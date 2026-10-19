@@ -20,7 +20,7 @@ jobs:
         module: [RPMArt, RPMAudio, RPMCast, RPMDesign, RPMKit, RPMLibrary, RPMRadio, RPMSession, RPMSharing, RPMStages]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: swift test
         working-directory: RPM.iOS/Modules/${{ matrix.module }}
         run: swift test
