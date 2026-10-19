@@ -61,18 +61,11 @@ struct BannerDwellTests {
         #expect(dwell(pageAtTop: false) != dwell(pageAtTop: true))
     }
 
-    /// The phone holds a card for the same time as the desktop. The test reads the desktop's source, so the
-    /// two cannot drift apart without this test failing.
+    /// The phone holds a card for the same time as the desktop. The test reads the desktop's source from
+    /// the rpm-desktop repo next to this one, so the two cannot drift apart without this test failing.
     @Test func holdsACardAsLongAsTheDesktop() throws {
-        let rpm = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()   // RPMLibraryTests
-            .deletingLastPathComponent()   // Tests
-            .deletingLastPathComponent()   // RPMLibrary
-            .deletingLastPathComponent()   // Modules
-            .deletingLastPathComponent()   // RPM.iOS
-            .deletingLastPathComponent()   // RPM
         let source = try String(
-            contentsOf: rpm.appending(path: "RPM.Desktop/Presentation/Main/Home/HomeBanner.cs"),
+            contentsOf: workspaceFile("rpm-desktop", "RPM.Desktop/Presentation/Main/Home/HomeBanner.cs"),
             encoding: .utf8)
 
         let line = try #require(source.split(separator: "\n")
@@ -127,4 +120,19 @@ struct BannerRingTests {
         #expect(ring.slots == 5)
         #expect(ring.next(after: 4) == 0)
     }
+}
+
+/// Finds `path` in the repo `repo`, which is checked out next to this one. A checkout that holds every
+/// app in one tree has the file in its own folder instead. If neither exists, the result is a path
+/// that does not exist, so the error names the repo and the file.
+private func workspaceFile(_ repo: String, _ path: String, from file: String = #filePath) -> URL {
+    var dir = URL(fileURLWithPath: file).deletingLastPathComponent()
+    while dir.path != "/" {
+        let next = dir.appending(path: repo).appending(path: path)
+        if FileManager.default.fileExists(atPath: next.path) { return next }
+        let own = dir.appending(path: path)
+        if FileManager.default.fileExists(atPath: own.path) { return own }
+        dir = dir.deletingLastPathComponent()
+    }
+    return URL(fileURLWithPath: "../\(repo)/\(path)")
 }

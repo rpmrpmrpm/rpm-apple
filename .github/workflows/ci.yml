@@ -20,7 +20,22 @@ jobs:
         module: [RPMArt, RPMAudio, RPMCast, RPMDesign, RPMKit, RPMLibrary, RPMRadio, RPMSession, RPMSharing, RPMStages]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          path: rpm-apple
+      # Some tests compare the phone with files in the rpm and rpm-desktop repos, checked out next to this one.
+      - uses: actions/checkout@v7
+        with:
+          repository: rpmrpmrpm/rpm
+          path: rpm
+          # A private repo can only be checked out with the organisation secret SIBLING_REPOS_TOKEN,
+          # a token that can read the rpm repos. A public repo needs no secret.
+          token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
+      - uses: actions/checkout@v7
+        with:
+          repository: rpmrpmrpm/rpm-desktop
+          path: rpm-desktop
+          token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
       - name: swift test
-        working-directory: RPM.iOS/Modules/${{ matrix.module }}
+        working-directory: rpm-apple/RPM.iOS/Modules/${{ matrix.module }}
         run: swift test

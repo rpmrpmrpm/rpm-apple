@@ -15,14 +15,7 @@ struct PlaylistPhotosTests {
     /// nothing else is. The table is generated. This test fails when the JSON is edited and
     /// `gen_playlist_photos.py` is not run.
     @Test func theTableIsTheJson() throws {
-        let json = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()   // RPMArtTests
-            .deletingLastPathComponent()   // Tests
-            .deletingLastPathComponent()   // RPMArt
-            .deletingLastPathComponent()   // Modules
-            .deletingLastPathComponent()   // RPM.iOS
-            .deletingLastPathComponent()   // RPM
-            .appendingPathComponent("scripts/playlist-photos.json")
+        let json = workspaceFile("rpm", "scripts/playlist-photos.json")
 
         let book = try JSONSerialization.jsonObject(with: Data(contentsOf: json)) as! [String: Any]
         let photos = book["photos"] as! [[String: Any]]
@@ -172,4 +165,19 @@ struct PlaylistPhotosTests {
         let degrees = sector * 60
         return degrees < 0 ? degrees + 360 : degrees
     }
+}
+
+/// Finds `path` in the repo `repo`, which is checked out next to this one. A checkout that holds every
+/// app in one tree has the file in its own folder instead. If neither exists, the result is a path
+/// that does not exist, so the error names the repo and the file.
+private func workspaceFile(_ repo: String, _ path: String, from file: String = #filePath) -> URL {
+    var dir = URL(fileURLWithPath: file).deletingLastPathComponent()
+    while dir.path != "/" {
+        let next = dir.appending(path: repo).appending(path: path)
+        if FileManager.default.fileExists(atPath: next.path) { return next }
+        let own = dir.appending(path: path)
+        if FileManager.default.fileExists(atPath: own.path) { return own }
+        dir = dir.deletingLastPathComponent()
+    }
+    return URL(fileURLWithPath: "../\(repo)/\(path)")
 }
