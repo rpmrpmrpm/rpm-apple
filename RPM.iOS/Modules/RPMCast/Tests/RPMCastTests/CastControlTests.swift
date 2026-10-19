@@ -8,7 +8,7 @@ import Testing
 /// track change has nothing to report on the media namespace. A receiver that only reads the LOAD keeps showing the record
 /// that the queue started with, for the whole session. This channel fixes that.
 ///
-/// The key names must match the web receiver in `rpm.Api/wwwroot/cast/receiver.html`. A key that is renamed on one side only
+/// The key names must match the web receiver in `cast/receiver.html` in the rpm repo. A key that is renamed on one side only
 /// still compiles, but its value never arrives.
 @Suite("What the room is told is playing")
 struct CastControlTests {
