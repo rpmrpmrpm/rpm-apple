@@ -1,0 +1,10 @@
+// Signing for the app target. Official builds use rpm's team and bundle id.
+//
+// To run the app on your own device, copy Local.xcconfig.example to Local.xcconfig in this folder
+// and set your own team and bundle id there. Git ignores Local.xcconfig. The simulator needs no
+// team.
+
+DEVELOPMENT_TEAM = LBW775Z8JG
+PRODUCT_BUNDLE_IDENTIFIER = com.rpm.player
+
+#include? "Local.xcconfig"

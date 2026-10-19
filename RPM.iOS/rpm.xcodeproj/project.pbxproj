@@ -1,0 +1,457 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		10F9E984FF42FE891B9C83D6 /* RPMKit in Frameworks */ = {isa = PBXBuildFile; productRef = D1F9303E3CD67C43E5E5B002 /* RPMKit */; };
+		734576F615D8B5038C5EB709 /* RPMDesign in Frameworks */ = {isa = PBXBuildFile; productRef = BDF9CB5FFB1FDD4ADDF41675 /* RPMDesign */; };
+		8961A46AC711133B65D8DBA6 /* RPMUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39831671E6C97FA4963C617A /* RPMUI */; };
+		8E814D1F3120DA059C9B363D /* RPMLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = DED8EE477281533904F6D168 /* RPMLibrary */; };
+		A1B2C3D40001000000000003 /* RPMArt in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40001000000000002 /* RPMArt */; };
+		A1B2C3D40002000000000003 /* RPMAudio in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40002000000000002 /* RPMAudio */; };
+		A1B2C3D40004000000000003 /* RPMSession in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40004000000000002 /* RPMSession */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		05BE9347E2FAE1D9BA0F8AA8 /* RPMDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMDesign; path = Modules/RPMDesign; sourceTree = SOURCE_ROOT; };
+		3A2FAF3E0C4DB5344F6A86C9 /* RPMKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMKit; path = Modules/RPMKit; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40001000000000004 /* RPMArt */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMArt; path = Modules/RPMArt; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40002000000000004 /* RPMAudio */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMAudio; path = Modules/RPMAudio; sourceTree = SOURCE_ROOT; };
+		A1B2C3D40004000000000004 /* RPMSession */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMSession; path = Modules/RPMSession; sourceTree = SOURCE_ROOT; };
+		B380D5AE12C14E6D868A589C /* RPMUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMUI; path = Modules/RPMUI; sourceTree = SOURCE_ROOT; };
+		BE21491486E49FAE22561BD5 /* RPMLibrary */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMLibrary; path = Modules/RPMLibrary; sourceTree = SOURCE_ROOT; };
+		CBECBC01A63CF53B799CCB1C /* rpm.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = rpm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A1B2C3D40003000000000002 /* Exceptions for "rpm" folder in "rpm" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 29D12D87FDA79A8967495164 /* rpm */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		EC9692F8E01D2BE25C82A32B /* rpm */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A1B2C3D40003000000000002 /* Exceptions for "rpm" folder in "rpm" target */,
+			);
+			path = rpm;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2D5841DCEDFE34B110949F40 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10F9E984FF42FE891B9C83D6 /* RPMKit in Frameworks */,
+				8E814D1F3120DA059C9B363D /* RPMLibrary in Frameworks */,
+				734576F615D8B5038C5EB709 /* RPMDesign in Frameworks */,
+				8961A46AC711133B65D8DBA6 /* RPMUI in Frameworks */,
+				A1B2C3D40001000000000003 /* RPMArt in Frameworks */,
+				A1B2C3D40002000000000003 /* RPMAudio in Frameworks */,
+				A1B2C3D40004000000000003 /* RPMSession in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		73E823C72F9B1AD1A4C9A109 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CBECBC01A63CF53B799CCB1C /* rpm.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D7C3C27A6E93280EE59CE37F = {
+			isa = PBXGroup;
+			children = (
+				5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */,
+				F8AF5295117FCB49637B315A /* Packages */,
+				EC9692F8E01D2BE25C82A32B /* rpm */,
+				73E823C72F9B1AD1A4C9A109 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F8AF5295117FCB49637B315A /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D40001000000000004 /* RPMArt */,
+				A1B2C3D40002000000000004 /* RPMAudio */,
+				05BE9347E2FAE1D9BA0F8AA8 /* RPMDesign */,
+				3A2FAF3E0C4DB5344F6A86C9 /* RPMKit */,
+				BE21491486E49FAE22561BD5 /* RPMLibrary */,
+				A1B2C3D40004000000000004 /* RPMSession */,
+				B380D5AE12C14E6D868A589C /* RPMUI */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		29D12D87FDA79A8967495164 /* rpm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE32D4A8C07A6F1361F1549E /* Build configuration list for PBXNativeTarget "rpm" */;
+			buildPhases = (
+				C117BE2F5E6B2C455C678DB9 /* Sources */,
+				2D5841DCEDFE34B110949F40 /* Frameworks */,
+				A1B2C3D40003000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				EC9692F8E01D2BE25C82A32B /* rpm */,
+			);
+			name = rpm;
+			packageProductDependencies = (
+				D1F9303E3CD67C43E5E5B002 /* RPMKit */,
+				DED8EE477281533904F6D168 /* RPMLibrary */,
+				BDF9CB5FFB1FDD4ADDF41675 /* RPMDesign */,
+				39831671E6C97FA4963C617A /* RPMUI */,
+				A1B2C3D40001000000000002 /* RPMArt */,
+				A1B2C3D40002000000000002 /* RPMAudio */,
+				A1B2C3D40004000000000002 /* RPMSession */,
+			);
+			productName = rpm;
+			productReference = CBECBC01A63CF53B799CCB1C /* rpm.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F415A069E900370CF4CFBD7B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					29D12D87FDA79A8967495164 = {
+						DevelopmentTeam = LBW775Z8JG;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = A8B93477F5ABE2F4E7917327 /* Build configuration list for PBXProject "RPM" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D7C3C27A6E93280EE59CE37F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				33E5F4368F559FC00205023E /* XCLocalSwiftPackageReference "Modules/RPMDesign" */,
+				94C0D7F4871F4DC8D32DF8C3 /* XCLocalSwiftPackageReference "Modules/RPMKit" */,
+				B3D4A64437CDA74BBF44B4FA /* XCLocalSwiftPackageReference "Modules/RPMLibrary" */,
+				41AA568DACF5C3D3E0CE1399 /* XCLocalSwiftPackageReference "Modules/RPMUI" */,
+				A1B2C3D40001000000000001 /* XCLocalSwiftPackageReference "Modules/RPMArt" */,
+				A1B2C3D40002000000000001 /* XCLocalSwiftPackageReference "Modules/RPMAudio" */,
+				A1B2C3D40004000000000001 /* XCLocalSwiftPackageReference "Modules/RPMSession" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 73E823C72F9B1AD1A4C9A109 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				29D12D87FDA79A8967495164 /* rpm */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1B2C3D40003000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C117BE2F5E6B2C455C678DB9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		994A85FC74C53A9E733EDE2F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = rpm;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A742A8488402121A3741BD1B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = rpm;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		ABEB231176B7C4ADBD4CAC8E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = rpm/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = rpm;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		EB645097BA79B6057766AD9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = rpm/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = rpm;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A8B93477F5ABE2F4E7917327 /* Build configuration list for PBXProject "RPM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				994A85FC74C53A9E733EDE2F /* Debug */,
+				A742A8488402121A3741BD1B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FE32D4A8C07A6F1361F1549E /* Build configuration list for PBXNativeTarget "rpm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABEB231176B7C4ADBD4CAC8E /* Debug */,
+				EB645097BA79B6057766AD9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		33E5F4368F559FC00205023E /* XCLocalSwiftPackageReference "Modules/RPMDesign" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMDesign;
+		};
+		41AA568DACF5C3D3E0CE1399 /* XCLocalSwiftPackageReference "Modules/RPMUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMUI;
+		};
+		94C0D7F4871F4DC8D32DF8C3 /* XCLocalSwiftPackageReference "Modules/RPMKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMKit;
+		};
+		A1B2C3D40001000000000001 /* XCLocalSwiftPackageReference "Modules/RPMArt" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMArt;
+		};
+		A1B2C3D40002000000000001 /* XCLocalSwiftPackageReference "Modules/RPMAudio" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMAudio;
+		};
+		A1B2C3D40004000000000001 /* XCLocalSwiftPackageReference "Modules/RPMSession" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMSession;
+		};
+		B3D4A64437CDA74BBF44B4FA /* XCLocalSwiftPackageReference "Modules/RPMLibrary" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Modules/RPMLibrary;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		39831671E6C97FA4963C617A /* RPMUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMUI;
+		};
+		A1B2C3D40001000000000002 /* RPMArt */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMArt;
+		};
+		A1B2C3D40002000000000002 /* RPMAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMAudio;
+		};
+		A1B2C3D40004000000000002 /* RPMSession */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMSession;
+		};
+		BDF9CB5FFB1FDD4ADDF41675 /* RPMDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMDesign;
+		};
+		D1F9303E3CD67C43E5E5B002 /* RPMKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMKit;
+		};
+		DED8EE477281533904F6D168 /* RPMLibrary */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMLibrary;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F415A069E900370CF4CFBD7B /* Project object */;
+}

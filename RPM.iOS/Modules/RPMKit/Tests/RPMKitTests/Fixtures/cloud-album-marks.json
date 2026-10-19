@@ -1,0 +1,6 @@
+{
+  "albums": [
+    { "albumKey": "talk talk|laughing stock", "favorite": true, "favoritedAt": 638000000000000000, "updatedAt": 1756252800 },
+    { "albumKey": "bark psychosis|hex", "favorite": false, "favoritedAt": 0, "updatedAt": 1756252700 }
+  ]
+}

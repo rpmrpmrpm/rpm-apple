@@ -1,0 +1,6 @@
+{
+  "devices": [
+    { "deviceId": "dev-1", "publicKey": "MCowBQYDK2VwAyEAplaceholderkeyone", "name": "Placeholder Desktop", "lastSeenAt": 1756252800 },
+    { "deviceId": "dev-2", "publicKey": "MCowBQYDK2VwAyEAplaceholderkeytwo", "name": "Placeholder Phone" }
+  ]
+}

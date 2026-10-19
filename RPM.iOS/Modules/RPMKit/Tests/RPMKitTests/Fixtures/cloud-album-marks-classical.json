@@ -1,0 +1,19 @@
+{
+  "albums": [
+    {
+      "albumKey": "0123456789abcdef0123456789abcdef",
+      "favorite": true,
+      "favoritedAt": 638000000000000000,
+      "updatedAt": 1700000002,
+      "classical": true
+    },
+    {
+      "albumKey": "fedcba9876543210fedcba9876543210",
+      "favorite": true,
+      "favoritedAt": 0,
+      "updatedAt": 1700000003,
+      "classical": null
+    }
+  ],
+  "owner": "user-a"
+}

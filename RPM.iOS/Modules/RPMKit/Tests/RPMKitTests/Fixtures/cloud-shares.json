@@ -1,0 +1,8 @@
+{
+  "granted": [
+    { "ownerId": "user-self", "granteeId": "user-one", "granteeName": "Placeholder One", "createdAt": 1750000000 }
+  ],
+  "received": [
+    { "ownerId": "user-two", "granteeId": "user-self", "granteeName": "Placeholder Two", "createdAt": 1751000000 }
+  ]
+}

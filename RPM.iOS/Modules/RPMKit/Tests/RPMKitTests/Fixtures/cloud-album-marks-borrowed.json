@@ -1,0 +1,12 @@
+{
+  "albums": [
+    {
+      "albumKey": "0123456789abcdef0123456789abcdef",
+      "favorite": false,
+      "favoritedAt": 0,
+      "updatedAt": 1700000002,
+      "classical": true
+    }
+  ],
+  "owner": "user-a"
+}

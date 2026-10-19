@@ -1,0 +1,426 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7E5A00000000000000000200 /* RPMKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000100 /* RPMKit */; };
+		7E5A00000000000000000201 /* RPMLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000101 /* RPMLibrary */; };
+		7E5A00000000000000000202 /* RPMDesign in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000102 /* RPMDesign */; };
+		7E5A00000000000000000203 /* RPMArt in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000103 /* RPMArt */; };
+		7E5A00000000000000000204 /* RPMAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000104 /* RPMAudio */; };
+		7E5A00000000000000000205 /* RPMRadio in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000105 /* RPMRadio */; };
+		7E5A00000000000000000206 /* RPMStages in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000106 /* RPMStages */; };
+		7E5A00000000000000000207 /* RPMSession in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000107 /* RPMSession */; };
+		7E5A00000000000000000208 /* RPMSharing in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000108 /* RPMSharing */; };
+		7E5A00000000000000000209 /* RPMSharedUI in Frameworks */ = {isa = PBXBuildFile; productRef = 7E5A00000000000000000109 /* RPMSharedUI */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		7E5A00000000000000000001 /* rpm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = rpm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E5A00000000000000000400 /* RPMKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMKit; path = ../RPM.iOS/Modules/RPMKit; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000401 /* RPMLibrary */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMLibrary; path = ../RPM.iOS/Modules/RPMLibrary; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000402 /* RPMDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMDesign; path = ../RPM.iOS/Modules/RPMDesign; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000403 /* RPMArt */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMArt; path = ../RPM.iOS/Modules/RPMArt; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000404 /* RPMAudio */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMAudio; path = ../RPM.iOS/Modules/RPMAudio; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000405 /* RPMRadio */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMRadio; path = ../RPM.iOS/Modules/RPMRadio; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000406 /* RPMStages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMStages; path = ../RPM.iOS/Modules/RPMStages; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000407 /* RPMSession */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMSession; path = ../RPM.iOS/Modules/RPMSession; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000408 /* RPMSharing */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMSharing; path = ../RPM.iOS/Modules/RPMSharing; sourceTree = SOURCE_ROOT; };
+		7E5A00000000000000000409 /* RPMSharedUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMSharedUI; path = ../RPM.iOS/Modules/RPMSharedUI; sourceTree = SOURCE_ROOT; };
+		7E5A0000000000000000A001 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7E5A00000000000000000003 /* Exceptions for "rpm" folder in "rpm" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7E5A00000000000000000007 /* rpm */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		7E5A00000000000000000002 /* rpm */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7E5A00000000000000000003 /* Exceptions for "rpm" folder in "rpm" target */,
+			);
+			path = rpm;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7E5A00000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E5A00000000000000000200 /* RPMKit in Frameworks */,
+				7E5A00000000000000000201 /* RPMLibrary in Frameworks */,
+				7E5A00000000000000000202 /* RPMDesign in Frameworks */,
+				7E5A00000000000000000203 /* RPMArt in Frameworks */,
+				7E5A00000000000000000204 /* RPMAudio in Frameworks */,
+				7E5A00000000000000000205 /* RPMRadio in Frameworks */,
+				7E5A00000000000000000206 /* RPMStages in Frameworks */,
+				7E5A00000000000000000207 /* RPMSession in Frameworks */,
+				7E5A00000000000000000208 /* RPMSharing in Frameworks */,
+				7E5A00000000000000000209 /* RPMSharedUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7E5A0000000000000000000F = {
+			isa = PBXGroup;
+			children = (
+				7E5A0000000000000000A001 /* Signing.xcconfig */,
+				7E5A00000000000000000011 /* Packages */,
+				7E5A00000000000000000002 /* rpm */,
+				7E5A00000000000000000010 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7E5A00000000000000000010 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7E5A00000000000000000001 /* rpm.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7E5A00000000000000000011 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				7E5A00000000000000000400 /* RPMKit */,
+				7E5A00000000000000000401 /* RPMLibrary */,
+				7E5A00000000000000000402 /* RPMDesign */,
+				7E5A00000000000000000403 /* RPMArt */,
+				7E5A00000000000000000404 /* RPMAudio */,
+				7E5A00000000000000000405 /* RPMRadio */,
+				7E5A00000000000000000406 /* RPMStages */,
+				7E5A00000000000000000407 /* RPMSession */,
+				7E5A00000000000000000408 /* RPMSharing */,
+				7E5A00000000000000000409 /* RPMSharedUI */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7E5A00000000000000000007 /* rpm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E5A00000000000000000008 /* Build configuration list for PBXNativeTarget "rpm" */;
+			buildPhases = (
+				7E5A00000000000000000005 /* Sources */,
+				7E5A00000000000000000004 /* Frameworks */,
+				7E5A00000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				7E5A00000000000000000002 /* rpm */,
+			);
+			name = rpm;
+			packageProductDependencies = (
+				7E5A00000000000000000100 /* RPMKit */,
+				7E5A00000000000000000101 /* RPMLibrary */,
+				7E5A00000000000000000102 /* RPMDesign */,
+				7E5A00000000000000000103 /* RPMArt */,
+				7E5A00000000000000000104 /* RPMAudio */,
+				7E5A00000000000000000105 /* RPMRadio */,
+				7E5A00000000000000000106 /* RPMStages */,
+				7E5A00000000000000000107 /* RPMSession */,
+				7E5A00000000000000000108 /* RPMSharing */,
+				7E5A00000000000000000109 /* RPMSharedUI */,
+			);
+			productName = rpm;
+			productReference = 7E5A00000000000000000001 /* rpm.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7E5A0000000000000000000B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					7E5A00000000000000000007 = {
+						DevelopmentTeam = LBW775Z8JG;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 7E5A0000000000000000000C /* Build configuration list for PBXProject "rpm" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7E5A0000000000000000000F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7E5A00000000000000000300 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMKit" */,
+				7E5A00000000000000000301 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMLibrary" */,
+				7E5A00000000000000000302 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMDesign" */,
+				7E5A00000000000000000303 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMArt" */,
+				7E5A00000000000000000304 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMAudio" */,
+				7E5A00000000000000000305 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMRadio" */,
+				7E5A00000000000000000306 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMStages" */,
+				7E5A00000000000000000307 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMSession" */,
+				7E5A00000000000000000308 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMSharing" */,
+				7E5A00000000000000000309 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMSharedUI" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7E5A00000000000000000010 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7E5A00000000000000000007 /* rpm */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7E5A00000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7E5A00000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7E5A0000000000000000000D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MTL_FAST_MATH = YES;
+				SDKROOT = appletvos;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7E5A0000000000000000000E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				MTL_FAST_MATH = YES;
+				SDKROOT = appletvos;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		7E5A00000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7E5A0000000000000000A001 /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = rpm/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = rpm;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_NAME = rpm;
+				SDKROOT = appletvos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		7E5A0000000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7E5A0000000000000000A001 /* Signing.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = rpm/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = rpm;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_NAME = rpm;
+				SDKROOT = appletvos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7E5A0000000000000000000C /* Build configuration list for PBXProject "rpm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7E5A0000000000000000000D /* Debug */,
+				7E5A0000000000000000000E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7E5A00000000000000000008 /* Build configuration list for PBXNativeTarget "rpm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7E5A00000000000000000009 /* Debug */,
+				7E5A0000000000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		7E5A00000000000000000300 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMKit;
+		};
+		7E5A00000000000000000301 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMLibrary" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMLibrary;
+		};
+		7E5A00000000000000000302 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMDesign" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMDesign;
+		};
+		7E5A00000000000000000303 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMArt" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMArt;
+		};
+		7E5A00000000000000000304 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMAudio" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMAudio;
+		};
+		7E5A00000000000000000305 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMRadio" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMRadio;
+		};
+		7E5A00000000000000000306 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMStages" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMStages;
+		};
+		7E5A00000000000000000307 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMSession" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMSession;
+		};
+		7E5A00000000000000000308 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMSharing" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMSharing;
+		};
+		7E5A00000000000000000309 /* XCLocalSwiftPackageReference "../RPM.iOS/Modules/RPMSharedUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../RPM.iOS/Modules/RPMSharedUI;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7E5A00000000000000000100 /* RPMKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMKit;
+		};
+		7E5A00000000000000000101 /* RPMLibrary */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMLibrary;
+		};
+		7E5A00000000000000000102 /* RPMDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMDesign;
+		};
+		7E5A00000000000000000103 /* RPMArt */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMArt;
+		};
+		7E5A00000000000000000104 /* RPMAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMAudio;
+		};
+		7E5A00000000000000000105 /* RPMRadio */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMRadio;
+		};
+		7E5A00000000000000000106 /* RPMStages */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMStages;
+		};
+		7E5A00000000000000000107 /* RPMSession */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMSession;
+		};
+		7E5A00000000000000000108 /* RPMSharing */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMSharing;
+		};
+		7E5A00000000000000000109 /* RPMSharedUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RPMSharedUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 7E5A0000000000000000000B /* Project object */;
+}

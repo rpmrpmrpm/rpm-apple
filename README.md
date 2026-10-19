@@ -18,10 +18,13 @@ Part of [rpm](https://github.com/rpmrpmrpm/rpm). Ideas and questions go to the
 You need a Mac with the current Xcode. The iPhone app runs on iOS 17 or later, the Apple TV app on
 tvOS 26 or later.
 
-1. The simulator needs no Apple account. To run on your own device, copy
+1. The icon font (Font Awesome 5 Pro) is licensed and cannot be published, so it is not in the
+   repo. Maintainers run `scripts/copy-icon-fonts.sh` to copy it from the private `rpm-fonts-pro`
+   repo. Without it the apps work and some icons are blank.
+2. The simulator needs no Apple account. To run on your own device, copy
    `RPM.iOS/Local.xcconfig.example` to `RPM.iOS/Local.xcconfig` (and the same in `RPM.tvOS`) and
    set your own team and bundle id. A free Apple ID is enough. Git ignores `Local.xcconfig`.
-2. Open `RPM.iOS/rpm.xcodeproj` (or `RPM.tvOS/rpm.xcodeproj`) and run.
+3. Open `RPM.iOS/rpm.xcodeproj` (or `RPM.tvOS/rpm.xcodeproj`) and run.
 
 Test a module from the command line:
 

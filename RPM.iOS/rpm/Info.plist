@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+		<string>es</string>
+		<string>de</string>
+		<string>zh-Hans</string>
+	</array>
+	<!--
+	    Internet radio, and only internet radio. The Radio Browser directory is tens of
+	    thousands of third-party stations, a large minority of which are served over plain
+	    http:// by people this app has no relationship with, and their addresses cannot be
+	    enumerated as exception domains. rpm's own services are all https:// and none of
+	    them relies on this.
+
+	    NSAllowsArbitraryLoadsInMedia is not enough on its own: it covers AVFoundation's
+	    own loads, and a station is pulled by URLSession in StationFeed so that the ICY
+	    metadata can be read off the same socket. Both keys are stated because the second
+	    is what the media path would use if the first were ever withdrawn.
+
+	    This is the justification that App Review asks for.
+	-->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInMedia</key>
+		<true/>
+	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_googlecast._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>rpm looks for speakers on your network so you can play your music on them.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>

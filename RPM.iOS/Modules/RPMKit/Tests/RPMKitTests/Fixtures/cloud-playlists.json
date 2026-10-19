@@ -1,0 +1,8 @@
+{
+  "playlists": [
+    { "playlistId": "pl_legacy", "name": "Old list", "trackIds": ["rpm_0000000000000001"], "updatedAt": 1700000000 },
+    { "playlistId": "pl_nested", "name": "Friday", "trackIds": [], "folder": ["Sets", "AC/DC night"], "updatedAt": 1756252800 },
+    { "playlistId": "pl_plain", "name": "Morning", "trackIds": ["rpm_0000000000000002"], "folder": [], "updatedAt": 1756252801 }
+  ],
+  "owner": null
+}

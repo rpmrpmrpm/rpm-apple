@@ -1,0 +1,20 @@
+.DS_Store
+
+# Xcode and Swift Package Manager
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.build/
+.swiftpm/
+Package.resolved
+
+# Personal signing (see RPM.iOS/Signing.xcconfig and RPM.tvOS/Signing.xcconfig)
+Local.xcconfig
+
+# Font Awesome 5 Pro, copied in from the private rpm-fonts-pro repo by scripts/copy-icon-fonts.sh.
+# The licence does not allow publishing these files.
+RPM.iOS/Modules/RPMUI/Sources/RPMUI/Resources/fa-solid-900.ttf
+RPM.iOS/Modules/RPMUI/Sources/RPMUI/Resources/fa-regular-400.ttf
+.idea/
+.vscode/
+.claude/

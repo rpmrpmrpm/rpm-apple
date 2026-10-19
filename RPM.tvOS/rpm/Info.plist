@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>fr</string>
+		<string>es</string>
+		<string>de</string>
+		<string>zh-Hans</string>
+	</array>
+	<!--
+	    Internet radio, as on the phone (see RPM.iOS/rpm/Info.plist): many Radio Browser
+	    stations are served over plain http:// and cannot be listed as exception domains.
+
+	    NSAllowsArbitraryLoads also lets a connection reach a computer running rpm, which
+	    serves its library over TLS at a bare IP address with a self-signed certificate; the
+	    app checks that certificate's key against the key the computer advertised (PeerPins).
+
+	    No NSAllowsLocalNetworking: with it present the system ignores NSAllowsArbitraryLoads,
+	    and every http:// station is refused (error -1022).
+	-->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInMedia</key>
+		<true/>
+	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_rpm._tcp</string>
+		<string>_googlecast._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>rpm finds the computers on your network that share their library, and the speakers you can play your music on.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>
