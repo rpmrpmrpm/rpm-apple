@@ -4,6 +4,21 @@ import os
 import Testing
 @testable import RPMAudio
 
+/// Polls until `done` is true, or records an issue after `within`.
+///
+/// These tests play through the machine's real output device. On a shared CI Mac the device can
+/// start late, by more than a second. A fixed sleep then fails on a slow start, so the tests wait
+/// for the state they need and check the result after that.
+private func until(_ what: String, within: Duration = .seconds(10),
+                   _ done: @Sendable () -> Bool) async throws {
+    let end = ContinuousClock.now.advanced(by: within)
+    while ContinuousClock.now < end {
+        if done() { return }
+        try await Task.sleep(for: .milliseconds(50))
+    }
+    Issue.record("timed out waiting for \(what)")
+}
+
 /// Checks that sound is actually output.
 ///
 /// These tests run on macOS, which has an output device and no audio session to claim. They check
@@ -42,8 +57,7 @@ struct PcmEngineTests {
         #expect(engine.priming)
         #expect(!engine.isPlaying)
 
-        try await Task.sleep(for: .milliseconds(600))
-        #expect(engine.isPlaying, "it never started")
+        try await until("the engine to start") { engine.isPlaying && engine.position > 0 }
         #expect(!engine.priming)
         let early = engine.position
 
@@ -60,7 +74,7 @@ struct PcmEngineTests {
         let engine = PcmEngine(normalize: NormalizeContext())
         try engine.play(try tone(), loudness: .unmeasured, because: .somebodyAskedForIt)
 
-        try await Task.sleep(for: .milliseconds(500))
+        try await until("the engine to start") { engine.position > 0 }
         engine.pause()
 
         let held = engine.position
@@ -68,8 +82,7 @@ struct PcmEngineTests {
         #expect(engine.position == held, "it kept going after pause")
 
         try engine.resume()
-        try await Task.sleep(for: .milliseconds(400))
-        #expect(engine.position > held, "it did not start again")
+        try await until("the clock to start again") { engine.position > held }
 
         engine.stop()
     }
@@ -184,8 +197,8 @@ struct GaplessTests {
         try engine.play(try tone(), id: 1, loudness: .unmeasured, because: .somebodyAskedForIt)
         engine.queue(try tone(), id: 2, loudness: .unmeasured)
 
-        // Three seconds and a bit, so the first has finished and the second is in.
-        try await Task.sleep(for: .milliseconds(3400))
+        // The first record is three seconds long. Wait for the second to be in.
+        try await until("the second record") { engine.playing == 2 }
 
         #expect(engine.playing == 2, "it never moved on")
         #expect(engine.position < 1.5, "the needle carried the first record's time over")
@@ -253,8 +266,8 @@ struct GaplessTests {
         #expect(engine.rearranged(1, isNow: 0))
         engine.queue(try tone(), id: 1, loudness: .unmeasured)
 
-        // Three seconds and a bit, so the first has finished and the second is in.
-        try await Task.sleep(for: .milliseconds(3400))
+        // The first record is three seconds long. Wait for the change to be announced.
+        try await until("the second record") { moved.withLock { $0 }.count == 2 }
 
         #expect(engine.playing == 1, "it never moved on")
         #expect(engine.position < 1.5, "the needle carried the first record's time over")
@@ -271,7 +284,7 @@ struct GaplessTests {
         engine.ranOut = { _ in empty.withLock { $0 = true } }
 
         try engine.play(try tone(), id: 1, loudness: .unmeasured, because: .somebodyAskedForIt)
-        try await Task.sleep(for: .milliseconds(3500))
+        try await until("the end of the record") { empty.withLock { $0 } }
 
         #expect(empty.withLock { $0 }, "it never said it had run out")
         engine.stop()
