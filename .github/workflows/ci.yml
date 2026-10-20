@@ -11,13 +11,16 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch or pull request cancels the run still going for the older one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   modules:
-    name: Module tests (${{ matrix.module }})
-    strategy:
-      fail-fast: false
-      matrix:
-        module: [RPMArt, RPMAudio, RPMCast, RPMDesign, RPMKit, RPMLibrary, RPMRadio, RPMSession, RPMSharing, RPMStages]
+    # One job for all modules: a macOS minute is billed as ten on a private repo, and each job pays
+    # its own start-up. A module that fails does not stop the others; the job fails at the end.
+    name: Module tests
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
@@ -28,8 +31,8 @@ jobs:
         with:
           repository: rpmrpmrpm/rpm
           path: rpm
-          # A private repo can only be checked out with the organisation secret SIBLING_REPOS_TOKEN,
-          # a token that can read the rpm repos. A public repo needs no secret.
+          # A private repo can only be checked out with the secret SIBLING_REPOS_TOKEN, a token that
+          # can read the rpm repos. A public repo needs no secret.
           token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
       - uses: actions/checkout@v7
         with:
@@ -37,5 +40,15 @@ jobs:
           path: rpm-desktop
           token: ${{ secrets.SIBLING_REPOS_TOKEN || github.token }}
       - name: swift test
-        working-directory: rpm-apple/RPM.iOS/Modules/${{ matrix.module }}
-        run: swift test
+        working-directory: rpm-apple/RPM.iOS/Modules
+        run: |
+          failed=""
+          for module in RPMArt RPMAudio RPMCast RPMDesign RPMKit RPMLibrary RPMRadio RPMSession RPMSharing RPMStages; do
+            echo "::group::${module}"
+            (cd "${module}" && swift test) || failed="${failed} ${module}"
+            echo "::endgroup::"
+          done
+          if [ -n "${failed}" ]; then
+            echo "::error::Tests failed in:${failed}"
+            exit 1
+          fi
