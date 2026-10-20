@@ -12,12 +12,10 @@ public struct FoundComputer: Sendable, Equatable {
     public let port: Int
     /// SubjectPublicKeyInfo DER.
     public let publicKey: Data
-    public let account: String
 
-    public init(deviceId: String, name: String, address: String, port: Int, publicKey: Data,
-                account: String) {
+    public init(deviceId: String, name: String, address: String, port: Int, publicKey: Data) {
         self.deviceId = deviceId; self.name = name; self.address = address; self.port = port
-        self.publicKey = publicKey; self.account = account
+        self.publicKey = publicKey
     }
 
     /// The id in upper case. Computers are stored under this key.
@@ -27,13 +25,12 @@ public struct FoundComputer: Sendable, Equatable {
 }
 
 /// What a beacon's TXT record says, checked the same way as the desktop's `PeerBeacon`: `v` must
-/// be 3, `k` is the key (base64url SubjectPublicKeyInfo), and `id` must be the id that key implies.
+/// be 4, `k` is the key (base64url SubjectPublicKeyInfo), and `id` must be the id that key implies.
 /// Nil for a beacon that fails any of those.
 public struct Beacon: Equatable, Sendable {
     public let deviceId: String
     public let name: String
     public let publicKey: Data
-    public let account: String
 
     public init?(txt: [String: String]) {
         var text: [String: String] = [:]
@@ -52,9 +49,9 @@ public struct Beacon: Equatable, Sendable {
         }
 
         deviceId = id
-        name = said("d") ?? said("n") ?? id
+        // The beacon names no person and no account, only the machine.
+        name = said("n") ?? id
         publicKey = key
-        account = text["a"] ?? ""
     }
 }
 
@@ -173,7 +170,7 @@ public final class Discovery {
 
     private func place(name: String, beacon: Beacon, address: String, port: Int) {
         let computer = FoundComputer(deviceId: beacon.deviceId, name: beacon.name, address: address,
-                                     port: port, publicKey: beacon.publicKey, account: beacon.account)
+                                     port: port, publicKey: beacon.publicKey)
         PeerPins.shared.pin(address, spki: beacon.publicKey)
         names[name] = computer.key
         guard found[computer.key] != computer else { return }

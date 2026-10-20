@@ -70,6 +70,8 @@ public final class HomeNetwork {
     private let store: UserDefaults
     private let keys: any SecretStore
     private let deviceName: String
+    /// The account signed in on this device, read for each session proof. See `init`.
+    @ObservationIgnored private let account: @Sendable () async -> String
     private let client = PeerClient()
     @ObservationIgnored private let discovery = Discovery()
 
@@ -113,10 +115,16 @@ public final class HomeNetwork {
     ///   - store: where the paired computers are kept.
     ///   - keys: where this device's key is kept.
     ///   - deviceName: what the computer shows this device as while pairing.
-    public init(store: UserDefaults, keys: any SecretStore, deviceName: String) {
+    ///   - account: the account signed in on this device (the user id), or empty. It goes inside
+    ///     each session signature, so a computer learns which account this device is in only after
+    ///     the key is proved. Required: forgetting it would make every computer treat this device as
+    ///     a guest's.
+    public init(store: UserDefaults, keys: any SecretStore, deviceName: String,
+                account: @escaping @Sendable () async -> String) {
         self.store = store
         self.keys = keys
         self.deviceName = deviceName
+        self.account = account
         paired = Self.readPaired(store)
     }
 
@@ -163,10 +171,9 @@ public final class HomeNetwork {
     /// tries left again and hide the next wrong code.
     private var lastRev = -1
 
-    /// Starts pairing with `computer`, replacing any pairing under way.
-    /// - Parameter userId: the signed-in account. Its fingerprint goes in the request, so the
-    ///   computer can tell its owner's devices from a friend's. Nil when signed out.
-    public func pair(_ computer: FoundComputer, account userId: String?) {
+    /// Starts pairing with `computer`, replacing any pairing under way. The request names no account:
+    /// a computer learns which account this device is in from the session proof, after pairing.
+    public func pair(_ computer: FoundComputer) {
         pairingTask?.cancel()
         attempt += 1
         let mine = attempt
@@ -183,7 +190,6 @@ public final class HomeNetwork {
                 _ = nonce.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) }
                 let request = PairRequest(version: PeerWire.version, publicKey: PeerWire.base64Url(me.publicKey),
                                           name: self.deviceName, face: "",
-                                          account: PeerWire.accountFingerprint(userId),
                                           nonce: PeerWire.base64Url(nonce))
                 guard let offer = try await self.client.read(PairOffer.self, computer.base + "/rpm/pair",
                                                              body: request, token: nil)
@@ -320,16 +326,19 @@ public final class HomeNetwork {
         if let held = tokens[computer.key], held.expires.timeIntervalSinceNow > 120 { return held.value }
         if let running = asking[computer.key] { return try await running.value }
 
-        let task = Task { [client] () async throws -> String in
+        let task = Task { [client, account] () async throws -> String in
             let me = await self.me()
+            let signedIn = await account()
             guard let challenge = try await client.read(SessionChallenge.self, computer.base + "/rpm/session",
                                                         token: nil)
             else { throw PeerFailed(what: "no challenge") }
             let signature = try me.sign(PeerWire.sessionText(serverDeviceId: computer.deviceId,
-                                                             challenge: challenge.challenge))
+                                                             challenge: challenge.challenge,
+                                                             account: signedIn))
             let redeem = SessionRedeem(publicKey: PeerWire.base64Url(me.publicKey),
                                        challenge: challenge.challenge,
-                                       signature: PeerWire.base64Url(signature))
+                                       signature: PeerWire.base64Url(signature),
+                                       account: signedIn)
             guard let grant = try await client.read(SessionGrant.self, computer.base + "/rpm/session",
                                                     body: redeem, token: nil)
             else { throw PeerFailed(what: "no grant") }
@@ -452,12 +461,18 @@ public final class HomeNetwork {
         return nil
     }
 
-    /// The address to stream `rpmId` from `computer`, with a session token in its query.
+    /// The address to stream `rpmId` from `computer`. Its query carries a ticket for this one track,
+    /// not the session token: the player does not pin the computer's key, so this URL is what
+    /// someone on the network could read (``PeerWire/mediaTicket(_:route:id:)``).
     public func address(of rpmId: String, on computer: FoundComputer) async throws -> URL {
         let token = try await token(for: computer)
         let id = rpmId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(["/"])) ?? rpmId
-        let t = token.addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? token
-        guard let url = URL(string: computer.base + "/rpm/track/" + id + "?t=" + t) else {
+        func query(_ value: String) -> String {
+            value.addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? value
+        }
+        let s = query(PeerWire.mediaHandle(token))
+        let t = query(PeerWire.mediaTicket(token, route: PeerWire.trackRoute, id: rpmId))
+        guard let url = URL(string: computer.base + PeerWire.trackRoute + id + "?s=" + s + "&t=" + t) else {
             throw PeerFailed(what: "bad address")
         }
         return url

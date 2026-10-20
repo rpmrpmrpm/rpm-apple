@@ -5,9 +5,12 @@ import CryptoKit
 /// `PeerIdentity`, `Base32`) and the Android TV app's `PeerWire.kt`. Every binary value on the wire
 /// is base64url without padding.
 public enum PeerWire {
-    public static let version = 3
+    public static let version = 4
     public static let serviceType = "_rpm._tcp"
     public static let sessionPurpose = "rpm-share-session"
+
+    /// Where a computer serves a track's bytes. A ticket is made over this route and the track's id.
+    public static let trackRoute = "/rpm/track/"
 
     public static func base64Url(_ data: Data) -> String {
         data.base64EncodedString()
@@ -30,17 +33,26 @@ public enum PeerWire {
         base32(Data(SHA256.hash(data: publicKey)).prefix(16))
     }
 
-    /// An account's public fingerprint: base32 of the first 12 bytes of SHA-256 of the user id, or
-    /// empty when signed out. Computers compare it to tell their owner's devices from a friend's.
-    public static func accountFingerprint(_ userId: String?) -> String {
-        guard let userId, !userId.trimmingCharacters(in: .whitespaces).isEmpty else { return "" }
-        return base32(Data(SHA256.hash(data: Data(userId.utf8))).prefix(12))
+    /// The text that a session signature covers: the computer's device id exactly as the computer
+    /// spells it, the challenge, and the account this device is signed into (the user id, or empty).
+    /// The account is said only here, inside the signature, to a computer whose key is pinned.
+    public static func sessionText(serverDeviceId: String, challenge: String, account: String) -> Data {
+        Data("\(sessionPurpose)\n\(serverDeviceId)\n\(challenge)\n\(account)".utf8)
     }
 
-    /// The text that a session signature covers. The computer's device id is used exactly as the
-    /// computer spells it.
-    public static func sessionText(serverDeviceId: String, challenge: String) -> Data {
-        Data("\(sessionPurpose)\n\(serverDeviceId)\n\(challenge)".utf8)
+    /// The public name of a session token in a media URL: the first 16 bytes of SHA-256, base64url.
+    /// The desktop's `PeerSessions.Handle`.
+    public static func mediaHandle(_ token: String) -> String {
+        base64Url(Data(SHA256.hash(data: Data("rpm-media-handle\n\(token)".utf8))).prefix(16))
+    }
+
+    /// What a media URL carries in place of the token: the first 16 bytes of HMAC-SHA256, keyed with
+    /// the token, over the route and the unescaped id. It opens that one route and id, and nothing
+    /// else. The desktop's `PeerSessions.Ticket`.
+    public static func mediaTicket(_ token: String, route: String, id: String) -> String {
+        let mac = HMAC<SHA256>.authenticationCode(for: Data("rpm-media\n\(route)\(id)".utf8),
+                                                  using: SymmetricKey(data: Data(token.utf8)))
+        return base64Url(Data(mac).prefix(16))
     }
 
     private static let alphabet = Array("0123456789ABCDEFGHJKMNPQRSTVWXYZ")
@@ -81,7 +93,6 @@ struct PairRequest: Encodable {
     let publicKey: String
     let name: String
     let face: String
-    let account: String
     let nonce: String
 }
 
@@ -140,6 +151,8 @@ struct SessionRedeem: Encodable {
     let publicKey: String
     let challenge: String
     let signature: String
+    /// The account this device is signed into, or empty. Covered by the signature.
+    let account: String
 }
 
 struct SessionGrant: Decodable {

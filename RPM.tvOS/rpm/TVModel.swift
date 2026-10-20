@@ -96,7 +96,8 @@ final class TVModel {
         // the computers to the account's own shelf.
         let auth = self.auth
         let home = HomeNetwork(store: .standard, keys: Keychain(service: "com.rpm.player.peer"),
-                               deviceName: UIDevice.current.name)
+                               deviceName: UIDevice.current.name,
+                               account: { await auth.current?.userId ?? "" })
         homeNetwork = home
         session = LibrarySession(
             auth: auth, cloud: cloud, community: community, library: library,

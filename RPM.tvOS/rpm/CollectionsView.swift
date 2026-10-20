@@ -84,7 +84,7 @@ struct CollectionsView: View {
                                             : Loc.get("Tv_Computer_Connect"),
                                           open: computer.paired && computer.here != nil) {
                                 if !computer.paired, let found = computer.here {
-                                    home.pair(found, account: session.who?.userId)
+                                    home.pair(found)
                                 }
                             }
                         }

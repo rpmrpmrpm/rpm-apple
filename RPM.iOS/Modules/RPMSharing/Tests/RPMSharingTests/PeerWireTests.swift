@@ -13,12 +13,6 @@ import RPMKit
         #expect(PeerWire.id(for: key).count == 26)
     }
 
-    @Test func anAccountFingerprintIsBase32OfTheFirst12BytesOfTheUserIdsHash() {
-        #expect(PeerWire.accountFingerprint("1245d484-d071-70ea-e9d3-e196ee969043") == "CYX35Q9479VVA3ZQEYN0")
-        #expect(PeerWire.accountFingerprint("  ") == "")
-        #expect(PeerWire.accountFingerprint(nil) == "")
-    }
-
     @Test func base64UrlHasNoPaddingAndNoPlusOrSlash() {
         let bytes = Data([0xFB, 0xFF, 0x00, 0x01, 0x02])
         #expect(PeerWire.base64Url(bytes) == "-_8AAQI")
@@ -26,9 +20,15 @@ import RPMKit
         #expect(PeerWire.fromBase64Url("not base 64 url!!") == nil)
     }
 
-    @Test func theSessionTextIsThePurposeTheServersIdAndTheChallenge() {
-        let text = PeerWire.sessionText(serverDeviceId: "B3998PDJ2C52W58JABA0HEAYDM", challenge: "abc")
-        #expect(String(decoding: text, as: UTF8.self) == "rpm-share-session\nB3998PDJ2C52W58JABA0HEAYDM\nabc")
+    @Test func theSessionTextIsThePurposeTheServersIdTheChallengeAndTheAccount() {
+        let text = PeerWire.sessionText(serverDeviceId: "SERVER", challenge: "CH", account: "user-7")
+        #expect(String(decoding: text, as: UTF8.self) == "rpm-share-session\nSERVER\nCH\nuser-7")
+    }
+
+    /// The same values as `PeerSessionsTests.Handles_and_tickets_match_the_phones` on the desktop.
+    @Test func handlesAndTicketsMatchTheDesktop() {
+        #expect(PeerWire.mediaHandle("token-1") == "ufGG_y6PQoD1A0zS7jm0xg")
+        #expect(PeerWire.mediaTicket("token-1", route: "/rpm/track/", id: "abc") == "pfexHfz9I4_UxxVAiaRSMw")
     }
 
     @Test func ticksBecomeUnixSeconds() {
@@ -40,7 +40,7 @@ import RPMKit
     @Test func aSignatureIsRAndSOf32BytesEachAndVerifies() async throws {
         let store = MemorySecrets()
         let me = await PeerIdentity.load(from: store)
-        let text = PeerWire.sessionText(serverDeviceId: "X", challenge: "y")
+        let text = PeerWire.sessionText(serverDeviceId: "X", challenge: "y", account: "")
         let signature = try me.sign(text)
         #expect(signature.count == 64)
 
@@ -56,22 +56,22 @@ import RPMKit
         #expect(first.deviceId == PeerWire.id(for: first.publicKey))
     }
 
-    @Test func aBeaconMustCarryVersion3AndAnIdItsKeyImplies() throws {
+    @Test func aBeaconMustCarryVersion4AndAnIdItsKeyImplies() throws {
         let key = P256.Signing.PrivateKey().publicKey.derRepresentation
         let id = PeerWire.id(for: key)
-        let good = ["v": "3", "k": PeerWire.base64Url(key), "id": id.lowercased(), "d": "Desk", "a": "ACC"]
+        let good = ["v": "4", "k": PeerWire.base64Url(key), "id": id.lowercased(), "n": "Desk"]
         let beacon = try #require(Beacon(txt: good))
         #expect(beacon.name == "Desk")
-        #expect(beacon.account == "ACC")
         #expect(beacon.publicKey == key)
 
-        var old = good; old["v"] = "2"
+        var old = good; old["v"] = "3"
         #expect(Beacon(txt: old) == nil)
         var forged = good; forged["id"] = "B3998PDJ2C52W58JABA0HEAYDM"
         #expect(Beacon(txt: forged) == nil)
-        var named = good; named["d"] = nil; named["n"] = "Name"
-        #expect(Beacon(txt: named)?.name == "Name")
-        var nameless = good; nameless["d"] = nil
+        // A display name from an older beacon is not read: the beacon names no person.
+        var withFace = good; withFace["d"] = "Alex"
+        #expect(Beacon(txt: withFace)?.name == "Desk")
+        var nameless = good; nameless["n"] = nil
         #expect(Beacon(txt: nameless)?.name == id.lowercased())
     }
 }
