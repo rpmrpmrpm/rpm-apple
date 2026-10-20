@@ -62,9 +62,11 @@ struct LiveSmokeTests {
         let auth = AuthClient(base: Self.accounts, keychain: MemoryStore(), reach: NetworkReach())
 
         for provider in ["Google", "Apple"] {
-            let (url, sessionId) = try await auth.startSocialSignIn(provider: provider)
+            // The TV's way, because it is the one that polls. The phone's way ends in a browser.
+            let started = try await auth.startSocialSignIn(provider: provider, returnTo: .device)
+            let sessionId = started.sessionId
 
-            #expect(url.scheme == "https", "\(provider) came back with \(url)")
+            #expect(started.url.scheme == "https", "\(provider) came back with \(started.url)")
             #expect(!sessionId.isEmpty)
 
             // Nothing has happened on that row yet, so the poll finds nothing and
