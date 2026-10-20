@@ -389,6 +389,8 @@ final class AppModel {
         player.onTrackChanged = { [weak self] track in
             guard let self else { return }
             Task { await self.record.show(track) }
+            // A song the radio queued is playing: the radio queues the songs after it.
+            Task { @MainActor in self.radio?.topUp(self.player) }
         }
 
         player.onStationChanged = { [weak self] station in
@@ -773,9 +775,30 @@ final class AppModel {
     /// Any list of songs: a record, a playlist, the marked songs. It replaces the queue,
     /// or asks first if the user changed the songs that are still to come. See ``queueQuestion``.
     func play(_ tracks: [CloudTrack], from: Int, tapped: Tapped) async {
+        radio = nil
         switch player.replacing(with: tracks, from: from, tapped: tapped) {
         case .clear(let start): await startPlaying(start)
         case .asks(let question): queueQuestion = question
+        }
+    }
+
+    /// The song radio that is on, or nil. Dropped by every other way of starting a queue, so
+    /// starting an album or a list ends the radio without saying so. See `SongRadioRun`.
+    @ObservationIgnored private var radio: SongRadioRun?
+
+    /// "Start radio" on a song: it plays now, and the queue keeps filling with songs like
+    /// whichever one is playing. It replaces the queue without asking, as the computer does:
+    /// a radio is a new thing to listen to, not a list to keep the old one beside.
+    func startRadio(_ track: CloudTrack) {
+        let start = switch player.replacing(with: [track], from: 0, tapped: .song) {
+        case .clear(let clear): clear
+        case .asks(let question): question.discard()
+        }
+        let run = session.startRadio(on: track)
+        radio = run
+        Task {
+            await startPlaying(start)
+            run.topUp(player)
         }
     }
 

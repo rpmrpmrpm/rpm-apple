@@ -168,6 +168,8 @@ struct RootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Start radio, on every song menu and home's radio entries. See `StartRadio`.
+        .environment(\.startRadio, { [model] track in model.startRadio(track) })
         // Asked before a tap replaces a queue that the user changed. It is on the root and not on
         // each page, because a tap on every page reaches `AppModel.play`, and the player is an
         // overlay here and not a system sheet that would hide a dialog presented under it.

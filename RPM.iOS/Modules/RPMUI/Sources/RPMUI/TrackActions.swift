@@ -56,6 +56,9 @@ public struct TrackActions: ViewModifier {
     private let onMark: (CloudTrack, Bool) -> Void
     private let onFile: (CloudTrack) -> Void
 
+    /// Start radio, offered on every row where the app has set it. See ``EnvironmentValues/startRadio``.
+    @Environment(\.startRadio) private var startRadio
+
     public init(track: CloudTrack, marked: Bool, mine: Bool, upNext: UpNext,
                 onMark: @escaping (CloudTrack, Bool) -> Void,
                 onFile: @escaping (CloudTrack) -> Void) {
@@ -78,6 +81,13 @@ public struct TrackActions: ViewModifier {
         let row = content
             .contextMenu {
                 playNext
+
+                // On a borrowed row too: a radio only plays, it writes nothing.
+                if let startRadio {
+                    Button { startRadio(track) } label: {
+                        Label(Loc.get("Track_StartRadio"), systemImage: "dot.radiowaves.left.and.right")
+                    }
+                }
 
                 // A borrowed row gets only the action that works on it. The other
                 // actions are left out, not disabled: a disabled button suggests "not

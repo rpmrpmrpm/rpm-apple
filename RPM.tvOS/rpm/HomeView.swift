@@ -634,7 +634,7 @@ private struct QuickEntry: View {
     @ViewBuilder
     private var menu: some View {
         switch pick.kind {
-        case .song:
+        case .song, .radio:
             if let track = tracks[pick.key] { TrackMenu(track: track, queue: [track], at: 0) }
         case .album:
             if let album = albums[pick.key] {
@@ -654,7 +654,7 @@ private struct QuickEntry: View {
     @ViewBuilder
     private var picture: some View {
         switch pick.kind {
-        case .song:
+        case .song, .radio:
             let track = tracks[pick.key]
             Sleeve(album: track.flatMap { albums[AlbumGrouping.key(for: $0)] }, edge: 96, corner: 8)
         case .album:
@@ -672,7 +672,7 @@ private struct QuickEntry: View {
 
     private var title: String {
         switch pick.kind {
-        case .song: tracks[pick.key]?.title ?? ""
+        case .song, .radio: tracks[pick.key]?.title ?? ""
         case .album: albums[pick.key].map(AlbumNames.title) ?? ""
         case .playlist: pick.key
         case .station: model.session.homeStations[pick.key]?.display ?? ""
@@ -687,6 +687,14 @@ private struct QuickEntry: View {
             Loc.get("Home_QuickKindJoin", Loc.get("Home_QuickPlaylist"),
                     HomeLists.set(named: pick.key, in: model.session.playlists).map(ListLines.caption) ?? "")
         case .station: Loc.get("Home_QuickStation")
+        // Named for the song it starts from, the kind first on the line under it, so it reads as
+        // a radio and not as the song's own entry further on.
+        case .radio:
+            if let artist = tracks[pick.key]?.artist, !artist.isEmpty {
+                Loc.get("Home_QuickKindJoin", Loc.get("Home_QuickRadio"), artist)
+            } else {
+                Loc.get("Home_QuickRadio")
+            }
         }
     }
 
@@ -704,6 +712,11 @@ private struct QuickEntry: View {
         case .station:
             if let station = model.session.homeStations[pick.key] {
                 model.tune(station)
+                screens.playerShown = true
+            }
+        case .radio:
+            if let track = tracks[pick.key] {
+                model.startRadio(track)
                 screens.playerShown = true
             }
         }

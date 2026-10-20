@@ -25,6 +25,10 @@ public enum QuickPickKind: Sendable, Hashable {
     case album
     case playlist
     case station
+
+    /// A song radio on one of the songs played most, keyed by the song's cloud id. See
+    /// ``QuickPicks/radioSeeds(_:)``.
+    case radio
 }
 
 public struct QuickPick: Sendable, Equatable {
@@ -39,6 +43,26 @@ public struct QuickPick: Sendable, Equatable {
 public enum QuickPicks {
     /// How many entries the screen shows.
     public static let count = 16
+
+    /// How many song radios the selection offers at most. The desktop's `QuickPicks.MostRadios`.
+    public static let mostRadios = 2
+
+    /// The songs to offer a radio on: the one played most, and the next one by another act,
+    /// because two radios on one act are one radio. A song whose tags name no act is never
+    /// taken for another such song. The desktop's `QuickPicks.RadioSeeds`.
+    ///
+    /// - Parameter songs: most played first, each with its act.
+    public static func radioSeeds(_ songs: [(id: String, act: String)]) -> [String] {
+        var seeds: [String] = []
+        var acts: Set<String> = []
+        for song in songs {
+            if seeds.count == mostRadios { break }
+            let act = song.act.trimmingCharacters(in: .whitespaces).lowercased()
+            if !act.isEmpty && !acts.insert(act).inserted { continue }
+            seeds.append(song.id)
+        }
+        return seeds
+    }
 
     /// How many entries one panel holds. The panels are columns of this many, read down, as
     /// on the desktop (`QuickPicks.Tall`).
@@ -89,8 +113,10 @@ public struct HomeScreen: Sendable, Equatable {
     ///   These come from the synced station log (`RadioListens` in RPMRadio). The list is
     ///   empty on a borrowed shelf, and for a listener who has not played the radio. The
     ///   banner and the quick selection skip a source that has nothing in it.
+    /// - Parameter radios: The songs to offer a radio on (``QuickPicks/radioSeeds(_:)``). They
+    ///   come first in the quick selection, ahead of the deal.
     public static func build(shelf: [HomeAlbum], songs: [String], lists: [String],
-                             stations: [String], draw: Int) -> HomeScreen {
+                             stations: [String], draw: Int, radios: [String] = []) -> HomeScreen {
         let gate = HomeGate.of(albums: shelf.count)
         let length = HomeShelf.rowLength
 
@@ -146,7 +172,7 @@ public struct HomeScreen: Sendable, Equatable {
 
         return HomeScreen(gate: gate, strip: strip, rows: rows, lists: lists,
                           quickPicks: picks(songs: songs, played: played, lists: lists,
-                                            stations: stations))
+                                            stations: stations, radios: radios))
     }
 
     /// The quick selection: the things a listener plays most, of whatever kind they are.
@@ -160,12 +186,14 @@ public struct HomeScreen: Sendable, Equatable {
     /// The four kinds are the same ones that the desktop deals, in the same order. See
     /// `QuickPicks.Choose`.
     private static func picks(songs: [String], played: [String], lists: [String],
-                              stations: [String]) -> [QuickPick] {
+                              stations: [String], radios: [String]) -> [QuickPick] {
+        // The radios first: a suggestion made from the rest, not one more kind competing with it.
+        var picks = radios.prefix(QuickPicks.mostRadios).map { QuickPick(kind: .radio, key: $0) }
+
         let sources: [(kind: QuickPickKind, keys: [String])] = [
             (.song, songs), (.album, played), (.playlist, lists), (.station, stations),
         ]
 
-        var picks: [QuickPick] = []
         var cursor = [Int](repeating: 0, count: sources.count)
 
         while picks.count < QuickPicks.count {

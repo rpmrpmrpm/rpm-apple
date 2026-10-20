@@ -592,6 +592,11 @@ struct TrackMenu: View {
         Button(Loc.get("Playlists_AddToNowPlaying"), systemImage: "text.line.last.and.arrowtriangle.forward") {
             model.addToQueue(track)
         }
+        // On a borrowed collection too: a radio only plays, it writes nothing.
+        Button(Loc.get("Track_StartRadio"), systemImage: "dot.radiowaves.left.and.right") {
+            model.startRadio(track)
+            screens.playerShown = true
+        }
         if model.session.isTrackMine(track) {
             if model.session.isTrackMarked(track) {
                 Button(Loc.get("Track_UnsetFavorite"), systemImage: "heart.slash") { model.mark(track, false) }

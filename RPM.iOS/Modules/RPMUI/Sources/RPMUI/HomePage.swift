@@ -121,7 +121,8 @@ public struct HomePage: View {
     /// Only the songs that the quick selection names. One pass over the listing finds the dozen
     /// or so tracks on screen, so there is no table of every song in the collection.
     private func songs(of screen: HomeScreen) -> [String: CloudTrack] {
-        let wanted = Set(screen.quickPicks.filter { $0.kind == .song }.map(\.key))
+        // A radio entry is keyed by its song too, and drawn from it.
+        let wanted = Set(screen.quickPicks.filter { $0.kind == .song || $0.kind == .radio }.map(\.key))
         guard !wanted.isEmpty else { return [:] }
 
         var found: [String: CloudTrack] = [:]
@@ -450,6 +451,9 @@ struct HomePicksRow: View {
     /// Records, playlists and stations have no menu on the phone.
     let songMenu: TrackMenu
 
+    /// What a radio entry does. See ``EnvironmentValues/startRadio``.
+    @Environment(\.startRadio) private var startRadio
+
     /// The cover size beside a line. The desktop uses 48, and the phone uses 4 points less
     /// because its lines are narrower.
     private static let art: Double = 44
@@ -483,7 +487,7 @@ struct HomePicksRow: View {
                          stations: [String: RadioStation]) -> [QuickPick] {
         picks.filter { pick in
             switch pick.kind {
-            case .song: return songs[pick.key] != nil
+            case .song, .radio: return songs[pick.key] != nil
             case .album: return albums[pick.key] != nil
             case .playlist: return true
             case .station: return stations[pick.key] != nil
@@ -579,6 +583,18 @@ struct HomePicksRow: View {
                 }
                 .buttonStyle(.plain)
                 .trackActions(track, songMenu)
+            }
+
+        case .radio:
+            // Named for the song it starts from, the kind first on the line under it, so it
+            // reads as a radio and not as the song's own line further on.
+            if let track = songs[pick.key] {
+                Button { startRadio?(track) } label: {
+                    line(title: track.title ?? "",
+                         subtitle: Self.kindLine("Home_QuickRadio", track.artist),
+                         glyph: Glyph.radio, track: track, list: nil)
+                }
+                .buttonStyle(.plain)
             }
 
         case .album:

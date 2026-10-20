@@ -84,6 +84,39 @@ public enum Genres {
     }()
 }
 
+extension Genres {
+    /// The styles this tag names, each by its name in `SubgenreTable`: "Trip Hop", "Baroque".
+    /// A tag may list several ("classical, romantic classical, classical period"), so each
+    /// entry is read on its own. Empty when it names none, which is most tags. The desktop's
+    /// song radio reads a record's styles the same way.
+    public static func styles(_ tag: String?) -> Set<String> {
+        guard let tag, !tag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
+        var found: Set<String> = []
+        for entry in tag.split(whereSeparator: { $0 == "," || $0 == ";" || $0 == "|" }) {
+            for key in GenreText.keys(of: String(entry)) {
+                if let name = styleNames[key] {
+                    found.insert(name)
+                    break
+                }
+            }
+        }
+        return found
+    }
+
+    /// The same keys as the style lookup that `match` uses, to the style's own name instead
+    /// of its shelf.
+    private static let styleNames: [String: String] = {
+        var keys: [String: String] = [:]
+        for style in SubgenreTable.styles {
+            let key = GenreText.fold(style.name)
+            if key.isEmpty || SubgenreTable.sharedKeys.contains(key)
+                || SubgenreTable.blockedKeys.contains(key) { continue }
+            if keys[key] == nil { keys[key] = style.name }
+        }
+        return keys
+    }()
+}
+
 /// How a tag is folded and cut into the keys that a lookup tries. This is the desktop's `GenreText`.
 enum GenreText {
     /// The characters that a shelf label is cut on.

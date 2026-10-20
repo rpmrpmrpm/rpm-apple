@@ -303,9 +303,18 @@ public final class LibrarySession {
         homeStations = Dictionary(heard.map { ($0.station.uuid, $0.station) },
                                   uniquingKeysWith: { first, _ in first })
 
+        // A radio on the song played most, and on the next one by somebody else.
+        let byId = Dictionary(albums.flatMap(\.tracks).map { ($0.rpmId, $0) }, uniquingKeysWith: { first, _ in first })
+        let radios = QuickPicks.radioSeeds(songs.compactMap { id in
+            byId[id].map { track in
+                let albumArtist = track.tags?.albumArtist ?? ""
+                return (id: id, act: albumArtist.isEmpty ? (track.artist ?? "") : albumArtist)
+            }
+        })
+
         home = HomeScreen.build(shelf: shelf, songs: songs,
                                 lists: HomeLists.offered(playlists, on: viewing),
-                                stations: heard.map(\.station.uuid), draw: homeDraw)
+                                stations: heard.map(\.station.uuid), draw: homeDraw, radios: radios)
     }
 
     /// Reads the collection's playlists if they have not been read, and works home out again with
@@ -346,6 +355,10 @@ public final class LibrarySession {
 
     /// The shelf the kept cut belongs to.
     private var moodCutShelf: CloudShelf?
+
+    /// The kept cut when it belongs to the shelf on screen, for a song radio to read which
+    /// moods each song is in. See ``startRadio(on:)``.
+    var radioMoods: CloudMoodLists? { moodCutShelf == viewing ? moodCut : nil }
 
     /// Every song the listener has marked, newest first. Read each time it is used, so a song
     /// marked a moment ago is included.

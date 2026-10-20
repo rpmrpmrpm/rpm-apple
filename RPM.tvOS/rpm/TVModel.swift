@@ -159,6 +159,8 @@ final class TVModel {
         player.onTrackChanged = { [weak self] track in
             guard let self else { return }
             Task { await self.record.show(track) }
+            // A song the radio queued is playing: the radio queues the songs after it.
+            Task { @MainActor in self.radio?.topUp(self.player) }
         }
 
         player.onStationChanged = { [weak self] station in
@@ -277,6 +279,7 @@ final class TVModel {
     /// Android TV app does, because a remote control cannot show the phone's question.
     func play(_ tracks: [CloudTrack], from: Int) {
         guard tracks.indices.contains(from) else { return }
+        radio = nil
         let start: QueueStart
         switch player.replacing(with: tracks, from: from, tapped: .list) {
         case .clear(let clear): start = clear
@@ -285,6 +288,24 @@ final class TVModel {
         Task {
             await remote.begin()
             await player.start(start)
+        }
+    }
+
+    /// The song radio that is on, or nil. Dropped by every other way of starting a queue, so
+    /// starting an album or a list ends the radio without saying so. See `SongRadioRun`.
+    @ObservationIgnored private var radio: SongRadioRun?
+
+    /// "Start radio" on a song: it plays now, and the queue keeps filling with songs like
+    /// whichever one is playing.
+    func startRadio(_ track: CloudTrack) {
+        play([track], from: 0)
+        let run = session.startRadio(on: track)
+        radio = run
+        // The first top-up waits for the song to be the one playing; the change of track asks
+        // again in any case.
+        Task {
+            try? await Task.sleep(for: .seconds(1))
+            run.topUp(player)
         }
     }
 
@@ -663,7 +684,7 @@ final class TVModel {
 
         let albums = Dictionary(session.albums.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         let quick = home.quickPicks.prefix(12)
-        let songs = Set(quick.filter { $0.kind == .song }.map(\.key))
+        let songs = Set(quick.filter { $0.kind == .song || $0.kind == .radio }.map(\.key))
         let tracks = songs.isEmpty ? [:] : Dictionary(
             session.albums.lazy.flatMap(\.tracks).filter { songs.contains($0.rpmId) }.map { ($0.rpmId, $0) },
             uniquingKeysWith: { first, _ in first })
@@ -676,7 +697,7 @@ final class TVModel {
             switch pick.kind {
             case .album:
                 if let album = albums[pick.key] { sleeves.append(album) }
-            case .song:
+            case .song, .radio:
                 if let track = tracks[pick.key], let album = albums[AlbumGrouping.key(for: track)] { sleeves.append(album) }
             case .playlist:
                 if let set = HomeLists.set(named: pick.key, in: session.playlists) { lists.append(set) }
