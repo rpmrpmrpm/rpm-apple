@@ -3,23 +3,25 @@ import Foundation
 /// The key this app sends to the RPM API. It is used for the reads that need no signed-in
 /// user: metadata, artwork, and the album, artist and profile pages.
 ///
-/// The key is stored inside the app, so anyone can read it there. It filters out casual
-/// traffic. It is not a secret. The API's cost is limited by its reserved concurrency and by
-/// the edge cache in front of it, not by this value. The server accepts two keys at once, so
-/// changing the key in a later build does not lock out builds that are already installed.
+/// The source holds no key. A release build gets the official key from the release
+/// (`RPM_APP_KEY`, see Signing.xcconfig), which puts it in Info.plist as `RPMAppKey`. A
+/// contributor sets their own developer key, made at rpmrpmrpm.com/developer, in Local.xcconfig.
+/// The key ships inside the app, so anyone can read it there: it filters casual traffic and says
+/// whose build is asking. It is not a secret. The server accepts two official keys at once, so a
+/// new key in a later build does not lock out builds that are already installed.
 ///
-/// The matching constant on the other heads is `RpmApi` in RPM.Core.
+/// The matching code on the other heads is `RpmApi` in RPM.Core and `AppKey` in the Android core.
 public enum AppKey {
     /// The header the API reads the key from.
     public static let header = "X-RPM-Key"
 
-    /// The value stored in Secrets Manager under RPM/AppKey as Current. Setting `RPM_APP_KEY`
-    /// in the environment replaces it. Use this for a debug build that points at a deployed API.
+    /// The key from Info.plist, or empty when the build has none. Setting `RPM_APP_KEY` in the
+    /// environment replaces it, for tests and for a debug build that points at a deployed API.
     public static var value: String {
         if let supplied = ProcessInfo.processInfo.environment["RPM_APP_KEY"], !supplied.isEmpty {
             return supplied
         }
-        return "rpm_live_FEvcaWAmKYVQIOi8EbDUD98kgpkpbT9r"
+        return (Bundle.main.object(forInfoDictionaryKey: "RPMAppKey") as? String) ?? ""
     }
 
     /// The host name of the deployed API.

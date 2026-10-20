@@ -3,3 +3,6 @@
 
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
 PRODUCT_BUNDLE_IDENTIFIER = com.example.rpm
+
+// Your developer key from rpmrpmrpm.com/developer. Optional: without it, pages that need the API stay empty.
+RPM_APP_KEY = YOUR_DEVELOPER_KEY

@@ -7,4 +7,9 @@
 DEVELOPMENT_TEAM = LBW775Z8JG
 PRODUCT_BUNDLE_IDENTIFIER = com.rpm.player
 
+// The key the app sends to the rpm API (RPMAppKey in Info.plist, read by AppKey in RPMKit). The source
+// has none: release builds get the official key from the release, and you can set your own developer key
+// from rpmrpmrpm.com/developer in Local.xcconfig. Without a key, pages that need the API stay empty.
+RPM_APP_KEY =
+
 #include? "Local.xcconfig"
