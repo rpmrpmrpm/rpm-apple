@@ -197,8 +197,10 @@ struct GaplessTests {
         try engine.play(try tone(), id: 1, loudness: .unmeasured, because: .somebodyAskedForIt)
         engine.queue(try tone(), id: 2, loudness: .unmeasured)
 
-        // The first record is three seconds long. Wait for the second to be in.
-        try await until("the second record") { engine.playing == 2 }
+        // The first record is three seconds long. Wait for the second to be in and announced: the
+        // engine sets playing before it calls moved, so waiting for playing alone can check moved
+        // too early.
+        try await until("the second record") { engine.playing == 2 && moved.withLock { $0 }.count == 2 }
 
         #expect(engine.playing == 2, "it never moved on")
         #expect(engine.position < 1.5, "the needle carried the first record's time over")
