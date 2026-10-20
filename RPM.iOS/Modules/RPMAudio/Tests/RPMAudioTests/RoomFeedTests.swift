@@ -40,16 +40,22 @@ struct RoomFeedTests {
 
     @Test func betweenReportsThePositionFillsInAtOneTimesSpeed() async {
         let feed = await room(holding: 6)
+        let before = ContinuousClock.now
         feed.says(1)
 
         try? await Task.sleep(for: .milliseconds(200))
 
         let at = feed.played
+        let elapsed = ContinuousClock.now - before
         #expect(at != nil)
 
-        // About 0.2 s of music has played. The margin allows for the accuracy of sleep.
+        // At one times speed the position moves as far as the clock: at least the 0.2 s slept,
+        // and no more than the time measured around the report and the read. A sleep can run
+        // long on a busy machine, so the upper bound is the measured time, not a fixed margin.
         let moved = Double((at ?? 0) - frames(1)) / Self.rate
-        #expect(moved > 0.15 && moved < 0.35)
+        let measured = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+        #expect(moved >= 0.19, "moved \(moved) s")
+        #expect(moved <= min(measured, 1) + 0.001, "moved \(moved) s in \(measured) s")
     }
 
     @Test func theGuessNeverRunsPastWhatWasHandedOver() async {
