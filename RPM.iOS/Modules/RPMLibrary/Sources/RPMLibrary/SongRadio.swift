@@ -371,12 +371,21 @@ public enum SongRadio {
                                     blocked: (ids: Set<String>, songs: Set<String>)) -> [RadioSong] {
         let playingRelated = relatedTo(playing.genre)
         let originRelated = relatedTo(origin.genre)
-        return crate.songs
-            .filter { $0.offered && !blocked.ids.contains($0.id) && !blocked.songs.contains($0.song) }
-            .map { song in
-                (song, apart(song, playing, related: playingRelated) + originWeight * apart(song, origin, related: originRelated))
-            }
-            .sorted { $0.1 != $1.1 ? $0.1 < $1.1 : $0.0.id < $1.0.id }
-            .map(\.0)
+
+        // In plain steps with their types written: one chained expression was more than the type
+        // checker would take.
+        var scored: [(song: RadioSong, score: Double)] = []
+        scored.reserveCapacity(crate.songs.count)
+        for song in crate.songs {
+            if !song.offered || blocked.ids.contains(song.id) || blocked.songs.contains(song.song) { continue }
+            let toPlaying: Double = apart(song, playing, related: playingRelated)
+            let toOrigin: Double = apart(song, origin, related: originRelated)
+            scored.append((song: song, score: toPlaying + originWeight * toOrigin))
+        }
+        scored.sort { (a: (song: RadioSong, score: Double), b: (song: RadioSong, score: Double)) -> Bool in
+            if a.score != b.score { return a.score < b.score }
+            return a.song.id < b.song.id
+        }
+        return scored.map { $0.song }
     }
 }
