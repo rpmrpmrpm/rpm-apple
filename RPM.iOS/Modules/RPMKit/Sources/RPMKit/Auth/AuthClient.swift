@@ -94,26 +94,49 @@ public actor AuthClient: TokenSource {
     /// Social sign-in, first step: ask the accounts service where to send the person.
     ///
     /// The app opens the browser, not this package. On iOS the right way is `ASWebAuthenticationSession`, which
-    /// is a UI framework that this package does not import.
-    public func startSocialSignIn(provider: String) async throws -> (url: URL, sessionId: String) {
+    /// is a UI framework that this package does not import. `returnTo` says how the sign-in comes back:
+    /// `.app` for the phone, whose browser sheet brings back a one-time code (`finishSocialSignIn`), and
+    /// `.device` for a TV, which polls (`pollSocial`) and shows `userCode` next to its QR code.
+    public func startSocialSignIn(provider: String, returnTo: SocialReturn) async throws -> SocialStarted {
         let secret = PollSecret.make()
         let said: SocialStart = try await post("auth/social-login", [
             "provider": provider,
             "appId": Self.appId,
             "pollHash": PollSecret.hash(of: secret),
+            "returnTo": returnTo.rawValue,
         ])
         guard let url = URL(string: said.loginUrl), !said.sessionId.isEmpty else {
             throw RPMError.signInIncomplete
         }
         pollSecrets[said.sessionId] = secret
-        return (url, said.sessionId)
+        return SocialStarted(url: url, sessionId: said.sessionId, userCode: said.userCode)
     }
 
-    /// Social sign-in, second step: poll the sign-in record that the website writes the tokens to.
+    /// Social sign-in, second step on the phone: collect the tokens with the one-time code the browser
+    /// brought back (`rpm://auth?sessionId=…&code=…`) and this client's poll secret. The website writes the
+    /// tokens before it sends the browser back, so the first ask normally finds them. Two more asks a second
+    /// apart cover a slow write.
+    public func finishSocialSignIn(sessionId: String, code: String) async throws {
+        guard let secret = pollSecrets[sessionId] else { throw RPMError.signInIncomplete }
+        let escaped = sessionId.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? sessionId
+
+        for attempt in 0..<3 {
+            if attempt > 0 { try await Task.sleep(for: .seconds(1)) }
+            let said: SocialPoll = try await request(
+                "GET", "auth/poll-session?sessionId=\(escaped)", body: nil,
+                headers: [PollSecret.header: secret, PollSecret.codeHeader: code])
+            guard said.isComplete else { continue }
+            pollSecrets[sessionId] = nil
+            try await adopt(socialAnswer: said)
+            return
+        }
+        throw RPMError.signInIncomplete
+    }
+
+    /// Social sign-in, second step on a TV: poll the sign-in record that the website writes the tokens to.
     ///
-    /// This polls rather than using a callback, because the accounts service offers polling. A record that is not
-    /// finished yet returns a status and no tokens. The deadline is long, because the app is in the background
-    /// while the browser is open.
+    /// A TV cannot receive the browser's redirect, because the sign-in happens on a phone that scanned the
+    /// TV's QR code, so it polls. A record that is not finished yet returns a status and no tokens.
     public func pollSocial(
         sessionId: String,
         every interval: Duration = .seconds(2),
@@ -132,19 +155,23 @@ public actor AuthClient: TokenSource {
 
             guard said.isComplete else { continue }
             pollSecrets[sessionId] = nil
-            guard let token = said.accessToken, !token.isEmpty else {
-                throw RPMError.signInIncomplete
-            }
-
-            await adopt(LoginResponse(
-                userId: said.userId, email: said.email, displayName: said.displayName,
-                accessToken: said.accessToken, refreshToken: said.refreshToken,
-                expiresIn: said.expiresIn))
-            revokePendingAfterSignIn()
+            try await adopt(socialAnswer: said)
             return
         }
 
         throw RPMError.signInTimedOut
+    }
+
+    /// Takes the session from a finished social sign-in.
+    private func adopt(socialAnswer said: SocialPoll) async throws {
+        guard let token = said.accessToken, !token.isEmpty else {
+            throw RPMError.signInIncomplete
+        }
+        await adopt(LoginResponse(
+            userId: said.userId, email: said.email, displayName: said.displayName,
+            accessToken: said.accessToken, refreshToken: said.refreshToken,
+            expiresIn: said.expiresIn))
+        revokePendingAfterSignIn()
     }
 
     /// Ends the session and revokes its refresh token on the server.
@@ -429,6 +456,11 @@ public actor AuthClient: TokenSource {
 enum PollSecret {
     /// The header the secret is sent in when polling.
     static let header = "X-Poll-Secret"
+
+    /// The header the one-time code is sent in when the phone collects a sign-in. The browser brings the
+    /// code back to the app, and the server hands out the tokens only with the code and the secret
+    /// together. `SocialSignIn.CodeHeader` in rpm.Api.
+    static let codeHeader = "X-Sign-In-Code"
 
     /// A new random secret: 32 bytes, base64url without padding.
     static func make() -> String {

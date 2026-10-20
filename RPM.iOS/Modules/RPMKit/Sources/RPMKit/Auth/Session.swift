@@ -33,10 +33,29 @@ struct LoginResponse: Decodable {
     let expiresIn: Int?
 }
 
-/// The URL to open in the browser, and the session id to poll while the user signs in.
+/// The URL to open in the browser, the session id, and for a TV the code to show.
 struct SocialStart: Decodable {
     let loginUrl: String
     let sessionId: String
+    let userCode: String?
+}
+
+/// How a social sign-in comes back to the app. The accounts service keeps it with the session, so a changed
+/// login URL cannot change it.
+public enum SocialReturn: String, Sendable {
+    /// The browser sheet on the phone brings back a one-time code (`AuthClient.finishSocialSignIn`).
+    case app
+    /// The sign-in happens on another device; the TV polls (`AuthClient.pollSocial`) and shows a code
+    /// that the phone's sign-in page shows too.
+    case device
+}
+
+/// A social sign-in that was started: the URL to open, its session id, and for a TV the code to show
+/// (two groups of four letters).
+public struct SocialStarted: Sendable {
+    public let url: URL
+    public let sessionId: String
+    public let userCode: String?
 }
 
 /// A social sign-in attempt that is still in progress.

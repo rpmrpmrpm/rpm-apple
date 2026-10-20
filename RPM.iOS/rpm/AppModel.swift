@@ -518,26 +518,25 @@ final class AppModel {
 
     /// Signs in with Apple or Google.
     ///
-    /// There are two halves that do not know about each other. The accounts service returns
-    /// a URL and a one-time session id, the browser takes the person through the
-    /// provider, and the website writes the tokens onto that row. Nothing calls back
-    /// into the app, so the second half is a poll.
+    /// The accounts service returns a URL and a one-time session id, the browser sheet takes the
+    /// person through the provider, and the website sends the sheet back to `rpm://auth` with a
+    /// one-time code. The app collects the tokens with that code and its poll secret, so a sign-in
+    /// finished in someone else's browser never reaches this app.
     func signIn(with provider: String) async {
         trouble = nil
         notice = nil
 
         do {
-            let (url, sessionId) = try await auth.startSocialSignIn(provider: provider)
+            let started = try await auth.startSocialSignIn(provider: provider, returnTo: .app)
+            let back = try await browser.authenticate(started.url)
+            browser.dismiss()
 
-            let watching = Task { try await auth.pollSocial(sessionId: sessionId) }
+            let query = URLComponents(url: back, resolvingAgainstBaseURL: false)?.queryItems ?? []
+            guard query.first(where: { $0.name == "sessionId" })?.value == started.sessionId,
+                  let code = query.first(where: { $0.name == "code" })?.value, !code.isEmpty
+            else { throw RPMError.signInIncomplete }
 
-            // Closing the sheet stops the poll. Otherwise the poll would run for
-            // three minutes for a sign-in that nobody is doing.
-            browser.open(url) { watching.cancel() }
-
-            defer { browser.dismiss() }
-            try await watching.value
-
+            try await auth.finishSocialSignIn(sessionId: started.sessionId, code: code)
             await show(ground: .adoptNow)
         } catch is CancellationError {
             // The person closed the browser. This is not a failure and needs no message.

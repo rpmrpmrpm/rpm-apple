@@ -14,6 +14,9 @@ struct SignInCode: Equatable, Sendable, Identifiable {
     let provider: String
     let url: URL
     let sessionId: String
+    /// The code the phone's sign-in page shows before it goes on to Apple or Google, two groups of four
+    /// letters. The person compares the two.
+    let userCode: String?
     var id: String { provider }
 }
 
@@ -21,8 +24,9 @@ struct SignInCode: Equatable, Sendable, Identifiable {
 /// The person scans one code and signs in on their phone. This side polls `auth/poll-session` for
 /// all providers until one of them finishes. The Android TV app uses the same flow (`SignInFlow`).
 ///
-/// The codes are never replaced. The accounts service writes a session's row only when its sign-in
-/// finishes, so a session id stays valid while the screen waits.
+/// The codes are not replaced while the screen waits. The accounts service keeps a TV's pending
+/// sign-in for 24 hours. Each QR code has a user code under it, which the phone's sign-in page shows
+/// too: a person who was sent someone else's QR code sees that it is not their TV.
 struct SignInFlow {
     let auth: AuthClient
 
@@ -36,8 +40,9 @@ struct SignInFlow {
         while codes.isEmpty {
             do {
                 for provider in Self.providers {
-                    let started = try await auth.startSocialSignIn(provider: provider)
-                    codes.append(SignInCode(provider: provider, url: started.url, sessionId: started.sessionId))
+                    let started = try await auth.startSocialSignIn(provider: provider, returnTo: .device)
+                    codes.append(SignInCode(provider: provider, url: started.url,
+                                            sessionId: started.sessionId, userCode: started.userCode))
                 }
             } catch {
                 codes = []

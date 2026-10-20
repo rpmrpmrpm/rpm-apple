@@ -543,6 +543,12 @@
 "Login_Title" = "Anmelden";
 "Login_Unable" = "Anmeldung nicht möglich. Bitte erneut versuchen.";
 "Login_WaitingBrowser" = "Warte auf Anmeldung im Browser…";
+
+/* Title of the page the browser shows after signing in with Apple or Google from rpm on Windows or Linux. The app serves this page itself. */
+"Login_BrowserDoneTitle" = "Angemeldet";
+
+/* Text under Login_BrowserDoneTitle on the same browser page. */
+"Login_BrowserDoneBody" = "Du kannst diesen Tab schließen und zu rpm zurückkehren.";
 "Lookup_CatalogNumber" = "Katalognr.";
 "Lookup_CatalogHint" = "z. B. SHVL 804";
 "Lookup_Barcode" = "Barcode";
@@ -5513,6 +5519,9 @@
 
 /* Under the QR code in the Android TV sign-in pop-up. */
 "Tv_SignIn_ScanThis" = "Scanne den Code mit der Kamera deines Telefons und melde dich auf dem Telefon an.";
+
+/* Under the QR code on the Apple TV and Android TV sign-in screens. {0} is eight letters in two groups, e.g. BCDF-GHJK. The phone's sign-in page shows the same code before it goes on to Apple or Google. */
+"Tv_SignIn_Code" = "Code %1$@. Prüfe, ob dein Telefon denselben Code anzeigt.";
 
 /* Shown on the Android TV after signing in. {0} is the account's name or email. */
 "Tv_SignIn_Done" = "Du bist als %1$@ angemeldet.";

@@ -5,7 +5,8 @@ import RPMKit
 import RPMSharedUI
 
 /// Sign-in on a TV: one QR code per provider. The person scans one with a phone and signs in
-/// there. The TV gets the session by polling.
+/// there, after checking that the phone shows the code under the QR code. The TV gets the session by
+/// polling.
 struct SignInView: View {
     @Environment(TVModel.self) private var model
 
@@ -21,17 +22,17 @@ struct SignInView: View {
             switch model.signIn {
             case .starting:
                 RecordSpinner(diameter: 96)
-                    .frame(height: 420)
+                    .frame(height: 500)
             case .unreachable:
                 Text(Loc.get("Rpm_Net_Failed"))
                     .font(.tv(Size.note))
                     .foregroundStyle(Ink.words)
-                    .frame(height: 420)
+                    .frame(height: 500)
             case .codes(let codes):
                 HStack(spacing: 96) {
                     ForEach(codes) { QRTile(code: $0) }
                 }
-                .frame(height: 420)
+                .frame(height: 500)
             }
 
             Text(Loc.get("Tv_SignIn_Scan"))
@@ -45,7 +46,8 @@ struct SignInView: View {
     }
 }
 
-/// One provider's QR code, black on white with its quiet zone, and the provider's name below it.
+/// One provider's QR code, black on white with its quiet zone, the provider's name below it, and the
+/// code to compare with the phone's sign-in page.
 private struct QRTile: View {
     let code: SignInCode
 
@@ -62,6 +64,13 @@ private struct QRTile: View {
             Text(code.provider == "Google" ? Loc.get("Login_Google") : Loc.get("Login_Apple"))
                 .font(.tv(Size.row, .semibold))
                 .foregroundStyle(Ink.words)
+            if let userCode = code.userCode {
+                Text(Loc.get("Tv_SignIn_Code", userCode))
+                    .font(.tv(Size.note))
+                    .foregroundStyle(Color.white.opacity(0.82))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 360)
+            }
         }
     }
 }

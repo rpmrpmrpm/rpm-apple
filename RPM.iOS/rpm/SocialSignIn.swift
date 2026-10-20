@@ -3,18 +3,16 @@ import UIKit
 
 /// The browser part of signing in with Apple or Google.
 ///
-/// **Uses `ASWebAuthenticationSession`, not a jump to Safari.** If the app opens Safari, the
-/// app goes to the background and is suspended, so the poll that waits for the tokens stops
-/// until the person comes back. In a sheet over the app, the app keeps running, the poll
-/// keeps going, and the sheet closes as soon as the tokens arrive.
-///
-/// There is no callback scheme because there is no callback: the accounts service writes
-/// the tokens to a row and the app watches that row. The session ends in one of two ways:
-/// the poll finishes and dismisses it from here, or the person closes it and the poll stops.
+/// **Uses `ASWebAuthenticationSession`, not a jump to Safari.** The sheet stays over the app, and it
+/// catches the website's redirect to `rpm://auth?sessionId=…&code=…` itself, so the app needs no URL
+/// scheme of its own and no other app can receive the code. The app then collects the tokens with the
+/// code and its poll secret (`AuthClient.finishSocialSignIn`).
 @MainActor
 final class SocialSignIn: NSObject, ASWebAuthenticationPresentationContextProviding {
+    /// The scheme the website sends the browser back to when the sign-in is done.
+    static let callbackScheme = "rpm"
+
     private var session: ASWebAuthenticationSession?
-    private var closed: (() -> Void)?
 
     /// The window to show the sheet over, saved when the sheet is opened.
     ///
@@ -24,8 +22,10 @@ final class SocialSignIn: NSObject, ASWebAuthenticationPresentationContextProvid
     /// dispatch-queue assertion, which crashes the app instead of throwing.
     private var anchor: ASPresentationAnchor?
 
-    /// Shows the browser. `closed` is called if the person dismisses it.
-    func open(_ url: URL, closed: @escaping () -> Void) {
+    /// Shows the browser and returns the URL the website sent it back to. Throws `CancellationError`
+    /// when the person closes the sheet or the task is cancelled, and the sheet's own error when it
+    /// fails in another way.
+    func authenticate(_ url: URL) async throws -> URL {
         dismiss()
 
         anchor = UIApplication.shared.connectedScenes
@@ -33,26 +33,38 @@ final class SocialSignIn: NSObject, ASWebAuthenticationPresentationContextProvid
             .flatMap(\.windows)
             .first { $0.isKeyWindow }
 
-        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: nil) { _, _ in
-            Task { @MainActor in self.closed?(); self.closed = nil }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (done: CheckedContinuation<URL, Error>) in
+                let session = ASWebAuthenticationSession(url: url, callbackURLScheme: Self.callbackScheme) { back, error in
+                    if let back {
+                        done.resume(returning: back)
+                    } else if let error, (error as? ASWebAuthenticationSessionError)?.code != .canceledLogin {
+                        done.resume(throwing: error)
+                    } else {
+                        done.resume(throwing: CancellationError())
+                    }
+                }
+                session.presentationContextProvider = self
+
+                // Not ephemeral: the button is useful because it reuses an account that is already
+                // signed in to Google in Safari. An ephemeral session would ask for a password
+                // every time.
+                session.prefersEphemeralWebBrowserSession = false
+
+                self.session = session
+                if !session.start() {
+                    self.session = nil
+                    done.resume(throwing: CancellationError())
+                }
+            }
+        } onCancel: {
+            Task { @MainActor in self.dismiss() }
         }
-        session.presentationContextProvider = self
-
-        // Not ephemeral: the button is useful because it reuses an account that is already
-        // signed in to Google in Safari. An ephemeral session would ask for a password
-        // every time.
-        session.prefersEphemeralWebBrowserSession = false
-
-        session.start()
-
-        self.session = session
-        self.closed = closed
     }
 
-    /// Closes the browser. The callback is cleared first, so closing it after a successful
-    /// sign-in does not also report that it was closed.
+    /// Closes the browser. A sheet that is still open finishes with a cancelled-login error, which
+    /// `authenticate` reports as `CancellationError`.
     func dismiss() {
-        closed = nil
         session?.cancel()
         session = nil
     }

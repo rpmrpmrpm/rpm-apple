@@ -210,13 +210,63 @@ func onlyARefusalStatusSignsOut(status: Int, refusal: Bool) {
     let client = auth(replying(200,
         #"{"loginUrl":"https://accounts.example.com/go?x=1","sessionId":"sess-1"}"#))
 
-    let start = try await client.startSocialSignIn(provider: "Apple")
+    let start = try await client.startSocialSignIn(provider: "Apple", returnTo: .app)
     #expect(start.url.absoluteString == "https://accounts.example.com/go?x=1")
     #expect(start.sessionId == "sess-1")
+    #expect(start.userCode == nil)
 }
 
-/// The website writes the tokens back to a session row, so the app polls for
-/// them. A row that is not finished yet answers with a status and no tokens,
+/// A TV asks for the device mode and gets a code to show next to its QR code.
+@Test func aTvSignInGetsACodeToShow() async throws {
+    let started = Box<[String: String]>()
+    let client = auth(stubbedSession { request in
+        started.value = (try? JSONSerialization.jsonObject(with: request.bodyData)) as? [String: String]
+        return ok(request, #"{"loginUrl":"https://accounts.example.com/go","sessionId":"sess-1","userCode":"BCDF-GHJK"}"#)
+    }, MemoryStore())
+
+    let start = try await client.startSocialSignIn(provider: "Google", returnTo: .device)
+    #expect(start.userCode == "BCDF-GHJK")
+    #expect(started.value?["returnTo"] == "device")
+}
+
+/// The phone collects with the code the browser brought back and with its own secret, in one ask.
+@Test func thePhoneCollectsWithTheCodeAndTheSecret() async throws {
+    let started = Box<[String: String]>()
+    let secret = Box<String>()
+    let code = Box<String>()
+    let client = auth(stubbedSession { request in
+        if request.url?.path.hasSuffix("social-login") == true {
+            started.value = (try? JSONSerialization.jsonObject(with: request.bodyData)) as? [String: String]
+            return ok(request, #"{"loginUrl":"https://accounts.example.com/go","sessionId":"sess-1"}"#)
+        }
+        secret.value = request.value(forHTTPHeaderField: "X-Poll-Secret")
+        code.value = request.value(forHTTPHeaderField: "X-Sign-In-Code")
+        return ok(request, #"""
+            {"status":"complete","userId":"u1","email":"a@example.com","accessToken":"tok",
+             "refreshToken":"ref","expiresIn":3600}
+            """#)
+    }, MemoryStore())
+
+    _ = try await client.startSocialSignIn(provider: "Apple", returnTo: .app)
+    try await client.finishSocialSignIn(sessionId: "sess-1", code: "one-time")
+
+    #expect(started.value?["returnTo"] == "app")
+    #expect(code.value == "one-time")
+    #expect(PollSecret.hash(of: try #require(secret.value)) == started.value?["pollHash"])
+    #expect(await client.isSignedIn)
+}
+
+/// A session this client did not start has no secret here, so it is not collected.
+@Test func aSessionThisClientDidNotStartIsNotCollected() async {
+    let client = auth(replying(200, #"{"status":"complete","accessToken":"tok"}"#))
+    await #expect(throws: RPMError.self) {
+        try await client.finishSocialSignIn(sessionId: "someone-else", code: "one-time")
+    }
+    #expect(await client.isSignedIn == false)
+}
+
+/// A TV cannot receive the browser's redirect, so it polls the row the website
+/// writes the tokens to. A row that is not finished yet answers with a status and no tokens,
 /// which is not a failure and must not be read as one.
 @Test func pollingKeepsAskingUntilTheRowIsComplete() async throws {
     let calls = Box<Int>()
@@ -257,7 +307,7 @@ func onlyARefusalStatusSignsOut(status: Int, refusal: Bool) {
             """#)
     }, MemoryStore())
 
-    _ = try await client.startSocialSignIn(provider: "Apple")
+    _ = try await client.startSocialSignIn(provider: "Apple", returnTo: .device)
     try await client.pollSocial(sessionId: "sess-1", every: .milliseconds(1), giveUpAfter: .seconds(5))
 
     let hash = try #require(started.value?["pollHash"])
