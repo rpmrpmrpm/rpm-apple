@@ -166,7 +166,9 @@ public struct ArtistPage: View {
 
                 shelf(Loc.get("Artists_Albums"), shelves.records)
                 shelf(Loc.get("Artists_Collaborations"), shelves.together)
+                shelf(Loc.get("Artists_Eps"), shelves.eps)
                 shelf(Loc.get("Artists_LiveAlbums"), shelves.live)
+                shelf(Loc.get("Artists_Mixtapes"), shelves.mixtapes)
                 shelf(Loc.get("Artists_Soundtracks"), shelves.soundtracks)
                 shelf(Loc.get("Artists_Compilations"), shelves.compilations)
                 shelf(Loc.get("Artists_Singles"), shelves.singles)

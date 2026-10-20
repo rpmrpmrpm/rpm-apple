@@ -79,3 +79,44 @@ public enum AlbumKind {
                + #"|compilations?|retrospective|definitive|hits)\b"#,
         options: [.caseInsensitive])
 }
+
+/// What kind of release a record is: the shelf it stands on on an artist's page. The
+/// desktop's `ReleaseType`; the raw values are its stored names (`ReleaseTypes.ToStored`),
+/// which the cloud's listing carries as `releaseType`.
+public enum ReleaseType: String, Sendable, CaseIterable {
+    case album = "Album", ep = "Ep", single = "Single", live = "Live", mixtape = "Mixtape"
+    case compilation = "Compilation", soundtrack = "Soundtrack"
+
+    /// The type a stored name means, or nil for a name that is none of them. Any case.
+    public static func fromStored(_ stored: String?) -> ReleaseType? {
+        guard let stored = stored?.trimmingCharacters(in: .whitespaces), !stored.isEmpty else { return nil }
+        return allCases.first { $0.rawValue.caseInsensitiveCompare(stored) == .orderedSame }
+    }
+
+    /// What the record's name suggests, in the desktop's order (`ReleaseTypes.FromTitle`):
+    /// single, live, soundtrack, compilation. Nil where it suggests nothing.
+    public static func fromTitle(_ title: String?) -> ReleaseType? {
+        if AlbumKind.isSingle(title) { return .single }
+        if AlbumKind.isLive(title) { return .live }
+        if AlbumKind.isSoundtrack(title) { return .soundtrack }
+        if AlbumKind.isCompilation(title) { return .compilation }
+        return nil
+    }
+
+    /// The shelf a record goes on: the type its tracks carry, else what its name suggests,
+    /// else an album. A set type always wins, which is the point of setting it: "Live
+    /// Through This" set to Album leaves the live shelf. The desktop's
+    /// `ReleaseTypes.ShelfOf`. Where the tracks disagree, most of them decide.
+    public static func shelf(of album: CloudAlbum) -> ReleaseType {
+        var counts: [ReleaseType: Int] = [:]
+        for track in album.tracks {
+            if let type = fromStored(track.tags?.releaseType) { counts[type, default: 0] += 1 }
+        }
+        let order = Array(allCases)
+        let set = counts.max { a, b in
+            if a.value != b.value { return a.value < b.value }
+            return (order.firstIndex(of: a.key) ?? 0) > (order.firstIndex(of: b.key) ?? 0)
+        }?.key
+        return set ?? fromTitle(album.album) ?? .album
+    }
+}

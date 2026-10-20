@@ -149,3 +149,34 @@ private func shelves(_ artist: String, over albums: [CloudAlbum]) throws -> Arti
         #expect(page.records.map(\.album) == ["Arrival"])
     }
 }
+
+/// What a record's release type does to its shelf: the type the listener set wins over the name.
+@Suite struct ReleaseTypeShelfTests {
+    private func typed(_ key: String, _ name: String, _ types: [String?]) -> CloudAlbum {
+        CloudAlbum(key: key, album: name, artist: "Queen", tracks: types.enumerated().map { at, type in
+            var tags = CloudTrackTags()
+            tags.releaseType = type
+            return CloudTrack(rpmId: "\(key)#\(at)", title: key, artist: "Queen", tags: tags)
+        })
+    }
+
+    @Test func aSetTypeWinsOverTheNameAndEpsAndMixtapesHaveShelves() throws {
+        let page = try shelves("Queen", over: [
+            typed("through", "Live Through This", ["Album"]),
+            typed("ep", "Five Live", ["Ep"]),
+            typed("tape", "Street Sounds", ["Mixtape"]),
+            typed("guess", "Live at Wembley", [nil]),
+        ])
+
+        #expect(page.records.map(\.key) == ["through"])
+        #expect(page.eps.map(\.key) == ["ep"])
+        #expect(page.mixtapes.map(\.key) == ["tape"])
+        #expect(page.live.map(\.key) == ["guess"])
+    }
+
+    @Test func mostOfARecordsTracksDecideItsType() {
+        #expect(ReleaseType.shelf(of: typed("a", "A", ["Ep", "Ep", "single"])) == .ep)
+        #expect(ReleaseType.shelf(of: typed("b", "B - Single", [nil, "nonsense"])) == .single)
+        #expect(ReleaseType.shelf(of: typed("c", "C", [nil])) == .album)
+    }
+}

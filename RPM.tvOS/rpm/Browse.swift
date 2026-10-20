@@ -452,7 +452,9 @@ struct ArtistPage: View {
     private static func rows(_ shelves: ArtistShelves) -> [Row] {
         [Row(title: Loc.get("Artists_Albums"), albums: shelves.records),
          Row(title: Loc.get("Artists_Collaborations"), albums: shelves.together),
+         Row(title: Loc.get("Artists_Eps"), albums: shelves.eps),
          Row(title: Loc.get("Artists_LiveAlbums"), albums: shelves.live),
+         Row(title: Loc.get("Artists_Mixtapes"), albums: shelves.mixtapes),
          Row(title: Loc.get("Artists_Soundtracks"), albums: shelves.soundtracks),
          Row(title: Loc.get("Artists_Compilations"), albums: shelves.compilations),
          Row(title: Loc.get("Artists_Singles"), albums: shelves.singles),

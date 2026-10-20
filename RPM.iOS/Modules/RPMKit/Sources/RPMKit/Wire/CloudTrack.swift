@@ -145,6 +145,10 @@ public struct CloudTrackTags: Codable, Hashable, Sendable {
     public var musicBrainzReleaseId: String?
     public var musicBrainzDiscId: String?
 
+    // What kind of release the record is, as the listener or the file set it ("Album", "Ep",
+    // "Live"...), or nil where nobody has said. See `ReleaseType` in RPMLibrary.
+    public var releaseType: String?
+
     // The two names that are not their Swift names. Spelled out because the wire
     // is the contract: renaming these to match the C# property rather than the
     // C# [JsonPropertyName] would decode nothing and report no error.
@@ -158,6 +162,7 @@ public struct CloudTrackTags: Codable, Hashable, Sendable {
         case catno, barcode
         case musicBrainzReleaseId = "mbReleaseId"
         case musicBrainzDiscId = "discId"
+        case releaseType
     }
 
     public init() {}

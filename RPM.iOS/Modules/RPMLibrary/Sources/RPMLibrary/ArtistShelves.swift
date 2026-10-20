@@ -14,7 +14,9 @@ public struct ArtistShelves: Sendable, Equatable {
     /// Records they made with somebody, same subtraction.
     public let together: [CloudAlbum]
 
+    public let eps: [CloudAlbum]
     public let live: [CloudAlbum]
+    public let mixtapes: [CloudAlbum]
     public let soundtracks: [CloudAlbum]
     public let compilations: [CloudAlbum]
     public let singles: [CloudAlbum]
@@ -30,7 +32,8 @@ public struct ArtistShelves: Sendable, Equatable {
 
     /// Whether there is nothing at all to draw.
     public var isEmpty: Bool {
-        records.isEmpty && together.isEmpty && live.isEmpty && soundtracks.isEmpty
+        records.isEmpty && together.isEmpty && eps.isEmpty && live.isEmpty && mixtapes.isEmpty
+            && soundtracks.isEmpty
             && compilations.isEmpty && singles.isEmpty && appearances.isEmpty
     }
 
@@ -53,41 +56,26 @@ public struct ArtistShelves: Sendable, Equatable {
 
         let own = found(artist.own)
 
-        // One record, one shelf, and the order settles which when a title answers more
-        // than once: single, then live, then soundtrack, then compilation. Most
-        // particular first. A single says what the release is, a live record says how it
-        // was recorded, a soundtrack says what it was written for, and a compilation is
-        // the loosest of the four. So "Live at Abbey Road - Single" is a single,
-        // "Greatest Hits Live" is a live record, and none of them is listed twice.
-        let singles = own.filter { AlbumKind.isSingle($0.album) }
-        let live = own.filter { AlbumKind.isLive($0.album) && !AlbumKind.isSingle($0.album) }
-        let soundtracks = own.filter {
-            AlbumKind.isSoundtrack($0.album)
-                && !AlbumKind.isSingle($0.album) && !AlbumKind.isLive($0.album)
+        // One record, one shelf: the type the record's files carry, else what its name
+        // suggests (``ReleaseType/shelf(of:)``). A name that answers more than once is read
+        // most particular first, so "Live at Abbey Road - Single" is a single and none of
+        // them is listed twice.
+        func kind(_ type: ReleaseType) -> [CloudAlbum] {
+            newestFirst(own.filter { ReleaseType.shelf(of: $0) == type })
         }
-        let compilations = own.filter {
-            AlbumKind.isCompilation($0.album)
-                && !AlbumKind.isSingle($0.album) && !AlbumKind.isLive($0.album)
-                && !AlbumKind.isSoundtrack($0.album)
-        }
+        func ordinary(_ album: CloudAlbum) -> Bool { ReleaseType.shelf(of: album) == .album }
 
         return ArtistShelves(
-            records: newestFirst(found(artist.albums).filter(isOrdinary)),
-            together: newestFirst(found(artist.together).filter(isOrdinary)),
-            live: newestFirst(live),
-            soundtracks: newestFirst(soundtracks),
-            compilations: newestFirst(compilations),
-            singles: newestFirst(singles),
+            records: newestFirst(found(artist.albums).filter(ordinary)),
+            together: newestFirst(found(artist.together).filter(ordinary)),
+            eps: kind(.ep),
+            live: kind(.live),
+            mixtapes: kind(.mixtape),
+            soundtracks: kind(.soundtrack),
+            compilations: kind(.compilation),
+            singles: kind(.single),
             appearances: newestFirst(found(artist.appearances)),
             songs: songs(of: artist, own: own, appearances: found(artist.appearances)))
-    }
-
-    /// What is left for the shelf a record would otherwise have been on: a record they
-    /// made, rather than a live recording, a single, music written for a film or
-    /// a compilation.
-    private static func isOrdinary(_ album: CloudAlbum) -> Bool {
-        !AlbumKind.isLive(album.album) && !AlbumKind.isSingle(album.album)
-            && !AlbumKind.isSoundtrack(album.album) && !AlbumKind.isCompilation(album.album)
     }
 
     /// One shelf, newest record first.
