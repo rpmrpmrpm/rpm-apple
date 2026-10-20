@@ -85,7 +85,7 @@ public struct TrackActions: ViewModifier {
                 // On a borrowed row too: a radio only plays, it writes nothing.
                 if let startRadio {
                     Button { startRadio(track) } label: {
-                        Label(Loc.get("Track_StartRadio"), systemImage: "dot.radiowaves.left.and.right")
+                        Label(Loc.get("Track_StartMixtape"), systemImage: "recordingtape")
                     }
                 }
 

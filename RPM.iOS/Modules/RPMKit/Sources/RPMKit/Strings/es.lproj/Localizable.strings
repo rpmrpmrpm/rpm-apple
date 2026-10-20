@@ -2688,6 +2688,9 @@
 /* Status line after the cloud download finishes. */
 "Queue_DownloadDone" = "Se descargaron %1$@ de %2$@ archivos";
 
+/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre or year. */
+"Queue_CatalogueFilled" = "Discos completados desde el catálogo: %1$@";
+
 /* Tooltip on the duplicate mark. */
 "QueueDup_InLibrary" = "La colección ya tiene esta pista, en una copia al menos igual de buena.";
 
@@ -3240,8 +3243,8 @@
 /* Track context-menu item: clear the favorite mark on this song. */
 "Track_UnsetFavorite" = "Quitar de favoritos";
 
-/* Track context-menu item (song menus, library table, playlist rows): plays this song now and keeps the queue filled with songs of a similar mood, era and genre to whichever song is playing. Not internet radio. */
-"Track_StartRadio" = "Iniciar radio";
+/* Track context-menu item (song menus, library table, playlist rows): plays this song now and keeps the queue filled with songs of a similar mood, genre and era from the collection. Called a mixtape, not a radio, so it is not mistaken for internet radio. */
+"Track_StartMixtape" = "Iniciar mixtape";
 
 /* Tag field (import panel, album editor, track editor): what kind of release the record is. Decides which section of the artist page it appears in. */
 "Details_ReleaseType" = "Tipo de lanzamiento";
@@ -3518,6 +3521,12 @@
 
 /* Settings hint under the required tags checkboxes. */
 "Settings_RequiredTagsHint" = "Un archivo en cola se marca si le falta alguna de estas etiquetas. La importación no se bloquea.";
+
+/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
+"Settings_CatalogueFill" = "Completar el género y el año que falten al añadir música";
+
+/* Settings hint under the catalogue fill toggle. */
+"Settings_CatalogueFillHint" = "rpm busca cada disco en su catálogo y completa el género, el subgénero y el año cuando están vacíos o no figuran en la lista de géneros de rpm. Los valores ya definidos se conservan. No se escribe nada en tus archivos hasta que importes.";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "Ocultar duplicados";
@@ -4302,8 +4311,8 @@
 /* Second line of a radio station entry in the home view's quick selection, under the station's name. Desktop and iPhone. */
 "Home_QuickStation" = "Emisora de radio";
 
-/* Kind label on a song radio entry in the home view's quick selection, before the artist: 'Radio • Sting'. The entry is named after one of the songs played most; pressing it plays that song and keeps the queue filled with songs like it (the song menus' Start radio). Not internet radio. */
-"Home_QuickRadio" = "Radio";
+/* Kind label on a mixtape entry in the home view's quick selection, before the artist: 'Mixtape • Sting'. The entry starts a mixtape (songs like this one, kept coming) on one of the songs played most. Called a mixtape, not a radio, so it is not mistaken for internet radio. */
+"Home_QuickMixtape" = "Mixtape";
 
 /* Second line of an album or playlist entry in the home view's quick selection. {0} = Home_QuickAlbum or Home_QuickPlaylist, {1} = the artist or the playlist's caption. */
 "Home_QuickKindJoin" = "%1$@ • %2$@";
@@ -6044,3 +6053,30 @@
 
 /* Android TV side menu: spoken name of the key at the top right that reads the collection from the cloud again. */
 "Tv_MenuReload" = "Recargar la biblioteca";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the arrow keys: they move from item to item. */
+"Tv_LegendMove" = "Moverse";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the OK key: holding it opens the menu of the track or station it stands on. */
+"Tv_LegendHoldMenu" = "Mantener: menú";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the OK key on the radio screen: it starts the station it stands on. */
+"Tv_LegendTune" = "Sintonizar";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the Right key on the radio screen: holding it for two seconds opens the wheel of the radio's modes (Tuner, Search, Music, News, Local). */
+"Tv_LegendHoldModes" = "Mantener: modos de radio";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to an arrow key: it opens the alphabet, to jump to a letter. */
+"Tv_LegendLetters" = "Letras";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the Left and Right keys on the album carousel: they turn it one record. */
+"Tv_LegendTurn" = "Girar";
+
+/* Row in the Android TV app's settings: whether a small card listing what the remote's keys do is shown for two seconds when a screen opens. The value is On or Off; OK switches it. */
+"Tv_SettingsKeyLegend" = "Ayuda de los botones";
+
+/* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
+"Deck_QueueTip" = "Cola de reproducción";
+
+/* Player deck: the queue card's text when nothing is queued. */
+"Deck_QueueEmpty" = "No hay nada en cola. Reproduce un disco o una canción y lo que viene después aparecerá aquí.";

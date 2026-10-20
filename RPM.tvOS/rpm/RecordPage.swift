@@ -593,7 +593,7 @@ struct TrackMenu: View {
             model.addToQueue(track)
         }
         // On a borrowed collection too: a radio only plays, it writes nothing.
-        Button(Loc.get("Track_StartRadio"), systemImage: "dot.radiowaves.left.and.right") {
+        Button(Loc.get("Track_StartMixtape"), systemImage: "recordingtape") {
             model.startRadio(track)
             screens.playerShown = true
         }

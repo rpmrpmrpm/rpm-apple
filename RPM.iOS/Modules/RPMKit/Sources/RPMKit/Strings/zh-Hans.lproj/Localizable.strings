@@ -2688,6 +2688,9 @@
 /* Status line after the cloud download finishes. */
 "Queue_DownloadDone" = "已下载 %1$@/%2$@ 个文件";
 
+/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre or year. */
+"Queue_CatalogueFilled" = "已从目录补全的唱片：%1$@";
+
 /* Tooltip on the duplicate mark. */
 "QueueDup_InLibrary" = "音乐收藏中已有这首曲目，且质量不低于此文件。";
 
@@ -3240,8 +3243,8 @@
 /* Track context-menu item: clear the favorite mark on this song. */
 "Track_UnsetFavorite" = "从收藏中移除";
 
-/* Track context-menu item (song menus, library table, playlist rows): plays this song now and keeps the queue filled with songs of a similar mood, era and genre to whichever song is playing. Not internet radio. */
-"Track_StartRadio" = "开始电台";
+/* Track context-menu item (song menus, library table, playlist rows): plays this song now and keeps the queue filled with songs of a similar mood, genre and era from the collection. Called a mixtape, not a radio, so it is not mistaken for internet radio. */
+"Track_StartMixtape" = "开始混音带";
 
 /* Tag field (import panel, album editor, track editor): what kind of release the record is. Decides which section of the artist page it appears in. */
 "Details_ReleaseType" = "发行类型";
@@ -3518,6 +3521,12 @@
 
 /* Settings hint under the required tags checkboxes. */
 "Settings_RequiredTagsHint" = "队列中的文件如果缺少其中任何一项，就会被标记。这不会阻止导入。";
+
+/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
+"Settings_CatalogueFill" = "添加音乐时补全缺失的流派和年份";
+
+/* Settings hint under the catalogue fill toggle. */
+"Settings_CatalogueFillHint" = "rpm 会在其目录中查找每张唱片，并在流派、子流派和年份为空或不在 rpm 流派列表中时补全它们。已设置的值会保留。在你导入之前，不会写入任何文件。";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "隐藏重复项";
@@ -4302,8 +4311,8 @@
 /* Second line of a radio station entry in the home view's quick selection, under the station's name. Desktop and iPhone. */
 "Home_QuickStation" = "电台";
 
-/* Kind label on a song radio entry in the home view's quick selection, before the artist: 'Radio • Sting'. The entry is named after one of the songs played most; pressing it plays that song and keeps the queue filled with songs like it (the song menus' Start radio). Not internet radio. */
-"Home_QuickRadio" = "电台";
+/* Kind label on a mixtape entry in the home view's quick selection, before the artist: 'Mixtape • Sting'. The entry starts a mixtape (songs like this one, kept coming) on one of the songs played most. Called a mixtape, not a radio, so it is not mistaken for internet radio. */
+"Home_QuickMixtape" = "混音带";
 
 /* Second line of an album or playlist entry in the home view's quick selection. {0} = Home_QuickAlbum or Home_QuickPlaylist, {1} = the artist or the playlist's caption. */
 "Home_QuickKindJoin" = "%1$@ • %2$@";
@@ -6044,3 +6053,30 @@
 
 /* Android TV side menu: spoken name of the key at the top right that reads the collection from the cloud again. */
 "Tv_MenuReload" = "重新载入资料库";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the arrow keys: they move from item to item. */
+"Tv_LegendMove" = "移动";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the OK key: holding it opens the menu of the track or station it stands on. */
+"Tv_LegendHoldMenu" = "长按：菜单";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the OK key on the radio screen: it starts the station it stands on. */
+"Tv_LegendTune" = "收听";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the Right key on the radio screen: holding it for two seconds opens the wheel of the radio's modes (Tuner, Search, Music, News, Local). */
+"Tv_LegendHoldModes" = "长按：电台模式";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to an arrow key: it opens the alphabet, to jump to a letter. */
+"Tv_LegendLetters" = "字母";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the Left and Right keys on the album carousel: they turn it one record. */
+"Tv_LegendTurn" = "转动";
+
+/* Row in the Android TV app's settings: whether a small card listing what the remote's keys do is shown for two seconds when a screen opens. The value is On or Off; OK switches it. */
+"Tv_SettingsKeyLegend" = "遥控器按键提示";
+
+/* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
+"Deck_QueueTip" = "播放队列";
+
+/* Player deck: the queue card's text when nothing is queued. */
+"Deck_QueueEmpty" = "队列中没有内容。播放一张专辑或一首歌，接下来要播放的内容会显示在这里。";

@@ -784,6 +784,8 @@ public enum Glyph {
     public static let link = "\u{f0c1}"
     public static let code = "\u{f121}"
     public static let radio = "\u{f519}"
+    /// A cassette tape: a mixtape of songs like one song, kept apart from the internet radio's mark.
+    public static let mixtape = "\u{f8ab}"
     public static let profile = "\u{f007}"
 }
 

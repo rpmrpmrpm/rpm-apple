@@ -691,9 +691,9 @@ private struct QuickEntry: View {
         // a radio and not as the song's own entry further on.
         case .radio:
             if let artist = tracks[pick.key]?.artist, !artist.isEmpty {
-                Loc.get("Home_QuickKindJoin", Loc.get("Home_QuickRadio"), artist)
+                Loc.get("Home_QuickKindJoin", Loc.get("Home_QuickMixtape"), artist)
             } else {
-                Loc.get("Home_QuickRadio")
+                Loc.get("Home_QuickMixtape")
             }
         }
     }

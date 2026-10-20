@@ -2688,6 +2688,9 @@
 /* Status line after the cloud download finishes. */
 "Queue_DownloadDone" = "%1$@ von %2$@ Dateien heruntergeladen";
 
+/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre or year. */
+"Queue_CatalogueFilled" = "Aus dem Katalog ergänzte Platten: %1$@";
+
 /* Tooltip on the duplicate mark. */
 "QueueDup_InLibrary" = "Die Sammlung enthält diesen Titel bereits, in mindestens gleicher Qualität.";
 
@@ -3240,8 +3243,8 @@
 /* Track context-menu item: clear the favorite mark on this song. */
 "Track_UnsetFavorite" = "Aus Favoriten entfernen";
 
-/* Track context-menu item (song menus, library table, playlist rows): plays this song now and keeps the queue filled with songs of a similar mood, era and genre to whichever song is playing. Not internet radio. */
-"Track_StartRadio" = "Radio starten";
+/* Track context-menu item (song menus, library table, playlist rows): plays this song now and keeps the queue filled with songs of a similar mood, genre and era from the collection. Called a mixtape, not a radio, so it is not mistaken for internet radio. */
+"Track_StartMixtape" = "Mixtape starten";
 
 /* Tag field (import panel, album editor, track editor): what kind of release the record is. Decides which section of the artist page it appears in. */
 "Details_ReleaseType" = "Veröffentlichungsart";
@@ -3518,6 +3521,12 @@
 
 /* Settings hint under the required tags checkboxes. */
 "Settings_RequiredTagsHint" = "Eine Datei in der Warteschlange wird markiert, wenn eines dieser Tags fehlt. Der Import wird dadurch nicht blockiert.";
+
+/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
+"Settings_CatalogueFill" = "Fehlendes Genre und Jahr beim Hinzufügen von Musik ergänzen";
+
+/* Settings hint under the catalogue fill toggle. */
+"Settings_CatalogueFillHint" = "rpm sucht jede Platte in seinem Katalog und ergänzt Genre, Subgenre und Jahr, wo sie fehlen oder nicht in der Genreliste von rpm stehen. Bereits gesetzte Werte bleiben erhalten. Bis zum Import wird nichts in deine Dateien geschrieben.";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "Duplikate ausblenden";
@@ -4302,8 +4311,8 @@
 /* Second line of a radio station entry in the home view's quick selection, under the station's name. Desktop and iPhone. */
 "Home_QuickStation" = "Radiosender";
 
-/* Kind label on a song radio entry in the home view's quick selection, before the artist: 'Radio • Sting'. The entry is named after one of the songs played most; pressing it plays that song and keeps the queue filled with songs like it (the song menus' Start radio). Not internet radio. */
-"Home_QuickRadio" = "Radio";
+/* Kind label on a mixtape entry in the home view's quick selection, before the artist: 'Mixtape • Sting'. The entry starts a mixtape (songs like this one, kept coming) on one of the songs played most. Called a mixtape, not a radio, so it is not mistaken for internet radio. */
+"Home_QuickMixtape" = "Mixtape";
 
 /* Second line of an album or playlist entry in the home view's quick selection. {0} = Home_QuickAlbum or Home_QuickPlaylist, {1} = the artist or the playlist's caption. */
 "Home_QuickKindJoin" = "%1$@ • %2$@";
@@ -6044,3 +6053,30 @@
 
 /* Android TV side menu: spoken name of the key at the top right that reads the collection from the cloud again. */
 "Tv_MenuReload" = "Mediathek neu laden";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the arrow keys: they move from item to item. */
+"Tv_LegendMove" = "Navigieren";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the OK key: holding it opens the menu of the track or station it stands on. */
+"Tv_LegendHoldMenu" = "Halten: Menü";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the OK key on the radio screen: it starts the station it stands on. */
+"Tv_LegendTune" = "Einschalten";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the Right key on the radio screen: holding it for two seconds opens the wheel of the radio's modes (Tuner, Search, Music, News, Local). */
+"Tv_LegendHoldModes" = "Halten: Radiomodi";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to an arrow key: it opens the alphabet, to jump to a letter. */
+"Tv_LegendLetters" = "Buchstaben";
+
+/* Shown on the Android TV app's key legend: a small card that appears for two seconds when a screen opens, listing what the remote's keys do there. Each entry is an icon of the key followed by this text. Next to the Left and Right keys on the album carousel: they turn it one record. */
+"Tv_LegendTurn" = "Drehen";
+
+/* Row in the Android TV app's settings: whether a small card listing what the remote's keys do is shown for two seconds when a screen opens. The value is On or Off; OK switches it. */
+"Tv_SettingsKeyLegend" = "Tastenhinweise";
+
+/* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
+"Deck_QueueTip" = "Wiedergabeliste";
+
+/* Player deck: the queue card's text when nothing is queued. */
+"Deck_QueueEmpty" = "Nichts in der Warteschlange. Spiel ein Album oder einen Song ab, dann erscheint hier, was als Nächstes kommt.";

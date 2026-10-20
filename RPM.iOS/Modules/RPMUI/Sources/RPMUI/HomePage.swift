@@ -591,8 +591,8 @@ struct HomePicksRow: View {
             if let track = songs[pick.key] {
                 Button { startRadio?(track) } label: {
                     line(title: track.title ?? "",
-                         subtitle: Self.kindLine("Home_QuickRadio", track.artist),
-                         glyph: Glyph.radio, track: track, list: nil)
+                         subtitle: Self.kindLine("Home_QuickMixtape", track.artist),
+                         glyph: Glyph.mixtape, track: track, list: nil)
                 }
                 .buttonStyle(.plain)
             }
