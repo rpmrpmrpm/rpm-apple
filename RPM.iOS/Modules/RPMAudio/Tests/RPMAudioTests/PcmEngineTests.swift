@@ -47,16 +47,69 @@ struct PcmEngineTests {
         #expect(throws: PcmEngine.Trouble.noFormat) { try engine.play(StreamedPcm(), loudness: .unmeasured, because: .somebodyAskedForIt) }
     }
 
+    /// The start of the tone file and the rest of it. The file has its `moov` at the front, so the
+    /// start is the header and about 0.6 s of audio, which decodes on its own.
+    private func toneInTwo() throws -> (start: Data, rest: Data) {
+        let url = try #require(Bundle.module.url(forResource: "Fixtures/tone", withExtension: "m4a"))
+        let bytes = try Data(contentsOf: url)
+        return (bytes.prefix(8192), bytes.dropFirst(8192))
+    }
+
+    /// Plays a source that holds less than the cushion and is not finished, and checks that the
+    /// node waits. Returns once the pump has decoded what there is and the node has stayed off.
+    ///
+    /// **The node does not start before the cushion, on purpose.** Starting on the first buffer
+    /// made a track cut in and out during its first few seconds. This needs a source that holds
+    /// less than the cushion: the whole tone decodes in a few milliseconds on its own thread, so
+    /// with it the cushion can be full before the test reads anything.
+    private func playLessThanTheCushion(_ engine: PcmEngine) async throws -> StreamedPcm {
+        let source = StreamedPcm()
+        try source.take(try toneInTwo().start)
+        try engine.play(source, loudness: .unmeasured, because: .somebodyAskedForIt)
+
+        // `produced` is what the decoder has made. Above zero means the part really decodes, so
+        // the node is off because there is too little, and not because there is nothing.
+        try await until("the pump to decode the part that has arrived") { source.produced > 0 }
+
+        let end = ContinuousClock.now.advanced(by: .milliseconds(400))
+        while ContinuousClock.now < end {
+            #expect(engine.priming && !engine.isPlaying, "the node started before the cushion")
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(source.produced > 0 && source.produced < 44100,
+                "the part is not less than the cushion: \(source.produced) frames")
+        return source
+    }
+
+    @Test func aSourceShorterThanTheCushionStartsWhenMoreArrives() async throws {
+        let engine = PcmEngine(normalize: NormalizeContext())
+        let source = try await playLessThanTheCushion(engine)
+
+        try source.take(try toneInTwo().rest)
+        try await until("the engine to start") { engine.isPlaying && engine.position > 0 }
+        #expect(!engine.priming)
+
+        source.finish(.theFileRanOut)
+        engine.stop()
+    }
+
+    /// A record shorter than the cushion is still a record: it starts once nothing more is coming.
+    @Test func aSourceShorterThanTheCushionStartsWhenItEnds() async throws {
+        let engine = PcmEngine(normalize: NormalizeContext())
+        let source = try await playLessThanTheCushion(engine)
+
+        source.finish(.theFileRanOut)
+        try await until("the engine to start") { engine.isPlaying }
+
+        engine.stop()
+    }
+
     @Test func theNeedleMovesWhileItPlays() async throws {
         let engine = PcmEngine(normalize: NormalizeContext())
         try engine.play(try tone(), loudness: .unmeasured, because: .somebodyAskedForIt)
 
-        // **The node does not start yet, on purpose.** It waits until a cushion of audio is
-        // buffered. Starting on the first buffer made a track cut in and out during its first few
-        // seconds.
-        #expect(engine.priming)
-        #expect(!engine.isPlaying)
-
+        // That the node waits for a cushion is checked by
+        // `aSourceShorterThanTheCushionStartsWhenMoreArrives` and `...StartsWhenItEnds`.
         try await until("the engine to start") { engine.isPlaying && engine.position > 0 }
         #expect(!engine.priming)
         let early = engine.position
