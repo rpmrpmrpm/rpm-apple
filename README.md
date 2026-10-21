@@ -20,7 +20,8 @@ tvOS 26 or later.
 
 1. The icon font (Font Awesome 5 Pro) is licensed and cannot be published, so it is not in the
    repo. Maintainers run `scripts/copy-icon-fonts.sh` to copy it from the private `rpm-fonts-pro`
-   repo. Without it the apps work and some icons are blank.
+   repo. Without it the apps work and some icons are blank. Xcode Cloud builds get the font and
+   the official API key from the scripts in `RPM.iOS/ci_scripts` and `RPM.tvOS/ci_scripts`.
 2. The simulator needs no Apple account. The project names rpm's own team, so Xcode's Signing pane
    may say "No account for team LBW775Z8JG". For the simulator that is expected and does not stop
    the build. To run on your own device, copy `RPM.iOS/Local.xcconfig.example` to
