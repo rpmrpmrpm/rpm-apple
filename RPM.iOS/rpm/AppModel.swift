@@ -302,7 +302,7 @@ final class AppModel {
         backdrops = BackdropStore(source: cloud)
         portraits = ArtistPortraits(source: cloud)
 
-        words = LyricsLookup(lrclib: LrcLibClient(reach: reach))
+        words = LyricsLookup(lrclib: LrcLibClient(reach: reach), cloud: cloud)
         radio = StationSearch(directory: RadioBrowserClient(reach: reach),
                               radioState: RadioState(record: RadioRepositoryClient(transport: transport)))
 
@@ -885,7 +885,9 @@ final class AppModel {
     var lookingUpLyrics: Bool { words.looking }
 
     /// Reads the words for what is playing, once. The player screen asks for it while it is shown.
-    func readLyrics() async { await words.read(player.current) }
+    func readLyrics() async {
+        await words.read(player.current, on: shelves.shelf(of: player.current?.rpmId))
+    }
 
     // ── the speaker in another room ──
 

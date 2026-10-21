@@ -588,6 +588,24 @@ public struct RPMCloudClient: Sendable {
         }
     }
 
+    /// The lyric sheet the owner chose for a track on a desktop (`cloud/lyric-sheet/{rpmId}`),
+    /// as LRC text. Nil when the owner chose none, which the server says with a 404; the reader
+    /// then asks LRCLIB. An answer that names a different owner than the borrowed shelf's owner
+    /// throws, as every borrowed read does.
+    public func lyricSheet(rpmId: String, on shelf: CloudShelf) async throws -> String? {
+        struct Said: Decodable { let lrc: String?; let owner: String? }
+        do {
+            let said = try await transport.get("cloud/lyric-sheet/" + escaped(rpmId) + shelf.query(first: true),
+                                               as: Said.self)
+            if !shelf.isOwn && said.owner != shelf.ownerId {
+                throw RPMError.notServed(ownerId: shelf.ownerId)
+            }
+            return said.lrc
+        } catch RPMError.refused(status: 404, _) {
+            return nil
+        }
+    }
+
     /// Asks for a track's lyrics to be timed from its recording (`.../measure`). The server
     /// answers at once and the transcoder does the work afterwards. ``lyricTiming(rpmId:on:)``
     /// reads the result later.

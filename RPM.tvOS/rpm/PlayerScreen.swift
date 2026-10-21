@@ -159,7 +159,10 @@ struct PlayerScreen: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeIn(duration: 0.42)) { controlsShown = false }
         }
-        .task(id: model.player.current?.rpmId) { await model.words.read(model.player.current) }
+        .task(id: model.player.current?.rpmId) {
+            let track = model.player.current
+            await model.words.read(track, on: model.session.shelves.shelf(of: track?.rpmId))
+        }
         // More opens the artist's page. The photograph and text are prepared before the user asks.
         .task(id: model.player.current?.artist) {
             if let artist = model.player.current?.artist { await model.warmArtist(artist, scale: scale) }

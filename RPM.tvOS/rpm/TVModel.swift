@@ -88,7 +88,7 @@ final class TVModel {
         portraits = ArtistPortraits(source: cloud, mostBytes: 64 * 1024 * 1024)
         backdrops = BackdropStore(source: cloud)
 
-        words = LyricsLookup(lrclib: LrcLibClient(reach: reach))
+        words = LyricsLookup(lrclib: LrcLibClient(reach: reach), cloud: cloud)
         stations = StationSearch(directory: RadioBrowserClient(reach: reach, agent: "RPM/1.0 (tvOS)"),
                                  radioState: RadioState(record: RadioRepositoryClient(transport: transport)))
 

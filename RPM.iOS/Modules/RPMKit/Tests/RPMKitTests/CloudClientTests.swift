@@ -504,6 +504,27 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
     #expect(seen.value?.httpMethod == "POST")
 }
 
+/// The sheet the owner chose on a desktop is read from its route, under its shelf.
+@Test func aChosenLyricSheetIsReadUnderItsShelf() async throws {
+    let seen = Box<URL>()
+    let cloud = client { request in
+        seen.value = request.url
+        return ok(request, #"""
+            {"lrc":"[00:01.50]hi you","chosenAt":"2026-10-21T10:00:00+00:00","owner":"owner-1"}
+            """#)
+    }
+
+    let lrc = try await cloud.lyricSheet(rpmId: "rpm_1", on: .of("owner-1"))
+    #expect(lrc == "[00:01.50]hi you")
+    #expect(seen.value?.path == "/cloud/lyric-sheet/rpm_1")
+    #expect(seen.value?.query == "owner=owner-1")
+}
+
+/// A track with no chosen sheet is no sheet, not a failure.
+@Test func aTrackWithNoChosenSheetHasNone() async throws {
+    #expect(try await client(404, "{}").lyricSheet(rpmId: "rpm_1", on: .own) == nil)
+}
+
 // ── a shared library's saved stations ──
 
 /// A shared library's saved stations are asked of its owner, all of them.
