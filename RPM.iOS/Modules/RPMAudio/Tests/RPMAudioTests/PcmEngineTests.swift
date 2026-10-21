@@ -119,6 +119,41 @@ struct PcmEngineTests {
         engine.stop()
     }
 
+    /// **A pump that `begin` has replaced does not touch the new source.** The old pump can be in
+    /// the middle of a turn when `begin` runs: past its check of `pumpRun`, and not yet at
+    /// `coming.first`. If it picked the new source there, two pumps would decode one `StreamedPcm`
+    /// at once. Its converter cannot be used from two threads, so one read fails, the source is
+    /// taken off the queue as a decoder failure, and nothing plays.
+    ///
+    /// `moved` is called on the pump's thread inside that part of the turn, so the test holds each
+    /// pump there. While the new pump is held, only the old one could read the new source.
+    @Test func aReplacedPumpDoesNotReadTheNewSource() async throws {
+        let engine = PcmEngine(normalize: NormalizeContext())
+        let letTheFirstGo = DispatchSemaphore(value: 0)
+        let letTheSecondGo = DispatchSemaphore(value: 0)
+        let held = OSAllocatedUnfairLock(initialState: Set<Int>())
+        engine.moved = { id in
+            guard held.withLock({ $0.insert(id).inserted }) else { return }
+            (id == 1 ? letTheFirstGo : letTheSecondGo).wait()
+        }
+
+        try engine.play(try tone(), id: 1, loudness: .unmeasured, because: .somebodyAskedForIt)
+        try await until("the first pump to reach moved") { held.withLock { $0.contains(1) } }
+
+        let next = try tone()
+        try engine.play(next, id: 2, loudness: .unmeasured, because: .somebodyAskedForIt)
+        try await until("the second pump to reach moved") { held.withLock { $0.contains(2) } }
+
+        letTheFirstGo.signal()
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(next.produced == 0, "the replaced pump decoded the new source")
+
+        letTheSecondGo.signal()
+        try await until("the new source to play") { engine.position > 0 }
+
+        engine.stop()
+    }
+
     /// A pause pressed while the source is still loading is not lost. `Transport.arrives` hands
     /// the pause back, and it is applied again when the source arrives. This must keep working.
     @Test func aPauseCanStillBeAppliedTheMomentASourceArrives() async throws {

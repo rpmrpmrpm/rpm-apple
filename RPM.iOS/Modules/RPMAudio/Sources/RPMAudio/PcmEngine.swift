@@ -340,9 +340,13 @@ public final class PcmEngine: @unchecked Sendable {
     /// Every way a source leaves the queue goes through here: it drained, or its decoder gave up.
     /// The reason is kept because the source it belongs to is gone by the time anybody is told.
     /// See ``lastEnding``.
-    private func takeItOffTheFront(_ ending: Ending) {
+    ///
+    /// **Only by the current pump.** A pump that `begin` replaced can still be finishing a turn with
+    /// the source it picked before. By then the front is the new source, and taking that off would
+    /// leave nothing to play. See ``isCurrent(_:)``.
+    private func takeItOffTheFront(_ ending: Ending, while mine: Int) {
         gate.withLock {
-            guard !coming.isEmpty else { return }
+            guard isCurrent(mine), !coming.isEmpty else { return }
 
             coming.removeFirst()
             lastEnding = ending
@@ -753,7 +757,14 @@ public final class PcmEngine: @unchecked Sendable {
                 continue
             }
 
-            guard let next = gate.withLock({ coming.first }) else {
+            // **Picked under the gate, together with the check that this pump is still the current
+            // one.** `begin` can run while this pump is between the check at the top of the loop and
+            // here, and it puts the new source in `coming`. A pump that took it here would decode it
+            // at the same time as the new pump. A `StreamedPcm` cannot be read from two threads: one
+            // of the reads fails, and the new source is taken off as a decoder failure.
+            let (current, first) = gate.withLock { (isCurrent(mine), coming.first) }
+            guard current else { break }
+            guard let next = first else {
                 // Everything has been handed over and is still coming out of the speaker.
                 waitToRunOut(mine)
                 continue
@@ -773,19 +784,19 @@ public final class PcmEngine: @unchecked Sendable {
             do { made = try next.source.read(upTo: Self.bite) }
             catch {
                 Self.log.error("decode stopped: \(error.localizedDescription, privacy: .public)")
-                takeItOffTheFront(Ending(why: .theDecoderStopped, reachedItsEnd: false))
+                takeItOffTheFront(Ending(why: .theDecoderStopped, reachedItsEnd: false), while: mine)
                 continue
             }
 
             guard let buffer = made else {
                 if next.source.drained {
                     // A record shorter than the cushion is still a record.
-                    startIfThereIsEnough(whateverIsThere: true)
+                    startIfThereIsEnough(whateverIsThere: true, while: mine)
 
                     // On to the next one. **Nothing is stopped here**: what is already
                     // in front of the node carries on playing. The source is asked why
                     // it drained on the way out, because in a moment it will be gone.
-                    takeItOffTheFront(next.source.ending)
+                    takeItOffTheFront(next.source.ending, while: mine)
                     continue
                 }
 
@@ -871,7 +882,7 @@ public final class PcmEngine: @unchecked Sendable {
             self?.gate.withLock { self?.inFlight -= 1 }
         }
 
-        startIfThereIsEnough()
+        startIfThereIsEnough(whateverIsThere: false, while: mine)
     }
 
     /// Whether the pump numbered `mine` is still the one this engine is running.
@@ -887,9 +898,12 @@ public final class PcmEngine: @unchecked Sendable {
 
     /// Starts the node once there is a cushion in front of it, or once there is
     /// nothing more coming: a track shorter than the cushion must still play.
-    private func startIfThereIsEnough(whateverIsThere: Bool = false) {
+    ///
+    /// **Only for the current pump.** A replaced pump that finishes its old source would otherwise
+    /// start the node for the new source before its cushion is there. See ``isCurrent(_:)``.
+    private func startIfThereIsEnough(whateverIsThere: Bool, while mine: Int) {
         let go = gate.withLock { () -> Bool in
-            guard !started else { return false }
+            guard isCurrent(mine), !started else { return false }
 
             // **Somebody asked for silence, and that outranks having enough to play.**
             //
@@ -952,9 +966,15 @@ public final class PcmEngine: @unchecked Sendable {
 
             guard gate.withLock({ coming.isEmpty }) else { return }
 
-            if !said, gate.withLock({ inFlight == 0 }) {
+            // **One block decides it, with the check that this pump is still the current one.**
+            // `begin` sets `inFlight` to zero, so a replaced pump that read it in a separate block
+            // could say that the record ran out just after somebody moved the needle.
+            let ending = gate.withLock { () -> Ending? in
+                isCurrent(mine) && coming.isEmpty && inFlight == 0 ? lastEnding : nil
+            }
+            if !said, let ending {
                 said = true
-                ranOut?(gate.withLock { lastEnding })
+                ranOut?(ending)
             }
 
             Thread.sleep(forTimeInterval: 0.05)
