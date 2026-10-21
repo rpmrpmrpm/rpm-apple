@@ -1,5 +1,4 @@
 import Foundation
-import Security
 import RPMKit
 
 /// A computer this device has paired with, kept in the user defaults.
@@ -53,7 +52,8 @@ public struct HeldCatalog: Sendable, Equatable {
 /// and `Discovery` classes.
 ///
 /// - Pairing: this device offers its key, the computer shows a six-digit code, and the person
-///   types it here.
+///   types it here. The code never crosses the network: ``PairingAsker`` commits to it and checks
+///   the computer's revealed nonce instead.
 /// - Sessions: a challenge signed with this device's key gives a token that lasts 30 minutes. The
 ///   token is reused until 2 minutes before it expires. Only one token request runs at a time for
 ///   each computer.
@@ -162,6 +162,8 @@ public final class HomeNetwork {
     private var pairingTask: Task<Void, Never>?
     private var pairingId = ""
     private var pairingWith: FoundComputer?
+    /// This device's half of the pairing under way. Set once the computer's offer has arrived.
+    private var asker: PairingAsker?
 
     /// Counts pairings. A reply for an older pairing is ignored.
     private var attempt = 0
@@ -175,6 +177,8 @@ public final class HomeNetwork {
     /// a computer learns which account this device is in from the session proof, after pairing.
     public func pair(_ computer: FoundComputer) {
         pairingTask?.cancel()
+        asker?.stop()
+        asker = nil
         attempt += 1
         let mine = attempt
         pairingWith = computer
@@ -186,11 +190,10 @@ public final class HomeNetwork {
             guard let self else { return }
             do {
                 let me = await self.me()
-                var nonce = Data(count: 16)
-                _ = nonce.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) }
                 let request = PairRequest(version: PeerWire.version, publicKey: PeerWire.base64Url(me.publicKey),
                                           name: self.deviceName, face: "",
-                                          nonce: PeerWire.base64Url(nonce))
+                                          nonce: PeerWire.base64Url(PairingCode.nonce()),
+                                          pairing: PeerWire.pairing)
                 guard let offer = try await self.client.read(PairOffer.self, computer.base + "/rpm/pair",
                                                              body: request, token: nil)
                 else { return self.end(mine, .failed) }
@@ -202,9 +205,23 @@ public final class HomeNetwork {
                 guard !offer.id.isEmpty else { return self.onStatus(mine, offer.status) }
 
                 self.pairingId = offer.id
+                // A code shown with no commitment comes from a computer that expects the code in the
+                // clear. This device does not pair with it, and withdraws so the code comes off
+                // that screen.
+                if offer.status.state == "ShowingCode", offer.status.commit.isEmpty {
+                    self.end(mine, .failed)
+                    _ = try? await self.client.call(computer.base + "/rpm/pair/withdraw",
+                                                    body: PairId(id: offer.id), token: nil)
+                    return
+                }
+
+                let asker = PairingAsker(askerKey: me.publicKey, ownerKey: computer.publicKey,
+                                         id: offer.id, post: self.post(to: computer))
+                self.asker = asker
                 self.lastTries = offer.status.triesLeft
                 var status = offer.status
                 self.onStatus(mine, status)
+                await self.join(mine, asker, status)
 
                 // Asked again at once after each answer. The computer ends a pairing that nobody
                 // follows for 10 s. A failed request is retried each second, and the pairing is
@@ -226,6 +243,7 @@ public final class HomeNetwork {
                         continue
                     }
                     self.onStatus(mine, status)
+                    await self.join(mine, asker, status)
                 }
             } catch {
                 if Task.isCancelled { return }
@@ -234,18 +252,29 @@ public final class HomeNetwork {
         }
     }
 
-    /// Sends the code the person typed. The answer is applied the same way as a status from the
-    /// status loop.
+    /// Sends the code the person typed, through ``PairingAsker/type(_:)``: the code itself never
+    /// crosses the network. The answer is applied the same way as a status from the status loop.
     public func submit(_ code: String) {
-        guard let computer = pairingWith, !pairingId.isEmpty else { return }
+        guard let asker else { return }
         let mine = attempt
-        let id = pairingId
         Task { [weak self] in
-            guard let self else { return }
-            if let status = try? await self.client.read(PairStatus.self, computer.base + "/rpm/pair/code",
-                                                        body: PairCode(id: id, code: code), token: nil) {
-                self.onStatus(mine, status)
-            }
+            guard let self, let status = await asker.type(code) else { return }
+            self.onStatus(mine, status)
+            await self.join(mine, asker, status)
+        }
+    }
+
+    /// Sends this device's nonce when `status` shows a round still waiting for it (a new pairing,
+    /// or a new round after a wrong code), and applies the answer.
+    private func join(_ mine: Int, _ asker: PairingAsker, _ status: PairStatus) async {
+        if let joined = await asker.join(status) { onStatus(mine, joined) }
+    }
+
+    /// How ``PairingAsker`` posts to `computer`.
+    private func post(to computer: FoundComputer) -> PairingAsker.Post {
+        { [client] route, json in
+            guard let data = try? await client.send(computer.base + route, json: json, token: nil) else { return nil }
+            return try? JSONDecoder().decode(PairStatus.self, from: data)
         }
     }
 
@@ -255,6 +284,8 @@ public final class HomeNetwork {
         let id = pairingId
         attempt += 1
         pairingTask?.cancel()
+        asker?.stop()
+        asker = nil
         pairing = nil
         if let computer, !id.isEmpty {
             Task { [client] in

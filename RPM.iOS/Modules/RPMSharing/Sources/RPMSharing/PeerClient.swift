@@ -36,12 +36,17 @@ final class PeerClient: NSObject, URLSessionDelegate, @unchecked Sendable {
     /// 200 and nil for 204. Throws ``PeerRefused`` for 401 and 403, and ``PeerFailed`` for other
     /// statuses.
     func call(_ url: String, body: (any Encodable)? = nil, token: String?) async throws -> Data? {
+        try await send(url, json: body.map { try JSONEncoder().encode($0) }, token: token)
+    }
+
+    /// ``call(_:body:token:)`` with the body already encoded: a POST when `json` is set.
+    func send(_ url: String, json: Data?, token: String?) async throws -> Data? {
         guard let address = URL(string: url) else { throw PeerFailed(what: "bad address") }
         var request = URLRequest(url: address)
-        if let body {
+        if let json {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONEncoder().encode(body)
+            request.httpBody = json
         }
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
 

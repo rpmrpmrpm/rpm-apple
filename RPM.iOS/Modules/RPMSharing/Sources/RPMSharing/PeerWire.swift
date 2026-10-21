@@ -6,6 +6,9 @@ import CryptoKit
 /// is base64url without padding.
 public enum PeerWire {
     public static let version = 4
+    /// The pairing exchange, the desktop's `SharingProtocol.Pairing`. A computer answers a pair
+    /// request without it with 426. See ``PairingAsker``.
+    public static let pairing = 2
     public static let serviceType = "_rpm._tcp"
     public static let sessionPurpose = "rpm-share-session"
 
@@ -93,7 +96,10 @@ struct PairRequest: Encodable {
     let publicKey: String
     let name: String
     let face: String
+    /// Read only by computers before pairing exchange 2. See ``PairingAsker`` for the nonces that
+    /// make the code.
     let nonce: String
+    let pairing: Int
 }
 
 struct PairStatus: Decodable, Equatable {
@@ -101,8 +107,23 @@ struct PairStatus: Decodable, Equatable {
     var rev = 0
     var triesLeft = 0
     var expiresIn = 0
+    /// The current round, counting from 1. A wrong code starts a new round, with new digits on the
+    /// computer's screen.
+    var round = 0
+    /// The computer's commitment to this round's nonce, base64url.
+    var commit = ""
+    /// Whether the computer has this device's nonce for the round. When it has, its digits are on
+    /// its screen.
+    var shown = false
+    /// The computer's nonce for the round, base64url. It is sent only after this device has
+    /// committed to a code for the round.
+    var reveal = ""
 
-    init() {}
+    init(state: String = "", rev: Int = 0, triesLeft: Int = 0, expiresIn: Int = 0, round: Int = 0,
+         commit: String = "", shown: Bool = false, reveal: String = "") {
+        self.state = state; self.rev = rev; self.triesLeft = triesLeft; self.expiresIn = expiresIn
+        self.round = round; self.commit = commit; self.shown = shown; self.reveal = reveal
+    }
 
     init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -110,9 +131,15 @@ struct PairStatus: Decodable, Equatable {
         rev = try c.decodeIfPresent(Int.self, forKey: .rev) ?? 0
         triesLeft = try c.decodeIfPresent(Int.self, forKey: .triesLeft) ?? 0
         expiresIn = try c.decodeIfPresent(Int.self, forKey: .expiresIn) ?? 0
+        round = try c.decodeIfPresent(Int.self, forKey: .round) ?? 0
+        commit = try c.decodeIfPresent(String.self, forKey: .commit) ?? ""
+        shown = try c.decodeIfPresent(Bool.self, forKey: .shown) ?? false
+        reveal = try c.decodeIfPresent(String.self, forKey: .reveal) ?? ""
     }
 
-    private enum CodingKeys: String, CodingKey { case state, rev, triesLeft, expiresIn }
+    private enum CodingKeys: String, CodingKey {
+        case state, rev, triesLeft, expiresIn, round, commit, shown, reveal
+    }
 }
 
 struct PairOffer: Decodable {
@@ -134,9 +161,26 @@ struct PairOffer: Decodable {
     private enum CodingKeys: String, CodingKey { case deviceId, name, publicKey, id, status }
 }
 
-struct PairCode: Encodable {
+/// This device's nonce for one round. Only ``PairingAsker`` sends it.
+struct PairNonce: Encodable {
     let id: String
-    let code: String
+    let round: Int
+    let nonce: String
+}
+
+/// This device's commitment to the typed code for one round. Only ``PairingAsker`` sends it.
+struct PairCommit: Encodable {
+    let id: String
+    let round: Int
+    let commit: String
+}
+
+/// Opens the commitment, or is empty when this device's check of the revealed nonce failed. Only
+/// ``PairingAsker`` sends it.
+struct PairOpen: Encodable {
+    let id: String
+    let round: Int
+    let opening: String
 }
 
 struct PairId: Encodable {
