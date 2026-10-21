@@ -5973,6 +5973,9 @@
 /* Row in the Android TV app's settings: whether the sung lyric line lights word by word. */
 "Tv_SettingsKaraoke" = "卡拉 OK 歌词";
 
+/* Row in the Android TV app's settings: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
+"Tv_SettingsMixtapeAfter" = "唱片播完后播放混音带";
+
 /* Desktop: menu item in the playlist pane that opens the window for making a mood playlist. */
 "MoodMaker_New" = "新建心情播放列表…";
 
