@@ -157,7 +157,8 @@ struct ListPicture: View {
 enum ListArt {
     /// Whether the list stands on the room and asks no store for a picture. A list whose room
     /// cannot be drawn (because there is no frame in the bundle or no shader) shows its stored
-    /// picture instead.
+    /// picture instead. On the main actor because `RoomView.works` is.
+    @MainActor
     static func standsOnRoom(_ set: PlaylistSet) -> Bool {
         ListBehind.of(set.cut) == .room && FramedList.of(set) != nil && RoomView.works
     }

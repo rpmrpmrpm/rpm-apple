@@ -21,16 +21,24 @@ tvOS 26 or later.
 1. The icon font (Font Awesome 5 Pro) is licensed and cannot be published, so it is not in the
    repo. Maintainers run `scripts/copy-icon-fonts.sh` to copy it from the private `rpm-fonts-pro`
    repo. Without it the apps work and some icons are blank.
-2. The simulator needs no Apple account. To run on your own device, copy
-   `RPM.iOS/Local.xcconfig.example` to `RPM.iOS/Local.xcconfig` (and the same in `RPM.tvOS`) and
-   set your own team and bundle id. A free Apple ID is enough. Git ignores `Local.xcconfig`.
+2. The simulator needs no Apple account. The project names rpm's own team, so Xcode's Signing pane
+   may say "No account for team LBW775Z8JG". For the simulator that is expected and does not stop
+   the build. To run on your own device, copy `RPM.iOS/Local.xcconfig.example` to
+   `RPM.iOS/Local.xcconfig` (and the same in `RPM.tvOS`) and set your own team and bundle id. A
+   free Apple ID is enough. Git ignores `Local.xcconfig`.
 3. Open `RPM.iOS/rpm.xcodeproj` (or `RPM.tvOS/rpm.xcodeproj`) and run.
 
-Test a module from the command line:
+Test a module from the command line, for example `RPMKit`:
 
 ```
 cd RPM.iOS/Modules/RPMKit
 swift test
+```
+
+Run the tests of each module you changed. To run every module's tests, as CI does:
+
+```
+for m in RPM.iOS/Modules/*/; do [ -d "$m/Tests" ] || continue; (cd "$m" && swift test) || echo "FAILED: $m"; done
 ```
 
 The local library and playback work without an account. The cloud library, catalogue pages and
