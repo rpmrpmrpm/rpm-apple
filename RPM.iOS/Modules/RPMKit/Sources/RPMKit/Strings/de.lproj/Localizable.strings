@@ -1853,6 +1853,9 @@
 /* The entry in the speaker picker that brings playback back to the phone. */
 "Rpm_Cast_ThisPhone" = "Dieses iPhone";
 
+/* Row in the Android phone's speaker picker that plays on the phone itself. Rpm_Cast_ThisPhone says iPhone. */
+"Rpm_Cast_ThisAndroidPhone" = "Dieses Telefon";
+
 /* Android TV: the first entry in the cast menu over the player. Picking it brings the music back to the TV from a Cast device. */
 "Tv_Cast_ThisTv" = "Dieser Fernseher";
 
@@ -5247,6 +5250,9 @@
 /* Title of the dialog that removes one downloaded album from the iPhone. */
 "Rpm_Download_RemoveQuestion" = "Dieses Album vom iPhone entfernen? Es bleibt in deiner Cloud-Bibliothek.";
 
+/* Android phone: title of the dialog that removes one downloaded album from the phone. Rpm_Download_RemoveQuestion says iPhone. */
+"Phone_Download_RemoveQuestion" = "Dieses Album vom Handy entfernen? Es bleibt in deiner Cloud-Bibliothek.";
+
 /* Heading of the downloads card on the iPhone profile tab, and of the downloads list. */
 "Rpm_Downloads_Title" = "Downloads";
 
@@ -5282,6 +5288,9 @@
 
 /* Title of the dialog that removes several downloaded albums from the iPhone. */
 "Rpm_Downloads_RemoveQuestion" = "%1$@ Alben vom iPhone entfernen? Sie bleiben in deiner Cloud-Bibliothek.";
+
+/* Android phone: title of the dialog that removes several downloaded albums from the phone. {0} is how many. Rpm_Downloads_RemoveQuestion says iPhone. */
+"Phone_Downloads_RemoveQuestion" = "%1$@ Alben vom Handy entfernen? Sie bleiben in deiner Cloud-Bibliothek.";
 
 /* Empty state of the iPhone downloads list. */
 "Rpm_Downloads_Empty" = "Noch keine Downloads. Öffne ein Album und tippe auf die Download-Taste, um es ohne Internetverbindung zu hören.";
