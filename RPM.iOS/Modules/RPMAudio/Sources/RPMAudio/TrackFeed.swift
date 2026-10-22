@@ -425,8 +425,19 @@ extension TrackFeed: URLSessionDataDelegate {
             return
         }
 
+        // A record encoded while it is sent has no length of its own, so the transcoder states
+        // it in this header. Without it, a stream the encoder ended early looks like the end of
+        // the record. `Double` reads a decimal point whatever the phone's locale is.
+        if let said = http.value(forHTTPHeaderField: Self.lengthHeader),
+           let seconds = Double(said), seconds > 0 {
+            pcm.statesItsLength(seconds)
+        }
+
         completionHandler(.allow)
     }
+
+    /// The header a live encode states the whole record's length in, in seconds.
+    static let lengthHeader = "X-RPM-Duration"
 
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
                            didReceive data: Data) {

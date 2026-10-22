@@ -291,16 +291,34 @@ public final class StreamedPcm: @unchecked Sendable {
     /// converter made. They agree to within the priming samples when nothing is wrong, so
     /// the allowance is one second.
     ///
-    /// A stream whose header gives no duration (a station never does) is taken at its word, so
-    /// a source that cannot be measured is not treated as broken. **Only when it ended normally.**
-    /// A record encoded while it is sent has no duration in its header either. When its
-    /// connection drops, that is not the end of the record: read as the end, the queue would move
-    /// on to the next song in the middle of this one, with no message and no second attempt.
+    /// A record encoded while it is sent has no duration in its header, so the length the
+    /// encoder stated beside the stream is used instead. See ``statesItsLength(_:)``.
+    ///
+    /// A stream with neither (a station never says) is taken at its word, so a source that
+    /// cannot be measured is not treated as broken. **Only when it ended normally.** A dropped
+    /// connection is not the end of the record: read as the end, the queue would move on to the
+    /// next song in the middle of this one, with no message and no second attempt.
     public var reachedTheEnd: Bool {
-        guard let holds = duration else { return gate.withLock { stated } == .theFileRanOut }
+        guard let holds = duration ?? gate.withLock({ told }) else {
+            return gate.withLock { stated } == .theFileRanOut
+        }
         let got = gate.withLock { begins + Double(made) / output.sampleRate }
 
         return got >= holds - Self.shortfall
+    }
+
+    /// The record's length as the sender stated it. Nil unless ``statesItsLength(_:)`` was called.
+    private var told: Double?
+
+    /// The length of the whole record, in seconds, stated by whoever sends the bytes.
+    ///
+    /// **For a record encoded while it is sent.** It arrives as ADTS, which carries no length,
+    /// and the encoder can end the stream cleanly when it fails part way. Without a length, that
+    /// early end and the real end look the same. It is the whole record's length, also for a
+    /// stream that began part way: ``begins`` is added to what was decoded before the two are
+    /// compared. The length in the file's own header, when there is one, comes first.
+    public func statesItsLength(_ seconds: Double) {
+        gate.withLock { told = seconds }
     }
 
     /// How far, in seconds, a stream may stop before the length given in the header and

@@ -18,6 +18,7 @@ final class SilentStore: @unchecked Sendable {
     private let lock = NSLock()
     private var listener: NWListener?
     private var lengths: [String: Double] = [:]
+    private var served: [String: (body: Data, headers: [String: String])] = [:]
     private(set) var asked: [String] = []
     private var port: UInt16 = 0
 
@@ -54,6 +55,12 @@ final class SilentStore: @unchecked Sendable {
         lock.withLock { lengths[rpmId] = seconds }
     }
 
+    /// Answers `rpmId` with these bytes and these extra headers instead of silence, then closes
+    /// the connection normally. For a stream that the sender ends early without an error.
+    func serves(_ body: Data, for rpmId: String, headers: [String: String]) {
+        lock.withLock { served[rpmId] = (body, headers) }
+    }
+
     func address(of rpmId: String) -> URL {
         URL(string: "http://127.0.0.1:\(lock.withLock { port })/\(rpmId).wav")!
     }
@@ -70,6 +77,15 @@ final class SilentStore: @unchecked Sendable {
 
         let waitFor = lock.withLock { slowBy }
         if waitFor > .zero { try? await Task.sleep(for: waitFor) }
+
+        if let (body, extra) = lock.withLock({ served[rpmId] }) {
+            var header = "HTTP/1.1 200 OK\r\nContent-Type: audio/aac\r\n"
+            for (name, value) in extra { header += "\(name): \(value)\r\n" }
+            header += "Content-Length: \(body.count)\r\nConnection: close\r\n\r\n"
+            await send(connection, Data(header.utf8) + body)
+            connection.cancel()
+            return
+        }
 
         let seconds = lock.withLock { lengths[rpmId] ?? fallback }
         let whole = SilentRecord.of(seconds: seconds)

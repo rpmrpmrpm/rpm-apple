@@ -250,4 +250,56 @@ struct SeekTests {
 
         engine.stop()
     }
+
+    // ── a record encoded while it is sent ──
+
+    /// The fixture is ADTS, as a live encode is, and is 2.13 seconds long.
+    private func adts() throws -> Data {
+        try Data(contentsOf: try #require(
+            Bundle.module.url(forResource: "Fixtures/high-he", withExtension: "aac")))
+    }
+
+    /// Reads a live stream from the silent store until the connection has closed and everything
+    /// that arrived is decoded, and returns how it ended.
+    private func ending(of body: Data, stating length: String?) async throws -> Ending {
+        let store = SilentStore()
+        try await store.start()
+        defer { store.stop() }
+
+        store.serves(body, for: "live", headers: length.map { [TrackFeed.lengthHeader: $0] } ?? [:])
+
+        let feed = TrackFeed()
+        feed.start(store.address(of: "live"), kind: .live)
+        for _ in 0..<100 where !feed.complete { try await Task.sleep(for: .milliseconds(50)) }
+        try #require(feed.complete, "the stream did not close")
+
+        while try feed.pcm.read() != nil {}
+        #expect(feed.pcm.drained)
+        return feed.pcm.ending
+    }
+
+    /// **The encoder can close the stream cleanly when it fails part way.** The connection then
+    /// ends with no error, exactly as at the end of the record. Only the length the encoder
+    /// stated beside the stream shows that the record is not over.
+    @Test func aLiveStreamThatClosesShortOfItsStatedLengthDidNotReachItsEnd() async throws {
+        let ended = try await ending(of: try adts(), stating: "10")
+
+        #expect(ended.why == .theFileRanOut)
+        #expect(ended.reachedItsEnd == false, "2 seconds of a 10 second record read as the whole of it")
+        #expect(ended.worthAnotherGo)
+    }
+
+    @Test func aLiveStreamThatReachesItsStatedLengthReachedItsEnd() async throws {
+        let ended = try await ending(of: try adts(), stating: "2.13")
+
+        #expect(ended == .theRecordFinished)
+    }
+
+    /// The header is written with a decimal point by the server. A comma would not parse, and the
+    /// stream is then taken at its word, as before there was a header.
+    @Test func aLiveStreamWithNoLengthIsTakenAtItsWordWhenItClosesCleanly() async throws {
+        let ended = try await ending(of: try adts(), stating: nil)
+
+        #expect(ended == .theRecordFinished)
+    }
 }
