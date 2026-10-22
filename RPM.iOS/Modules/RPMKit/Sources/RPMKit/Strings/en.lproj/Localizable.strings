@@ -4908,6 +4908,57 @@
 /* About screen: what SonoVault is asked for. */
 "Credits_Sonovault_Use" = "Album, track and release information.";
 
+/* About screen, Android app: what Kotlin is used for. */
+"Credits_Kotlin_Use" = "The language the Android app is written in, and its standard library.";
+
+/* About screen, Android app: what kotlinx.coroutines is used for. */
+"Credits_KotlinxCoroutines_Use" = "Runs the app's work in the background, so the screen never waits.";
+
+/* About screen, Android app: what kotlinx.serialization is used for. */
+"Credits_KotlinxSerialization_Use" = "Reads what rpm's server sends, and writes what the app keeps.";
+
+/* About screen, Android app: what Jetpack Compose is used for. */
+"Credits_Compose_Use" = "The interface framework the Android app is written against.";
+
+/* About screen, Android app: what the AndroidX libraries is used for. */
+"Credits_AndroidX_Use" = "Android's support libraries: the app's life cycle, the sign-in page in a browser tab, and the profiles that make it start quickly.";
+
+/* About screen, Android app: what AndroidX Media3 is used for. */
+"Credits_Media3_Use" = "Plays every song and station, and shows what is playing on the lock screen and on headphone and car controls.";
+
+/* About screen, Android app: what Media3's FFmpeg decoder is used for. */
+"Credits_Media3Ffmpeg_Use" = "Hands the songs Android cannot decode itself to FFmpeg.";
+
+/* About screen, Android app: what FFmpeg, as built into the Android app is used for. */
+"Credits_FfmpegAndroid_Use" = "Decodes ALAC, AC-3 and E-AC-3 files played from a computer on your home network.";
+
+/* About screen, Android app: what Guava is used for. */
+"Credits_Guava_Use" = "Utilities that Media3 is built on.";
+
+/* About screen, Android app: what OkHttp is used for. */
+"Credits_OkHttp_Use" = "Every request the app sends to rpm's server and to the catalogues.";
+
+/* About screen, Android app: what Okio is used for. */
+"Credits_Okio_Use" = "The reading and writing under OkHttp and the image loader.";
+
+/* About screen, Android app: what the Public Suffix List, inside OkHttp is used for. */
+"Credits_PublicSuffixList_Use" = "Tells OkHttp which part of a web address names the site.";
+
+/* About screen, Android app: what Coil is used for. */
+"Credits_Coil_Use" = "Loads and keeps cover art, photographs and station logos.";
+
+/* About screen, Android app: what AndroidSVG is used for. */
+"Credits_AndroidSvg_Use" = "Draws the station logos that are published as SVG drawings.";
+
+/* About screen, Android app: what Accompanist Drawable Painter is used for. */
+"Credits_DrawablePainter_Use" = "Lets the image loader draw its pictures in Compose.";
+
+/* About screen, Android app: what ML Kit face detection is used for. */
+"Credits_MlKitFaces_Use" = "Finds the faces in artists' photographs, on the phone, so a crop keeps them in view.";
+
+/* About screen, Android app: what the libraries ML Kit needs (Firebase components, javax.inject) is used for. */
+"Credits_MlKitParts_Use" = "Part of what ML Kit is built on.";
+
 /* Kicker above the heading on every setup wizard step. */
 "Wizard_StepOf" = "Step %1$@ of %2$@";
 
