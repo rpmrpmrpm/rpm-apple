@@ -63,6 +63,22 @@ struct EndingTests {
         #expect(source.ending.reachedItsEnd)
     }
 
+    /// **Taken at its word only when it ended normally.** A record encoded while it is sent has
+    /// no length in its header either. If its connection drops, that is not the end of the
+    /// record. Read as the end, the queue moves on to the next song in the middle of this one,
+    /// with no message and no second attempt.
+    @Test func aSourceThatDoesNotSayHowLongItIsAndWasCutOffDidNotReachItsEnd() throws {
+        let url = try #require(Bundle.module.url(forResource: "Fixtures/high-he", withExtension: "aac"))
+        let bytes = try Data(contentsOf: url)
+        let source = try fed(bytes.prefix(bytes.count / 2))
+        while try source.read() != nil {}
+        source.finish(.theBytesStopped)
+
+        #expect(source.duration == nil, "the fixture is meant to have no stated length")
+        #expect(source.ending.reachedItsEnd == false, "a dropped connection read as the end of the record")
+        #expect(source.ending.worthAnotherGo)
+    }
+
     /// The start position counts towards the length. A stream that begins half way through a
     /// record is complete when the rest of the record has played.
     @Test func aStreamThatBeganPartWayThroughAddsBackWhatItWasNeverSent() throws {

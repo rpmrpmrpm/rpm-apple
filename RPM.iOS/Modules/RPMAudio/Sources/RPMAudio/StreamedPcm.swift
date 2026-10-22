@@ -291,10 +291,13 @@ public final class StreamedPcm: @unchecked Sendable {
     /// converter made. They agree to within the priming samples when nothing is wrong, so
     /// the allowance is one second.
     ///
-    /// True for a stream whose header gives no duration (a station never does), because a
-    /// source that cannot be measured must not be treated as broken.
+    /// A stream whose header gives no duration (a station never does) is taken at its word, so
+    /// a source that cannot be measured is not treated as broken. **Only when it ended normally.**
+    /// A record encoded while it is sent has no duration in its header either. When its
+    /// connection drops, that is not the end of the record: read as the end, the queue would move
+    /// on to the next song in the middle of this one, with no message and no second attempt.
     public var reachedTheEnd: Bool {
-        guard let holds = duration else { return true }
+        guard let holds = duration else { return gate.withLock { stated } == .theFileRanOut }
         let got = gate.withLock { begins + Double(made) / output.sampleRate }
 
         return got >= holds - Self.shortfall

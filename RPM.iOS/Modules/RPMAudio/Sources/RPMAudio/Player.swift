@@ -837,9 +837,55 @@ public final class Player {
     /// ``seek(to:)``), but it is the one that does not change the generation.
     public var playSession: Int { generation &+ seeks }
 
-    /// Which position has already been handed to the engine as the look-ahead, so a
-    /// track is not enqueued twice.
-    private var lookingAhead: Int?
+    /// The look-ahead that is running or has handed its record over, so a track is not
+    /// enqueued twice. A queue edit or a seek sets it to nil, and that is what ends the one
+    /// that was running: see ``Claim``.
+    private var lookingAhead: LookingAhead?
+
+    /// One look-ahead. **An object and not a position**, because two look-aheads for the same
+    /// position must be told apart: the one started before a queue edit and the one started
+    /// after it. Only the identity does that.
+    private final class LookingAhead {
+        let generation: Int
+        let at: Int
+
+        init(generation: Int, at: Int) {
+            self.generation = generation
+            self.at = at
+        }
+    }
+
+    /// Who an open is for. **Checked after every wait**, so an open that nobody wants any more
+    /// stops where it is: it closes its feed, hands nothing to the engine and shows nothing on
+    /// the screen.
+    ///
+    /// Two kinds, because different things end them. A start is ended by another start, a stop
+    /// or a sign-out, which all move the generation. A look-ahead is ended by those too, and also
+    /// by a queue edit or a seek, which start a new look-ahead under the same generation.
+    private enum Claim {
+        case start(generation: Int)
+        case lookAhead(LookingAhead)
+    }
+
+    private func holds(_ claim: Claim) -> Bool {
+        switch claim {
+        case .start(let mine): mine == generation
+        case .lookAhead(let ahead): ahead.generation == generation && lookingAhead === ahead
+        }
+    }
+
+    /// What an open came to.
+    private enum Opened {
+        case feed(TrackFeed)
+
+        /// It could not be opened, and why. **Only a start shows this.** The look-ahead's
+        /// record is not the one playing, and its failure shown now would sit over a record
+        /// that plays. It is shown when the queue reaches that record and opens it again.
+        case failed(PlaybackFailure)
+
+        /// Its claim went while it opened. Nothing to show: something else was chosen.
+        case abandoned
+    }
 
     private var watching: [NSKeyValueObservation] = []
 
@@ -976,6 +1022,7 @@ public final class Player {
 
         // Set together with the queue, so an offline start that exits above leaves both unchanged.
         if list == .outside { started = tracks.map(\.rpmId) }
+        failure = .none
         trouble = nil
         playingKilobits = nil
         wasTheRadio = false
@@ -1014,7 +1061,15 @@ public final class Player {
         // `RoomStream`.
         let roomsNextStream = isCasting ? await takeTheRoomsStream() : nil
 
-        guard let feed = await open(at: from, generation: mine) else { return }
+        let feed: TrackFeed
+        switch await open(at: from, for: .start(generation: mine)) {
+        case .feed(let opened): feed = opened
+        case .abandoned: return
+        case .failed(let why):
+            failure = why
+            trouble = why.said
+            return
+        }
         guard mine == generation else { feed.stop(); return }
 
         do { try sound.play(feed.pcm, id: from, loudness: loud, because: why) }
@@ -1692,10 +1747,17 @@ public final class Player {
     /// they wait in the queue, as ``insertNext(_:)``'s do.
     public func append(_ tracks: [CloudTrack]) {
         guard !tracks.isEmpty else { return }
+        let hadNext = hasNext
         queue.append(contentsOf: tracks)
 
         // Everything went in at the end, so the playing record keeps its number. The record
         // after it changes only when the queue ended at the playing position.
+        //
+        // **Otherwise nothing is reseated.** Every feed and the engine still describe the
+        // queue as it is. A reseat would drop the record already handed over behind the
+        // needle and open it again: a mixtape adds a song at every change of track, so every
+        // song would be requested twice, and one encoded while it is sent would be encoded twice.
+        guard !hadNext else { return }
         reseat(from: index)
     }
 
@@ -2643,6 +2705,15 @@ public final class Player {
         position = .seconds(sound.position)
         isPlaying = sound.isPlaying && !sound.starved
 
+        // **A record that is coming out of the speaker has no network trouble.** The sentences
+        // for a drop say that it is retrying, and the retry is a seek, which plays on with no
+        // start of its own to clear them. Read off the engine, so it holds however the record
+        // got going again.
+        if isPlaying, failure.blamesTheNetwork {
+            failure = .none
+            trouble = nil
+        }
+
         // What has been listened to, read off the same tick as everything else. It is synchronous
         // and in order: the tally sums stretches across seeks, and readings that arrived out of
         // order would score the wrong one. What comes out is handed on; writing it down is the caller's job.
@@ -2923,7 +2994,11 @@ public final class Player {
     /// so it has a whole track's worth of time to sign an address and open a file.
     private func lookAhead(after at: Int, generation mine: Int) async {
         let next = at + 1
-        guard queue.indices.contains(next), lookingAhead != next else { return }
+        guard queue.indices.contains(next) else { return }
+
+        // One look-ahead for each next record. One left from an earlier start does not count,
+        // because it lost its claim when the generation moved.
+        if let ahead = lookingAhead, ahead.at == next, holds(.lookAhead(ahead)) { return }
 
         // Offline, a record with no copy here cannot be opened, and trying would put the
         // offline sentence over the record that is playing perfectly well from the
@@ -2935,15 +3010,18 @@ public final class Player {
         // either; the record is opened when the queue moves on to it.
         guard !holdsBackTheNextRecord else { return }
 
-        lookingAhead = next
+        let ahead = LookingAhead(generation: mine, at: next)
+        lookingAhead = ahead
 
         // Taken with the track the feed is opened for. If a row below the playing position is
         // removed during the open, `index` stays as it was and `queue[next]` is past the end.
         // The setting is not part of this: the engine reads it live.
         let loud = loudness(of: queue[next])
 
-        guard let feed = await open(at: next, generation: mine) else { return }
-        guard mine == generation, index == at else { feed.stop(); return }
+        // A failure is not shown here. It belongs to the next record, which is not the one
+        // playing, and the queue opens that record again when it reaches it. See ``Opened``.
+        guard case .feed(let feed) = await open(at: next, for: .lookAhead(ahead)) else { return }
+        guard holds(.lookAhead(ahead)), index == at else { feed.stop(); return }
 
         // Checked again after the await: the timer can be set while the record opens. The
         // feed stays where it is, and a later look-ahead or start takes it from there.
@@ -2964,17 +3042,20 @@ public final class Player {
     /// the purpose of the look-ahead is that pressing next finds the network work
     /// already done.
     ///
-    /// - Parameter mine: the claim this open is made under. **Checked while it
-    ///   waits, not only when it finishes.** A record that is skipped past would otherwise
-    ///   go on downloading for as long as it took to produce a format (twenty seconds on the
-    ///   sort of connection where it matters) and be thrown away when it got there.
-    ///   This is the part of `StartGate` that stops the loser: the point of a claim is that
-    ///   the loser stops.
-    private func open(at: Int, generation mine: Int) async -> TrackFeed? {
-        guard queue.indices.contains(at) else { return nil }
+    /// - Parameter claim: who this open is for. **Checked while it waits, not only when it
+    ///   finishes.** A record that is skipped past would otherwise go on downloading for as
+    ///   long as it took to produce a format (twenty seconds on the sort of connection where it
+    ///   matters) and be thrown away when it got there. The point of a claim is that the loser
+    ///   stops.
+    ///
+    /// **It writes nothing to the screen.** It is reached by a start and by the look-ahead, and
+    /// only the start's record is the one the screen is about. The caller decides what a
+    /// failure means. See ``Opened``.
+    private func open(at: Int, for claim: Claim) async -> Opened {
+        guard queue.indices.contains(at) else { return .abandoned }
 
         if let already = feeds[at], already.pcm.ready, already.trouble == nil {
-            return already
+            return .feed(already)
         }
 
         let track = queue[at]
@@ -2986,7 +3067,7 @@ public final class Player {
             let feed = TrackFeed()
             feeds[at] = feed
             feed.start(file: copy.file)
-            return await ready(feed, at: at, generation: mine)
+            return await ready(feed, at: at, for: claim)
         }
 
         // **A computer on the home network next**, while it is there. A feed that will not start
@@ -2994,73 +3075,73 @@ public final class Player {
         // going away costs a pause and not the track.
         nearbyFeeds[at] = nil
         if let near = await nearby.address(of: track, on: shelves.shelf(of: track.rpmId)) {
-            guard mine == generation else { return nil }
+            guard holds(claim) else { return .abandoned }
 
             feeds[at]?.stop()
             let feed = TrackFeed()
             feeds[at] = feed
-            failure = .none
             feed.start(near, kind: .stored)
 
-            if let started = await ready(feed, at: at, generation: mine) {
+            switch await ready(feed, at: at, for: claim) {
+            case .feed(let started):
                 nearbyFeeds[at] = near
-                return started
+                return .feed(started)
+            case .abandoned:
+                return .abandoned
+            case .failed:
+                nearby.failed(near)
             }
-            guard mine == generation else { return nil }
-            nearby.failed(near)
         }
 
-        guard let signed = await sign(track) else {
-            // Nothing is shown on the screen for a start that was abandoned on purpose: a
-            // record tapped while another was still signing is not a fault, and a red
-            // sentence about it would blame the user for changing their mind.
-            trouble = failure.said
-            return nil
+        let signed: StreamUrlCache.Signed
+        do {
+            signed = try await sign(track)
+        } catch {
+            // Nothing is said for a start that was abandoned on purpose: a record tapped while
+            // another was still signing is not a fault, and a red sentence about it would
+            // blame the user for changing their mind.
+            return holds(claim) ? .failed(PlaybackFailure.read(error)) : .abandoned
         }
 
         // Signed, and in the meantime somebody moved on. **The cheapest download to
         // stop is the one that never started**, so nothing is opened at all, and the slot
         // is left exactly as whoever holds the claim now has it.
-        guard mine == generation else { return nil }
+        guard holds(claim) else { return .abandoned }
 
         feeds[at]?.stop()
         let feed = TrackFeed()
         feeds[at] = feed
         feed.start(signed.url, kind: signed.kind)
 
-        return await ready(feed, at: at, generation: mine)
+        return await ready(feed, at: at, for: claim)
     }
 
     /// Waits for a feed to have a header, or gives it up.
-    private func ready(_ feed: TrackFeed, at: Int, generation mine: Int) async -> TrackFeed? {
+    private func ready(_ feed: TrackFeed, at: Int, for claim: Claim) async -> Opened {
         // Twenty seconds (800 polls of 25 ms). After that the connection is not slow, it is
         // not going to answer, and the sentence for it is already written.
         for _ in 0..<800 {
-            if feed.pcm.ready { trouble = nil; return feed }
+            if feed.pcm.ready { return .feed(feed) }
 
             // Somebody moved on. Nothing is shown on the screen and nothing is
             // remembered: this is not a fault, it is a record nobody wants any more.
-            guard mine == generation else {
+            guard holds(claim) else {
                 feed.stop()
                 letGo(feed, at: at)
-                return nil
+                return .abandoned
             }
 
             if let why = feed.trouble {
-                failure = why == .refused(403) ? .signedIn : .store
-                trouble = failure.said
                 letGo(feed, at: at)
-                return nil
+                return .failed(why == .refused(403) ? .signedIn : .store)
             }
 
             try? await Task.sleep(for: .milliseconds(25))
         }
 
-        failure = .timeout
-        trouble = failure.said
         feed.stop()
         letGo(feed, at: at)
-        return nil
+        return holds(claim) ? .failed(.timeout) : .abandoned
     }
 
     /// Forgets a feed, **and only if it is still the one being forgotten.**
@@ -3077,21 +3158,15 @@ public final class Player {
     ///
     /// Never from one held since the queue was made: the store's signature expires,
     /// and a queue left paused overnight is a queue of dead addresses.
-    private func sign(_ track: CloudTrack) async -> StreamUrlCache.Signed? {
-        if let known = urls.known(track.rpmId, rate: kilobits) { failure = .none; return known }
+    private func sign(_ track: CloudTrack) async throws -> StreamUrlCache.Signed {
+        if let known = urls.known(track.rpmId, rate: kilobits) { return known }
 
-        do {
-            let said = try await source.stream(shelves.shelf(of: track.rpmId),
-                                               rpmId: track.rpmId, kilobits: kilobits)
-            let signed = StreamUrlCache.Signed(
-                url: said.url, kilobits: said.kilobits, kind: said.kind)
-            urls.note(track.rpmId, asked: kilobits, signed: signed)
-            failure = .none
-            return signed
-        } catch {
-            failure = PlaybackFailure.read(error)
-            return nil
-        }
+        let said = try await source.stream(shelves.shelf(of: track.rpmId),
+                                           rpmId: track.rpmId, kilobits: kilobits)
+        let signed = StreamUrlCache.Signed(
+            url: said.url, kilobits: said.kilobits, kind: said.kind)
+        urls.note(track.rpmId, asked: kilobits, signed: signed)
+        return signed
     }
 
     // ── how loud ──

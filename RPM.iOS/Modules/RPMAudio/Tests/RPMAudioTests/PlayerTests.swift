@@ -1017,6 +1017,121 @@ private func until(_ what: String, within: Duration = .seconds(15),
     rpm.stop()
 }
 
+/// **A song added at the end leaves the next record alone.** A mixtape adds a song at every
+/// change of track. If each one dropped the record already loaded behind the needle and opened
+/// it again, every record would be requested twice, and a record that is encoded while it is
+/// sent would be encoded twice.
+@MainActor
+@Test func aSongAddedAtTheEndDoesNotOpenTheNextRecordAgain() async throws {
+    let store = SilentStore()
+    try await store.start()
+    defer { store.stop() }
+
+    let rpm = Player(source: SilenceSigned(store: store), shelves: AnyShelf(), copies: NoCopies(), nearby: NothingNearby(), reach: NetworkReach(), levelling: .album, levelsClassical: false, classical: { _ in false }, cover: { _ in nil })
+    await rpm.play((0..<3).map { track("t\($0)") }, from: 0, because: .somebodyAskedForIt)
+
+    try await until("the next record to be handed over") { rpm.loadedBehindTheNeedle }
+
+    rpm.append([track("x")])
+
+    #expect(rpm.loadedBehindTheNeedle, "the next record was taken back for a song added after it")
+
+    // Long enough for a second request for t1 to reach the store.
+    try await Task.sleep(for: .milliseconds(500))
+    #expect(store.asked.filter { $0 == "t1" }.count == 1, "asked: \(store.asked)")
+
+    rpm.stop()
+}
+
+/// Signs every track to the silent store, except the ones named here, which sign to a host name
+/// that does not resolve.
+private struct SilenceExcept: StreamSource {
+    let store: SilentStore
+    let dead: Set<String>
+
+    func stream(_ shelf: CloudShelf, rpmId: String,
+                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+        let url = dead.contains(rpmId)
+            ? URL(string: "https://nothing.invalid/\(rpmId)")!
+            : store.address(of: rpmId)
+        return (url, kilobits, .stored)
+    }
+
+    func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }
+}
+
+/// **The look-ahead does not speak for the record that is playing.** The record after this one
+/// failed to open. That is a fact about the next record, and it is reported when the queue
+/// reaches it. Shown now, it puts "cannot play" over a record that is playing perfectly well.
+@MainActor
+@Test func aNextRecordThatWillNotOpenSaysNothingOverThePlayingOne() async throws {
+    let store = SilentStore()
+    try await store.start()
+    defer { store.stop() }
+
+    let rpm = Player(source: SilenceExcept(store: store, dead: ["t1"]), shelves: AnyShelf(), copies: NoCopies(), nearby: NothingNearby(), reach: NetworkReach(), levelling: .album, levelsClassical: false, classical: { _ in false }, cover: { _ in nil })
+
+    // `play` returns when the look-ahead has finished, so t1 has already failed here.
+    await rpm.play((0..<3).map { track("t\($0)") }, from: 0, because: .somebodyAskedForIt)
+
+    #expect(rpm.index == 0)
+    #expect(rpm.trouble == nil, "the next record's failure was shown: \(rpm.trouble ?? "")")
+    #expect(rpm.failure == .none)
+
+    rpm.stop()
+}
+
+/// Holds the address of one track until the gate is opened. Every other track signs to the
+/// silent store at once.
+private struct HoldsOne: StreamSource {
+    let store: SilentStore
+    let gate: Gate
+    let held: String
+
+    func stream(_ shelf: CloudShelf, rpmId: String,
+                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+        if rpmId == held { await gate.hold() }
+        return (store.address(of: rpmId), kilobits, .stored)
+    }
+
+    func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }
+}
+
+/// **A look-ahead replaced by a queue edit stops where it is.** Its record is no longer the next
+/// one. When its address arrives it must not open it, must not stop the feed of the look-ahead
+/// that replaced it, and must not hand anything to the engine. Otherwise the engine holds two
+/// records behind the needle, one of them stopped part way.
+@MainActor
+@Test func aLookAheadReplacedByAQueueEditHandsNothingOver() async throws {
+    let store = SilentStore()
+    try await store.start()
+    defer { store.stop() }
+
+    let gate = Gate()
+    let rpm = Player(source: HoldsOne(store: store, gate: gate, held: "t1"), shelves: AnyShelf(), copies: NoCopies(), nearby: NothingNearby(), reach: NetworkReach(), levelling: .album, levelsClassical: false, classical: { _ in false }, cover: { _ in nil })
+
+    // The start plays t0 and then waits in its look-ahead for t1's address. t0 is fetched and
+    // decoded first, which takes real time, so the wait is measured in time and not in turns.
+    let start = Task { await rpm.play((0..<3).map { track("t\($0)") }, from: 0, because: .somebodyAskedForIt) }
+    for _ in 0..<300 where await !gate.wasAsked { try await Task.sleep(for: .milliseconds(50)) }
+    try #require(await gate.wasAsked)
+
+    // x is now next. Its own look-ahead opens it and hands it over.
+    rpm.insertNext([track("x")])
+    try await until("x to be handed over") { rpm.loadedBehindTheNeedle }
+
+    // The replaced look-ahead gets its address now.
+    await gate.letGo()
+    await start.value
+
+    #expect(!store.asked.contains("t1"), "the replaced look-ahead opened its record: \(store.asked)")
+    #expect(rpm.loudnessHandedOver.count == 2,
+            "the engine holds \(rpm.loudnessHandedOver.count) records, not t0 and x")
+    #expect(rpm.trouble == nil)
+
+    rpm.stop()
+}
+
 // ── replacing a queue the user changed ──
 
 private let otherAlbum = (0..<4).map { track("b\($0)", album: "Laughing Stock") }
