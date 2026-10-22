@@ -5,6 +5,17 @@ The rpm music player for iPhone and Apple TV.
 Part of [rpm](https://github.com/rpmrpmrpm/rpm). Ideas and questions go to the
 [discussions](https://github.com/rpmrpmrpm/rpm/discussions) there.
 
+<p align="center">
+  <img src="docs/screenshots/iphone-home.jpg" width="24%" alt="The iPhone app's Home">
+  <img src="docs/screenshots/iphone-playing.jpg" width="24%" alt="The player">
+  <img src="docs/screenshots/iphone-album.jpg" width="24%" alt="An album page">
+  <img src="docs/screenshots/iphone-lyrics.jpg" width="24%" alt="Lyrics in time with the song">
+</p>
+
+The iPhone app: Home, the player, an album page and the lyrics. More on
+[rpmrpmrpm.com](https://rpmrpmrpm.com/iphone). The record covers and photographs in the screenshots
+belong to their owners; the code licence does not cover them.
+
 ## What is here
 
 | Folder | What it is |
