@@ -1455,7 +1455,7 @@
 /* Row in the Android TV app's settings panel: which layout the now-playing screen opens with (Full, Compact or Visuals only). OK moves to the next layout. */
 "Tv_SettingsDefaultLayout" = "Diseño predeterminado";
 
-/* Row in the Android TV app's settings panel, Visualisation section: which music-reactive animation is drawn behind the player and the screens (Original, Yang, Lava or RPaMp). OK moves to the next one. */
+/* Row in the Android TV app's settings panel, Visualisation section: which music-reactive animation is drawn behind the player and the screens (Original, Yang, Lava or Alchemy). OK moves to the next one. */
 "Tv_SettingsRoomStyle" = "Animación de la sala";
 
 /* Value of the Room animation row in the Android TV settings: the room's own animation, the glowing shapes every RPM app draws. Feminine in French (une animation). */
@@ -1467,8 +1467,8 @@
 /* Value of the Room animation row in the Android TV settings: blobs rising and sinking like a lava lamp. A name; leave it untranslated. */
 "Tv_RoomStyleLava" = "Lava";
 
-/* Value of the Room animation row in the Android TV settings: columns of light rising from a glowing floor, after the RPaMp player skin. A product name; never translate it. */
-"Tv_RoomStyleRPaMp" = "RPaMp";
+/* Value of the Room animation row in the Android TV settings: ribbons of cyan light drifting in deep blue (the ground of the RPaMp player skin, set moving). A name; leave it untranslated. */
+"Tv_RoomStyleAlchemy" = "Alchemy";
 
 /* Row in the Android TV app's settings panel: whether frame rate, CPU and memory figures are shown at the top left of the screen. The value is On or Off; OK switches it. */
 "Tv_SettingsShowStats" = "Mostrar estadísticas de rendimiento";
@@ -4354,7 +4354,7 @@
 "Genres_AboutUnavailable" = "No se pudo cargar el artículo. Abre el género otra vez para reintentarlo.";
 
 /* Heading over the card listing related genres on a genre's page. */
-"Genres_Subgenres" = "Subgéneros";
+"Genres_Subgenres" = "Géneros relacionados";
 
 /* Count beside one related genre in the Subgenres card on a genre's page. */
 "Genres_SubgenreAlbums" = "%1$@ álbumes";
