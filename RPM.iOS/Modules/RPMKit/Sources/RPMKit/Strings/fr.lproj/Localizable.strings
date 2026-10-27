@@ -2044,7 +2044,7 @@
 "Rpm_Profile_PlanFree" = "Pas encore soutien";
 
 /* Settings, Profile page: what an account gets without supporting rpm. */
-"Rpm_Profile_PlanFreeDetail" = "100 Go de stockage cloud, toutes les fonctions, sans limite de durée.";
+"Rpm_Profile_PlanFreeDetail" = "25 Go de stockage cloud, toutes les fonctions, sans limite de durée.";
 
 /* Settings, Profile page: second paragraph under 'Not a supporter', asking the account to support rpm. */
 "Rpm_Profile_PlanFreeAppeal" = "Pensez à soutenir rpm. Les soutiens font vivre l'application et ont accès à des fonctions réservées.";
@@ -3220,7 +3220,7 @@
 "Cloud_SupporterHeading" = "Statut de soutien";
 
 /* Cloud settings: the standing of an account that is not a supporter. */
-"Cloud_SupporterFree" = "Compte gratuit avec 100 Go de stockage cloud.";
+"Cloud_SupporterFree" = "Compte gratuit avec 25 Go de stockage cloud.";
 
 /* Cloud settings: the standing of a supporter. */
 "Cloud_SupporterYes" = "Vous êtes un soutien. Votre stockage cloud est illimité.";

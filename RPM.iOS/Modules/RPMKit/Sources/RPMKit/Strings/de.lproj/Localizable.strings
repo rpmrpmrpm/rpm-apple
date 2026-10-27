@@ -2044,7 +2044,7 @@
 "Rpm_Profile_PlanFree" = "Kein Unterstützer";
 
 /* Settings, Profile page: what an account gets without supporting rpm. */
-"Rpm_Profile_PlanFreeDetail" = "100 GB Cloud-Speicher, alle Funktionen, ohne Zeitlimit.";
+"Rpm_Profile_PlanFreeDetail" = "25 GB Cloud-Speicher, alle Funktionen, ohne Zeitlimit.";
 
 /* Settings, Profile page: second paragraph under 'Not a supporter', asking the account to support rpm. */
 "Rpm_Profile_PlanFreeAppeal" = "Bitte erwäge, rpm zu unterstützen. Unterstützer halten das Licht an und erhalten Zugang zu exklusiven Funktionen.";
@@ -3220,7 +3220,7 @@
 "Cloud_SupporterHeading" = "Unterstützerstatus";
 
 /* Cloud settings: the standing of an account that is not a supporter. */
-"Cloud_SupporterFree" = "Kostenloses Konto mit 100 GB Cloud-Speicher.";
+"Cloud_SupporterFree" = "Kostenloses Konto mit 25 GB Cloud-Speicher.";
 
 /* Cloud settings: the standing of a supporter. */
 "Cloud_SupporterYes" = "Du bist Unterstützer. Dein Cloud-Speicher ist unbegrenzt.";

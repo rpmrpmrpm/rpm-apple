@@ -2044,7 +2044,7 @@
 "Rpm_Profile_PlanFree" = "非支持者";
 
 /* Settings, Profile page: what an account gets without supporting rpm. */
-"Rpm_Profile_PlanFreeDetail" = "100 GB 云存储空间，全部功能，无时间限制。";
+"Rpm_Profile_PlanFreeDetail" = "25 GB 云存储空间，全部功能，无时间限制。";
 
 /* Settings, Profile page: second paragraph under 'Not a supporter', asking the account to support rpm. */
 "Rpm_Profile_PlanFreeAppeal" = "请考虑支持 rpm。支持者让 rpm 得以运转，并可使用支持者专属功能。";
@@ -3220,7 +3220,7 @@
 "Cloud_SupporterHeading" = "支持者状态";
 
 /* Cloud settings: the standing of an account that is not a supporter. */
-"Cloud_SupporterFree" = "免费账户，含 100 GB 云存储。";
+"Cloud_SupporterFree" = "免费账户，含 25 GB 云存储。";
 
 /* Cloud settings: the standing of a supporter. */
 "Cloud_SupporterYes" = "你是支持者。你的云存储无限。";
