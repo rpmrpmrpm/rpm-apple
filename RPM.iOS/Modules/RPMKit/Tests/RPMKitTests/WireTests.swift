@@ -30,6 +30,25 @@ import Foundation
     #expect(quota.usedBytes == 12_000_000_000)
     #expect(quota.quotaBytes == 100_000_000_000)
     #expect(quota.unlimited == false)
+    #expect(quota.supporter == false)
+    #expect(quota.tester == false)
+}
+
+@Test func aTesterHasTheSupporterFeaturesACeilingAndNoMark() throws {
+    let quota = try fixture("cloud-quota-tester", as: CloudQuota.self)
+    #expect(quota.supporter)
+    #expect(quota.tester)
+    #expect(quota.unlimited == false)
+    #expect(quota.quotaBytes == 107_374_182_400)
+    #expect(quota.wearsMark == false)
+}
+
+@Test func aServerWithoutTheSupporterFieldTakesItFromUnlimited() throws {
+    let data = Data(#"{"usedBytes":1,"quotaBytes":9223372036854775807,"fileCount":1,"unlimited":true}"#.utf8)
+    let quota = try RPMJSON.decoder.decode(CloudQuota.self, from: data)
+    #expect(quota.supporter)
+    #expect(quota.tester == false)
+    #expect(quota.wearsMark)
 }
 
 // ── sharing ──

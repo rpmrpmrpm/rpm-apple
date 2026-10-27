@@ -2055,6 +2055,15 @@
 
 /* Settings, Profile page: second paragraph under 'Supporter', thanking the account for supporting rpm. */
 "Rpm_Profile_PlanSupporterThanks" = "Merci de soutenir rpm. Vous aidez rpm à continuer et financez son développement. Votre générosité nous touche.";
+
+/* Settings, Profile page: the standing of an account marked as a closed beta tester. */
+"Rpm_Profile_PlanTester" = "Testeur de la bêta fermée";
+
+/* Settings, Profile page: what a closed beta tester gets. */
+"Rpm_Profile_PlanTesterDetail" = "Fonctions des soutiens et 100 Go de stockage cloud.";
+
+/* Settings, Profile page: second paragraph under 'Closed beta tester', thanking the account for testing. */
+"Rpm_Profile_PlanTesterThanks" = "Merci de tester rpm. Vos signalements nous aident à corriger les problèmes avant la bêta publique.";
 "Rpm_Profile_Playback" = "Lecture";
 
 /* Settings, Profile page: what the quality choices do. */
@@ -3227,6 +3236,9 @@
 
 /* Cloud settings: a supporter whose support has an end date. */
 "Cloud_SupporterYesUntil" = "Vous êtes un soutien jusqu'au %1$@. Votre stockage cloud est illimité.";
+
+/* Cloud settings: the standing of an account marked as a closed beta tester. */
+"Cloud_SupporterTester" = "Vous testez la bêta fermée. Vous avez les fonctions des soutiens et 100 Go de stockage cloud.";
 
 /* Cloud settings: the server did not answer, which is not the same as 'not a supporter'. */
 "Cloud_SupporterUnknown" = "Votre statut de soutien n'a pas pu être récupéré.";

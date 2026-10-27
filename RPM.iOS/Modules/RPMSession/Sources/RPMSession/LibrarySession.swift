@@ -210,8 +210,8 @@ public final class LibrarySession {
         guard let quota else { return }
 
         switch rule {
-        case .adoptNow: SupporterGround.adopt(isSupporter: quota.unlimited, in: .standard)
-        case .nextLaunch: SupporterGround.remember(isSupporter: quota.unlimited, in: .standard)
+        case .adoptNow: SupporterGround.adopt(isSupporter: quota.supporter, in: .standard)
+        case .nextLaunch: SupporterGround.remember(isSupporter: quota.supporter, in: .standard)
         }
         onQuotaRead()
     }

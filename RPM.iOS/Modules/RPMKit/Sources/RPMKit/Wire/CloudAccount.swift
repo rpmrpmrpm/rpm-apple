@@ -5,9 +5,24 @@ public struct CloudQuota: Codable, Hashable, Sendable {
     public let quotaBytes: Int64
     public let fileCount: Int
 
-    /// No ceiling, which is what supporting rpm buys. False when the server does not send the
-    /// field, and then the quota is the free account's limit.
+    /// No storage ceiling. Only paying supporters have this. False when the server does not send
+    /// the field, and then the quota is the free account's limit. This is about storage only: read
+    /// the supporter features from ``supporter``.
     public let unlimited: Bool
+
+    /// Whether the account has the supporter features (higher bitrates, karaoke, the gold backdrop
+    /// and the rest). Paying supporters and closed beta testers have them, so this is not the same
+    /// as ``unlimited``: a tester has the features and a ceiling. A server that does not send the
+    /// field has no testers, so it falls back to ``unlimited``.
+    public let supporter: Bool
+
+    /// A closed beta tester who does not pay: the supporter features, a ceiling, and no supporter's
+    /// mark. For the words on screen.
+    public let tester: Bool
+
+    /// Whether the supporter's mark is shown for this account. The mark says "Supporter", so a
+    /// tester, who does not pay, does not wear it.
+    public var wearsMark: Bool { supporter && !tester }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -15,11 +30,14 @@ public struct CloudQuota: Codable, Hashable, Sendable {
         quotaBytes = try c.decodeIfPresent(Int64.self, forKey: .quotaBytes) ?? 0
         fileCount  = try c.decodeIfPresent(Int.self, forKey: .fileCount) ?? 0
         unlimited  = try c.decodeIfPresent(Bool.self, forKey: .unlimited) ?? false
+        supporter  = try c.decodeIfPresent(Bool.self, forKey: .supporter) ?? unlimited
+        tester     = try c.decodeIfPresent(Bool.self, forKey: .tester) ?? false
     }
 
-    public init(usedBytes: Int64, quotaBytes: Int64, fileCount: Int, unlimited: Bool = false) {
+    public init(usedBytes: Int64, quotaBytes: Int64, fileCount: Int, unlimited: Bool, supporter: Bool, tester: Bool) {
         self.usedBytes = usedBytes; self.quotaBytes = quotaBytes
         self.fileCount = fileCount; self.unlimited = unlimited
+        self.supporter = supporter; self.tester = tester
     }
 }
 

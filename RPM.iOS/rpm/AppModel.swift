@@ -159,7 +159,7 @@ final class AppModel {
     /// fetches, because the phone has no supporter service to ask.
     var offer: AudioLadder.RateOffer {
         guard let quota else { return .unread }
-        return .of(isSupporter: quota.unlimited)
+        return .of(isSupporter: quota.supporter)
     }
 
     /// Tells the player what to ask for, based on the network the phone is on and what the

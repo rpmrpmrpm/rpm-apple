@@ -386,7 +386,7 @@ final class TVModel {
     }
 
     /// Whether the account is a supporter of rpm. It is nil until the quota is read.
-    var isSupporter: Bool? { session.quota.map(\.unlimited) }
+    var isSupporter: Bool? { session.quota.map(\.supporter) }
 
     /// Whether the sung lyric line is highlighted word by word. It needs the setting and a
     /// supporter account, as on the desktop and in the Android TV app.
@@ -397,7 +397,7 @@ final class TVModel {
     /// rung in any case).
     var offer: AudioLadder.RateOffer {
         guard let quota = session.quota else { return .unread }
-        return .of(isSupporter: quota.unlimited)
+        return .of(isSupporter: quota.supporter)
     }
 
     /// Sets the rate that the player requests, from the setting and the offer. It is called

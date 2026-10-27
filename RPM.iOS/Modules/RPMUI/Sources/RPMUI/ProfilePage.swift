@@ -102,7 +102,7 @@ public struct ProfilePage: View {
     /// request timed out is the worse of the two possible mistakes.
     private var offer: AudioLadder.RateOffer {
         guard let quota else { return .unread }
-        return .of(isSupporter: quota.unlimited)
+        return .of(isSupporter: quota.supporter)
     }
 
     public var body: some View {
@@ -271,6 +271,11 @@ public struct ProfilePage: View {
 
     // ── supporter status ──
 
+    /// The string for this account's standing: a closed beta tester, a paying supporter, or free.
+    static func planKey(_ quota: CloudQuota, supporter: String, tester: String, free: String) -> String {
+        quota.tester ? tester : quota.supporter ? supporter : free
+    }
+
     /// Shows only this account's status. It is hidden until the quota has been read, so a request
     /// that timed out does not show "Not a supporter" to a supporter.
     @ViewBuilder
@@ -279,24 +284,27 @@ public struct ProfilePage: View {
             card(Glyph.heart, Loc.get("Rpm_Profile_Plan")) {
                 VStack(alignment: .leading, spacing: 4) {
                     // A supporter gets the gold badge, which contains the word "Supporter". The free
-                    // plan name is shown in cyan.
-                    if quota.unlimited {
+                    // plan and a closed beta tester are named in cyan: a tester has the supporter
+                    // features but does not pay, so does not wear the badge.
+                    if quota.wearsMark {
                         SupporterMark()
                             .padding(.vertical, 2)
                     } else {
-                        Text(Loc.get("Rpm_Profile_PlanFree"))
+                        Text(Loc.get(quota.tester ? "Rpm_Profile_PlanTester" : "Rpm_Profile_PlanFree"))
                             .font(RPMFont.display(17))
                             .foregroundStyle(RPMInk.cyan)
                     }
 
-                    Text(Loc.get(quota.unlimited ? "Rpm_Profile_PlanSupporterDetail"
-                                                 : "Rpm_Profile_PlanFreeDetail"))
+                    Text(Loc.get(Self.planKey(quota, supporter: "Rpm_Profile_PlanSupporterDetail",
+                                              tester: "Rpm_Profile_PlanTesterDetail",
+                                              free: "Rpm_Profile_PlanFreeDetail")))
                         .font(RPMFont.display(12))
                         .foregroundStyle(RPMInk.white(0x88 / 255))
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text(Loc.get(quota.unlimited ? "Rpm_Profile_PlanSupporterThanks"
-                                                 : "Rpm_Profile_PlanFreeAppeal"))
+                    Text(Loc.get(Self.planKey(quota, supporter: "Rpm_Profile_PlanSupporterThanks",
+                                              tester: "Rpm_Profile_PlanTesterThanks",
+                                              free: "Rpm_Profile_PlanFreeAppeal")))
                         .font(RPMFont.display(12))
                         .foregroundStyle(RPMInk.white(0xB3 / 255))
                         .fixedSize(horizontal: false, vertical: true)

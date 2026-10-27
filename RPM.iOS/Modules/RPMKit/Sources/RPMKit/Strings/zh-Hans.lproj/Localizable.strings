@@ -2055,6 +2055,15 @@
 
 /* Settings, Profile page: second paragraph under 'Supporter', thanking the account for supporting rpm. */
 "Rpm_Profile_PlanSupporterThanks" = "感谢你支持 rpm。你帮助 rpm 持续运行，并资助新的开发。你的慷慨让我们深受感动。";
+
+/* Settings, Profile page: the standing of an account marked as a closed beta tester. */
+"Rpm_Profile_PlanTester" = "封闭测试用户";
+
+/* Settings, Profile page: what a closed beta tester gets. */
+"Rpm_Profile_PlanTesterDetail" = "支持者功能和 100 GB 云存储。";
+
+/* Settings, Profile page: second paragraph under 'Closed beta tester', thanking the account for testing. */
+"Rpm_Profile_PlanTesterThanks" = "感谢你测试 rpm。你的反馈帮助我们在公开测试前修复问题。";
 "Rpm_Profile_Playback" = "播放";
 
 /* Settings, Profile page: what the quality choices do. */
@@ -3227,6 +3236,9 @@
 
 /* Cloud settings: a supporter whose support has an end date. */
 "Cloud_SupporterYesUntil" = "你的支持者身份有效期至 %1$@。你的云存储无限。";
+
+/* Cloud settings: the standing of an account marked as a closed beta tester. */
+"Cloud_SupporterTester" = "你是封闭测试用户。你可使用支持者功能，并拥有 100 GB 云存储。";
 
 /* Cloud settings: the server did not answer, which is not the same as 'not a supporter'. */
 "Cloud_SupporterUnknown" = "无法获取你的支持者状态。";

@@ -213,12 +213,13 @@ private struct AccountBlock: View {
                 InfoRow(label: name.isEmpty ? email : name, value: name.isEmpty ? "" : email)
                 if let quota = session.quota {
                     // A supporter sees the supporter badge, which contains the word "Supporter",
-                    // as in the phone's and the desktop's profile. A free account sees the name of
-                    // the free plan.
-                    if quota.unlimited {
+                    // as in the phone's and the desktop's profile. A free account and a closed beta
+                    // tester see the name of their standing; a tester does not pay, so has no badge.
+                    if quota.wearsMark {
                         InfoRow(label: Loc.get("Rpm_Profile_Plan")) { SupporterMark() }
                     } else {
-                        InfoRow(label: Loc.get("Rpm_Profile_Plan"), value: Loc.get("Rpm_Profile_PlanFree"))
+                        InfoRow(label: Loc.get("Rpm_Profile_Plan"),
+                                value: Loc.get(quota.tester ? "Rpm_Profile_PlanTester" : "Rpm_Profile_PlanFree"))
                     }
                     InfoRow(label: Loc.get("Cloud_Heading"), value: Self.storage(quota))
                 }
