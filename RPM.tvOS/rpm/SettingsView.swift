@@ -228,7 +228,7 @@ private struct AccountBlock: View {
         .padding(.leading, RowStyle.inset)
     }
 
-    /// The storage line, for example "12 GB of 100 GB used (almost full)". It has the same text as
+    /// The storage line, for example "24 GB of 25 GB used (almost full)". It has the same text as
     /// the phone's storage card.
     static func storage(_ quota: CloudQuota) -> String {
         guard !quota.unlimited, quota.quotaBytes > 0 else {

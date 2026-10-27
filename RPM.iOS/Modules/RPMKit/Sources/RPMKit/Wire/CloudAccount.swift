@@ -6,7 +6,7 @@ public struct CloudQuota: Codable, Hashable, Sendable {
     public let fileCount: Int
 
     /// No ceiling, which is what supporting rpm buys. False when the server does not send the
-    /// field, and then the quota is the free account's 100 GB.
+    /// field, and then the quota is the free account's limit.
     public let unlimited: Bool
 
     public init(from decoder: any Decoder) throws {
