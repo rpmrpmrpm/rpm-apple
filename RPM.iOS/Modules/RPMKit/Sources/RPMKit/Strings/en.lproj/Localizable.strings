@@ -2246,6 +2246,75 @@
 /* Settings, Profile page: status in a build that was not installed by the installer. */
 "Update_Unmanaged" = "This copy of rpm does not update itself.";
 
+/* Item in the hamburger menu, under Help. Opens the feedback window, which takes both problems and suggestions. */
+"Shell_Feedback" = "Send feedback";
+
+/* Title of the feedback window opened from the hamburger menu. */
+"Feedback_Title" = "Send feedback";
+
+/* First line in the feedback window, above the kind and area lists and the text box. */
+"Feedback_Body" = "Report something that went wrong, or suggest something that could be better.";
+
+/* Feedback window: label over the list that picks a problem or a suggestion. */
+"Feedback_KindLabel" = "What is this";
+
+/* Feedback window, kind list: a bug. It is the first choice. */
+"Feedback_KindProblem" = "Something is wrong";
+
+/* Feedback window, kind list: a suggestion. */
+"Feedback_KindIdea" = "Something could be better";
+
+/* Feedback window: says what travels with the feedback, under the text box. */
+"Feedback_Sends" = "Sent with your feedback: the screenshot below, your rpm version, your operating system and the app's recent activity, which can include track and file names.";
+
+/* Feedback window: label over the list of parts of the app. It covers suggestions as well as problems, so it does not say "where it happened". */
+"Feedback_AreaLabel" = "Which part of rpm";
+
+/* Feedback window, area list: the choice for anything not on the list. It is the first choice. */
+"Feedback_AreaOther" = "Something else";
+
+/* Feedback window, area list. */
+"Feedback_AreaPlayback" = "Playback";
+
+/* Feedback window, area list. */
+"Feedback_AreaLibrary" = "Library and import";
+
+/* Feedback window, area list. Covers cover art, track details and the catalogues. */
+"Feedback_AreaArtwork" = "Artwork and details";
+
+/* Feedback window, area list. */
+"Feedback_AreaCloud" = "Cloud";
+
+/* Feedback window, area list. */
+"Feedback_AreaRadio" = "Radio";
+
+/* Feedback window, area list. Covers the library server and the phone and TV apps. */
+"Feedback_AreaSharing" = "Sharing and phone";
+
+/* Feedback window, area list. Covers how the app looks and reacts. */
+"Feedback_AreaInterface" = "Interface";
+
+/* Feedback window: placeholder in the empty text box while the kind is a problem. */
+"Feedback_PlaceholderProblem" = "What went wrong?";
+
+/* Feedback window: placeholder in the empty text box while the kind is a suggestion. */
+"Feedback_PlaceholderIdea" = "What would you change?";
+
+/* Feedback window: switch over the picture of the app as it was when the window was opened. */
+"Feedback_Screenshot" = "Include this screenshot";
+
+/* Shown when Send feedback is pressed with an empty text box. */
+"Feedback_NeedWords" = "Please write something before sending.";
+
+/* Feedback window: the button that sends it. */
+"Feedback_Send" = "Send feedback";
+
+/* Shown after the feedback has landed on the server. */
+"Feedback_Sent" = "Thanks. Your feedback was sent.";
+
+/* Shown when the server would not take the feedback. */
+"Feedback_Failed" = "The feedback could not be sent. Please try again later.";
+
 /* Title of the window shown at launch after rpm crashed, asking once whether to send crash reports. */
 "Crash_PromptTitle" = "rpm closed unexpectedly";
 
