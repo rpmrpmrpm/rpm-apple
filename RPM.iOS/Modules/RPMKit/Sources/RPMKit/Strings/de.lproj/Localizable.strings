@@ -3039,6 +3039,12 @@
 /* Amber album-marker tooltip when the record carries more than one other value for the field. */
 "Edit_AlbumDisagreesMany" = "Andere Titel haben unterschiedliche Werte";
 
+/* Checkbox under the release type in the album editor and the import tag panel, shown when the type is Live or Mixtape. {0} is the note added to the tags, "(Live)" or "(Mixed)", which is not translated. */
+"Edit_MarkTitles" = "%1$@ an die Titelnamen anhängen";
+
+/* Tooltip on the Add (Live) / Add (Mixed) checkbox. {0} is "(Live)" or "(Mixed)". */
+"Edit_MarkTitlesTip" = "Hängt %1$@ an jeden Titel an, der es noch nicht hat.";
+
 /* Title of the album editor window. */
 "AlbumEdit_Title" = "Album bearbeiten";
 
