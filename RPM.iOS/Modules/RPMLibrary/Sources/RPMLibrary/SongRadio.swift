@@ -6,7 +6,8 @@ import RPMKit
 /// `record` is the album's key: a radio spaces records by it. `song` is the act and the
 /// title with the edition notes taken off, lower cased: two tracks with the same value are
 /// one song on two records. `genre` is the shelf the record is filed on, `styles` the
-/// styles its tags name, `moods` the moods the computer put it in.
+/// styles its tags name, `moods` the moods the computer put it in. `live` is whether it is a
+/// live recording (``SongRadio/isLive(title:album:releaseType:)``).
 public struct RadioSong: Sendable, Equatable {
     public let id: String
     public let record: String
@@ -18,11 +19,13 @@ public struct RadioSong: Sendable, Equatable {
     public let moods: Set<String>
     public let offered: Bool
     public let plays: Int
+    public let live: Bool
 
     public init(id: String, record: String, artist: String, song: String, year: Int, genre: String?,
-                styles: Set<String>, moods: Set<String>, offered: Bool, plays: Int) {
+                styles: Set<String>, moods: Set<String>, offered: Bool, plays: Int, live: Bool = false) {
         self.id = id; self.record = record; self.artist = artist; self.song = song; self.year = year
         self.genre = genre; self.styles = styles; self.moods = moods; self.offered = offered; self.plays = plays
+        self.live = live
     }
 }
 
@@ -95,7 +98,9 @@ public struct RadioCrate: Sendable {
                     styles: styles,
                     moods: moods[track.rpmId] ?? [],
                     offered: (track.tags?.durationSeconds ?? 0) >= leastSeconds,
-                    plays: played[track.rpmId]?.plays ?? 0))
+                    plays: played[track.rpmId]?.plays ?? 0,
+                    live: SongRadio.isLive(title: track.title, album: track.album ?? album.album,
+                                           releaseType: track.tags?.releaseType)))
             }
         }
         return RadioCrate(songs)
@@ -171,7 +176,17 @@ public enum SongRadio {
     static let relatedGenre = 0.5
     static let kinStyle = 0.3
     static let otherStyle = 0.6
-    static let oneStyle = 0.15
+    /// As far as kin: a matching style comes clearly before one nobody has filed.
+    static let oneStyle = kinStyle
+
+    /// How many songs must be left, beyond the ones a pick asks for, before songs whose style
+    /// clashes with the song playing are left out.
+    static let clashSpare = shortlist
+
+    /// What a live recording adds to its score when the radio did not start from a live song:
+    /// about a decade of era. A live song still comes when nothing in the studio is near. The
+    /// desktop's `LiveApart`.
+    static let liveApart = 0.3
 
     /// The mood term when one song is in a mood list and the other in none.
     static let oneInAMood = 0.75
@@ -184,18 +199,163 @@ public enum SongRadio {
     static let moodKinds: Set<String> = ["Calm", "Energetic", "Danceable", "Focus", "Sleep"]
 
     /// Styles that sit next to one another. The desktop's `SongRadio.StyleFamilies`; change
-    /// both together.
+    /// both together. Every shelf has its families, because two styles that share none clash,
+    /// and a song whose style clashes with the one playing is left out (``withoutClashes(_:playing:count:)``).
     static let styleFamilies: [[String]] = [
+        // Electronic music for sitting down.
         ["Downtempo", "Trip Hop", "Chillout", "Chillwave", "Lo-fi Beats", "Ambient", "New Age", "Folktronica",
          "Vaporwave", "Ambient Techno", "Ambient Classical"],
+        // For listening rather than dancing, but not to sleep to.
         ["IDM", "Leftfield", "Electronica", "Progressive Electronic", "Downtempo", "Trip Hop"],
+        // For a club.
         ["Electro", "Electro House", "Trance", "Psytrance", "Eurodance", "Italo Dance", "Hardstyle", "Future Bass",
          "Alternative Dance", "Deep House", "Tech House", "Progressive House", "Future House", "French House",
          "Garage House", "Tribal House", "Acid House", "Chicago House", "Afro House", "Euro House",
          "Detroit Techno", "Minimal Techno", "Acid Techno", "Hard Techno", "Industrial Techno"],
+        // Breaks and bass.
         ["Drum and Bass", "Jungle", "Breakbeat", "Dubstep", "Post-Dubstep", "UK Garage", "Speed Garage", "Future Bass"],
+        // The dark end.
         ["Synthwave", "Dark Wave", "Ethereal Wave", "Minimal Wave", "Witch House", "Industrial", "Post-Industrial",
          "Dark Ambient"],
+        // Pop for dancing, and the dance music it shares a floor with.
+        ["Dance-Pop", "Electropop", "Europop", "Synth-Pop", "Teen Pop", "Bubblegum Pop", "Hyperpop", "K-Pop", "J-Pop",
+         "Eurodance", "Italo Dance", "Hi-NRG", "Italo-Disco"],
+        // Pop to sit back to.
+        ["Ballad", "Easy Listening", "Adult Contemporary", "Traditional Pop", "Sophisti-Pop", "Soft Rock",
+         "Chanson Française"],
+        // Pop for listening closely.
+        ["Art Pop", "Progressive Pop", "Psychedelic Pop", "Baroque Pop", "Alternative Pop", "Sophisti-Pop"],
+        // ── Rock ──
+        // Classic and hard rock: big riffs, big choruses.
+        ["Classic Rock", "Hard Rock", "Arena Rock", "AOR", "Blues Rock", "Southern Rock", "Glam Rock", "Heartland Rock",
+         "Pub Rock", "Roots Rock", "Glam Metal", "Heavy Metal",
+         // Folk sits beside it: the same records, the same years, often the same players.
+         "Folk Rock", "Contemporary Folk", "Folk Pop", "Folk Revival", "Traditional Folk", "Alternative Folk",
+         "Indie Folk", "Singer-Songwriter"],
+        // Soft, acoustic and rootsy.
+        ["Soft Rock", "Acoustic Rock", "Folk Rock", "Country Rock", "Piano Rock", "Singer-Songwriter", "Heartland Rock",
+         "Roots Rock", "AOR", "Americana", "Folk Pop", "Contemporary Folk", "Folk Revival", "Traditional Folk",
+         "Celtic Folk", "Alternative Folk", "Indie Folk"],
+        // Rock with a pop song in it.
+        ["Pop Rock", "Power Pop", "Soft Rock", "Piano Rock", "AOR", "Britpop", "Jangle Pop", "Indie Pop", "Pop Punk"],
+        // Alternative and grunge.
+        ["Alternative Rock", "Grunge", "Post-Grunge", "Indie Rock", "Britpop", "Garage Rock Revival", "Noise Rock",
+         "Alternative Metal", "Shoegaze", "Post-Punk Revival", "Emo", "Alternative Punk"],
+        // Progressive, psychedelic and art rock.
+        ["Progressive Rock", "Psychedelic Rock", "Art Rock", "Space Rock", "Krautrock", "Experimental Rock", "Post-Rock",
+         "Symphonic Rock", "Acid Rock", "Neo-Psychedelia", "Progressive Metal", "Avant-Prog", "Art Pop",
+         "Progressive Pop"],
+        // The eighties' new wave, with its synthesisers.
+        ["New Wave", "New Romantic", "Synth-Pop", "Post-Punk", "Gothic Rock", "Dance-Rock", "Dark Wave", "Minimal Wave",
+         "Sophisti-Pop"],
+        // Rock and roll and the garage it grew up in.
+        ["Rock and Roll", "Rockabilly", "Surf Rock", "Merseybeat", "Garage Rock", "Doo-Wop", "Proto-Punk"],
+        // Heavy, with machines or a rapper in it.
+        ["Industrial Rock", "Industrial Metal", "Nu Metal", "Rap Rock", "Alternative Metal", "Industrial", "Electropunk",
+         "Funk Rock"],
+
+        // ── Metal ──
+        ["Heavy Metal", "Glam Metal", "Power Metal", "Speed Metal", "Thrash Metal", "Pop Metal", "Symphonic Metal",
+         "Gothic Metal", "Folk Metal"],
+        ["Death Metal", "Black Metal", "Deathcore", "Metalcore", "Thrash Metal", "Speed Metal", "Djent"],
+        ["Doom Metal", "Sludge Metal", "Post-Metal", "Drone", "Post-Rock"],
+        ["Nu Metal", "Alternative Metal", "Industrial Metal", "Rap Rock", "Metalcore", "Post-Grunge", "Djent"],
+
+        // ── Punk ──
+        ["Punk Rock", "Pop Punk", "Skate Punk", "Ska Punk", "Street Punk", "Hardcore Punk", "Garage Punk", "Proto-Punk",
+         "Riot Grrrl", "Crust Punk", "Powerviolence"],
+        ["Post-Punk", "Post-Hardcore", "Emo", "Screamo", "Alternative Punk"],
+        ["Folk Punk", "Anti-Folk"],
+
+        // ── Indie ──
+        ["Indie Pop", "Bedroom Pop", "Dream Pop", "Jangle Pop", "Chamber Pop", "Lo-fi", "Indie Folk", "Indietronica",
+         "Alternative Pop"],
+        ["Indie Rock", "Shoegaze", "Slowcore", "Neo-Psychedelia", "Post-Punk Revival", "Garage Rock Revival", "Lo-fi",
+         "Dream Pop"],
+
+        // ── Hip-hop and rap ──
+        // Thoughtful, sampled, jazzy.
+        ["Conscious Hip Hop", "Alternative Hip Hop", "Jazz Rap", "Political Hip Hop", "Boom Bap", "Golden Age Hip Hop",
+         "East Coast Hip Hop", "Turntablism", "Experimental Hip Hop", "Contemporary R&B"],
+        // Hard, from the streets of one coast or another.
+        ["Hardcore Hip Hop", "Gangsta Rap", "East Coast Hip Hop", "West Coast Hip Hop", "G-Funk", "Southern Hip Hop",
+         "Crunk", "Drill", "Grime"],
+        // Melodic, sung half the time, on trap drums.
+        ["Pop Rap", "Cloud Rap", "Emo Rap", "Trap Soul", "Plugg", "Rage", "Phonk", "Southern Hip Hop", "Trap Latino"],
+        ["Experimental Hip Hop", "Industrial Hip Hop", "Alternative Hip Hop", "Cloud Rap"],
+        ["Miami Bass", "Crunk", "Jersey Club"],
+
+        // ── R&B, soul and funk ──
+        // R&B now.
+        ["Contemporary R&B", "Alternative R&B", "Trap Soul", "Neo-Soul", "New Jack Swing", "Quiet Storm", "Pop Soul"],
+        // Smooth, late at night.
+        ["Neo-Soul", "Smooth Soul", "Quiet Storm", "Philly Soul", "Pop Soul", "Blue-Eyed Soul", "Soul Jazz", "Acid Jazz",
+         "Alternative R&B", "Singer-Songwriter", "Contemporary R&B"],
+        // The soul of the sixties and seventies.
+        ["Motown", "Northern Soul", "Southern Soul", "Deep Soul", "Philly Soul", "Rhythm and Blues", "Doo-Wop",
+         "Blue-Eyed Soul", "Psychedelic Soul", "Gospel Soul", "Pop Soul", "Contemporary R&B"],
+        // Funk, and what it became in the eighties.
+        ["P-Funk", "Boogie", "Synth Funk", "Minneapolis Sound", "Go-Go", "Jazz-Funk", "Psychedelic Soul", "Funk Rock",
+         "Electro-Disco", "Post-Disco", "New Jack Swing", "Contemporary R&B"],
+
+        // ── Disco and the club ──
+        ["Euro-Disco", "Italo-Disco", "Hi-NRG", "Electro-Disco", "Nu Disco", "Post-Disco", "Boogie", "French House",
+         "Eurodance"],
+        ["Big Room", "Future Rave", "Electro House", "Progressive House", "Trance"],
+        ["Electroclash", "Electro", "Electropunk", "Synth-Pop", "Electropop"],
+        ["Deconstructed Club", "Jersey Club", "Hyperpop", "Bubblegum Bass", "Glitch"],
+
+        // ── Jazz and blues ──
+        // Sung, swung and easy.
+        ["Vocal Jazz", "Swing", "Big Band", "Jazz Pop", "Smooth Jazz", "Traditional Pop", "Easy Listening", "Cool Jazz",
+         "Bossa Nova"],
+        ["Bebop", "Hard Bop", "Cool Jazz", "Modal Jazz", "Soul Jazz", "Latin Jazz"],
+        ["Free Jazz", "Avant-Garde Jazz", "Free Improvisation", "Modal Jazz"],
+        ["Jazz Fusion", "Jazz-Funk", "Acid Jazz", "Soul Jazz", "Smooth Jazz", "Ethio-Jazz"],
+        ["Swing", "Big Band", "Gypsy Jazz", "Ragtime", "Jump Blues"],
+        ["Chicago Blues", "Electric Blues", "Texas Blues", "British Blues", "Blues Rock", "Jump Blues"],
+        ["Delta Blues", "Country Blues", "Piedmont Blues", "Gospel Blues", "Desert Blues"],
+        ["Punk Blues", "Garage Rock", "Garage Rock Revival", "Blues Rock"],
+
+        // ── Country and folk ──
+        ["Country Pop", "Bro-Country", "Country Rock", "Americana", "Folk Pop"],
+        ["Honky Tonk", "Bakersfield Sound", "Outlaw Country", "Western Swing", "Bluegrass", "Americana",
+         "Alternative Country", "Gothic Country", "Southern Rock"],
+        ["Singer-Songwriter", "Contemporary Folk", "Folk Pop", "Indie Folk", "Alternative Folk", "Folk Rock", "Americana",
+         "Acoustic Rock", "Anti-Folk", "Freak Folk", "Chamber Pop"],
+        ["Traditional Folk", "Celtic Folk", "Celtic", "Folk Revival", "Neo Folk", "Bluegrass"],
+
+        // ── Reggae, Latin and the world ──
+        ["Roots Reggae", "Rocksteady", "Lovers Rock", "Dub", "Nyabinghi", "Ska", "Two-Tone", "Ska Punk"],
+        ["Dancehall", "Ragga", "Reggae Fusion", "Reggaeton", "Afrobeats"],
+        ["Salsa", "Merengue", "Bachata", "Cumbia", "Son Cubano"],
+        ["Bossa Nova", "Samba", "MPB", "Tango", "Latin Jazz"],
+        ["Reggaeton", "Trap Latino", "Latin Pop", "Dancehall"],
+        ["Mariachi", "Banda", "Norteño", "Vallenato", "Cumbia"],
+        ["Latin Rock", "Latin Pop"],
+        ["Afrobeat", "Highlife", "Soukous", "Afrobeats", "Ethio-Jazz", "Desert Blues"],
+        ["Flamenco", "Fado", "Tango"],
+        ["Klezmer", "Balkan Brass"],
+        ["Bhangra", "Filmi"],
+
+        // ── Sacred ──
+        ["Gospel", "Traditional Gospel", "Contemporary Gospel", "Southern Gospel", "Gospel Soul", "Gospel Blues",
+         "Spirituals", "Hymns", "Worship", "Contemporary Christian"],
+        ["Gregorian Chant", "Sacred Choral", "Hymns", "Medieval", "Early Music"],
+        ["Christian Rock", "Christian Hip-Hop", "Contemporary Christian", "Worship"],
+
+        // ── The screen and the stage ──
+        ["Film Score", "Orchestral Score", "Television Score", "Trailer Music", "Video Game Score", "Anime Soundtrack",
+         "Synth Score"],
+        ["Broadway", "Film Musical", "Show Tunes", "West End", "Original Cast Recording"],
+        ["Synth Score", "Synthwave", "Chiptune"],
+
+        // ── Out at the edges ──
+        ["Electroacoustic", "Musique Concrete", "Sound Collage", "Spectral Music", "Fluxus", "Field Recording", "Drone"],
+        ["Harsh Noise", "Japanoise", "Noisecore", "Power Electronics", "Noise Rock"],
+        ["Audiobook", "Podcast", "Interview", "Storytelling", "Poetry", "Comedy"],
+
+        // The classical periods, each with its neighbours.
         ["Medieval", "Renaissance", "Early Music", "Baroque"],
         ["Baroque", "Classical Period"],
         ["Classical Period", "Romantic Classical"],
@@ -249,6 +409,7 @@ public enum SongRadio {
             ranked = rankedSongs(crate, playing: playing, origin: start,
                                  blocked: blocked(crate, inQueue, Array(history.dropFirst(history.count / 2)), seed, origin))
         }
+        ranked = withoutClashes(ranked, playing: playing, count: count)
 
         var recent = history.suffix(recordGap).compactMap(crate.find)
         recent.append(playing)
@@ -343,6 +504,54 @@ public enum SongRadio {
         return Set(Genres.related(genre).map { $0.lowercased() })
     }
 
+    /// What a pick is ranked by: the distance to the song playing, half the distance to the
+    /// origin, and ``liveApart`` on a live recording when the radio did not start from one.
+    static func score(_ song: RadioSong, playing: RadioSong, origin: RadioSong) -> Double {
+        apart(song, playing) + originWeight * apart(song, origin) + (song.live && !origin.live ? liveApart : 0)
+    }
+
+    /// `ranked` without the songs whose style clashes with the song playing, while enough are
+    /// left: a ballad does not follow dance-pop because it is from the same year. Songs that
+    /// share a style or a kin one stay, and so do songs with no style. A song playing with no
+    /// style leaves the ranking as it is. The desktop's `WithoutClashes`.
+    static func withoutClashes(_ ranked: [RadioSong], playing: RadioSong, count: Int) -> [RadioSong] {
+        guard !playing.styles.isEmpty else { return ranked }
+        let kept = ranked.filter { styleApart($0.styles, playing.styles) != otherStyle }
+        return kept.count >= count + clashSpare ? kept : ranked
+    }
+
+    /// Whether a song is a live recording: its record is filed as a live one, or its title or
+    /// its album says so. A title says so as "(Live)", "[Live at Wembley]" or " - Unplugged";
+    /// an album the same ways, or by starting with the word ("Live", "Live at the BBC") or
+    /// holding "Unplugged". "Live Forever" is not live, and a "(Live Mix)" is a mix. The
+    /// desktop's `SongRadio.IsLive`; change both together.
+    public static func isLive(title: String?, album: String?, releaseType: String?) -> Bool {
+        if ReleaseType.fromStored(releaseType) == .live { return true }
+        if saysLive(title) { return true }
+        guard let album, !album.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        return saysLive(album) || has(album, liveAlbum)
+    }
+
+    private static func saysLive(_ text: String?) -> Bool {
+        guard let text, !text.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        return has(text, liveNote) && !has(text, liveMix)
+    }
+
+    private static func has(_ text: String, _ pattern: NSRegularExpression) -> Bool {
+        pattern.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
+    }
+
+    private static let liveNote = try! NSRegularExpression(
+        pattern: #"[(\[][^)\]]*\b(?:live|unplugged)\b[^)\]]*[)\]]|\s[-–—]\s*(?:live|unplugged)\b"#,
+        options: [.caseInsensitive])
+
+    private static let liveMix = try! NSRegularExpression(
+        pattern: #"\blive\s+(?:mix|edit|dub)\b"#, options: [.caseInsensitive])
+
+    private static let liveAlbum = try! NSRegularExpression(
+        pattern: #"^\s*live\s*(?:$|[:\-–—(\[]|(?:at|in|from|on|aus|à|en)\b)|\bunplugged\b"#,
+        options: [.caseInsensitive])
+
     /// Whether the act and the record have been away long enough. An empty credit names nobody.
     private static func spaced(_ song: RadioSong, _ recent: [RadioSong]) -> Bool {
         var i = recent.count - 1
@@ -380,7 +589,8 @@ public enum SongRadio {
             if !song.offered || blocked.ids.contains(song.id) || blocked.songs.contains(song.song) { continue }
             let toPlaying: Double = apart(song, playing, related: playingRelated)
             let toOrigin: Double = apart(song, origin, related: originRelated)
-            scored.append((song: song, score: toPlaying + originWeight * toOrigin))
+            let live: Double = song.live && !origin.live ? liveApart : 0
+            scored.append((song: song, score: toPlaying + originWeight * toOrigin + live))
         }
         scored.sort { (a: (song: RadioSong, score: Double), b: (song: RadioSong, score: Double)) -> Bool in
             if a.score != b.score { return a.score < b.score }

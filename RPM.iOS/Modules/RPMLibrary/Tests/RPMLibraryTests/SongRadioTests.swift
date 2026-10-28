@@ -22,10 +22,10 @@ struct SongRadioTests {
     /// of tests not about it.
     private func song(_ id: String, year: Int = 1975, genre: String? = "Rock", styles: Set<String> = [],
                       moods: Set<String> = [], artist: String? = nil, record: String? = nil,
-                      plays: Int = 0, offered: Bool = true) -> RadioSong {
+                      plays: Int = 0, offered: Bool = true, live: Bool = false) -> RadioSong {
         let act = artist ?? "act \(id)"
         return RadioSong(id: id, record: record ?? id, artist: act, song: "\(act)\n\(id)", year: year,
-                         genre: genre, styles: styles, moods: moods, offered: offered, plays: plays)
+                         genre: genre, styles: styles, moods: moods, offered: offered, plays: plays, live: live)
     }
 
     private func pick(_ crate: RadioCrate, _ seed: String, _ count: Int, history: [String] = [],
@@ -64,6 +64,80 @@ struct SongRadioTests {
         let mozart = song("mozart", year: 1987, genre: "Classical")
         #expect(SongRadio.eraApart(song("bach", year: 2000, genre: "Classical"), mozart) == 0)
         #expect(SongRadio.eraApart(song("undated", year: 0), mozart) == SongRadio.unknown)
+    }
+
+    // ── styles that clash ──
+
+    /// The mixtape after a dance-pop record: a ballad from the same year is closer in era than
+    /// dance-pop from another decade, and it is still not played.
+    @Test func aSongWhoseStyleClashesWithTheOnePlayingIsNotPicked() {
+        let seed = song("seed", year: 2003, genre: "Pop", styles: ["Dance-Pop"])
+        let ballad = song("ballad", year: 2003, genre: "Pop", styles: ["Ballad"])
+        let dancing = (0..<(SongRadio.clashSpare + 10)).map {
+            song("dance\($0)", year: 1990, genre: "Pop", styles: [$0 % 2 == 0 ? "Dance-Pop" : "Europop"])
+        }
+        let crate = RadioCrate([seed, ballad] + dancing)
+
+        #expect(SongRadio.apart(ballad, seed) < SongRadio.apart(dancing[0], seed))
+        for r in 0..<20 { #expect(!pick(crate, "seed", 5, random: UInt64(r)).contains("ballad")) }
+    }
+
+    @Test func aSongWithNoStyleIsNotLeftOutAsAClash() {
+        let seed = song("seed", genre: "Pop", styles: ["Dance-Pop"])
+        let unfiled = song("unfiled", genre: "Pop")
+        #expect(SongRadio.withoutClashes([unfiled], playing: seed, count: 0) == [unfiled])
+    }
+
+    @Test func clashesStayWhenTooFewSongsWouldBeLeft() {
+        let crate = RadioCrate([
+            song("seed", genre: "Pop", styles: ["Dance-Pop"]),
+            song("ballad", genre: "Pop", styles: ["Ballad"]),
+            song("dance", genre: "Pop", styles: ["Dance-Pop"]),
+        ])
+        #expect(pick(crate, "seed", 2).count == 2)
+    }
+
+    @Test(arguments: [
+        ("Dance-Pop", "Europop", true), ("Dance-Pop", "Ballad", false),
+        ("Folk Rock", "Hard Rock", true), ("Celtic Folk", "Acoustic Rock", true), ("Celtic Folk", "Hard Rock", false),
+        ("Contemporary R&B", "Neo-Soul", true), ("Contemporary R&B", "Conscious Hip Hop", true),
+        ("Contemporary R&B", "Pop Rap", false),
+    ])
+    func stylesAreKinWhereTheyArePlayedTogether(a: String, b: String, kin: Bool) {
+        #expect(SongRadio.styleApart([a], [b]) == (kin ? SongRadio.kinStyle : SongRadio.otherStyle))
+    }
+
+    // ── live recordings ──
+
+    @Test(arguments: [
+        ("Sail Away (Live)", nil, nil, true),
+        ("Babylon [Live at the Point]", nil, nil, true),
+        ("Layla - Unplugged", nil, nil, true),
+        ("Babylon", "Live", nil, true),
+        ("Babylon", "Live at the BBC", nil, true),
+        ("Babylon", "MTV Unplugged", nil, true),
+        ("Babylon", "White Ladder", "Live", true),
+        ("Groovejet (If This Ain't Love) (Live Mix)", "Read My Lips", "Album", false),
+        ("Live Forever", "Definitely Maybe", nil, false),
+        ("Babylon", "Long Live the King", nil, false),
+        ("Babylon", "White Ladder", nil, false),
+    ] as [(String, String?, String?, Bool)])
+    func aLiveRecordingIsToldByItsRecordItsTitleOrItsAlbum(title: String, album: String?, releaseType: String?, live: Bool) {
+        #expect(SongRadio.isLive(title: title, album: album, releaseType: releaseType) == live)
+    }
+
+    @Test func aRadioFromAStudioSongPutsLiveRecordingsBehindStudioOnes() {
+        let seed = song("seed", year: 2000, genre: "Pop")
+        let live = song("live", year: 2000, genre: "Pop", live: true)
+        let studio = song("studio", year: 2004, genre: "Pop")
+        #expect(SongRadio.score(live, playing: seed, origin: seed) > SongRadio.score(studio, playing: seed, origin: seed))
+    }
+
+    @Test func aRadioFromALiveSongDoesNotHoldLiveRecordingsBack() {
+        let seed = song("seed", year: 2000, genre: "Pop", live: true)
+        let live = song("live", year: 2000, genre: "Pop", live: true)
+        let studio = song("studio", year: 2004, genre: "Pop")
+        #expect(SongRadio.score(live, playing: seed, origin: seed) < SongRadio.score(studio, playing: seed, origin: seed))
     }
 
     @Test func everyStyleInAFamilyIsAStyleRpmKnows() {
