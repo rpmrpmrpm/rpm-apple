@@ -4335,10 +4335,10 @@
 /* Prefix on the iPhone library counts line when the wall is somebody else's. {0} = their name. */
 "Rpm_Library_SharedBy" = "由 %1$@ 共享";
 
-/* Key on the iPhone queue panel that puts the tracks still to come in another order. */
+/* Key on the iPhone queue panel, and in the band of the desktop Now playing card, that puts the tracks still to come in another order. */
 "Rpm_Queue_Shuffle" = "随机播放";
 
-/* Key on the iPhone queue panel and Now playing page that turns row dragging on. */
+/* Key on the iPhone queue panel and Now playing page, and in the band of the desktop Now playing card, that turns row dragging on. */
 "Rpm_Queue_Rearrange" = "重新排序";
 
 /* Line under the iPhone library search results when the list is capped. {0} is the number shown. */
@@ -6123,7 +6123,10 @@
 /* Row in the Android TV app's settings: whether the sung lyric line lights word by word. */
 "Tv_SettingsKaraoke" = "卡拉 OK 歌词";
 
-/* Row in the Android TV app's settings: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
+/* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
+"Settings_MixtapeAfterHint" = "专辑、播放列表或单曲播完后，继续播放你收藏中与之相似的歌曲。";
+
+/* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
 "Tv_SettingsMixtapeAfter" = "唱片播完后播放混音带";
 
 /* Desktop: menu item in the playlist pane that opens the window for making a mood playlist. */
@@ -6245,6 +6248,9 @@
 
 /* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
 "Deck_QueueTip" = "播放队列";
+
+/* Tooltip and accessible name of the shuffle key in the band of the desktop Now playing card, while the queue is shuffled. Pressing it puts the songs still to come back in the order they had before the shuffle. Before the press the same key says Rpm_Queue_Shuffle. */
+"Deck_QueueUnshuffle" = "恢复原来的顺序";
 
 /* Player deck: the queue card's text when nothing is queued. */
 "Deck_QueueEmpty" = "队列中没有内容。播放一张专辑或一首歌，接下来要播放的内容会显示在这里。";
