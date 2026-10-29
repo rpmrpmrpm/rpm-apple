@@ -93,6 +93,9 @@ struct RootView: View {
     /// Whether the list of downloaded albums is up, over the profile tab.
     @State private var showingDownloads = false
 
+    /// The open Send feedback sheet, with the screenshot taken just before it opened.
+    @State private var feedback: FeedbackShot?
+
     /// Whether the wait mark is still shown over the wall. See the overlay below.
     @State private var covering = false
 
@@ -359,6 +362,13 @@ struct RootView: View {
         }
         // Decides the report scope, then sends or asks about the crashes that are waiting.
         .task { await model.diagnostics.start() }
+        // A shake of the phone opens Send feedback over whatever is on screen.
+        .onReceive(NotificationCenter.default.publisher(for: .rpmShake)) { _ in openFeedback() }
+        .sheet(item: $feedback) { shot in
+            FeedbackSheet(screenshot: shot.png, email: model.who?.email,
+                          send: { await model.diagnostics.sendFeedback($0) },
+                          onClose: { feedback = nil })
+        }
         .alert(Loc.get("Crash_PromptTitle"),
                isPresented: Binding(get: { model.diagnostics.asksAboutCrashes }, set: { _ in })) {
             Button(Loc.get("Crash_PromptSend")) { Task { await model.diagnostics.answer(send: true) } }
@@ -498,6 +508,13 @@ struct RootView: View {
     ///
     /// The simulator accepts no synthetic taps, so a screen that is three steps deep can
     /// otherwise only be reached by hand. Debug only: a release build does not read this.
+    /// Takes the screenshot first, while the screen the tester is reporting is still showing, then
+    /// opens the sheet over it. Only a TestFlight build offers this (`ReportScope`).
+    private func openFeedback() {
+        guard model.diagnostics.offersFeedback, feedback == nil else { return }
+        feedback = FeedbackShot(png: WindowShot.capture())
+    }
+
     private func openWhereTheScriptAsked() {
         #if DEBUG
         let asked = ProcessInfo.processInfo.environment
@@ -704,7 +721,10 @@ struct RootView: View {
                             onClearCache: { Task { await model.clearCache() } },
                             onSignOut: { Task { await model.signOut() } },
                             onDeleteAccount: { await model.deleteAccount(confirmEmail: model.who?.email ?? "") },
-                            onSupport: { openUrl(AppModel.becomeSupporter) })
+                            onSupport: { openUrl(AppModel.becomeSupporter) },
+                            crashReports: Binding(get: { model.diagnostics.sendsCrashReports },
+                                                  set: { model.diagnostics.sendsCrashReports = $0 }),
+                            onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil)
                     .task { await model.readCacheSize() }
                     .footRoom(chrome, .underTheChrome)
                     .sheet(isPresented: $showingDownloads) {
@@ -1195,4 +1215,11 @@ struct RootView: View {
                     portraits: model.portraits,
                     shelves: model.shelves, scale: displayScale)
     }
+}
+
+/// The screenshot a Send feedback sheet opens with. A new value for every opening, so the sheet
+/// is presented from it with `sheet(item:)`.
+struct FeedbackShot: Identifiable {
+    let id = UUID()
+    let png: Data?
 }

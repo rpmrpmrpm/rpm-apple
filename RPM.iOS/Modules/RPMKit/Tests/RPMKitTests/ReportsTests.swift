@@ -297,3 +297,26 @@ private func diagnostics(_ box: CrashOutbox, sent: Tally, scope: ReportScope = .
 
     #expect(!diag.offersFeedback)
 }
+
+// ── the window's choices ──
+
+@Test func theAreasStartWithOtherAndUseTheDesktopsValues() {
+    #expect(FeedbackChoices.phoneAreas.map(\.value) ==
+            ["other", "playback", "library", "downloads", "cloud", "radio", "casting", "interface"])
+    #expect(FeedbackChoices.tvAreas.map(\.value) == ["other", "playback", "library", "radio", "interface"])
+    #expect(FeedbackChoices.kinds.first?.value == "problem")
+    #expect(FeedbackChoices.placeholderKey(kind: "idea") == "Feedback_PlaceholderIdea")
+}
+
+/// Every key the window shows is in the string table, so none appears on screen as its own name.
+@Test func everyChoiceHasAString() {
+    for choice in FeedbackChoices.kinds + FeedbackChoices.phoneAreas + FeedbackChoices.tvAreas {
+        #expect(Loc.get(choice.key) != choice.key, "\(choice.key)")
+    }
+}
+
+@Test func aScreenshotIsScaledToItsLongEdge() {
+    #expect(ShotFit.scale(width: 1179, height: 2556, maxEdge: 1600) == 1600.0 / 2556)
+    #expect(ShotFit.scale(width: 3840, height: 2160, maxEdge: 1600) == 1600.0 / 3840)
+    #expect(ShotFit.scale(width: 1000, height: 800, maxEdge: 1600) == 1)
+}

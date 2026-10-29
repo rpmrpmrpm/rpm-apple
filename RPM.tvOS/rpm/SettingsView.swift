@@ -15,6 +15,9 @@ struct SettingsView: View {
     /// does not.
     @State private var signOutAsked = false
 
+    /// Whether the Send feedback screen is open.
+    @State private var sendingFeedback = false
+
     /// The albums screen's sort order. The screen stores it between launches, and this setting
     /// changes the stored value.
     @AppStorage("tv.wall.order") private var orderName = AlbumOrdering.artist.rawValue
@@ -49,6 +52,13 @@ struct SettingsView: View {
                         } else {
                             signOutAsked = true
                         }
+                    }
+                    if model.diagnostics.offersFeedback {
+                        SettingRow(label: Loc.get("Shell_Feedback"), value: "") { sendingFeedback = true }
+                    }
+                    SettingRow(label: Loc.get("Settings_CrashReports"),
+                               value: model.diagnostics.sendsCrashReports ? on : off) {
+                        model.diagnostics.sendsCrashReports.toggle()
                     }
                 }
 
@@ -105,6 +115,11 @@ struct SettingsView: View {
             .padding(.bottom, 80)
         }
         .scrollClipDisabled()
+        .fullScreenCover(isPresented: $sendingFeedback) {
+            FeedbackView(screenshot: model.diagnostics.heldShot, email: model.session.who?.email) {
+                sendingFeedback = false
+            }
+        }
     }
 
     private func picture(_ look: PictureLook) -> String {

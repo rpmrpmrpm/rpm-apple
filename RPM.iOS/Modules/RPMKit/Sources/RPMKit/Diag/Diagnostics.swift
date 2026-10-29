@@ -17,6 +17,11 @@ public final class Diagnostics {
     /// True while the consent prompt should be on screen.
     public private(set) var asksAboutCrashes = false
 
+    /// The Apple TV's screenshot for Send feedback. Its settings are a tab, so the picture is
+    /// taken when that tab opens, while the screen the tester came from is still drawn, and kept
+    /// here until the feedback screen opens. Not observed: nothing on screen draws from it.
+    @ObservationIgnored public var heldShot: Data?
+
     private let reports: RPMReportsClient
     private let outbox: CrashOutbox
     private let spool: LogSpool

@@ -1,6 +1,7 @@
 import SwiftUI
 import RPMKit
 import RPMSession
+import RPMSharedUI
 
 /// The screens, shown in tvOS's sidebar. The sidebar is drawn by the system in Liquid Glass. It
 /// opens when the focus moves left from a screen's first column. Each screen has its own stack of
@@ -83,6 +84,11 @@ struct Shell: View {
             if over { screens.playerShown = false }
         }
         .onChange(of: screens.tab) { before, now in
+            // Send feedback is in the settings. The screen the tester came from is still drawn
+            // at this point, so this is the picture that goes with the report.
+            if now == .settings, before != .settings, model.diagnostics.offersFeedback {
+                model.diagnostics.heldShot = WindowShot.capture()
+            }
             guard now == .nowPlaying else { return }
             screens.playerShown = true
             screens.tab = before == .nowPlaying ? .home : before

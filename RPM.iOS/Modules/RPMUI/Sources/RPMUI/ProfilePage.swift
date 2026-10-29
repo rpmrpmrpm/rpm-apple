@@ -52,6 +52,12 @@ public struct ProfilePage: View {
     private let onDeleteAccount: () async -> String?
     private let onSupport: () -> Void
 
+    /// The Send crash reports switch.
+    private let crashReports: Binding<Bool>
+
+    /// Opens Send feedback. Nil hides the key: only a TestFlight build offers it (`ReportScope`).
+    private let onFeedback: (() -> Void)?
+
     /// Whether the delete-account panel is shown.
     @State private var deletingAccount = false
 
@@ -74,7 +80,9 @@ public struct ProfilePage: View {
                 onClearCache: @escaping () -> Void,
                 onSignOut: @escaping () -> Void,
                 onDeleteAccount: @escaping () async -> String?,
-                onSupport: @escaping () -> Void) {
+                onSupport: @escaping () -> Void,
+                crashReports: Binding<Bool>,
+                onFeedback: (() -> Void)?) {
         self.name = name
         self.email = email
         self.quota = quota
@@ -92,6 +100,8 @@ public struct ProfilePage: View {
         self.onSignOut = onSignOut
         self.onDeleteAccount = onDeleteAccount
         self.onSupport = onSupport
+        self.crashReports = crashReports
+        self.onFeedback = onFeedback
     }
 
     /// The bit rates that this account may choose between.
@@ -498,6 +508,22 @@ public struct ProfilePage: View {
             // A sheet and not a push: this tab is not inside a `NavigationStack`, because a stack
             // paints its own opaque background over the app's background.
             key(Loc.get("About_Acknowledgements"), stretches: true) { credits = true }
+
+            if let onFeedback {
+                key(Loc.get("Shell_Feedback"), stretches: true, action: onFeedback)
+            }
+
+            Toggle(isOn: crashReports) {
+                Text(Loc.get("Settings_CrashReports"))
+                    .font(RPMFont.display(13))
+                    .foregroundStyle(RPMInk.white(0xB3 / 255))
+            }
+            .tint(RPMInk.white(0x88 / 255))
+
+            Text(Loc.get("Settings_CrashReportsDesc"))
+                .font(RPMFont.display(11))
+                .foregroundStyle(RPMInk.white(0x66 / 255))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .sheet(isPresented: $credits) {
             AboutPage(version: version) { credits = false }
