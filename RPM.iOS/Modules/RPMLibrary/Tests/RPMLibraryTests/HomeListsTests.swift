@@ -61,16 +61,6 @@ struct HomeListsTests {
         #expect(set("Road trip", origin: .stored).picture.cut == nil)
     }
 
-    /// A set rebuilt with new tracks keeps its cut. `with(tracks:)` must keep it, or a generated list
-    /// would lose its frame and photo.
-    @Test func aSetWithNewTracksKeepsItsCut() {
-        let cut = GeneratedCut(kind: "Decade", genre: nil, decade: 1980)
-        let eighties = PlaylistSet(id: "\u{1}mood/x", name: "1980s", tracks: [], missing: 0,
-                                   folder: [], stamp: 0, shelf: .own, origin: .generated, cut: cut)
-
-        #expect(eighties.with(tracks: []).cut == cut)
-    }
-
     // ── what the lists row offers ──
 
     /// On the user's own shelf the row shows only generated lists. The user's own playlists are on

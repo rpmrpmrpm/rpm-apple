@@ -181,9 +181,6 @@ public final class LibrarySession {
         place(read, of: shelf)
         wallStanding = await settled(albums, of: shelf)
         await settleHome()
-
-        // The playlists are resolved against the tracks, so a new listing is a new answer.
-        await rereadPlaylists()
     }
 
     /// Reads the shelf on the wall again, skipping the copy in memory.
@@ -237,8 +234,8 @@ public final class LibrarySession {
         ownFace = .nobody
         received = []
         sharesKnown = false
-        playlists = []
-        playlistsRead = false
+        held = HeldPlaylists(shelf: .own)
+        redraw()
         playlistStanding = .reading
         home = nil
         played = [:]
@@ -252,7 +249,8 @@ public final class LibrarySession {
         SupporterGround.adopt(isSupporter: false, in: .standard)
     }
 
-    /// Puts a shelf's records on the wall: the own shelf with ``additions`` laid over it.
+    /// Puts a shelf's records on the wall: the own shelf with ``additions`` laid over it. The
+    /// playlists are resolved against the new listing.
     private func place(_ read: [CloudAlbum], of shelf: CloudShelf) {
         if shelf.isOwn {
             ownAsRead = read
@@ -260,6 +258,7 @@ public final class LibrarySession {
         } else {
             albums = read
         }
+        redraw()
     }
 
     /// The result of ``additions`` changed, for example because a computer joined, left, or changed
@@ -268,6 +267,9 @@ public final class LibrarySession {
     public func additionsChanged() async {
         guard viewing.isOwn, standing == .showing else { return }
         albums = additions(ownAsRead)
+        // The playlists are resolved against the own shelf with the additions laid over it, so a
+        // computer that joins or leaves changes which of their tracks can play.
+        redraw()
         // If the cloud read failed but a computer adds tracks, the wall shows them, so the failure
         // message is cleared.
         if !albums.isEmpty { wallStanding = .showing }
@@ -340,33 +342,42 @@ public final class LibrarySession {
 
     // ── the playlists ──
 
+    /// The playlists of the shelf on screen, resolved against ``albums``. Written only by
+    /// ``redraw()``.
     public private(set) var playlists: [PlaylistSet] = []
     public private(set) var playlistStanding: ReadStanding = .reading
 
-    /// Whether the playlist tree has been read in this session.
-    private var playlistsRead = false
-
-    /// The cut of generated lists last sent by the computer (`CloudMoodLists`). It is kept so that
-    /// stepping to the next slice is local arithmetic, not a network round trip.
-    private var moodCut: CloudMoodLists?
+    /// What this device knows about the playlists of the shelf on screen: the store's rows, the
+    /// computer's cut, and the writes in flight. **Replaced, never cleared, when the shelf or the
+    /// account changes**, so that a read or a write started for the old one cannot land on the new
+    /// one. See ``HeldPlaylists``.
+    private var held = HeldPlaylists(shelf: .own)
 
     /// Which slice of each generated list this device is on.
     private var moodReadings = GeneratedListReadings()
 
-    /// The shelf the kept cut belongs to.
-    private var moodCutShelf: CloudShelf?
-
     /// The kept cut when it belongs to the shelf on screen, for a song radio to read which
     /// moods each song is in. See ``startRadio(on:)``.
-    var radioMoods: CloudMoodLists? { moodCutShelf == viewing ? moodCut : nil }
+    var radioMoods: CloudMoodLists? { held.shelf == viewing ? held.moodLists : nil }
 
     /// Every song the listener has marked, newest first. Read each time it is used, so a song
     /// marked a moment ago is included.
     public var favoriteTracks: [CloudTrack] { library.marks.marked(in: albums) }
 
+    /// Works out ``playlists`` from ``held`` and ``albums``.
+    ///
+    /// **Called after every change to either one**: a read that lands, a write that starts or
+    /// ends, a new listing placed on the wall, a change to the additions, a switch or a sign-out.
+    /// The order of those does not matter, because each call resolves the whole of what is known
+    /// against the whole of the listing. A read that lands before the listing has its lists
+    /// resolved again when the listing is placed.
+    private func redraw() {
+        playlists = held.sets(against: albums.flatMap(\.tracks), readings: moodReadings.all)
+    }
+
     /// Reads the playlist tree once per session.
     public func showPlaylists() async {
-        guard !playlistsRead else { return }
+        guard !held.answered else { return }
         await loadPlaylists()
     }
 
@@ -379,13 +390,13 @@ public final class LibrarySession {
     /// Reads the tree again without clearing what is on screen. If the read fails, the current
     /// lists stay.
     public func rereadPlaylists() async {
-        guard playlistsRead else { return await loadPlaylists() }
+        guard held.answered else { return await loadPlaylists() }
         await readPlaylists(sayingWhyItFailed: false)
     }
 
     /// Whether this generated list has another slice to step to.
     public func hasAnotherList(_ set: PlaylistSet) -> Bool {
-        guard set.origin == .generated, let cut = moodCut else { return false }
+        guard set.origin == .generated, let cut = held.moodLists else { return false }
 
         let id = GeneratedLists.storeId(of: set)
         guard let list = cut.lists.first(where: { $0.id == id }) else { return false }
@@ -396,61 +407,54 @@ public final class LibrarySession {
     /// Shows the next slice of one generated list. Nothing is fetched: the cut is already held in
     /// memory.
     public func newGeneratedList(_ set: PlaylistSet) {
-        guard set.origin == .generated,
-              let cut = moodCut,
-              let shelf = moodCutShelf,
-              shelf.ownerId == viewing.ownerId
+        guard set.origin == .generated, set.shelf == held.shelf, held.moodLists != nil
         else { return }
 
         moodReadings.step(GeneratedLists.storeId(of: set))
-
-        let tracks = albums.flatMap(\.tracks)
-        let generated = GeneratedLists.sets(
-            cut, against: tracks, shelf: shelf, readings: moodReadings.all)
-
-        playlists = playlists.filter { $0.origin != .generated } + generated
+        redraw()
     }
 
     private func readPlaylists(sayingWhyItFailed: Bool) async {
-        // Read once, so the rows and the heading describe the same collection.
+        // Read once, so the rows and the heading describe the same collection. `held` is always
+        // for the shelf in `viewing`: the two are set together.
         let shelf = viewing
+        let ticket = held.startRead()
 
         do {
-            // Both are requested at once. A failure of the cut must not fail the read: `moodLists`
-            // returns nil for a 404, and any other error is dropped so the stored lists still load.
+            // Both are requested at once. A failure of the cut must not fail the read, and it is
+            // not an answer of "no cut" either: the cut already held stays.
             async let stored = cloud.playlists(shelf)
-            async let cut: CloudMoodLists? = try? await cloud.moodLists(shelf)
+            async let cut = cutAnswer(shelf)
 
-            let held = try await stored
+            let rows = try await stored
             let generated = await cut
-            guard shelf.ownerId == viewing.ownerId else { return }
 
-            // Resolved against the tracks in memory. The shelf is the same for both reads: a
-            // borrowed collection's lists name that owner's tracks.
-            let tracks = albums.flatMap(\.tracks)
+            // A read for a shelf or an account that is no longer on screen does not land.
+            guard held.land(ticket, rows: rows, cut: generated) else { return }
 
-            moodCut = generated
-            moodCutShelf = shelf
-
-            playlists = PlaylistSet.resolve(held, against: tracks, shelf: shelf)
-                + (generated.map {
-                    GeneratedLists.sets($0, against: tracks, shelf: shelf,
-                                        readings: moodReadings.all)
-                } ?? [])
-
-            playlistsRead = true
+            redraw()
             playlistStanding = .showing
         } catch RPMError.notServed {
             // An older API that does not support shared collections returns the reader's own tree
             // instead. The message says so.
-            guard sayingWhyItFailed else { return }
+            guard sayingWhyItFailed, held.holds(ticket) else { return }
             playlistStanding = .trouble(Loc.get("Rpm_Share_NotServed"))
         } catch let error as RPMError {
-            guard sayingWhyItFailed else { return }
+            guard sayingWhyItFailed, held.holds(ticket) else { return }
             playlistStanding = .trouble(error.userMessage(refused: Loc.get("Rpm_Playlists_Error")))
         } catch {
-            guard sayingWhyItFailed else { return }
+            guard sayingWhyItFailed, held.holds(ticket) else { return }
             playlistStanding = .trouble(Loc.get("Rpm_Playlists_Error"))
+        }
+    }
+
+    /// The cut as one read finds it. `moodLists` answers nil for a shelf whose computer has not
+    /// cut any lists, and throws when the request failed. The two are different answers.
+    private func cutAnswer(_ shelf: CloudShelf) async -> HeldPlaylists.CutAnswer {
+        do {
+            return try await cloud.moodLists(shelf).map { .cut($0) } ?? .none
+        } catch {
+            return .failed
         }
     }
 
@@ -464,17 +468,23 @@ public final class LibrarySession {
 
     /// Makes a playlist. Answers a sentence when it failed, nil when it is done.
     public func makePlaylist(name: String, in folder: [String], tracks: [CloudTrack]) async -> String? {
+        let ticket = held.startWrite()
+
         do {
             let made = try await writer.create(name: name, folder: folder, tracks: tracks)
 
-            // The new list is added locally instead of being read back from the store.
-            playlists.append(made)
+            // The new row is kept from the write instead of being read back from the store.
+            held.end(ticket, wrote: made)
+            redraw()
             return nil
         } catch let refused as PlaylistWriteError {
+            held.end(ticket, wrote: nil)
             return refused.userMessage
         } catch let error as RPMError {
+            held.end(ticket, wrote: nil)
             return error.userMessage(refused: Loc.get("Rpm_Playlists_CreateFailed"))
         } catch {
+            held.end(ticket, wrote: nil)
             return Loc.get("Rpm_Playlists_CreateFailed")
         }
     }
@@ -484,38 +494,41 @@ public final class LibrarySession {
     ///   decides. See ``PlaylistWriter/AlreadyThere``.
     public func addToPlaylist(_ set: PlaylistSet, tracks: [CloudTrack],
                               whenAlreadyThere: PlaylistWriter.AlreadyThere) async -> String? {
+        let ticket = held.startWrite()
+
         do {
             let added = try await writer.add(to: set, tracks: tracks,
                                              whenAlreadyThere: whenAlreadyThere)
 
-            // Nothing was added. The song was already in this playlist.
-            guard !added.isEmpty else { return Loc.get("Rpm_PlaylistPick_AlreadyIn", set.name) }
+            // The row the store now holds, with its new stamp, so that the next reorder writes
+            // against it.
+            held.end(ticket, wrote: added.row)
+            redraw()
 
-            // Appended to the copy held in memory. The stamp is not changed, because the next write
-            // reads the listing again.
-            if let at = playlists.firstIndex(where: { $0.id == set.id }) {
-                playlists[at] = PlaylistSet(
-                    id: set.id, name: set.name, tracks: set.tracks + added,
-                    missing: set.missing, folder: set.folder, stamp: set.stamp,
-                    shelf: set.shelf, origin: set.origin)
+            // Nothing was added. The song was already in this playlist.
+            guard !added.songs.isEmpty else {
+                return Loc.get("Rpm_PlaylistPick_AlreadyIn", set.name)
             }
             return nil
         } catch let refused as PlaylistWriteError {
+            held.end(ticket, wrote: nil)
             return refused.userMessage
         } catch let error as RPMError {
+            held.end(ticket, wrote: nil)
             return error.userMessage(refused: Loc.get("Rpm_PlaylistPick_Failed"))
         } catch {
+            held.end(ticket, wrote: nil)
             return Loc.get("Rpm_PlaylistPick_Failed")
         }
     }
 
-    /// Changes the order of a playlist. The copy in memory is changed first, and put back if the
-    /// store refuses. `to` is the index where the moved track is inserted, after it is removed
-    /// from `from`.
+    /// Changes the order of a playlist. The new order is shown while the write runs. When the
+    /// write ends, the row the store holds is shown: the new order, the order merged with another
+    /// device's change, or, when the store refused, the order the latest read found. `to` is the
+    /// index where the moved track is inserted, after it is removed from `from`.
     @discardableResult
     public func reorderPlaylist(_ set: PlaylistSet, from: Int, to: Int) async -> String? {
-        guard let at = playlists.firstIndex(where: { $0.id == set.id }), from != to
-        else { return nil }
+        guard from != to, playlists.contains(where: { $0.id == set.id }) else { return nil }
 
         var tracks = set.tracks
         guard tracks.indices.contains(from), tracks.indices.contains(to) else { return nil }
@@ -523,21 +536,21 @@ public final class LibrarySession {
         let carried = tracks.remove(at: from)
         tracks.insert(carried, at: to)
 
-        let was = playlists[at]
-        playlists[at] = set.with(tracks: tracks)
+        let ticket = held.startWrite(showing: tracks.map(\.rpmId), of: set.id)
+        redraw()
 
         do {
-            let stamp = try await writer.reorder(set, tracks: tracks)
-
-            if let now = playlists.firstIndex(where: { $0.id == set.id }) {
-                playlists[now] = set.with(tracks: tracks, stamp: stamp)
-            }
+            let written = try await writer.reorder(set, tracks: tracks)
+            held.end(ticket, wrote: written)
+            redraw()
             return nil
         } catch let refused as PlaylistWriteError {
-            playlists[at] = was
+            held.end(ticket, wrote: nil)
+            redraw()
             return refused.userMessage
         } catch {
-            playlists[at] = was
+            held.end(ticket, wrote: nil)
+            redraw()
             return Loc.get("Rpm_Playlists_OrderFailed")
         }
     }
@@ -649,8 +662,8 @@ public final class LibrarySession {
         shelfArriving = true
 
         albums = []
-        playlists = []
-        playlistsRead = false
+        held = HeldPlaylists(shelf: shelf)
+        redraw()
         playlistStanding = .reading
         wallStanding = .reading
 

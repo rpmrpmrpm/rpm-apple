@@ -65,11 +65,11 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
     let made = try await writer(store).create(
         name: "  Evening  ", folder: ["Moods"], tracks: [track("a"), track("b")])
 
-    #expect(made.id == "made-up-id")
+    #expect(made.playlistId == "made-up-id")
     #expect(made.name == "Evening", "the name was not trimmed")
-    #expect(made.folder == ["Moods"])
-    #expect(made.missing == 0)
-    #expect(made.stamp == 12_345, "the store's own stamp was not kept")
+    #expect(made.folderChain == ["Moods"])
+    #expect(made.trackIds == ["a", "b"])
+    #expect(made.updatedAt == 12_345, "the store's own stamp was not kept")
 
     let writes = await store.writes
     #expect(writes.count == 1)
@@ -94,7 +94,7 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
     let made = try await writer(store, borrowed: ["b"]).create(
         name: "x", folder: [], tracks: [track("a"), track("b"), track("c")])
 
-    #expect(made.tracks.map(\.rpmId) == ["a", "c"])
+    #expect(made.trackIds == ["a", "c"])
     #expect(await store.writes[0].playlist.trackIds == ["a", "c"])
 }
 
@@ -106,8 +106,10 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
                                             tracks: [track("c"), track("d")],
                                             whenAlreadyThere: .leaveIt)
 
-    #expect(added.map(\.rpmId) == ["c", "d"])
+    #expect(added.songs.map(\.rpmId) == ["c", "d"])
     #expect(await store.writes[0].playlist.trackIds == ["a", "b", "c", "d"])
+    #expect(added.row?.trackIds == ["a", "b", "c", "d"])
+    #expect(added.row?.updatedAt == 12_345, "the store's new stamp was not handed back")
 }
 
 /// A playlist can hold the same song twice on purpose. But when a user adds a song, they do not mean to add a
@@ -118,7 +120,7 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
                                             tracks: [track("b"), track("c")],
                                             whenAlreadyThere: .leaveIt)
 
-    #expect(added.map(\.rpmId) == ["c"])
+    #expect(added.songs.map(\.rpmId) == ["c"])
     #expect(await store.writes[0].playlist.trackIds == ["a", "b", "c"])
 }
 
@@ -130,7 +132,8 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
                                             tracks: [track("a"), track("b")],
                                             whenAlreadyThere: .leaveIt)
 
-    #expect(added.isEmpty)
+    #expect(added.songs.isEmpty)
+    #expect(added.row == nil)
     #expect(await store.writes.isEmpty)
 }
 
@@ -177,13 +180,31 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
                                             tracks: [track("mine")],
                                             whenAlreadyThere: .leaveIt)
 
-    #expect(added.map(\.rpmId) == ["mine"])
+    #expect(added.songs.map(\.rpmId) == ["mine"])
 
     let writes = await store.writes
     #expect(writes.count == 2)
     #expect(writes[1].ifUnchangedSince == 200, "the second write used the old stamp")
     #expect(writes[1].playlist.trackIds == ["a", "b", "theirs", "mine"],
             "both changes did not survive: \(writes[1].playlist.trackIds)")
+}
+
+/// **The phone shows what was written, not what it asked for.** After a merge they differ. If the
+/// phone kept its own order with the merged stamp, its next reorder would send that order with a stamp
+/// the store accepts, and the other device's song would be lost without a refusal.
+@Test func aMergedWriteHandsBackTheMergedRow() async throws {
+    let store = Store([list("p", "Evening", ["a", "b"], stamp: 100)])
+    await store.refuse(with: [
+        PlaylistConflict(stored: list("p", "Evening", ["a", "b", "theirs"], stamp: 200),
+                         name: "Evening"),
+    ])
+    let held = set("p", "Evening", [track("a"), track("b")], stamp: 100)
+
+    let written = try await writer(store).reorder(held, tracks: [track("b"), track("a")])
+
+    #expect(written.trackIds == (await store.writes[1].playlist.trackIds))
+    #expect(written.trackIds.contains("theirs"))
+    #expect(written.updatedAt == 12_345)
 }
 
 /// The stored name and folder are kept, not the phone's copy. Neither can be changed from a phone, so a
@@ -275,29 +296,6 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
     #expect(await store.writes[0].ifUnchangedSince == nil)
 }
 
-// ── the same playlist in another order ──
-
-/// The id, name and folder come from the computer, and nothing on a phone may change them. Only the
-/// running order and the store's stamp are updated.
-@Test func aReorderedPlaylistKeepsEverythingButItsOrder() {
-    let held = set("p", "Evening", [track("a"), track("b")], folder: ["Moods"], stamp: 900)
-    let moved = held.with(tracks: [track("b"), track("a")], stamp: 1000)
-
-    #expect(moved.id == held.id)
-    #expect(moved.name == held.name)
-    #expect(moved.folder == held.folder)
-    #expect(moved.shelf == held.shelf)
-    #expect(moved.tracks.map(\.rpmId) == ["b", "a"])
-    #expect(moved.stamp == 1000)
-}
-
-/// The stamp is only replaced when there is a new one. The copy on screen after a local move still
-/// refers to the same stored copy as before.
-@Test func aReorderWithNoNewStampKeepsTheOldOne() {
-    let held = set("p", "Evening", [track("a")], stamp: 900)
-    #expect(held.with(tracks: []).stamp == 900)
-}
-
 // ── the lists the computer cut ──
 
 /// A generated list's id does not refer to anything in the store. A write would not change a list.
@@ -333,7 +331,7 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
                                             tracks: [track("a")],
                                             whenAlreadyThere: .addAnother)
 
-    #expect(added.map(\.rpmId) == ["a"])
+    #expect(added.songs.map(\.rpmId) == ["a"])
     #expect(await store.writes[0].playlist.trackIds == ["a", "b", "a"])
 }
 
@@ -345,7 +343,7 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
                                             tracks: [track("a"), track("b")],
                                             whenAlreadyThere: .addAnother)
 
-    #expect(added.map(\.rpmId) == ["a", "b"])
+    #expect(added.songs.map(\.rpmId) == ["a", "b"])
     #expect(await store.writes[0].playlist.trackIds == ["a", "a", "b"])
 }
 

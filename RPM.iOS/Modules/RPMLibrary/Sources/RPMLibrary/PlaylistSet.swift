@@ -160,19 +160,6 @@ public struct PlaylistSet: Sendable, Equatable, Identifiable {
     }
 }
 
-extension PlaylistSet {
-    /// The same playlist with a different running order. When a new store stamp is
-    /// given, it replaces the old one.
-    ///
-    /// This is a method, and the fields are not `var`. The id, the name and the
-    /// folder belong to the computer, and nothing on the phone may change them.
-    public func with(tracks: [CloudTrack], stamp: Int64? = nil) -> PlaylistSet {
-        PlaylistSet(id: id, name: name, tracks: tracks, missing: missing,
-                    folder: folder, stamp: stamp ?? self.stamp, shelf: shelf, origin: origin,
-                    cut: cut)
-    }
-}
-
 /// The inputs that choose a list's picture.
 ///
 /// **The cut is part of the value because it decides where the picture comes from.**
