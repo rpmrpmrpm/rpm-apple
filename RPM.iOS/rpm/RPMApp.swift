@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import RPMUI
 import RPMLibrary
+import RPMSharedUI
 
 /// The entry point of the native Swift app.
 ///
@@ -31,6 +32,14 @@ struct RPMApp: App {
 @MainActor
 final class RPMDelegate: NSObject, UIApplicationDelegate {
     let model = AppModel()
+
+    /// The crash handlers are installed first, so a crash anywhere after this point is recorded.
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil)
+        -> Bool {
+        CrashWatch.install(arrived: { [model] in Task { await model.diagnostics.crashArrived() } })
+        return true
+    }
 
     func application(_ application: UIApplication,
                      supportedInterfaceOrientationsFor window: UIWindow?)

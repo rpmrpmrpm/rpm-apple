@@ -32,6 +32,8 @@ final class TVModel {
     let auth: AuthClient
     let cloud: RPMCloudClient
     let community: RPMCommunityClient
+    /// Send feedback and the crash reports: the scope, the outbox and the consent prompt.
+    let diagnostics: Diagnostics
     let articles: ArticleStore
     /// How often the world has played each song, used for an artist's popular tracks.
     let worldPlays: WorldPlays
@@ -69,6 +71,7 @@ final class TVModel {
         let transport = Transport(base: Self.api, tokens: auth, reach: reach)
         cloud = RPMCloudClient(transport: transport)
         community = RPMCommunityClient(transport: transport)
+        diagnostics = Diagnostics(transport: transport)
         worldPlays = WorldPlays(client: cloud)
         articles = ArticleStore(
             client: PapersClient(transport: transport, reach: reach),

@@ -30,6 +30,8 @@ final class AppModel {
     /// a shared collection belongs to somebody, and a row that cannot name them says
     /// "Shared library".
     let community: RPMCommunityClient
+    /// Send feedback and the crash reports: the scope, the outbox and the consent prompt.
+    let diagnostics: Diagnostics
 
     /// What Wikipedia says about a record or an artist, for the text on the album and artist
     /// pages. It uses the same route as the desktop app: the API's papers, then Wikidata and
@@ -290,6 +292,7 @@ final class AppModel {
         let transport = Transport(base: Self.api, tokens: auth, reach: reach)
         cloud = RPMCloudClient(transport: transport)
         community = RPMCommunityClient(transport: transport)
+        diagnostics = Diagnostics(transport: transport)
         articles = ArticleStore(
             client: PapersClient(transport: transport, reach: reach),
             languages: Encyclopedia.languages(preferred: Locale.preferredLanguages),

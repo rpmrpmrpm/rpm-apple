@@ -46,14 +46,16 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
     defer { try? FileManager.default.removeItem(at: dir) }
 
     let first = LogSpool(directory: dir, launched: Date())
-    await first.begin()
+    first.rotate()
     await first.write("the run that crashed")
+    #expect(first.thisRun() == "the run that crashed")
 
     let next = LogSpool(directory: dir, launched: Date())
-    #expect(await next.previousRun() == nil)
-    await next.begin()
+    #expect(next.previousRun() == nil)
+    next.rotate()
 
-    #expect(await next.previousRun() == "the run that crashed")
+    #expect(next.previousRun() == "the run that crashed")
+    #expect(next.thisRun() == nil)
 }
 
 // ── what a report carries ──
@@ -165,4 +167,133 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
 
     #expect(try await first == "fb_1")
     #expect(calls.count == 1)
+}
+
+// ── the crash outbox ──
+
+private func outbox() -> CrashOutbox {
+    CrashOutbox(directory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
+}
+
+private func crash(_ n: Int) -> CrashDraft {
+    CrashDraft(crashId: CrashDraft.newId(), crashedAt: Date(timeIntervalSince1970: Double(n)),
+               appVersion: "0.1.0 (6)", exception: "boom \(n)", systemReport: nil, systemReportKind: nil,
+               recent: nil)
+}
+
+@Test func aPutCrashIsPendingUntilItIsSent() async throws {
+    let box = outbox()
+    try box.put(crash(1))
+    try box.put(crash(2))
+
+    #expect(box.pending().map(\.exception) == ["boom 1", "boom 2"])
+
+    await box.send { _ in }
+
+    #expect(box.pending().isEmpty)
+}
+
+@Test func aRefusedCrashIsRemovedBecauseItWouldBeRefusedAgain() async throws {
+    let box = outbox()
+    try box.put(crash(1))
+
+    await box.send { _ in throw RPMError.refused(status: 400, reason: nil) }
+
+    #expect(box.pending().isEmpty)
+}
+
+@Test func offlineOrAServerErrorKeepsTheCrashForTheNextLaunch() async throws {
+    let box = outbox()
+    try box.put(crash(1))
+
+    await box.send { _ in throw RPMError.offline }
+    #expect(box.pending().count == 1)
+
+    await box.send { _ in throw RPMError.status(503) }
+    #expect(box.pending().count == 1)
+}
+
+@Test func aCrashAtEveryLaunchKeepsOnlyTheNewest() throws {
+    let box = outbox()
+    for n in 1...(CrashOutbox.mostKept + 3) { try box.put(crash(n)) }
+
+    let kept = box.pending()
+    #expect(kept.count == CrashOutbox.mostKept)
+    #expect(kept.first?.exception == "boom 4")
+}
+
+@Test func dontSendRemovesEverything() throws {
+    let box = outbox()
+    try box.put(crash(1))
+
+    box.removeAll()
+
+    #expect(box.pending().isEmpty)
+}
+
+@Test func consentIsAskedOnceThenFollowed() {
+    #expect(CrashConsent.next(.unasked, waiting: 1) == .ask)
+    #expect(CrashConsent.next(.unasked, waiting: 0) == .nothing)
+    #expect(CrashConsent.next(.send, waiting: 2) == .send)
+    #expect(CrashConsent.next(.dontSend, waiting: 2) == .nothing)
+}
+
+// ── the order of a launch ──
+
+@MainActor
+private func diagnostics(_ box: CrashOutbox, sent: Tally, scope: ReportScope = .full,
+                         consent: CrashConsent = .unasked) -> Diagnostics {
+    let defaults = UserDefaults(suiteName: UUID().uuidString)!
+    consent.write(defaults)
+    let client = reports { request in
+        sent.mark()
+        return ok(request, "{}")
+    }
+    let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    return Diagnostics(reports: client, outbox: box, spool: LogSpool(directory: dir, launched: Date()),
+                       defaults: defaults, decide: { scope })
+}
+
+/// MetricKit can deliver before the scope is decided. Nothing is asked or sent until it is.
+@MainActor
+@Test func aCrashBeforeTheScopeIsDecidedWaitsForIt() async throws {
+    let box = outbox()
+    let sent = Tally()
+    let diag = diagnostics(box, sent: sent, consent: .send)
+    try box.put(crash(1))
+
+    await diag.crashArrived()
+    #expect(sent.count == 0)
+    #expect(box.pending().count == 1)
+
+    await diag.start()
+    #expect(sent.count == 1)
+    #expect(box.pending().isEmpty)
+}
+
+@MainActor
+@Test func waitingCrashesAskOnceWhenNobodyHasAnswered() async throws {
+    let box = outbox()
+    let sent = Tally()
+    let diag = diagnostics(box, sent: sent)
+    try box.put(crash(1))
+
+    await diag.start()
+    #expect(diag.asksAboutCrashes)
+    #expect(sent.count == 0)
+
+    await diag.answer(send: false)
+    #expect(!diag.asksAboutCrashes)
+    #expect(!diag.sendsCrashReports)
+    #expect(box.pending().isEmpty)
+}
+
+@MainActor
+@Test func anAppStoreBuildOffersNoFeedback() async {
+    let diag = diagnostics(outbox(), sent: Tally(), scope: .anonymous)
+    #expect(!diag.offersFeedback)
+
+    await diag.start()
+
+    #expect(!diag.offersFeedback)
 }

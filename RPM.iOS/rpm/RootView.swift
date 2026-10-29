@@ -357,11 +357,29 @@ struct RootView: View {
             openWhereTheScriptAsked()
             await model.start()
         }
+        // Decides the report scope, then sends or asks about the crashes that are waiting.
+        .task { await model.diagnostics.start() }
+        .alert(Loc.get("Crash_PromptTitle"),
+               isPresented: Binding(get: { model.diagnostics.asksAboutCrashes }, set: { _ in })) {
+            Button(Loc.get("Crash_PromptSend")) { Task { await model.diagnostics.answer(send: true) } }
+            Button(Loc.get("Crash_PromptDontSend"), role: .cancel) {
+                Task { await model.diagnostics.answer(send: false) }
+            }
+        } message: {
+            Text(Loc.get("Crash_PromptBody"))
+        }
         // **Returning to the foreground reads the playlists again.** Only the playlists are read:
         // the wall has its own key, and reading a whole library is expensive, while reading the
         // playlists when nothing changed is one request. The read does not change the screen
         // while it runs, and does not change it if it fails.
         .onChange(of: phase) { _, now in
+            if now == .active {
+                CrashWatch.sceneBecameActive()
+            } else {
+                model.diagnostics.sceneLeftActive()
+            }
+            if now == .background { CrashWatch.sceneWentToBackground() }
+
             // When the app leaves the foreground, the current record is settled, so the last
             // thing that the user listened to is counted and is not lost with the session.
             guard now == .active else {
