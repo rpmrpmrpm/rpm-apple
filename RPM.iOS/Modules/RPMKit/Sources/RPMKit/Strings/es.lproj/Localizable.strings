@@ -2315,6 +2315,18 @@
 /* Shown when the server would not take the feedback. */
 "Feedback_Failed" = "No se han podido enviar los comentarios. Inténtalo de nuevo más tarde.";
 
+/* Feedback window, under the text box when signed in. {0} is the account's email address, where a reply to the report is sent. */
+"Feedback_RepliesTo" = "Las respuestas se enviarán a %1$@.";
+
+/* Feedback window, when signed out: placeholder of the box for the address a reply to the report is sent to. */
+"Feedback_ReplyEmail" = "Correo para las respuestas (opcional)";
+
+/* Feedback window, area list, phone apps only: albums downloaded to play without a connection. */
+"Feedback_AreaDownloads" = "Descargas";
+
+/* Feedback window, area list, phone apps only: playing on speakers, Chromecast and AirPlay (Play on). */
+"Feedback_AreaCasting" = "Altavoces y transmisión";
+
 /* Title of the window shown at launch after rpm crashed, asking once whether to send crash reports. */
 "Crash_PromptTitle" = "rpm se cerró inesperadamente";
 
@@ -6123,11 +6135,11 @@
 /* Row in the Android TV app's settings: whether the sung lyric line lights word by word. */
 "Tv_SettingsKaraoke" = "Letras de karaoke";
 
-/* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
-"Settings_MixtapeAfterHint" = "Cuando termina un álbum, una lista o un sencillo, la música sigue con canciones parecidas de tu colección.";
-
 /* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
 "Tv_SettingsMixtapeAfter" = "Mixtape al acabar un disco";
+
+/* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
+"Settings_MixtapeAfterHint" = "Cuando termina un álbum, una lista o un sencillo, la música sigue con canciones parecidas de tu colección.";
 
 /* Desktop: menu item in the playlist pane that opens the window for making a mood playlist. */
 "MoodMaker_New" = "Nueva lista de estado de ánimo…";
@@ -6249,11 +6261,11 @@
 /* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
 "Deck_QueueTip" = "Cola de reproducción";
 
-/* Tooltip and accessible name of the shuffle key in the band of the desktop Now playing card, while the queue is shuffled. Pressing it puts the songs still to come back in the order they had before the shuffle. Before the press the same key says Rpm_Queue_Shuffle. */
-"Deck_QueueUnshuffle" = "Volver al orden original";
-
 /* Player deck: the queue card's text when nothing is queued. */
 "Deck_QueueEmpty" = "No hay nada en cola. Reproduce un disco o una canción y lo que viene después aparecerá aquí.";
+
+/* Tooltip and accessible name of the shuffle key in the band of the desktop Now playing card, while the queue is shuffled. Pressing it puts the songs still to come back in the order they had before the shuffle. Before the press the same key says Rpm_Queue_Shuffle. */
+"Deck_QueueUnshuffle" = "Volver al orden original";
 
 /* Small heading in the TV player's Now playing drawer, where the list that was playing continues after the songs the person added (which are under an "Up next" heading). */
 "Tv_QueueAfterUpNext" = "Después";

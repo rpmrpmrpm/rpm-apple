@@ -2315,6 +2315,18 @@
 /* Shown when the server would not take the feedback. */
 "Feedback_Failed" = "反馈发送失败。请稍后再试。";
 
+/* Feedback window, under the text box when signed in. {0} is the account's email address, where a reply to the report is sent. */
+"Feedback_RepliesTo" = "回复将发送至 %1$@。";
+
+/* Feedback window, when signed out: placeholder of the box for the address a reply to the report is sent to. */
+"Feedback_ReplyEmail" = "用于回复的电子邮箱（可选）";
+
+/* Feedback window, area list, phone apps only: albums downloaded to play without a connection. */
+"Feedback_AreaDownloads" = "下载";
+
+/* Feedback window, area list, phone apps only: playing on speakers, Chromecast and AirPlay (Play on). */
+"Feedback_AreaCasting" = "扬声器与投放";
+
 /* Title of the window shown at launch after rpm crashed, asking once whether to send crash reports. */
 "Crash_PromptTitle" = "rpm 意外关闭";
 
@@ -6123,11 +6135,11 @@
 /* Row in the Android TV app's settings: whether the sung lyric line lights word by word. */
 "Tv_SettingsKaraoke" = "卡拉 OK 歌词";
 
-/* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
-"Settings_MixtapeAfterHint" = "专辑、播放列表或单曲播完后，继续播放你收藏中与之相似的歌曲。";
-
 /* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
 "Tv_SettingsMixtapeAfter" = "唱片播完后播放混音带";
+
+/* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
+"Settings_MixtapeAfterHint" = "专辑、播放列表或单曲播完后，继续播放你收藏中与之相似的歌曲。";
 
 /* Desktop: menu item in the playlist pane that opens the window for making a mood playlist. */
 "MoodMaker_New" = "新建心情播放列表…";
@@ -6249,11 +6261,11 @@
 /* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
 "Deck_QueueTip" = "播放队列";
 
-/* Tooltip and accessible name of the shuffle key in the band of the desktop Now playing card, while the queue is shuffled. Pressing it puts the songs still to come back in the order they had before the shuffle. Before the press the same key says Rpm_Queue_Shuffle. */
-"Deck_QueueUnshuffle" = "恢复原来的顺序";
-
 /* Player deck: the queue card's text when nothing is queued. */
 "Deck_QueueEmpty" = "队列中没有内容。播放一张专辑或一首歌，接下来要播放的内容会显示在这里。";
+
+/* Tooltip and accessible name of the shuffle key in the band of the desktop Now playing card, while the queue is shuffled. Pressing it puts the songs still to come back in the order they had before the shuffle. Before the press the same key says Rpm_Queue_Shuffle. */
+"Deck_QueueUnshuffle" = "恢复原来的顺序";
 
 /* Small heading in the TV player's Now playing drawer, where the list that was playing continues after the songs the person added (which are under an "Up next" heading). */
 "Tv_QueueAfterUpNext" = "之后";
