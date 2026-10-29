@@ -6135,11 +6135,11 @@
 /* Row in the Android TV app's settings: whether the sung lyric line lights word by word. */
 "Tv_SettingsKaraoke" = "Karaoke lyrics";
 
-/* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
-"Tv_SettingsMixtapeAfter" = "Mixtape when a record ends";
-
 /* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
 "Settings_MixtapeAfterHint" = "When an album, a playlist or a single ends, the music carries on with songs like it from your collection.";
+
+/* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
+"Tv_SettingsMixtapeAfter" = "Mixtape when a record ends";
 
 /* Desktop: menu item in the playlist pane that opens the window for making a mood playlist. */
 "MoodMaker_New" = "New mood playlist…";
@@ -6261,11 +6261,11 @@
 /* Player deck at the foot of the window: tooltip and accessible name of the key left of stop that opens the queue (the songs playing now and next) as a card above the deck. */
 "Deck_QueueTip" = "Now playing queue";
 
-/* Player deck: the queue card's text when nothing is queued. */
-"Deck_QueueEmpty" = "Nothing is queued. Play a record or a song and what comes next shows here.";
-
 /* Tooltip and accessible name of the shuffle key in the band of the desktop Now playing card, while the queue is shuffled. Pressing it puts the songs still to come back in the order they had before the shuffle. Before the press the same key says Rpm_Queue_Shuffle. */
 "Deck_QueueUnshuffle" = "Back to the original order";
+
+/* Player deck: the queue card's text when nothing is queued. */
+"Deck_QueueEmpty" = "Nothing is queued. Play a record or a song and what comes next shows here.";
 
 /* Small heading in the TV player's Now playing drawer, where the list that was playing continues after the songs the person added (which are under an "Up next" heading). */
 "Tv_QueueAfterUpNext" = "After that";
