@@ -3249,6 +3249,18 @@
 /* Line under an album's title on its page, for a series whose volumes are not numbered. {0} is the series' name. */
 "Album_SeriesPart" = "Fait partie de %1$@";
 
+/* Name under an empty sleeve on the album page's series row: a numbered volume of the series that is not in the listener's collection. */
+"Album_SeriesStillToFind" = "Encore à trouver";
+
+/* Second line under a sleeve on the album page's series row. {0} is the volume as the listener typed it (43, IV, 3a). */
+"Album_SeriesVolumeNumber" = "Volume %1$@";
+
+/* Beside the series name over the album page's series row: how many of the series' records are in the collection, when none of the numbered volumes is missing. {0} is a number. */
+"Album_SeriesHave" = "Vous en avez %1$@";
+
+/* Beside the series name over the album page's series row. {0} is how many of the series' records are in the collection, {1} how many numbered volumes below the highest one held are not. */
+"Album_SeriesHaveMissing" = "Vous en avez %1$@ · %2$@ encore à trouver";
+
 /* Album editor group kicker for the answers kept in the library rather than written into the files. ALLCAPS, like every other group kicker. */
 "AlbumEdit_GroupSettings" = "RÉGLAGES";
 
