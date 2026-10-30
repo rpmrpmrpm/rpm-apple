@@ -814,7 +814,7 @@
 "Settings_MusicFolderFailed" = "无法打开该文件夹。音乐文件夹未更改。";
 
 /* First-run setup, folder step: the chosen folder could not be opened as a library. There is no previous music folder at this point. */
-"Wizard_FolderFailed" = "无法打开该文件夹。请选择其他文件夹。";
+"Wizard_FolderFailed" = "无法打开该文件夹。没关系，换一个文件夹即可。";
 "Settings_Naming" = "文件命名";
 "Settings_NamingHint" = "抓取、录制和导入的文件如何命名与归档。抓取和黑胶录音会以默认模板进入队列，导入也按同样方式归档。可用下方的标记自定义命名格式。";
 "Settings_NamingNew" = "新建";
@@ -833,7 +833,7 @@
 "Settings_NamingErrorDuplicate" = "名称“%1$@”被使用了两次。名称必须唯一。";
 "Settings_Title" = "设置";
 "Settings_Close" = "关闭";
-"Setup_ExistingLibrary" = "现有的 rpm 音乐文件夹。将直接打开。";
+"Setup_ExistingLibrary" = "这已经是一个 rpm 音乐文件夹，rpm 将直接打开它。";
 
 /* Shown under the folder picker when the chosen folder has visible content and no RPM mirror. */
 "Setup_NotEmpty" = "此文件夹不是空的。请选择一个空文件夹，或选择一个现有的 rpm 音乐文件夹以打开它。";
@@ -2450,7 +2450,7 @@
 "Album_ReportCommentPrompt" = "为什么需要有人查看？举报会由人工阅读，系统不会自动隐藏任何内容。";
 "Album_ReportPlaceholder" = "说明问题";
 "Album_ReportSubmit" = "提交举报";
-"Login_NewHere" = "第一次使用？使用 Apple 或 Google 继续，账户会自动创建。";
+"Login_NewHere" = "新用户？用电子邮件注册，或使用 Apple 或 Google 继续，系统会为你创建账户。";
 "Login_Subtitle" = "请登录您的 rpm 账户。";
 
 /* Album page, phone: the same key once this reader has written one. */
@@ -5077,7 +5077,7 @@
 "Wizard_FolderTitle" = "你的音乐放在哪里？";
 
 /* Setup wizard step 1, line under the heading. */
-"Wizard_FolderBody" = "选择一个空文件夹。rpm 会把导入的所有音乐命名整理后存放在其中。";
+"Wizard_FolderBody" = "选择一个空文件夹，其余的交给 rpm。你导入的所有音乐都会在其中命名整理，让你的收藏始终井井有条。";
 
 /* Setup wizard step 1, the picker row before a folder is picked. */
 "Wizard_NoFolderChosen" = "尚未选择文件夹";
@@ -5086,7 +5086,7 @@
 "Wizard_ImportTitle" = "导入你的音乐";
 
 /* Setup wizard step 2, line under the heading, before a source is chosen. */
-"Wizard_ImportBody" = "选择音乐当前所在位置。rpm 会读取、检查并归档到你的收藏中。";
+"Wizard_ImportBody" = "音乐已经放在别处了？没问题！选择它所在的文件夹，rpm 会读取、检查，并将其整齐地归入你的收藏。";
 
 /* Setup wizard step 2, the scan strip over the review. */
 "Wizard_ScanSummary" = "%1$@ 个文件，%2$@ 张专辑，%3$@ 首散曲";
@@ -5113,7 +5113,7 @@
 "Wizard_PlanClashes" = "已自动解决 %1$@ 处名称冲突";
 
 /* Setup wizard step 3 heading. */
-"Wizard_DoneTitle" = "设置完成";
+"Wizard_DoneTitle" = "一切就绪！";
 
 /* Setup wizard step 3, the result card. */
 "Wizard_DoneAlbums" = "%1$@ 张专辑";
@@ -5125,19 +5125,19 @@
 "Wizard_SupportTitle" = "请考虑支持 rpm";
 
 /* Setup wizard step 3, the supporter pitch. */
-"Wizard_SupportPitch" = "rpm 由一支热爱音乐的小团队打造，我们相信收藏并真正拥有自己的音乐。支持者帮助我们承担托管费用和新功能的开发。";
+"Wizard_SupportPitch" = "rpm 由一个热爱音乐的小团队打造，我们相信收藏并拥有属于自己的音乐。支持者让 rpm 得以持续：他们承担托管费用，并帮助我们开发新功能。";
 
 /* Setup wizard step 3, the button that finishes without becoming a supporter. */
 "Wizard_Finish" = "打开我的收藏";
 
 /* First-run hint pointing at the Import tab in the left rail. */
-"Coach_AddMusic" = "在这里添加音乐。给 rpm 指定一个文件夹、一张 CD 或一台唱机，它会把所有内容归入你的收藏。";
+"Coach_AddMusic" = "你的音乐从这里进来！来吧，点一下“导入”。";
 
 /* First-run hint pointing at the grip under the artwork band. */
-"Coach_ArtHeader" = "拖动这里可以展开封面，双击可以收起。";
+"Coach_ArtHeader" = "正在播放音乐，想看看封面？拖动这里打开，双击即可再收起来。";
 
 /* First-run hint pointing at the view switch in the library header. */
-"Coach_Views" = "查看收藏的三种方式：列表、封面墙，或专辑网格。";
+"Coach_Views" = "按你的方式浏览收藏！随时在专辑网格、专辑列表和数据表之间切换。";
 
 /* Kicker on the locked home panel. Shown in caps. */
 "HomeLock_Kicker" = "主页";
@@ -5185,7 +5185,10 @@
 "ListLock_Hide" = "隐藏";
 
 /* Setup wizard step 1, under the wordmark and tagline, above the folder question. */
-"Wizard_Welcome" = "欢迎使用 rpm。我们将引导你完成音乐收藏的设置。";
+"Wizard_Welcome" = "欢迎使用 rpm！我们来设置你的音乐收藏，只需几个步骤。";
+
+/* Setup wizard, first launch: the welcome alone in the middle of the window while the opening sound plays, before step 1 fades in. */
+"Wizard_Hello" = "欢迎使用 rpm！";
 
 /* Setup wizard step 2: the one source. Onboarding imports a folder of files and nothing else. */
 "Wizard_ChooseFolder" = "选择文件夹";
@@ -5209,13 +5212,13 @@
 "Wizard_ImportCopyUnknown" = "将 %1$@ 个文件复制到收藏（%2$@ 个归为未知艺人）";
 
 /* Setup wizard step 2, under the Folder layout heading, above the template choices. */
-"Wizard_LayoutHint" = "请选择音乐收藏所使用的文件夹结构。";
+"Wizard_LayoutHint" = "你希望收藏如何排列？选择最适合你的文件夹结构。";
 
 /* Setup wizard step 2, under The original files heading, above the move/copy choice. */
-"Wizard_OriginalsHint" = "你希望 rpm 如何处理所选文件夹中的音乐文件？";
+"Wizard_OriginalsHint" = "rpm 应如何处理你所选文件夹中的音乐文件？";
 
 /* Setup wizard step 2, under the Music collection heading, above the destination grid. */
-"Wizard_PlanHint" = "这是你音乐收藏的初始文件夹结构。";
+"Wizard_PlanHint" = "这是你的音乐收藏最初的样子预览。";
 
 /* Tooltip on the cloud mark in the import queue. */
 "QueueDup_InCloud" = "已在你的云端，但此电脑上没有文件。导入后文件就会在本机。";
@@ -5305,7 +5308,7 @@
 "Settings_ShowHintsAgain" = "重新显示首次运行提示";
 
 /* First-run hint pointing at the menu, shown only while signed out. */
-"Coach_SignIn" = "登录 rpm 即可使用云功能：手机上访问你的收藏，随时随地在线播放。";
+"Coach_SignIn" = "把音乐随身带走！登录 rpm 即可使用云端：收藏就在你的手机上，随时随地都能播放。";
 
 /* Display settings, card heading over the button that replays the coachmarks. */
 "Settings_Hints" = "首次运行提示";
@@ -6272,3 +6275,219 @@
 
 /* Line under the title of the TV player's Now playing drawer while rearranging is on. OK, Up and Down are the TV remote's keys. */
 "Tv_QueueRearrangeHint" = "按 OK 拿起歌曲，上下键移动，再按 OK 放下。";
+
+/* Setup wizard step 1, line under the Country and language heading. */
+"Wizard_RegionBody" = "选择应用使用的语言，以及用于本地化的国家。";
+
+/* Setup wizard step 4 heading: the background, Pegasus's visualizer, the record and when rpm opens by itself. */
+"Wizard_LookTitle" = "打造你的 rpm";
+
+/* Setup wizard step 4, line under the Background heading. */
+"Wizard_LookBackgroundHint" = "整个应用背后的图片。之后也可以在设置中使用你自己的图片。";
+
+/* Setup wizard step 4, heading over the two switches: open rpm for a music CD, and for a music file. */
+"Wizard_LookStart" = "自动打开 rpm";
+
+/* Setup wizard step 5 heading: the view the library opens in. */
+"Wizard_LayoutTitle" = "你想如何浏览你的收藏？";
+
+/* Setup wizard step 5, line over the three view pictures. */
+"Wizard_LayoutBody" = "选择资料库打开时的视图。你可以随时在资料库顶部切换。";
+
+/* Setup wizard step 5, under the Album grid picture. */
+"Wizard_LayoutWallDesc" = "所有封面并排陈列，就像架子上的唱片。";
+
+/* Setup wizard step 5, under the Album list picture. */
+"Wizard_LayoutListDesc" = "每张专辑配上封面和曲目列表。";
+
+/* Setup wizard step 5, under the Data table picture. */
+"Wizard_LayoutTableDesc" = "所有歌曲以行列呈现，便于排序和编辑。";
+
+/* Pegasus's Original room animation, one line under its name (setup wizard and Display settings). */
+"Wizard_RoomOriginalDesc" = "柔和的光随音乐飘动、律动。";
+
+/* Pegasus's Yang room animation, one line under its name. */
+"Wizard_RoomYangDesc" = "发光的球体绕着中心旋转，拖曳出光尾。";
+
+/* Pegasus's Lava room animation, one line under its name. */
+"Wizard_RoomLavaDesc" = "像熔岩灯一样上升又下沉的色块。";
+
+/* Pegasus's Alchemy room animation, one line under its name. */
+"Wizard_RoomAlchemyDesc" = "宽阔的光带在屏幕上流淌。";
+
+/* Heading for the choice of Pegasus's room animation (setup wizard step 4 and Display settings). */
+"Settings_PegasusVisualizer" = "Pegasus 中的可视化效果";
+
+/* Line under the Visualizer in Pegasus heading. */
+"Settings_PegasusVisualizerHint" = "Pegasus 播放时音乐背后流动的光。";
+
+/* Display settings, first entry of the language and country pickers: follow Windows. {0} is what Windows gives now. */
+"Settings_SameAsWindows" = "与 Windows 相同（%1$@）";
+
+/* Display settings, shown after the language is changed. */
+"Settings_LanguageRestart" = "重新启动 rpm 以在所有地方使用新语言。";
+
+/* Display settings, button that closes rpm and starts it again. */
+"Settings_RestartNow" = "立即重新启动";
+
+/* Library settings, heading of the card for opening music files with rpm. */
+"Settings_MusicFiles" = "音乐文件";
+
+/* Switch: make rpm the app Windows opens music files with (setup wizard step 4 and Library settings). */
+"Settings_OpenMusicFiles" = "播放音乐文件时打开 rpm";
+
+/* Line under the Open rpm when a music file is played switch. */
+"Settings_OpenMusicFilesHint" = "你打开的音乐文件会在 rpm 中播放。Windows 会请你在其设置中确认使用 rpm。";
+
+/* What Windows calls a file type rpm opens, in Explorer's Type column and Open with. */
+"Settings_OpenMusicFilesType" = "音乐文件";
+
+/* Library settings, heading of the choice of the view the library opens in. */
+"Settings_LibraryLayout" = "资料库布局";
+
+/* Line under the Library layout heading. */
+"Settings_LibraryLayoutHint" = "资料库打开时的视图。资料库顶部的按钮也可以切换。";
+
+/* Setup wizard, first launch: the line under the welcome greeting, shown after two seconds. */
+"Wizard_HelloSubtitle" = "让我们开始吧。";
+
+/* Setup wizard, first launch: the button under the welcome that goes on to step 1. */
+"Wizard_Continue" = "继续";
+
+/* The note shown once after setup: its heading. */
+"Beta_WelcomeTitle" = "感谢你加入封闭测试！";
+
+/* The beta welcome: the first paragraph, under the heading. */
+"Beta_WelcomeIntro" = "很高兴你的加入！你是最早使用 rpm 的人之一，也因此成为打造它的一员。";
+
+/* The beta welcome: the small heading over its three points. */
+"Beta_WelcomeWhatHeading" = "封闭测试是什么";
+
+/* The beta welcome, first point: what testers are asked to do. */
+"Beta_WelcomeUse" = "把你自己的收藏带进 rpm，让它成为你的音乐播放器。翻录 CD、录制黑胶或导入文件，全由你决定！";
+
+/* The beta welcome, second point: reporting back. */
+"Beta_WelcomeTell" = "有东西坏了、缺了，或者特别好用？告诉我们！你会直接和打造 rpm 的人交流，你的反馈决定我们接下来做什么。";
+
+/* The beta welcome, third point: what testers get. */
+"Beta_WelcomeGet" = "作为感谢，你将获得带 100 GB 云空间的 iPhone 版 rpm，以及所有支持者福利。Android TV 版 rpm 即将完成，你会第一个拿到！";
+
+/* The beta welcome: the last paragraph, saying the tour of hints follows. */
+"Beta_WelcomeTourLine" = "接下来，快速游览一下！rpm 会一步步带你认识应用，让你清楚每样东西在哪里。我们开始吧！";
+
+/* The beta welcome's button: closes it and starts the tour of hints. */
+"Beta_WelcomeTour" = "带我看看";
+
+/* First-run hint beside the import pane, after Import was pressed. Asks for the pane to be closed again. */
+"Coach_ImportSources" = "你可以选择从文件夹、CD、黑胶唱片或 DVD 导入。然后通过目录编号、条形码或标题和艺人找到这张发行。很简单吧？现在，先把这个区域关上吧。";
+
+/* First-run hint pointing at the rail's track info, visualizations and internet radio buttons. */
+"Coach_SideScreens" = "在左侧边栏，你还能找到曲目信息、可视化效果和网络电台。了解你的音乐，让可视化效果在后台静静播放，或者收听电台。";
+
+/* First-run hint pointing at the deck's eye button, which opens the views picker. */
+"Coach_AppViews" = "rpm 有不止一种方式呈现你的音乐！点一下这里看看各种视图。";
+
+/* First-run hint beside the open views picker: what Main, RPaMp and Pegasus each are. Main is View_Library's own word. */
+"Coach_AppViewsOpen" = "“主界面”是完整的应用，用来浏览和管理收藏。RPaMp 是一个小巧的播放器，工作时不会打扰你。Pegasus 则铺满整个屏幕，专为沙发而生，配有可视化效果和歌词。随时都可以切换！";
+
+/* Setup wizard step 2 heading. */
+"Wizard_AccountTitle" = "你的 rpm 账户";
+
+/* Setup wizard step 2, line under the heading: the cloud needs an account, nothing else does. */
+"Wizard_AccountBody" = "把音乐随身带走！有了 rpm 账户，你的收藏就在手机上，随时随地都能播放。云端功能仅限有账户的用户使用，其他一切无需账户也能用，所以你随时可以稍后再登录。";
+
+/* Setup wizard step 2, once signed in. {0} is the account's name or email. */
+"Wizard_AccountSignedIn" = "已登录：%1$@";
+
+/* The link under a first-run hint that moves the tour on to the next one. */
+"Coach_Next" = "下一步";
+
+/* The card that ends the first-run tour: its heading. */
+"Coach_DoneTitle" = "游览到此结束！";
+
+/* The card that ends the first-run tour: the line under the heading. */
+"Coach_DoneBody" = "现在你已经熟悉 rpm 了。尽情翻录、录制、导入和播放，打造属于你自己的收藏。祝你收藏愉快！";
+
+/* The card that ends the first-run tour: the button that closes it and hands the app over. */
+"Coach_DoneButton" = "开始收藏";
+
+/* Setup wizard step 2, once signed in: the news, over who is signed in. */
+"Wizard_AccountLoggedIn" = "你已登录！";
+
+/* Setup wizard step 2, once signed in: the heading of the offer to connect Discogs. */
+"Wizard_DiscogsTitle" = "关联你的 Discogs 账户";
+
+/* Setup wizard step 2, once signed in: why to connect Discogs. */
+"Wizard_DiscogsBody" = "有 Discogs 账户吗？把它关联到 rpm，找到唱片的确切版本就轻而易举。Discogs 由和你一样的收藏者编目，所以就连最稀有的发行通常也能找到！";
+
+/* Setup wizard step 2, once Discogs is connected. The Discogs user name may follow in brackets. */
+"Wizard_DiscogsLinked" = "Discogs 已关联！";
+
+/* The sign-up window's title. */
+"SignUp_Title" = "注册 rpm";
+
+/* Sign-in window: the button beside Sign in that opens the sign-up window instead. */
+"SignUp_Button" = "注册";
+
+/* Sign-up window, the line over the form. */
+"SignUp_Subtitle" = "一分钟创建你的 rpm 账户！之后你的收藏随你而行。";
+
+/* Sign-up window: the name field's placeholder. */
+"SignUp_Name" = "名字";
+
+/* Sign-up window, under the password field: the accounts service's password rule. */
+"SignUp_PasswordRule" = "至少 8 个字符，包含大写字母、小写字母和数字。";
+
+/* Sign-up window: the button that sends the form. */
+"SignUp_Create" = "创建账户";
+
+/* Sign-up window: the button that sends the mailed code. */
+"SignUp_Confirm" = "确认";
+
+/* Sign-up window, the code face. {0} is the email address. */
+"SignUp_CodeSent" = "快好了！我们已向 %1$@ 发送了六位数验证码，请在下方输入。";
+
+/* Sign-up window: the code field's placeholder. */
+"SignUp_Code" = "验证码";
+
+/* Sign-up window, under the code field. */
+"SignUp_Resend" = "重新发送验证码";
+
+/* Sign-up window: a fresh code was mailed (asked for, or because the old one expired). */
+"SignUp_CodeResent" = "新的验证码已发送，请查看收件箱！";
+
+/* Sign-up window: a field was left empty. */
+"SignUp_NeedFields" = "请填写名字、电子邮件和密码。";
+
+/* Sign-up window: the code field was left empty. */
+"SignUp_NeedCode" = "请输入邮件中的验证码。";
+
+/* Sign-up window: the address already has an account. */
+"SignUp_AlreadyRegistered" = "该电子邮件已有账户，请尝试登录。";
+
+/* Sign-up window: the password does not meet the rule. */
+"SignUp_WeakPassword" = "该密码太容易被猜到。请至少使用 8 个字符，包含大写字母、小写字母和数字。";
+
+/* Sign-up window: the address was refused. */
+"SignUp_InvalidEmail" = "这看起来不像电子邮件地址。";
+
+/* Sign-up window: the name was refused. */
+"SignUp_InvalidName" = "名字可使用字母、数字、空格、连字符和句点，长度为 2 到 50 个字符。";
+
+/* Sign-up window: the code was wrong. */
+"SignUp_InvalidCode" = "验证码不正确，请再看看邮件。";
+
+/* Sign-up window: the accounts service is limiting attempts. */
+"SignUp_TooMany" = "尝试次数过多，请稍后再试。";
+
+/* Sign-up window: any other failure. */
+"SignUp_Failed" = "无法创建账户，请重试。";
+
+/* Setup wizard step 2: opens the sign-up window. */
+"Wizard_AccountSignUp" = "注册 rpm";
+
+/* Setup wizard step 2, under Sign up: opens the sign-in window for an email and password. */
+"Wizard_AccountHaveOne" = "已有账户？登录";
+
+/* Setup wizard step 4, over the import's progress bar after ten seconds of importing. */
+"Wizard_ImportSlow" = "请稍候！大型收藏的导入可能需要一些时间，不妨去喝杯咖啡，让 rpm 慢慢整理。";

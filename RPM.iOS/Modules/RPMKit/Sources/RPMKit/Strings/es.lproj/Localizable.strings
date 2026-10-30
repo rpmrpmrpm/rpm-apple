@@ -814,7 +814,7 @@
 "Settings_MusicFolderFailed" = "No se pudo abrir esa carpeta. Tu carpeta de música no ha cambiado.";
 
 /* First-run setup, folder step: the chosen folder could not be opened as a library. There is no previous music folder at this point. */
-"Wizard_FolderFailed" = "No se pudo abrir esa carpeta. Elige otra carpeta.";
+"Wizard_FolderFailed" = "No se pudo abrir esa carpeta. No pasa nada, elige otra.";
 "Settings_Naming" = "Nombres de archivo";
 "Settings_NamingHint" = "Cómo se nombran y archivan los archivos extraídos, grabados e importados. Las extracciones y las grabaciones de vinilo entran en la cola con la plantilla predeterminada, y la importación archiva todo igual. Crea tu propio diseño con los tokens de abajo.";
 "Settings_NamingNew" = "Nuevo";
@@ -833,7 +833,7 @@
 "Settings_NamingErrorDuplicate" = "El nombre «%1$@» se usa dos veces. Los nombres deben ser únicos.";
 "Settings_Title" = "Ajustes";
 "Settings_Close" = "Cerrar";
-"Setup_ExistingLibrary" = "Carpeta de música de rpm existente: se abrirá.";
+"Setup_ExistingLibrary" = "Esta ya es una carpeta de música de rpm. rpm la abrirá.";
 
 /* Shown under the folder picker when the chosen folder has visible content and no RPM mirror. */
 "Setup_NotEmpty" = "Esta carpeta no está vacía. Elige una carpeta vacía, o una carpeta de música de rpm existente para abrirla.";
@@ -2450,7 +2450,7 @@
 "Album_ReportCommentPrompt" = "¿Por qué debería revisarse esto? Los informes los lee una persona, no se oculta nada automáticamente.";
 "Album_ReportPlaceholder" = "Describe el problema";
 "Album_ReportSubmit" = "Enviar informe";
-"Login_NewHere" = "¿Nuevo por aquí? Continúa con Apple o Google y se creará tu cuenta.";
+"Login_NewHere" = "¿Eres nuevo? Regístrate con tu correo, o continúa con Apple o Google y se crea una cuenta para ti.";
 "Login_Subtitle" = "Inicia sesión en tu cuenta rpm.";
 
 /* Album page, phone: the same key once this reader has written one. */
@@ -5077,7 +5077,7 @@
 "Wizard_FolderTitle" = "¿Dónde debe vivir tu música?";
 
 /* Setup wizard step 1, line under the heading. */
-"Wizard_FolderBody" = "Elige una carpeta vacía. rpm archiva en ella todo lo que importes, con nombre y orden.";
+"Wizard_FolderBody" = "Elige una carpeta vacía y rpm se encarga del resto. Todo lo que importes se nombra y se ordena en ella, para que tu colección esté siempre en orden.";
 
 /* Setup wizard step 1, the picker row before a folder is picked. */
 "Wizard_NoFolderChosen" = "Ninguna carpeta elegida";
@@ -5086,7 +5086,7 @@
 "Wizard_ImportTitle" = "Importa tu música";
 
 /* Setup wizard step 2, line under the heading, before a source is chosen. */
-"Wizard_ImportBody" = "Indica dónde está tu música ahora. rpm la lee, la revisa y la archiva en tu colección.";
+"Wizard_ImportBody" = "¿Ya tienes tu música en otro sitio? ¡No pasa nada! Elige la carpeta donde está y rpm la lee, la revisa y la archiva ordenadamente en tu colección.";
 
 /* Setup wizard step 2, the scan strip over the review. */
 "Wizard_ScanSummary" = "%1$@ archivos, %2$@ álbumes, %3$@ pistas sueltas";
@@ -5113,7 +5113,7 @@
 "Wizard_PlanClashes" = "%1$@ conflictos de nombre resueltos automáticamente";
 
 /* Setup wizard step 3 heading. */
-"Wizard_DoneTitle" = "Todo listo";
+"Wizard_DoneTitle" = "¡Todo listo!";
 
 /* Setup wizard step 3, the result card. */
 "Wizard_DoneAlbums" = "%1$@ álbumes";
@@ -5125,19 +5125,19 @@
 "Wizard_SupportTitle" = "Considera apoyar a rpm";
 
 /* Setup wizard step 3, the supporter pitch. */
-"Wizard_SupportPitch" = "rpm lo crea un pequeño equipo de personas dedicadas que aman la música y creen en coleccionar y poseer tu propia música. Los mecenas ayudan con los costes de alojamiento y con el desarrollo de nuevas funciones.";
+"Wizard_SupportPitch" = "rpm lo hace un pequeño equipo de personas que aman la música y creen en coleccionar y tener tu propia música. Los supporters ayudan a que siga adelante: cubren los gastos de alojamiento y nos ayudan a crear nuevas funciones.";
 
 /* Setup wizard step 3, the button that finishes without becoming a supporter. */
 "Wizard_Finish" = "Abrir mi colección";
 
 /* First-run hint pointing at the Import tab in the left rail. */
-"Coach_AddMusic" = "Añade música aquí. Indica a rpm una carpeta, un CD o un tocadiscos y lo archiva todo en tu colección.";
+"Coach_AddMusic" = "¡Aquí es donde entra tu música! Adelante, pulsa Importar.";
 
 /* First-run hint pointing at the grip under the artwork band. */
-"Coach_ArtHeader" = "Arrastra esto para abrir la portada, o haz doble clic para guardarla.";
+"Coach_ArtHeader" = "¿Estás escuchando algo y quieres ver la portada? Arrastra esto para abrirla, o haz doble clic para guardarla otra vez.";
 
 /* First-run hint pointing at the view switch in the library header. */
-"Coach_Views" = "Tres formas de ver tu colección: una lista, un muro de portadas o los álbumes en cuadrícula.";
+"Coach_Views" = "¡Explora tu colección a tu manera! Cambia entre la cuadrícula de álbumes, la lista de álbumes y la tabla de datos cuando quieras.";
 
 /* Kicker on the locked home panel. Shown in caps. */
 "HomeLock_Kicker" = "INICIO";
@@ -5185,7 +5185,10 @@
 "ListLock_Hide" = "Ocultar";
 
 /* Setup wizard step 1, under the wordmark and tagline, above the folder question. */
-"Wizard_Welcome" = "Te damos la bienvenida a rpm. Te guiaremos para configurar tu colección de música.";
+"Wizard_Welcome" = "¡Bienvenido a rpm! Vamos a preparar tu colección de música. Solo son unos pasos.";
+
+/* Setup wizard, first launch: the welcome alone in the middle of the window while the opening sound plays, before step 1 fades in. */
+"Wizard_Hello" = "¡Bienvenido a rpm!";
 
 /* Setup wizard step 2: the one source. Onboarding imports a folder of files and nothing else. */
 "Wizard_ChooseFolder" = "Elegir una carpeta";
@@ -5209,13 +5212,13 @@
 "Wizard_ImportCopyUnknown" = "Copiar %1$@ archivos a la colección (%2$@ como Artista desconocido)";
 
 /* Setup wizard step 2, under the Folder layout heading, above the template choices. */
-"Wizard_LayoutHint" = "Elige la estructura de carpetas que quieres usar para la colección de música.";
+"Wizard_LayoutHint" = "¿Cómo quieres organizar tu colección? Elige la estructura de carpetas que mejor te vaya.";
 
 /* Setup wizard step 2, under The original files heading, above the move/copy choice. */
-"Wizard_OriginalsHint" = "¿Qué quieres que rpm haga con los archivos de música de la carpeta que elegiste?";
+"Wizard_OriginalsHint" = "¿Qué debe hacer rpm con los archivos de música de la carpeta que elegiste?";
 
 /* Setup wizard step 2, under the Music collection heading, above the destination grid. */
-"Wizard_PlanHint" = "Esta es la estructura de carpetas inicial de tu colección de música.";
+"Wizard_PlanHint" = "Aquí tienes una vista previa de cómo será tu colección de música al principio.";
 
 /* Tooltip on the cloud mark in the import queue. */
 "QueueDup_InCloud" = "En tu nube, sin archivo en este ordenador. Al importarlo, el archivo queda aquí.";
@@ -5305,7 +5308,7 @@
 "Settings_ShowHintsAgain" = "Volver a mostrar los consejos iniciales";
 
 /* First-run hint pointing at the menu, shown only while signed out. */
-"Coach_SignIn" = "Inicia sesión en rpm para usar la nube: tu colección en el móvil y streaming estés donde estés.";
+"Coach_SignIn" = "¡Llévate tu música contigo! Inicia sesión en rpm para usar la nube: tu colección en tu teléfono y en streaming estés donde estés.";
 
 /* Display settings, card heading over the button that replays the coachmarks. */
 "Settings_Hints" = "Consejos iniciales";
@@ -6272,3 +6275,219 @@
 
 /* Line under the title of the TV player's Now playing drawer while rearranging is on. OK, Up and Down are the TV remote's keys. */
 "Tv_QueueRearrangeHint" = "OK toma una canción, Arriba y Abajo la mueven, OK la deja.";
+
+/* Setup wizard step 1, line under the Country and language heading. */
+"Wizard_RegionBody" = "Elige el idioma de la aplicación y tu país para la localización.";
+
+/* Setup wizard step 4 heading: the background, Pegasus's visualizer, the record and when rpm opens by itself. */
+"Wizard_LookTitle" = "Haz rpm a tu manera";
+
+/* Setup wizard step 4, line under the Background heading. */
+"Wizard_LookBackgroundHint" = "La imagen detrás de toda la aplicación. Más tarde también puedes usar una tuya, en Ajustes.";
+
+/* Setup wizard step 4, heading over the two switches: open rpm for a music CD, and for a music file. */
+"Wizard_LookStart" = "Abrir rpm automáticamente";
+
+/* Setup wizard step 5 heading: the view the library opens in. */
+"Wizard_LayoutTitle" = "¿Cómo quieres explorar tu colección?";
+
+/* Setup wizard step 5, line over the three view pictures. */
+"Wizard_LayoutBody" = "Elige la vista con la que se abre tu biblioteca. Puedes cambiarla cuando quieras, en la parte superior de la biblioteca.";
+
+/* Setup wizard step 5, under the Album grid picture. */
+"Wizard_LayoutWallDesc" = "Todas las portadas una junto a otra, como tus discos en una estantería.";
+
+/* Setup wizard step 5, under the Album list picture. */
+"Wizard_LayoutListDesc" = "Cada álbum con su portada y su lista de canciones.";
+
+/* Setup wizard step 5, under the Data table picture. */
+"Wizard_LayoutTableDesc" = "Todas las canciones en filas y columnas, para ordenar y editar.";
+
+/* Pegasus's Original room animation, one line under its name (setup wizard and Display settings). */
+"Wizard_RoomOriginalDesc" = "Luces suaves que flotan y laten con la música.";
+
+/* Pegasus's Yang room animation, one line under its name. */
+"Wizard_RoomYangDesc" = "Esferas brillantes que giran alrededor del centro, dejando una estela de luz.";
+
+/* Pegasus's Lava room animation, one line under its name. */
+"Wizard_RoomLavaDesc" = "Burbujas que suben y bajan como en una lámpara de lava.";
+
+/* Pegasus's Alchemy room animation, one line under its name. */
+"Wizard_RoomAlchemyDesc" = "Anchas cintas de luz que fluyen por la pantalla.";
+
+/* Heading for the choice of Pegasus's room animation (setup wizard step 4 and Display settings). */
+"Settings_PegasusVisualizer" = "Visualizador en Pegasus";
+
+/* Line under the Visualizer in Pegasus heading. */
+"Settings_PegasusVisualizerHint" = "Las luces en movimiento detrás de la música cuando Pegasus reproduce.";
+
+/* Display settings, first entry of the language and country pickers: follow Windows. {0} is what Windows gives now. */
+"Settings_SameAsWindows" = "Igual que Windows (%1$@)";
+
+/* Display settings, shown after the language is changed. */
+"Settings_LanguageRestart" = "Reinicia rpm para ver el nuevo idioma en todas partes.";
+
+/* Display settings, button that closes rpm and starts it again. */
+"Settings_RestartNow" = "Reiniciar ahora";
+
+/* Library settings, heading of the card for opening music files with rpm. */
+"Settings_MusicFiles" = "Archivos de música";
+
+/* Switch: make rpm the app Windows opens music files with (setup wizard step 4 and Library settings). */
+"Settings_OpenMusicFiles" = "Abrir rpm al reproducir un archivo de música";
+
+/* Line under the Open rpm when a music file is played switch. */
+"Settings_OpenMusicFilesHint" = "Los archivos de música que abras se reproducen en rpm. Windows te pide confirmar rpm en su propia configuración.";
+
+/* What Windows calls a file type rpm opens, in Explorer's Type column and Open with. */
+"Settings_OpenMusicFilesType" = "Archivo de música";
+
+/* Library settings, heading of the choice of the view the library opens in. */
+"Settings_LibraryLayout" = "Diseño de la biblioteca";
+
+/* Line under the Library layout heading. */
+"Settings_LibraryLayoutHint" = "La vista con la que se abre tu biblioteca. Los botones de la parte superior de la biblioteca también la cambian.";
+
+/* Setup wizard, first launch: the line under the welcome greeting, shown after two seconds. */
+"Wizard_HelloSubtitle" = "Empecemos.";
+
+/* Setup wizard, first launch: the button under the welcome that goes on to step 1. */
+"Wizard_Continue" = "Continuar";
+
+/* The note shown once after setup: its heading. */
+"Beta_WelcomeTitle" = "¡Gracias por unirte a la beta cerrada!";
+
+/* The beta welcome: the first paragraph, under the heading. */
+"Beta_WelcomeIntro" = "¡Nos alegra muchísimo tenerte a bordo! Eres de las primeras personas en usar rpm, y eso te hace parte de su creación.";
+
+/* The beta welcome: the small heading over its three points. */
+"Beta_WelcomeWhatHeading" = "De qué trata la beta cerrada";
+
+/* The beta welcome, first point: what testers are asked to do. */
+"Beta_WelcomeUse" = "Trae tu propia colección a rpm y conviértelo en tu reproductor de música. Ripea tus CD, graba tus vinilos o importa tus archivos. ¡Tú decides!";
+
+/* The beta welcome, second point: reporting back. */
+"Beta_WelcomeTell" = "¿Algo falla, falta o funciona de maravilla? ¡Cuéntanoslo! Hablas directamente con quienes crean rpm, y tus comentarios deciden en qué trabajamos después.";
+
+/* The beta welcome, third point: what testers get. */
+"Beta_WelcomeGet" = "Como agradecimiento, recibes rpm para iPhone con 100 GB en la nube y todas las ventajas de supporter. rpm para Android TV está casi listo, ¡y lo tendrás antes que nadie!";
+
+/* The beta welcome: the last paragraph, saying the tour of hints follows. */
+"Beta_WelcomeTourLine" = "¡Y ahora, un recorrido rápido! rpm te enseña la aplicación paso a paso, para que sepas dónde está todo. ¡Vamos allá!";
+
+/* The beta welcome's button: closes it and starts the tour of hints. */
+"Beta_WelcomeTour" = "Enséñamelo";
+
+/* First-run hint beside the import pane, after Import was pressed. Asks for the pane to be closed again. */
+"Coach_ImportSources" = "Puedes elegir importar desde una carpeta, tu CD, un disco de vinilo o un DVD. Después, encuentra la edición buscando el número de catálogo, el código de barras o el título y el artista. Fácil, ¿verdad? Por ahora, cerremos esta sección.";
+
+/* First-run hint pointing at the rail's track info, visualizations and internet radio buttons. */
+"Coach_SideScreens" = "En la barra lateral izquierda también encontrarás las pantallas de información de la pista, el visualizador y la radio por internet. Infórmate sobre tu música, deja un visualizador de fondo o escucha la radio.";
+
+/* First-run hint pointing at the deck's eye button, which opens the views picker. */
+"Coach_AppViews" = "¡rpm tiene más de una forma de mostrar tu música! Pulsa aquí para ver las vistas.";
+
+/* First-run hint beside the open views picker: what Main, RPaMp and Pegasus each are. Main is View_Library's own word. */
+"Coach_AppViewsOpen" = "Principal es la aplicación completa, para explorar y gestionar tu colección. RPaMp es un reproductor compacto que no estorba mientras trabajas. Y Pegasus llena toda la pantalla, pensado para el sofá, con el visualizador y las letras. ¡Cambia cuando quieras!";
+
+/* Setup wizard step 2 heading. */
+"Wizard_AccountTitle" = "Tu cuenta de rpm";
+
+/* Setup wizard step 2, line under the heading: the cloud needs an account, nothing else does. */
+"Wizard_AccountBody" = "¡Llévate tu música contigo! Con una cuenta de rpm, tu colección está en tu teléfono y en streaming estés donde estés. La nube solo funciona con una cuenta, pero todo lo demás funciona sin ella, así que siempre puedes hacerlo más tarde.";
+
+/* Setup wizard step 2, once signed in. {0} is the account's name or email. */
+"Wizard_AccountSignedIn" = "Sesión iniciada como %1$@";
+
+/* The link under a first-run hint that moves the tour on to the next one. */
+"Coach_Next" = "Siguiente";
+
+/* The card that ends the first-run tour: its heading. */
+"Coach_DoneTitle" = "¡Y eso es todo el recorrido!";
+
+/* The card that ends the first-run tour: the line under the heading. */
+"Coach_DoneBody" = "Ya conoces rpm de arriba abajo. Ripea, graba, importa y escucha todo lo que quieras, y haz tuya tu colección. ¡Que disfrutes coleccionando!";
+
+/* The card that ends the first-run tour: the button that closes it and hands the app over. */
+"Coach_DoneButton" = "Empezar a coleccionar";
+
+/* Setup wizard step 2, once signed in: the news, over who is signed in. */
+"Wizard_AccountLoggedIn" = "¡Ya has iniciado sesión!";
+
+/* Setup wizard step 2, once signed in: the heading of the offer to connect Discogs. */
+"Wizard_DiscogsTitle" = "Vincula tu cuenta de Discogs";
+
+/* Setup wizard step 2, once signed in: why to connect Discogs. */
+"Wizard_DiscogsBody" = "¿Tienes una cuenta de Discogs? Vincúlala a rpm y encontrar la edición exacta de tus discos será pan comido. Discogs lo catalogan coleccionistas como tú, ¡así que hasta las ediciones más raras suelen estar ahí!";
+
+/* Setup wizard step 2, once Discogs is connected. The Discogs user name may follow in brackets. */
+"Wizard_DiscogsLinked" = "¡Discogs está vinculado!";
+
+/* The sign-up window's title. */
+"SignUp_Title" = "Regístrate en rpm";
+
+/* Sign-in window: the button beside Sign in that opens the sign-up window instead. */
+"SignUp_Button" = "Registrarse";
+
+/* Sign-up window, the line over the form. */
+"SignUp_Subtitle" = "¡Crea tu cuenta de rpm en un minuto! Así tu colección irá contigo a todas partes.";
+
+/* Sign-up window: the name field's placeholder. */
+"SignUp_Name" = "Nombre";
+
+/* Sign-up window, under the password field: the accounts service's password rule. */
+"SignUp_PasswordRule" = "Al menos 8 caracteres, con una mayúscula, una minúscula y un número.";
+
+/* Sign-up window: the button that sends the form. */
+"SignUp_Create" = "Crear cuenta";
+
+/* Sign-up window: the button that sends the mailed code. */
+"SignUp_Confirm" = "Confirmar";
+
+/* Sign-up window, the code face. {0} is the email address. */
+"SignUp_CodeSent" = "¡Casi está! Hemos enviado un código de seis dígitos a %1$@. Escríbelo abajo.";
+
+/* Sign-up window: the code field's placeholder. */
+"SignUp_Code" = "Código";
+
+/* Sign-up window, under the code field. */
+"SignUp_Resend" = "Enviar un código nuevo";
+
+/* Sign-up window: a fresh code was mailed (asked for, or because the old one expired). */
+"SignUp_CodeResent" = "Un código nuevo va de camino. ¡Mira tu bandeja de entrada!";
+
+/* Sign-up window: a field was left empty. */
+"SignUp_NeedFields" = "Escribe tu nombre, tu correo y una contraseña.";
+
+/* Sign-up window: the code field was left empty. */
+"SignUp_NeedCode" = "Escribe el código del correo.";
+
+/* Sign-up window: the address already has an account. */
+"SignUp_AlreadyRegistered" = "Ya hay una cuenta con este correo. Prueba a iniciar sesión.";
+
+/* Sign-up window: the password does not meet the rule. */
+"SignUp_WeakPassword" = "Esa contraseña es demasiado fácil. Usa al menos 8 caracteres, con una mayúscula, una minúscula y un número.";
+
+/* Sign-up window: the address was refused. */
+"SignUp_InvalidEmail" = "Eso no parece una dirección de correo.";
+
+/* Sign-up window: the name was refused. */
+"SignUp_InvalidName" = "Tu nombre puede llevar letras, números, espacios, guiones y puntos, de 2 a 50 caracteres.";
+
+/* Sign-up window: the code was wrong. */
+"SignUp_InvalidCode" = "Ese código no es correcto. Vuelve a mirar el correo.";
+
+/* Sign-up window: the accounts service is limiting attempts. */
+"SignUp_TooMany" = "Demasiados intentos por ahora. Espera un poco y vuelve a intentarlo.";
+
+/* Sign-up window: any other failure. */
+"SignUp_Failed" = "No se pudo crear la cuenta. Inténtalo de nuevo.";
+
+/* Setup wizard step 2: opens the sign-up window. */
+"Wizard_AccountSignUp" = "Regístrate en rpm";
+
+/* Setup wizard step 2, under Sign up: opens the sign-in window for an email and password. */
+"Wizard_AccountHaveOne" = "¿Ya tienes una cuenta? Inicia sesión";
+
+/* Setup wizard step 4, over the import's progress bar after ten seconds of importing. */
+"Wizard_ImportSlow" = "¡Aguanta! Una colección grande puede tardar un rato en importarse, así que tómate un café mientras rpm lo archiva todo.";
