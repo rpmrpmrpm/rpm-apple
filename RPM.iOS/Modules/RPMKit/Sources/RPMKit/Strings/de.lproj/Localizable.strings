@@ -6354,7 +6354,7 @@
 /* Setup wizard, first launch: the button under the welcome that goes on to step 1. */
 "Wizard_Continue" = "Weiter";
 
-/* The note shown once after setup: its heading. */
+/* The note shown once to an account marked as a closed beta tester: its heading. */
 "Beta_WelcomeTitle" = "Danke, dass du bei der geschlossenen Beta dabei bist!";
 
 /* The beta welcome: the first paragraph, under the heading. */
@@ -6371,12 +6371,6 @@
 
 /* The beta welcome, third point: what testers get. */
 "Beta_WelcomeGet" = "Als Dankeschön bekommst du rpm für das iPhone mit 100 GB in der Cloud und alle Supporter-Vorteile. rpm für Android TV ist fast fertig, und du bekommst es zuerst!";
-
-/* The beta welcome: the last paragraph, saying the tour of hints follows. */
-"Beta_WelcomeTourLine" = "Als Nächstes eine kurze Tour! rpm zeigt dir Schritt für Schritt alles, damit du sofort weißt, wo was ist. Los geht's!";
-
-/* The beta welcome's button: closes it and starts the tour of hints. */
-"Beta_WelcomeTour" = "Zeig mir alles";
 
 /* First-run hint beside the import pane, after Import was pressed. Asks for the pane to be closed again. */
 "Coach_ImportSources" = "Du kannst auswählen, ob du aus einem Ordner, von deiner CD, einer Schallplatte oder einer DVD importierst. Danach findest du die Veröffentlichung über die Katalognummer, den Barcode oder Titel und Künstler. Einfach, oder? Für jetzt schließen wir diesen Bereich.";

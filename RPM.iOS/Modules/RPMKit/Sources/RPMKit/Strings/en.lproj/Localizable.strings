@@ -6354,7 +6354,7 @@
 /* Setup wizard, first launch: the button under the welcome that goes on to step 1. */
 "Wizard_Continue" = "Continue";
 
-/* The note shown once after setup: its heading. */
+/* The note shown once to an account marked as a closed beta tester: its heading. */
 "Beta_WelcomeTitle" = "Thank you for joining the closed beta!";
 
 /* The beta welcome: the first paragraph, under the heading. */
@@ -6371,12 +6371,6 @@
 
 /* The beta welcome, third point: what testers get. */
 "Beta_WelcomeGet" = "As a thank you, you get rpm for iPhone with 100 GB in the cloud, and all the supporter perks. rpm for Android TV is almost ready, and you'll get it first!";
-
-/* The beta welcome: the last paragraph, saying the tour of hints follows. */
-"Beta_WelcomeTourLine" = "Next up, a quick tour! rpm shows you around step by step, so you know right where everything is. Let's get started!";
-
-/* The beta welcome's button: closes it and starts the tour of hints. */
-"Beta_WelcomeTour" = "Show me around";
 
 /* First-run hint beside the import pane, after Import was pressed. Asks for the pane to be closed again. */
 "Coach_ImportSources" = "You can select if you want to import from a folder, your CD, a vinyl record or DVD. From there, find the release by searching the Catalog ID, barcode or title and artist. Easy, right? For now, let's close this section.";

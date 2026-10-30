@@ -6354,7 +6354,7 @@
 /* Setup wizard, first launch: the button under the welcome that goes on to step 1. */
 "Wizard_Continue" = "继续";
 
-/* The note shown once after setup: its heading. */
+/* The note shown once to an account marked as a closed beta tester: its heading. */
 "Beta_WelcomeTitle" = "感谢你加入封闭测试！";
 
 /* The beta welcome: the first paragraph, under the heading. */
@@ -6371,12 +6371,6 @@
 
 /* The beta welcome, third point: what testers get. */
 "Beta_WelcomeGet" = "作为感谢，你将获得带 100 GB 云空间的 iPhone 版 rpm，以及所有支持者福利。Android TV 版 rpm 即将完成，你会第一个拿到！";
-
-/* The beta welcome: the last paragraph, saying the tour of hints follows. */
-"Beta_WelcomeTourLine" = "接下来，快速游览一下！rpm 会一步步带你认识应用，让你清楚每样东西在哪里。我们开始吧！";
-
-/* The beta welcome's button: closes it and starts the tour of hints. */
-"Beta_WelcomeTour" = "带我看看";
 
 /* First-run hint beside the import pane, after Import was pressed. Asks for the pane to be closed again. */
 "Coach_ImportSources" = "你可以选择从文件夹、CD、黑胶唱片或 DVD 导入。然后通过目录编号、条形码或标题和艺人找到这张发行。很简单吧？现在，先把这个区域关上吧。";
