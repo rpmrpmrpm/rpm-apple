@@ -22,6 +22,10 @@ struct SignInView: View {
     @State private var busy = false
     @State private var waiting: String?
 
+    /// The sign-up card when it is up, in place of the sign-in card. Sign-up runs on this screen, so
+    /// the record and the wordmark stay where they are.
+    @State private var signingUp: SignUpCard.Start?
+
     @FocusState private var editing: Field?
     private enum Field { case email, password }
 
@@ -54,27 +58,35 @@ struct SignInView: View {
                         .fill(Color.white)
                         .frame(width: 150, height: 150 / RPMWordmark.aspect)
 
-                    Text(Loc.get("Rpm_SignIn_Subtitle"))
+                    Text(Loc.get(signingUp == nil ? "Rpm_SignIn_Subtitle" : "SignUp_Subtitle"))
                         .font(.system(size: 15))
                         .foregroundStyle(RPMInk.white(0xCC / 255))
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 320)
 
-                    card
+                    if let signingUp {
+                        SignUpCard(model: model, start: signingUp, back: { self.signingUp = nil })
+                    } else {
+                        card
 
-                    // No register link: continuing with Apple or Google creates the account
-                    // at once. No forgot-password link either. The desktop opens
-                    // rpmrpmrpm.com/forgot-password, but App Review guideline 4 rejects
-                    // sending the phone to Safari for this. The phone would need an in-app
-                    // code flow (accounts auth/forgot-password and auth/reset-password,
-                    // which email a code-only reset).
-                    Text(Loc.get("Login_NewHere"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(
-                            Color(red: 0xCC / 255, green: 0xDD / 255, blue: 0xEE / 255)
-                                .opacity(0xAA / 255))
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: 320)
+                        // No forgot-password link. The desktop opens
+                        // rpmrpmrpm.com/forgot-password, but App Review guideline 4 rejects
+                        // sending the phone to Safari for this. The phone would need an in-app
+                        // code flow (accounts auth/forgot-password and auth/reset-password,
+                        // which email a code-only reset).
+                        Text(Loc.get("Login_NewHere"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(
+                                Color(red: 0xCC / 255, green: 0xDD / 255, blue: 0xEE / 255)
+                                    .opacity(0xAA / 255))
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 320)
+
+                        Button(Loc.get("SignUp_Button")) { signingUp = .form }
+                            .buttonStyle(RPMGlassButton(.ghost))
+                            .frame(maxWidth: 320)
+                            .disabled(busy)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 32)
@@ -199,7 +211,9 @@ struct SignInView: View {
         }
 
         busy = true
-        await model.signIn(email: email, password: password)
+        if await model.signIn(email: email, password: password) == .notConfirmed {
+            signingUp = .code(email: email, password: password)
+        }
         busy = false
     }
 

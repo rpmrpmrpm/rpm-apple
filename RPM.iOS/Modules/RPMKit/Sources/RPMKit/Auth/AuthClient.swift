@@ -91,6 +91,48 @@ public actor AuthClient: TokenSource {
         revokePendingAfterSignIn()
     }
 
+    // Signing up
+
+    /// Makes an rpm account with an email and password (`auth/register`). The account starts unconfirmed:
+    /// the accounts service mails a six-digit code, which ``confirmSignUp(email:code:)`` takes. This signs
+    /// nobody in. After the code, ``signIn(email:password:)`` does.
+    public func signUp(name: String, email: String, password: String) async -> SignUpAnswer {
+        await postSignUp("auth/register", [
+            "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
+            "email": email.trimmingCharacters(in: .whitespacesAndNewlines),
+            "password": password,
+        ])
+    }
+
+    /// Takes the mailed code (`auth/confirm`). The account is live once this answers ``SignUpAnswer/done``.
+    /// The service answers an account that is already confirmed as done, so a second try is safe.
+    public func confirmSignUp(email: String, code: String) async -> SignUpAnswer {
+        await postSignUp("auth/confirm", [
+            "email": email.trimmingCharacters(in: .whitespacesAndNewlines),
+            "code": code.trimmingCharacters(in: .whitespacesAndNewlines),
+        ])
+    }
+
+    /// Mails a new code (`auth/resend-code`). The new code replaces the one sent before.
+    public func resendSignUpCode(email: String) async -> SignUpAnswer {
+        await postSignUp("auth/resend-code", ["email": email.trimmingCharacters(in: .whitespacesAndNewlines)])
+    }
+
+    private func postSignUp(_ path: String, _ body: [String: String]) async -> SignUpAnswer {
+        do {
+            let (data, http) = try await send("POST", path, body: body)
+            switch http.statusCode {
+            case 200..<300: return .done
+            case 400..<500: return SignUpAnswer.refusal(data)
+            default: return .failed
+            }
+        } catch RPMError.offline {
+            return .offline
+        } catch {
+            return .failed
+        }
+    }
+
     /// Social sign-in, first step: ask the accounts service where to send the person.
     ///
     /// The app opens the browser, not this package. On iOS the right way is `ASWebAuthenticationSession`, which

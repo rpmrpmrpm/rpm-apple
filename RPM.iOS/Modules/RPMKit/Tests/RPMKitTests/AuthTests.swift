@@ -498,3 +498,76 @@ private func answering(_ status: Int, into paths: Paths) -> URLSession {
     #expect(!AuthClient.revocationAnswered(503))
     #expect(!AuthClient.revocationAnswered(500))
 }
+
+// ── sign up ──
+
+@Test func signUpSendsTheFormAndAnswersDone() async throws {
+    let seen = Box<Data>()
+    let client = auth(stubbedSession { request in
+        seen.value = request.bodyData
+        #expect(request.url?.path == "/auth/register")
+        return ok(request, #"{"status":"confirm_required","email":"a@example.com"}"#)
+    })
+
+    let answer = await client.signUp(name: " Hélène ", email: "  a@example.com ", password: "Passw0rd")
+
+    #expect(answer == .done)
+    let sent = try JSONDecoder().decode([String: String].self, from: seen.value ?? Data())
+    #expect(sent == ["name": "Hélène", "email": "a@example.com", "password": "Passw0rd"])
+    #expect(await !client.isSignedIn)
+}
+
+@Test func confirmAndResendAnswerDoneOnANoContentAnswer() async throws {
+    let paths = Box<[String]>()
+    let client = auth(stubbedSession { request in
+        paths.value = (paths.value ?? []) + [request.url?.path ?? ""]
+        return (HTTPURLResponse(url: request.url!, statusCode: 204, httpVersion: nil, headerFields: nil)!, Data())
+    })
+
+    #expect(await client.confirmSignUp(email: "a@example.com", code: " 123456 ") == .done)
+    #expect(await client.resendSignUpCode(email: "a@example.com") == .done)
+    #expect(paths.value == ["/auth/confirm", "/auth/resend-code"])
+}
+
+/// The service's refusals carry a code. Its English sentence is not kept: the screen says its own.
+@Test func aRefusedSignUpCarriesTheServicesCode() async {
+    let client = auth(replying(400, #"{"error":"An account with this email already exists.","code":"already_registered"}"#))
+    #expect(await client.signUp(name: "Jan", email: "a@example.com", password: "Passw0rd")
+        == .refused(code: "already_registered"))
+}
+
+@Test func aRefusalWithNoCodeIsRefusedAndAServerErrorIsFailed() async {
+    let noCode = auth(replying(400, #"{"error":"name, email and password are required."}"#))
+    #expect(await noCode.signUp(name: "Jan", email: "a@example.com", password: "Passw0rd") == .refused(code: "refused"))
+
+    let broken = auth(replying(500, "<html>Internal Server Error</html>"))
+    #expect(await broken.signUp(name: "Jan", email: "a@example.com", password: "Passw0rd") == .failed)
+}
+
+@Test func signingUpWithNoNetworkSaysOffline() async {
+    let client = AuthClient(base: accounts, keychain: MemoryStore(), reach: await closedLine(),
+                            session: replying(200, "{}"))
+    #expect(await client.signUp(name: "Jan", email: "a@example.com", password: "Passw0rd") == .offline)
+}
+
+@Test(arguments: [
+    ("already_registered", "SignUp_AlreadyRegistered"),
+    ("social_account", "SignUp_SocialAccount"),
+    ("weak_password", "SignUp_WeakPassword"),
+    ("invalid_email", "SignUp_InvalidEmail"),
+    ("invalid_name", "SignUp_InvalidName"),
+    ("invalid_code", "SignUp_InvalidCode"),
+    ("code_resent", "SignUp_CodeResent"),
+    ("too_many", "SignUp_TooMany"),
+    ("something_new", "SignUp_Failed"),
+])
+func eachSignUpRefusalHasItsOwnSentence(code: String, key: String) {
+    #expect(SignUpAnswer.refused(code: code).said == Loc.get(key))
+    #expect(Loc.get(key) != key)
+}
+
+@Test func offlineAndFailedSayTheirOwnSentenceAndDoneSaysNothing() {
+    #expect(SignUpAnswer.offline.said == Loc.get("Rpm_Net_Offline"))
+    #expect(SignUpAnswer.failed.said == Loc.get("SignUp_Failed"))
+    #expect(SignUpAnswer.done.said == nil)
+}

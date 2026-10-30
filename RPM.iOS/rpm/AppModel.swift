@@ -508,16 +508,34 @@ final class AppModel {
     /// A message for the person, shown where the sign-in errors are shown.
     func report(_ what: String) { trouble = what }
 
-    func signIn(email: String, password: String) async {
+    /// How a password sign-in ended, for the screen that asked.
+    enum PasswordSignIn {
+        case signedIn
+
+        /// The reason is in ``trouble``.
+        case failed
+
+        /// The account exists and was never confirmed. Nothing is put in ``trouble``: the mail carries
+        /// only a code, so the screen opens the code step (``SignUpCard/Start/code(email:password:)``).
+        case notConfirmed
+    }
+
+    @discardableResult
+    func signIn(email: String, password: String) async -> PasswordSignIn {
         trouble = nil
         notice = nil
         do {
             try await auth.signIn(email: email, password: password)
             await show(ground: .adoptNow)
+            return .signedIn
+        } catch RPMError.refused(_, .notConfirmed?) {
+            return .notConfirmed
         } catch let error as RPMError {
             trouble = error.userMessage(refused: Loc.get("Rpm_SignIn_Failed"))
+            return .failed
         } catch {
             trouble = Loc.get("Rpm_SignIn_Failed")
+            return .failed
         }
     }
 

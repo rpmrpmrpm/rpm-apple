@@ -6465,6 +6465,9 @@
 /* Sign-up window: the address already has an account. */
 "SignUp_AlreadyRegistered" = "There's already an account with this email. Try signing in instead.";
 
+/* Sign-up window: the address already signs in with Apple or Google, so an email account is refused. */
+"SignUp_SocialAccount" = "This email is already used with Apple or Google. Continue with Apple or Google instead.";
+
 /* Sign-up window: the password does not meet the rule. */
 "SignUp_WeakPassword" = "That password is too easy to guess. Use at least 8 characters, with an uppercase letter, a lowercase letter and a number.";
 
@@ -6472,7 +6475,7 @@
 "SignUp_InvalidEmail" = "That doesn't look like an email address.";
 
 /* Sign-up window: the name was refused. */
-"SignUp_InvalidName" = "Your name can use letters, numbers, spaces, hyphens and dots, 2 to 50 of them.";
+"SignUp_InvalidName" = "Your name can use letters, numbers, spaces, hyphens, dots and apostrophes, 2 to 50 of them.";
 
 /* Sign-up window: the code was wrong. */
 "SignUp_InvalidCode" = "That code isn't right. Have another look at the email.";

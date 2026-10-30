@@ -6465,6 +6465,9 @@
 /* Sign-up window: the address already has an account. */
 "SignUp_AlreadyRegistered" = "Ya hay una cuenta con este correo. Prueba a iniciar sesión.";
 
+/* Sign-up window: the address already signs in with Apple or Google, so an email account is refused. */
+"SignUp_SocialAccount" = "Este correo ya se usa con Apple o Google. Continúa con Apple o Google.";
+
 /* Sign-up window: the password does not meet the rule. */
 "SignUp_WeakPassword" = "Esa contraseña es demasiado fácil. Usa al menos 8 caracteres, con una mayúscula, una minúscula y un número.";
 
@@ -6472,7 +6475,7 @@
 "SignUp_InvalidEmail" = "Eso no parece una dirección de correo.";
 
 /* Sign-up window: the name was refused. */
-"SignUp_InvalidName" = "Tu nombre puede llevar letras, números, espacios, guiones y puntos, de 2 a 50 caracteres.";
+"SignUp_InvalidName" = "Tu nombre puede llevar letras, números, espacios, guiones, puntos y apóstrofos, de 2 a 50 caracteres.";
 
 /* Sign-up window: the code was wrong. */
 "SignUp_InvalidCode" = "Ese código no es correcto. Vuelve a mirar el correo.";
