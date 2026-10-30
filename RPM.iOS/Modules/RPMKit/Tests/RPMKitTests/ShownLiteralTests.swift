@@ -20,7 +20,7 @@ import Testing
 /// `RPMError` carries no text of its own, so a sentence cannot reach a screen through
 /// an error either.
 @Test func noSwiftSourceShowsAnEnglishLiteral() throws {
-    let found = try ShownLiteral.scan(ShownLiteral.sources())
+    let found = try ShownLiteral.scan(ShownLiteral.sources(), under: ShownLiteral.root)
 
     #expect(ShownLiteral.filesRead > 100, "only \(ShownLiteral.filesRead) files read; the scan is wrong")
     #expect(found.isEmpty, Comment(rawValue: "Add the words to scripts/strings.json and use Loc.get:\n"
@@ -44,6 +44,15 @@ func aLiteralIsReportedWhereItCanOnlyBeOnItsWayToTheScreen(line: String, returni
     #expect(ShownLiteral.literals(in: line, returning: returning, messageSet: true) == expected)
 }
 
+/// The view layer is found from the folders below `RPM.iOS`, so a checkout inside a folder named `rpm` does
+/// not make every file look like the app's own.
+@Test func theFoldersAboveTheCheckoutAreNotRead() {
+    let root = URL(fileURLWithPath: "/Users/someone/rpm/rpm-apple/RPM.iOS")
+    #expect(ShownLiteral.parts(of: root.appending(path: "Modules/RPMCast/Sources/RPMCast/CastLink.swift"), under: root)
+        == ["Modules", "RPMCast", "Sources", "RPMCast", "CastLink.swift"])
+    #expect(ShownLiteral.parts(of: root.appending(path: "rpm/SignInView.swift"), under: root) == ["rpm", "SignInView.swift"])
+}
+
 enum ShownLiteral {
     /// Literals that read the same in every language, and why.
     static let asWritten: [String: String] = [
@@ -54,19 +63,25 @@ enum ShownLiteral {
 
     nonisolated(unsafe) static var filesRead = 0
 
-    static func sources() throws -> [URL] {
-        // …/RPM.iOS/Modules/RPMKit/Tests/RPMKitTests/ShownLiteralTests.swift
-        let root = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    /// The `RPM.iOS` folder: …/RPM.iOS/Modules/RPMKit/Tests/RPMKitTests/ShownLiteralTests.swift.
+    static let root = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
+    /// The folders of `file` below `root`. The folders above it are not read: the checkout can sit in a folder
+    /// named `rpm`, and that name also marks the app's own folder (see ``scan(_:under:)``).
+    static func parts(of file: URL, under root: URL) -> [String] {
+        Array(file.standardizedFileURL.pathComponents.dropFirst(root.standardizedFileURL.pathComponents.count))
+    }
+
+    static func sources() throws -> [URL] {
         guard let walk = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) else {
             return []
         }
 
         var files: [URL] = []
         for case let url as URL in walk {
-            let parts = url.pathComponents
+            let parts = parts(of: url, under: root)
             if parts.contains(".build") || parts.contains("Tests") || parts.contains("DerivedData") {
                 continue
             }
@@ -78,12 +93,12 @@ enum ShownLiteral {
         return files
     }
 
-    static func scan(_ files: [URL]) throws -> [String] {
+    static func scan(_ files: [URL], under root: URL) throws -> [String] {
         var found: [String] = []
         filesRead = files.count
 
         for file in files {
-            let parts = file.pathComponents
+            let parts = parts(of: file, under: root)
             let viewLayer = parts.contains("RPMUI") || parts.contains("rpm")
             var returning = false
             var depth = 0
