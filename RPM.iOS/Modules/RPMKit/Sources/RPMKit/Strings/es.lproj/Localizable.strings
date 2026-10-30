@@ -3219,6 +3219,36 @@
 /* Album editor choice: this is not a classical record. The default. */
 "AlbumEdit_ClassicalNo" = "No";
 
+/* Album editor group kicker for the series a record is one volume of, such as a box-set edition released over many volumes. ALLCAPS, like every other group kicker. */
+"AlbumEdit_GroupSeries" = "SERIE";
+
+/* Album editor field label: whether this record is one volume of a series of releases, such as volume 43 of The Complete Mozart Edition. */
+"AlbumEdit_InSeries" = "Forma parte de una serie";
+
+/* Album editor choice: this record is one volume of a series. */
+"AlbumEdit_SeriesYes" = "Sí";
+
+/* Album editor choice: this record stands alone. The default. */
+"AlbumEdit_SeriesNo" = "No";
+
+/* Album editor field label: the name of the series this record belongs to. The box also offers the series already in the library. */
+"AlbumEdit_SeriesName" = "Serie";
+
+/* Placeholder in the album editor's series name box. The example is a real box set's own title, so it stays in English. */
+"AlbumEdit_SeriesNameHint" = "p. ej. The Complete Mozart Edition";
+
+/* Album editor field label: which volume of the series this record is. */
+"AlbumEdit_SeriesVolume" = "Volumen";
+
+/* Placeholder in the album editor's volume box. */
+"AlbumEdit_SeriesVolumeHint" = "p. ej. 43";
+
+/* Line under an album's title on its page: which volume of which series it is. {0} is the volume as the listener typed it (43, IV, 3a), {1} the series' name. */
+"Album_SeriesVolume" = "Volumen %1$@ de %2$@";
+
+/* Line under an album's title on its page, for a series whose volumes are not numbered. {0} is the series' name. */
+"Album_SeriesPart" = "Forma parte de %1$@";
+
 /* Album editor group kicker for the answers kept in the library rather than written into the files. ALLCAPS, like every other group kicker. */
 "AlbumEdit_GroupSettings" = "AJUSTES";
 
