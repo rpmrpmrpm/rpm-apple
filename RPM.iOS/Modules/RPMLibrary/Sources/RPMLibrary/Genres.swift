@@ -125,10 +125,11 @@ enum GenreText {
     /// The characters that a tag is cut into words on when it is looked up.
     static let wordBreaks: Set<Character> = ["/", ",", "&", ";", "|", " ", "-", "_"]
 
-    /// Keeps only letters and digits, in lower case. So "Hip-Hop", "hip hop" and "HipHop"
-    /// all give one key.
+    /// Keeps only letters and digits, in lower case and without accents. So "Hip-Hop", "hip hop"
+    /// and "HipHop" all give one key, and so do "Opéra Comique" and "Opera Comique".
     static func fold(_ value: String) -> String {
-        String(value.filter { $0.isLetter || $0.isNumber }).lowercased()
+        String(value.folding(options: .diacriticInsensitive, locale: nil)
+            .filter { $0.isLetter || $0.isNumber }).lowercased()
     }
 
     /// The whole label, then its parts cut on `breaks`, from left to right.
