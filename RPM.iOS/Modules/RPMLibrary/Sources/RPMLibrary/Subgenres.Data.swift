@@ -6,7 +6,7 @@
 /// The shelves and styles, generated from the same JSON as the desktop's
 /// `Subgenres.Data.cs`. See `Genres`, which does the looking up.
 enum SubgenreTable {
-    static let version = 1498540663
+    static let version = 2098435208
 
     /// The shelves, in the order they are offered.
     static let shelves: [String] = [
@@ -530,6 +530,7 @@ enum SubgenreTable {
         ("Requiem", "Classical"),
         ("Art Song", "Classical"),
         ("Ballet", "Classical"),
+        ("Ballroom Dance", "Classical"),
         ("Modern Classical", "Neo-Classical"),
         ("Post-Minimalism", "Neo-Classical"),
         ("Ambient Classical", "Neo-Classical"),
