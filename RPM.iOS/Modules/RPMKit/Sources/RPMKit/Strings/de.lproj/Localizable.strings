@@ -2883,6 +2883,18 @@
 /* Heading over the conductor's card in the track info pane, under the album's card, on a record that credits a conductor. */
 "TrackInfo_AboutConductor" = "Über den Dirigenten";
 
+/* Heading over the record label's card in the track info pane, under the conductor's card or the album's card, on a record whose tags name its label. */
+"TrackInfo_AboutLabel" = "Über das Label";
+
+/* On the record label's card in the track info pane, for a label still going: the year it was founded. {0} is the year. */
+"TrackInfo_LabelSince" = "Aktiv seit %1$@";
+
+/* On the record label's card in the track info pane, for a label that has closed. {0} is the year it was founded, {1} the year it closed. */
+"TrackInfo_LabelFromTo" = "Aktiv von %1$@ bis %2$@";
+
+/* On the record label's card in the track info pane, for a closed label whose founding year nobody wrote down. {0} is the year it closed. */
+"TrackInfo_LabelClosed" = "Eingestellt %1$@";
+
 /* Heading over the album notes, in the track info pane, on the drawer's album screen, and on the phone's sheet with the full Wikipedia text about an album. */
 "TrackInfo_AboutAlbum" = "Über das Album";
 

@@ -2883,6 +2883,18 @@
 /* Heading over the conductor's card in the track info pane, under the album's card, on a record that credits a conductor. */
 "TrackInfo_AboutConductor" = "关于指挥";
 
+/* Heading over the record label's card in the track info pane, under the conductor's card or the album's card, on a record whose tags name its label. */
+"TrackInfo_AboutLabel" = "关于唱片公司";
+
+/* On the record label's card in the track info pane, for a label still going: the year it was founded. {0} is the year. */
+"TrackInfo_LabelSince" = "%1$@ 年至今";
+
+/* On the record label's card in the track info pane, for a label that has closed. {0} is the year it was founded, {1} the year it closed. */
+"TrackInfo_LabelFromTo" = "%1$@ 年至 %2$@ 年";
+
+/* On the record label's card in the track info pane, for a closed label whose founding year nobody wrote down. {0} is the year it closed. */
+"TrackInfo_LabelClosed" = "%1$@ 年停业";
+
 /* Heading over the album notes, in the track info pane, on the drawer's album screen, and on the phone's sheet with the full Wikipedia text about an album. */
 "TrackInfo_AboutAlbum" = "关于专辑";
 
