@@ -2877,6 +2877,9 @@
 /* Track info pane and artist page: heading over the list of people in the band, with their dates of birth. */
 "TrackInfo_Members" = "Bandmitglieder";
 
+/* On the conductor's card in the track info pane, for a conductor who is alive: the year they were born. {0} is the year. */
+"TrackInfo_ConductorBorn" = "Geboren %1$@";
+
 /* Heading over the album notes, in the track info pane, on the drawer's album screen, and on the phone's sheet with the full Wikipedia text about an album. */
 "TrackInfo_AboutAlbum" = "Über das Album";
 
