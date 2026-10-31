@@ -20,7 +20,6 @@ extension PlaylistPhotos {
         GeneratedCut(kind: "Calm", genre: "R&B", decade: 0): "calm-rb.jpg",
         GeneratedCut(kind: "Calm", genre: "Rap", decade: 0): "calm-rap.jpg",
         GeneratedCut(kind: "Calm", genre: "Hip-Hop / Rap", decade: 0): "calm-hiphoprap.jpg",
-        GeneratedCut(kind: "Calm", genre: "House", decade: 0): "calm-house.jpg",
         GeneratedCut(kind: "Calm", genre: "Electronic / Dance", decade: 0): "calm-electronicdance.jpg",
         GeneratedCut(kind: "Calm", genre: "Jazz", decade: 0): "calm-jazz.jpg",
         GeneratedCut(kind: "Calm", genre: "Folk", decade: 0): "calm-folk.jpg",
