@@ -2880,6 +2880,9 @@
 /* On the conductor's card in the track info pane, for a conductor who is alive: the year they were born. {0} is the year. */
 "TrackInfo_ConductorBorn" = "Nacido en %1$@";
 
+/* Heading over the conductor's card in the track info pane, under the album's card, on a record that credits a conductor. */
+"TrackInfo_AboutConductor" = "Sobre el director";
+
 /* Heading over the album notes, in the track info pane, on the drawer's album screen, and on the phone's sheet with the full Wikipedia text about an album. */
 "TrackInfo_AboutAlbum" = "Sobre el álbum";
 
