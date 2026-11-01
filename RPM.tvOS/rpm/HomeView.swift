@@ -20,14 +20,14 @@ struct HomeView: View {
                 if case .trouble(let said) = session.wallStanding {
                     Trouble(said) { Task { await session.refresh() } }
                 } else {
-                    Message(Loc.get("Tv_Library_Empty"))
+                    EmptyCollection()
                 }
             }
         } else if let home = session.home {
             if home.gate.open {
                 HomeRows(home: home)
             } else {
-                HomeLock(gate: home.gate)
+                HomeLock(gate: home.gate, own: session.viewing.isOwn)
             }
         } else {
             Waiting(Loc.get("Rpm_Library_Loading"))
@@ -38,9 +38,13 @@ struct HomeView: View {
 /// This is shown in home's place until there is enough music for home to be useful (the phone's
 /// HomeLock). With fewer records than the gate's number, the rows would only repeat the whole
 /// collection in other orders. It shows what the gate waits for and how far along it is. There is
-/// no Add music key, because music is added on a computer.
+/// no Add music key, because music is added on a computer, so the text says where to add it.
 private struct HomeLock: View {
     let gate: FeatureGate
+
+    /// Whether the collection on screen is the person's own. Only the owner can add music, so a
+    /// shared collection does not say how.
+    let own: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -48,19 +52,15 @@ private struct HomeLock: View {
                 .font(.tv(Size.small, .semibold))
                 .tracking(2)
                 .foregroundStyle(Ink.dim)
-            Text(Loc.get("HomeLock_Body"))
+            Text(Loc.get(own ? "Rpm_HomeLock_Body" : "HomeLock_Body"))
                 .font(.tv(Size.note))
                 .foregroundStyle(Ink.words)
                 .fixedSize(horizontal: false, vertical: true)
             SeekLine(fraction: gate.fraction, knob: 0, track: 6)
                 .frame(height: 12)
-            HStack {
-                Text(Loc.get("HomeLock_Progress", String(gate.have), String(gate.want)))
-                Spacer()
-                Text(gate.toGo == 1 ? Loc.get("HomeLock_ToGoOne") : Loc.get("HomeLock_ToGo", String(gate.toGo)))
-            }
-            .font(.tv(Size.small))
-            .foregroundStyle(Ink.artist)
+            Text(Loc.get("HomeLock_Progress", String(gate.have), String(gate.want)))
+                .font(.tv(Size.small))
+                .foregroundStyle(Ink.artist)
         }
         .frame(width: 900)
         .padding(48)

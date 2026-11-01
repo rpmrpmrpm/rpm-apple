@@ -817,6 +817,7 @@ struct RootView: View {
                      covers: covers, backdrops: model.backdrops,
                      canSwitch: model.shelfRows.count > 1,
                      onSwitch: { model.pickingLibrary = true },
+                     lender: model.lender,
                      onScreen: tab == .home && homePath.isEmpty,
                      onOpen: { homePath.append(.album($0.key)) },
                      onOpenList: { name in
@@ -828,7 +829,6 @@ struct RootView: View {
                      },
                      onPlay: { tracks in Task { await model.play(tracks, from: 0, tapped: .list) } },
                      onTune: { model.tune($0) },
-                     onAddMusic: { tab = .library; mode = .albums },
                      songMenu: songMenu,
                      onReady: {
                          if !homeReady { LaunchClock.mark("home drawn") }

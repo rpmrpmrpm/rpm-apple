@@ -122,6 +122,16 @@ struct Message: View {
     }
 }
 
+/// The message for a collection with no music, on every screen that lists it. Only the owner can
+/// add music, so a shared collection does not say how.
+struct EmptyCollection: View {
+    @Environment(TVModel.self) private var model
+
+    var body: some View {
+        Message(Loc.get(model.session.viewing.isOwn ? "Rpm_Library_Empty" : "Rpm_Share_EmptyShelf"))
+    }
+}
+
 /// The E mark shown after the title of an explicit track.
 struct ExplicitMark: View {
     var side: CGFloat = 26

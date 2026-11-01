@@ -7,46 +7,46 @@ import RPMLibrary
 /// With fewer than 20 albums, the Recently added row is the whole collection in a different
 /// order, and the suggestions can only offer records that are already on the screen above them.
 /// So the screen shows what it is waiting for and how much is still needed, and does not draw
-/// four rows of the same fifteen records.
+/// four rows of the same fifteen records. There is no button: music is added in rpm on the
+/// computer, not on the phone, so the text says where to add it.
 struct HomeLock: View {
     let gate: FeatureGate
-    let onAddMusic: () -> Void
+
+    /// The owner of the collection on screen, or nil for the person's own. Only the owner can
+    /// add music, so a shared collection does not say how.
+    let lender: String?
 
     var body: some View {
         VStack(spacing: 14) {
-            Text(Loc.get("HomeLock_Kicker"))
-                .font(RPMFont.display(12))
-                .tracking(2)
-                .foregroundStyle(RPMInk.white(0x99 / 255))
-
             Text(Loc.get("Home_Heading"))
                 .font(RPMFont.displayBold(26))
 
-            Text(Loc.get("HomeLock_Body"))
+            Text(line)
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)
 
-            progress
-
-            Button(action: onAddMusic) {
-                Text(Loc.get("HomeLock_AddMusic"))
-                    .font(.system(size: 15, weight: .medium))
-                    .padding(.horizontal, RPMLayout.margin)
-                    .frame(height: 44)
-                    .contentShape(Capsule())
-                    .rpmGlass(Capsule())
+            // An empty collection has nothing to measure. Its line says how to fill it.
+            if gate.have > 0 {
+                progress
             }
-            .buttonStyle(.plain)
-            .padding(.top, 4)
         }
         .padding(.horizontal, RPMLayout.margin)
     }
 
+    private var line: String {
+        switch (gate.have > 0, lender == nil) {
+        case (false, true): Loc.get("Rpm_Library_Empty")
+        case (false, false): Loc.get("Rpm_Share_EmptyShelf")
+        case (true, true): Loc.get("Rpm_HomeLock_Body")
+        case (true, false): Loc.get("HomeLock_Body")
+        }
+    }
+
     private var progress: some View {
-        VStack(spacing: 6) {
-            // The bar shows the amount at a glance. The sentences below give the exact numbers.
+        VStack(spacing: 12) {
+            // The bar shows the amount at a glance. The line below gives the exact numbers.
             GeometryReader { box in
                 ZStack(alignment: .leading) {
                     Capsule().fill(RPMInk.glassWash)
@@ -60,12 +60,6 @@ struct HomeLock: View {
             Text(Loc.get("HomeLock_Progress", gate.have, gate.want))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
-
-            Text(gate.toGo == 1
-                 ? Loc.get("HomeLock_ToGoOne")
-                 : Loc.get("HomeLock_ToGo", gate.toGo))
-                .font(.system(size: 12))
-                .foregroundStyle(RPMInk.white(0x99 / 255))
         }
         .padding(.top, 6)
     }

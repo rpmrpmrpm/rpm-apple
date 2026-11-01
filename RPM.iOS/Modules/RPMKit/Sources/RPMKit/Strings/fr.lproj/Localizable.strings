@@ -1801,8 +1801,8 @@
 "Rpm_Tab_Radio" = "Radio";
 "Rpm_Library_Loading" = "Chargement de votre bibliothèque…";
 
-/* Empty state on the iPhone library tab when the user's cloud store is empty. */
-"Rpm_Library_Empty" = "Rien ici pour l'instant. Envoyez votre bibliothèque depuis rpm sur votre ordinateur et elle apparaîtra ici.";
+/* Phone and TV apps: empty state of home, the album wall, the artists wall and the genres wall when the person's own collection has no music. A shared collection uses Rpm_Share_EmptyShelf. */
+"Rpm_Library_Empty" = "Rien ici pour l'instant. Envoyez votre bibliothèque depuis rpm sur votre ordinateur et elle apparaîtra ici. Connectez-vous-y avec ce compte.";
 "Rpm_Library_Error" = "Impossible d'atteindre votre bibliothèque.";
 "Rpm_Library_Retry" = "Réessayer";
 "Rpm_NowPlaying_Nothing" = "Aucune lecture";
@@ -2026,6 +2026,9 @@
 
 /* iPhone tab bar label for the account and settings screen. */
 "Rpm_Tab_Profile" = "Profil";
+
+/* Phone tab bar label for the home screen. The page itself uses Home_Heading, in lower case. */
+"Rpm_Tab_Home" = "Accueil";
 "Rpm_Profile_Subtitle" = "Votre compte, votre stockage et le comportement de l'app.";
 "Rpm_Profile_Account" = "Compte";
 "Rpm_Profile_SignOut" = "Se déconnecter";
@@ -5208,8 +5211,11 @@
 /* Locked home panel heading when a single album is missing. */
 "HomeLock_ToGoOne" = "Encore 1 album";
 
-/* Locked home panel, line under the heading. */
-"HomeLock_Body" = "L'accueil montre ce que vous avez écouté et quoi mettre ensuite. Il lui faut quelques disques de plus pour être utile.";
+/* Locked home panel, line under the heading. Desktop, where the heading already says how many albums are missing, and the phone and Apple TV for a shared collection, where the person cannot add music. */
+"HomeLock_Body" = "L'accueil montre ce que vous avez écouté récemment et suggère quoi écouter ensuite.";
+
+/* Phone and Apple TV: locked home screen for the person's own collection, line under the heading. Music can only be added in the desktop app, so the line says where. A shared collection uses HomeLock_Body. */
+"Rpm_HomeLock_Body" = "L'accueil montre ce que vous avez écouté récemment et suggère quoi écouter ensuite. Envoyez plus d'albums depuis rpm sur votre ordinateur.";
 
 /* Locked home panel, under the progress bar. */
 "HomeLock_Progress" = "%1$@ albums sur %2$@";
@@ -5736,8 +5742,11 @@
 /* Android TV sign-in screen, under the two QR codes (Google and Apple). The person scans one with a phone and finishes signing in there; the TV signs in by itself. */
 "Tv_SignIn_Scan" = "Scannez un code avec l'appareil photo de votre téléphone et connectez-vous sur votre téléphone.";
 
-/* Android TV album wall when the signed-in account has no music in the cloud. */
-"Tv_Library_Empty" = "Rien pour l'instant. Envoyez votre bibliothèque depuis rpm sur votre ordinateur et elle apparaîtra ici.";
+/* Apple TV: artist page when the artist is not in the collection on screen, for example after switching collections. */
+"Tv_Artist_NotHere" = "Cet artiste n'a aucun album dans cette collection.";
+
+/* Apple TV: genre page when no album in the collection on screen is in the genre, for example after switching collections. */
+"Tv_Genre_NotHere" = "Ce genre n'a aucun album dans cette collection.";
 
 /* Android TV: under the rpm logo on the opening screen while the library is read from the cloud with nothing cached on the TV. {0} is how many tracks have arrived so far. */
 "Tv_Library_ReadingCount" = "Lecture de votre bibliothèque (%1$@ titres)";

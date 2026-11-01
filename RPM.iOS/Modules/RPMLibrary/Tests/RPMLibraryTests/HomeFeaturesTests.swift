@@ -140,13 +140,6 @@ struct FeatureGateTests {
         #expect(FeatureGate(have: 19, want: 20).open == false)
     }
 
-    /// The message reads "12 albums to go". A gate that is already open has nothing left to go, so
-    /// the count is never negative.
-    @Test func thereIsNeverANegativeAmountToGo() {
-        #expect(FeatureGate(have: 30, want: 20).toGo == 0)
-        #expect(FeatureGate(have: 8, want: 20).toGo == 12)
-    }
-
     /// The value is limited to 0 to 1 at both ends. A gate that wants nothing counts as finished,
     /// which avoids dividing by zero. A value past the threshold does not make the bar overflow.
     @Test func theBarNeitherDividesByNoughtNorOverflows() {

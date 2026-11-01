@@ -21,10 +21,6 @@ public struct FeatureGate: Sendable, Equatable {
     /// Whether the screen may draw.
     public var open: Bool { have >= want }
 
-    /// How much is still missing. Never negative. The sentence reads "12 albums to go", and
-    /// a gate that is already open has nothing to go, not a negative amount.
-    public var toGo: Int { max(0, want - have) }
-
     /// How far along, from zero to one, for a progress bar. The value is clamped at both
     /// ends. A gate that wants nothing reads as finished, rather than dividing by zero.
     /// A gate past its threshold does not draw a bar that overflows its track.

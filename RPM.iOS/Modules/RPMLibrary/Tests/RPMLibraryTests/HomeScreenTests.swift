@@ -27,7 +27,8 @@ struct HomeScreenTests {
         let screen = HomeScreen.build(shelf: shelf(19), songs: [], lists: [], stations: [], draw: 1)
 
         #expect(screen.gate.open == false)
-        #expect(screen.gate.toGo == 1)
+        #expect(screen.gate.have == 19)
+        #expect(screen.gate.want == 20)
     }
 
     @Test func aCollectionBigEnoughOpensIt() {

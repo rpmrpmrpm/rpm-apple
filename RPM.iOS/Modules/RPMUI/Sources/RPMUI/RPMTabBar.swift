@@ -22,7 +22,7 @@ public enum RPMTab: String, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .home: return Loc.get("Home_Heading")
+        case .home: return Loc.get("Rpm_Tab_Home")
         case .library: return Loc.get("Settings_Library")
         case .radio: return Loc.get("Rpm_Tab_Radio")
         case .profile: return Loc.get("Rpm_Tab_Profile")

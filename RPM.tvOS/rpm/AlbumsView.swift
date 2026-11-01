@@ -40,9 +40,10 @@ struct AlbumsView: View {
             VStack(alignment: .leading, spacing: 30) {
                 bar(shown, own: own)
 
-                if shown.isEmpty {
-                    Message(session.albums.isEmpty ? Loc.get("Tv_Library_Empty") : Loc.get("Viz_LibraryNoMatch"))
-                        .frame(height: 400)
+                if session.albums.isEmpty {
+                    EmptyCollection().frame(height: 400)
+                } else if shown.isEmpty {
+                    Message(Loc.get("Viz_LibraryNoMatch")).frame(height: 400)
                 } else {
                     AlbumGrid(albums: shown)
                 }

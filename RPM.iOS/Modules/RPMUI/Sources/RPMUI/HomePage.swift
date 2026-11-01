@@ -32,8 +32,6 @@ public struct HomePage: View {
     private let stations: [String: RadioStation]
     private let onTune: (RadioStation) -> Void
 
-    private let onAddMusic: () -> Void
-
     /// The long-press menu on the quick selection's songs. See ``HomePicksRow/songMenu``.
     private let songMenu: TrackMenu
 
@@ -43,6 +41,10 @@ public struct HomePage: View {
 
     /// Opens the list of collections this account can read.
     private let onSwitch: () -> Void
+
+    /// The owner of the collection on screen, or nil for the person's own. The lock tells the
+    /// person to upload music only to their own collection.
+    private let lender: String?
 
     /// Whether this page is the one showing.
     ///
@@ -61,12 +63,11 @@ public struct HomePage: View {
     public init(screen: HomeScreen?, albums: [CloudAlbum], lists: [PlaylistSet],
                 stations: [String: RadioStation],
                 covers: any CoverStore, backdrops: BackdropStore? = nil,
-                canSwitch: Bool, onSwitch: @escaping () -> Void, onScreen: Bool,
+                canSwitch: Bool, onSwitch: @escaping () -> Void, lender: String?, onScreen: Bool,
                 onOpen: @escaping (CloudAlbum) -> Void,
                 onOpenList: @escaping (String) -> Void,
                 onPlay: @escaping ([CloudTrack]) -> Void,
                 onTune: @escaping (RadioStation) -> Void,
-                onAddMusic: @escaping () -> Void,
                 songMenu: TrackMenu,
                 onReady: @escaping () -> Void) {
         self.onReady = onReady
@@ -81,9 +82,9 @@ public struct HomePage: View {
         self.onOpen = onOpen
         self.onOpenList = onOpenList
         self.onPlay = onPlay
-        self.onAddMusic = onAddMusic
         self.canSwitch = canSwitch
         self.onSwitch = onSwitch
+        self.lender = lender
         self.onScreen = onScreen
     }
 
@@ -152,7 +153,7 @@ public struct HomePage: View {
             if let screen, screen.gate.open {
                 open(screen)
             } else if let screen {
-                HomeLock(gate: screen.gate, onAddMusic: onAddMusic)
+                HomeLock(gate: screen.gate, lender: lender)
                     // No banner here to wait for.
                     .onAppear(perform: onReady)
             } else {

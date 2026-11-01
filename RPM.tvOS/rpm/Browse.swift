@@ -122,7 +122,7 @@ struct ArtistsView: View {
                     .id("top")
 
                     if artists.isEmpty {
-                        Message(Loc.get("Artists_Empty")).frame(height: 400)
+                        EmptyCollection().frame(height: 400)
                     } else {
                         LazyVGrid(columns: Array(repeating: GridItem(.fixed(ArtistCard.edge), spacing: Card.gap),
                                                  count: ArtistCard.columns),
@@ -393,7 +393,7 @@ struct ArtistPage: View {
                 screens.paint(page, art.colours)
             }
         } else {
-            Message(Loc.get("Artists_Empty"))
+            Message(Loc.get("Tv_Artist_NotHere"))
         }
     }
 
@@ -479,7 +479,7 @@ struct GenresView: View {
                 PageBar(genres.count == 1 ? Loc.get("Genres_CountOne") : Loc.get("Genres_Count", String(genres.count)))
 
                 if genres.isEmpty {
-                    Message(Loc.get("Genres_Empty")).frame(height: 400)
+                    EmptyCollection().frame(height: 400)
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.fixed(GenreCard.width), spacing: Card.gap),
                                              count: GenreCard.columns),
@@ -794,7 +794,7 @@ struct GenrePage: View {
                 }
             }
         } else {
-            Message(Loc.get("Genres_Empty"))
+            Message(Loc.get("Tv_Genre_NotHere"))
         }
     }
 

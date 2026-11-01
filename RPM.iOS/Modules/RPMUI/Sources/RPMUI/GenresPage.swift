@@ -205,7 +205,7 @@ public struct GenresPage: View {
     }
 
     private var empty: some View {
-        Text(Loc.get(lender == nil ? "Genres_Empty" : "Rpm_Share_EmptyShelf"))
+        Text(Loc.get(lender == nil ? "Rpm_Library_Empty" : "Rpm_Share_EmptyShelf"))
             .font(RPMFont.display(14))
             .foregroundStyle(RPMInk.white(0x88 / 255))
             .multilineTextAlignment(.center)
