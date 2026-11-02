@@ -3948,18 +3948,6 @@
 /* Tooltip on the back button of an artist's page. */
 "Artists_Back" = "Volver a artistas";
 
-/* Tooltip on the back arrow of the photo slideshow on an artist's page. */
-"Artists_PhotoPrevious" = "Foto anterior";
-
-/* Tooltip on the forward arrow of the photo slideshow on an artist's page. */
-"Artists_PhotoNext" = "Foto siguiente";
-
-/* Tooltip on the slideshow button of an artist's page while it is off. */
-"Artists_PhotoSlideshowStart" = "Iniciar pase de fotos";
-
-/* Tooltip on the slideshow button of an artist's page while it is running. */
-"Artists_PhotoSlideshowStop" = "Detener pase de fotos";
-
 /* Heading over the records filed under the artist on their page. */
 "Artists_Albums" = "Álbumes";
 
@@ -4088,9 +4076,6 @@
 
 /* Line under the Most popular heading saying where the ranking comes from. */
 "Artists_PopularSource" = "Según los coleccionistas de Discogs";
-
-/* Shown in the Most popular card on an artist's page when no Discogs account is connected. */
-"Artists_PopularConnect" = "Conecta una cuenta de Discogs en Ajustes para ver esto.";
 
 /* Under a record in the Most popular card: how many Discogs users own a copy. */
 "Artists_PopularHave" = "%1$@ lo tienen";

@@ -3948,18 +3948,6 @@
 /* Tooltip on the back button of an artist's page. */
 "Artists_Back" = "返回艺人";
 
-/* Tooltip on the back arrow of the photo slideshow on an artist's page. */
-"Artists_PhotoPrevious" = "上一张照片";
-
-/* Tooltip on the forward arrow of the photo slideshow on an artist's page. */
-"Artists_PhotoNext" = "下一张照片";
-
-/* Tooltip on the slideshow button of an artist's page while it is off. */
-"Artists_PhotoSlideshowStart" = "开始幻灯片放映";
-
-/* Tooltip on the slideshow button of an artist's page while it is running. */
-"Artists_PhotoSlideshowStop" = "停止幻灯片放映";
-
 /* Heading over the records filed under the artist on their page. */
 "Artists_Albums" = "专辑";
 
@@ -4088,9 +4076,6 @@
 
 /* Line under the Most popular heading saying where the ranking comes from. */
 "Artists_PopularSource" = "根据 Discogs 收藏者";
-
-/* Shown in the Most popular card on an artist's page when no Discogs account is connected. */
-"Artists_PopularConnect" = "在设置中连接 Discogs 账户以查看。";
 
 /* Under a record in the Most popular card: how many Discogs users own a copy. */
 "Artists_PopularHave" = "%1$@ 人拥有";
