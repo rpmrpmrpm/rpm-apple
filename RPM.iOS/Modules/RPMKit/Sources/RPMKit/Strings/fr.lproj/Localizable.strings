@@ -2014,6 +2014,21 @@
 /* Tooltip on the rip chip while it is asking about a disc rather than showing a rip. */
 "Rip_OfferTooltip" = "Un CD audio est dans le lecteur";
 
+/* Heading of the card that slides up when an audio CD goes into the drive. */
+"Rip_CardTitle" = "Disque inséré";
+
+/* Disc card: shown beside the turning record while the CD is read and looked up. */
+"Rip_CardLooking" = "Recherche de votre disque…";
+
+/* Disc card: the CD was read but no catalogue knows it. */
+"Rip_CardUnknown" = "Nous n’avons pas trouvé ce disque, mais vous pouvez quand même l’écouter ou l’extraire.";
+
+/* Disc card button: plays the CD straight away without adding it to the collection. */
+"Rip_CardPlay" = "Écouter le CD";
+
+/* Disc card button: opens Import from CD on this disc. */
+"Rip_CardRip" = "Extraire le CD";
+
 /* How rpm names itself in the Windows AutoPlay list of things that can happen when a music CD goes in. Windows shows it, not the app. */
 "Rip_AutoPlayAction" = "Extraire le disque avec rpm";
 "Rip_CancelTooltip" = "Supprimer tout ce que cette extraction a produit";
