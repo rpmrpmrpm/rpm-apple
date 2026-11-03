@@ -180,20 +180,20 @@
 /* Tagline beside the rpm mark in the parked header, when nothing is playing. */
 "Art_ParkedTagline" = "重新发现你的音乐收藏";
 "Catalog_DiscogsConnect" = "连接 Discogs";
-"Catalog_DiscogsConnectFailed" = "Discogs 未能完成连接。请重试。";
+"Catalog_DiscogsConnectFailed" = "Discogs 没有连接成功。再试一次吧！";
 "Catalog_DiscogsConnected" = "已连接";
 "Catalog_DiscogsConnectedAs" = "已连接：%1$@";
 "Catalog_DiscogsDisconnect" = "断开连接";
 "Catalog_DiscogsNotConnected" = "未连接";
-"Catalog_DiscogsPending" = "请在浏览器中完成 Discogs 登录，然后重新检查。";
+"Catalog_DiscogsPending" = "请先在浏览器中完成 Discogs 登录，然后回来再检查一次。";
 
 /* Discogs status in Catalogues settings when nobody is signed in to rpm. */
 "Catalog_DiscogsSignIn" = "请先登录 rpm";
 "Catalog_DiscogsRecheck" = "重新检查";
 "Catalog_DiscogsUnavailable" = "此处不可用";
-"Catalog_DiscogsWhy" = "Discogs 由唱片持有者共同编目，rpm 数据库没有收录的压片通常在这里能找到。连接你自己的账户后，搜索计入你自己的调用额度，而不是所有 rpm 用户共用的额度。";
+"Catalog_DiscogsWhy" = "Discogs 由唱片的主人们共同整理，常常收录 rpm 数据库里没有的版本。连接你自己的帐户后，搜索会使用你自己的频率限额，而不是和所有人共用一个。";
 "Catalog_Heading" = "唱片数据库";
-"Catalog_Intro" = "查找专辑时 rpm 会搜索的位置。搜索需要 rpm 账户；连接 Discogs 账户即可一并搜索 Discogs。";
+"Catalog_Intro" = "这里是你查找专辑时 rpm 去搜索的地方。搜索需要 rpm 帐户；连接 Discogs 后，rpm 也会在那里搜索。";
 
 /* RPM catalogue status on the Catalog settings page, signed in. */
 "Catalog_RpmSearched" = "始终参与搜索。无需连接。";
@@ -202,7 +202,7 @@
 "Catalog_RpmSignIn" = "登录您的 rpm 账户即可搜索唱片目录。";
 
 /* Catalog settings page, fanart.tv section: what fanart.tv provides and what adding a personal key changes. */
-"Catalog_FanartWhy" = "rpm 从 fanart.tv 获取艺人照片、方形艺人图片和标志。添加你自己的免费 fanart.tv 个人密钥，新图片将在 2 天后而不是 7 天后可用。密钥保存在你的 rpm 账户中，并在你的所有设备上使用。";
+"Catalog_FanartWhy" = "rpm 从 fanart.tv 获取艺人照片、方形图片和标志。添加你自己的免费个人密钥后，新图片 2 天就能拿到，而不是 7 天。密钥保存在你的 rpm 帐户里，所以在你所有设备上都能用。";
 
 /* Placeholder in the fanart.tv key box. */
 "Catalog_FanartKeyPlaceholder" = "fanart.tv 个人 API 密钥";
@@ -242,7 +242,7 @@
 "Cloud_Cancel" = "取消";
 "Cloud_Failed" = "%1$@ 首失败";
 "Cloud_Heading" = "云存储";
-"Cloud_Intro" = "把你的音乐同时保存在 rpm 云端和这台电脑上。除非你另行设置，文件都会留在磁盘上。";
+"Cloud_Intro" = "把你的音乐安全地存进 rpm 云端，同时保留在这台电脑上。除非你另有安排，文件都会原地不动。";
 "Cloud_ModeAll" = "同步所有音乐";
 "Cloud_ModeAllHint" = "你的整个音乐收藏，以及之后添加的内容。";
 "Cloud_ModeNone" = "不同步";
@@ -254,7 +254,7 @@
 "Cloud_OnlyInCloud" = "仅存于云端的音乐";
 
 /* Cloud settings, under Cloud_OnlyInCloud. */
-"Cloud_OnlyInCloudHint" = "rpm 从不删除你的文件。如果你为了腾出空间而删除音乐，云端副本会保留，你可以在右键菜单中重新下载。";
+"Cloud_OnlyInCloudHint" = "rpm 从不删除你的文件。如果你为了腾出空间删掉音乐，云端副本仍会保留，你随时可以从右键菜单重新下载。";
 "Cloud_Pending" = "剩余 %1$@ 首";
 "Cloud_Retry" = "重试失败的上传";
 "Cloud_SignIn" = "登录";
@@ -695,10 +695,10 @@
 "Settings_AnalysisTagsBackfill" = "写入整个音乐收藏";
 
 /* Settings > Collection: explanation under the tempo-and-key toggle. */
-"Settings_AnalysisTagsHint" = "rpm 会计算 DJ 模式中所用每首曲目的速度和调性。开启后，分析完成的曲目会把它们写入自身标签，文件管理器和其他音乐软件都能读取。仅填写空白字段：文件中已有的值不会改动。";
+"Settings_AnalysisTagsHint" = "rpm 会为 DJ 模式算出每首曲目的速度和调性。打开后，每首分析完的曲目都会把它们写进自己的标签，你的文件浏览器和其他音乐软件也能读到。只填写空白字段，文件里已有的内容保持不变。";
 
 /* Settings > Collection: shown in place of the count when nothing is waiting. */
-"Settings_AnalysisTagsNoneWaiting" = "所有已分析的曲目都已写入速度和调性。";
+"Settings_AnalysisTagsNoneWaiting" = "全部完成！每首已分析的曲目都写好了速度和调性。";
 
 /* Settings > Collection: tick beside the backfill button. Off, the pass fills blanks only. */
 "Settings_AnalysisTagsOverwrite" = "替换文件中已有的值";
@@ -710,7 +710,7 @@
 "Settings_AnalysisTagsStop" = "停止";
 
 /* Settings > Collection: how many analysed tracks the backfill would write to. */
-"Settings_AnalysisTagsWaiting" = "有 %1$@ 首已分析的曲目还在等待写入速度与调性。";
+"Settings_AnalysisTagsWaiting" = "还有 %1$@ 首已分析的曲目在等待写入速度和调性。";
 
 /* Settings > Collection: the toggle that turns the automatic tagging pass on. */
 "Settings_AnalysisTagsWrite" = "把测得的速度与调性写入文件";
@@ -725,19 +725,19 @@
 "Settings_HeaderRecord" = "旋转唱片";
 
 /* Settings > Display: hint under the spinning record toggle. */
-"Settings_HeaderRecordHint" = "在封面展示区右侧显示旋转的唱片。关闭时，图片将铺满整个宽度。";
+"Settings_HeaderRecordHint" = "在封面展示的右侧显示旋转的唱片。关闭后，封面会铺满整个宽度。";
 
 /* Settings > Display: toggle for the artist photograph behind the art display. */
 "Settings_HeaderArtistPhoto" = "艺人照片";
 
 /* Settings > Display: hint under the artist photo toggle. */
-"Settings_HeaderArtistPhotoHint" = "在封面展示区后面显示艺人照片。关闭时不会下载照片，改用专辑配色。";
+"Settings_HeaderArtistPhotoHint" = "在封面展示背后显示艺人照片。关闭后，rpm 不下载任何照片，改用专辑的颜色。";
 
 /* Settings > Collection: title of the card choosing how multi-disc releases are handled. */
 "Settings_MultiDisc" = "多碟专辑";
 
 /* Settings > Collection: hint under the multi-disc mode picker. */
-"Settings_MultiDiscHint" = "在抓取或导入跨多张碟的发行版时如何处理。";
+"Settings_MultiDiscHint" = "翻录或导入多碟发行时，rpm 如何处理。";
 
 /* Settings > Collection: multi-disc mode option, the default merged mode. */
 "Settings_MultiDiscMerged" = "合为一张专辑，曲目连续编号";
@@ -755,10 +755,10 @@
 "Settings_ShareListening" = "分享我播放的内容";
 
 /* Settings hint under the Share what I play toggle: what leaves the computer and what it is for. */
-"Settings_ShareListeningHint" = "发送您播放每首歌曲的次数，不含时间和历史记录。用于在专辑页面标记最常播放的歌曲。关闭后不再发送任何内容。";
+"Settings_ShareListeningHint" = "发送每首歌的播放次数，不含时间，也不含历史记录。专辑页面就是靠它标出最常播放的歌曲。关闭后就不再发送任何内容。";
 
 /* Settings > Collection: hint under the fingerprinting toggle. */
-"Settings_FingerprintHint" = "rpm 会为每首曲目计算音频指纹并共享给识别服务，从而让所有人的识别效果更好。它在后台运行，且不会修改你的文件。";
+"Settings_FingerprintHint" = "rpm 会为每首曲目生成音频指纹，并分享给识别服务，让大家都能更准确地识别音乐。它在后台安静运行，绝不会改动你的文件。";
 
 /* Settings section heading, above the setting that makes rpm the app the machine opens for a music CD. */
 "Settings_Discs" = "光盘";
@@ -767,7 +767,7 @@
 "Settings_DiscDefault" = "插入音乐 CD 时打开 rpm";
 
 /* Hint under the disc-handler toggle. */
-"Settings_DiscDefaultHint" = "这台电脑用 rpm 而不是系统自带的音乐应用打开音频光盘。rpm 在抓取前会先询问。这与系统设置中的选项是同一项，两处均可更改。";
+"Settings_DiscDefaultHint" = "放入音频 CD，它会在 rpm 中打开，而不是电脑自带的音乐应用。别担心，rpm 翻录前一定会先问你。这和系统设置里的是同一个选项，在哪边都能修改。";
 
 /* Shown instead of the disc-handler toggle when the app is not running from an installed bundle. */
 "Settings_DiscDefaultUnavailable" = "只有已安装的应用才能注册，因此开发版本中此项不可用。";
@@ -780,7 +780,7 @@
 "Settings_Background" = "背景";
 
 /* Hint under the Background heading in Display settings, above the row of backdrop tiles. */
-"Settings_BackgroundHint" = "选择应用自带的背景，或使用你自己的图片。";
+"Settings_BackgroundHint" = "从 rpm 自带的背景里挑一张，或者用你自己的图片。";
 
 /* Backdrop tile: the default backdrop, RPaMp's ground (bands of cyan light in deep blue). */
 "Settings_BackgroundDefault" = "默认";
@@ -809,7 +809,7 @@
 "Settings_Library" = "音乐收藏";
 
 /* Settings > Collection: caption under the page heading. */
-"Settings_LibraryIntro" = "音乐存放的位置、文件的命名方式，以及导入新音乐时的处理方式。";
+"Settings_LibraryIntro" = "你的音乐存放在哪里、文件如何命名，以及新音乐加入时会发生什么。";
 "Settings_MusicFolder" = "音乐文件夹";
 "Settings_MusicFolderHint" = "rpm 存放音乐收藏的位置。";
 
@@ -825,7 +825,7 @@
 /* First-run setup, folder step: the chosen folder could not be opened as a library. There is no previous music folder at this point. */
 "Wizard_FolderFailed" = "无法打开该文件夹。没关系，换一个文件夹即可。";
 "Settings_Naming" = "文件命名";
-"Settings_NamingHint" = "抓取、录制和导入的文件如何命名与归档。抓取和黑胶录音会以默认模板进入队列，导入也按同样方式归档。可用下方的标记自定义命名格式。";
+"Settings_NamingHint" = "你翻录、录制和导入的文件如何命名和归档。翻录和黑胶录音会套用默认模板进入队列，导入也按同样方式归档。用下面的标记搭出你自己的结构吧！";
 "Settings_NamingNew" = "新建";
 "Settings_NamingDuplicate" = "复制";
 "Settings_NamingDelete" = "删除";
@@ -839,7 +839,7 @@
 "Settings_NamingUnsaved" = "有未保存的更改";
 "Settings_NamingSaved" = "已保存。";
 "Settings_NamingErrorEmpty" = "每个模板都需要名称和模板字符串。";
-"Settings_NamingErrorDuplicate" = "名称“%1$@”被使用了两次。名称必须唯一。";
+"Settings_NamingErrorDuplicate" = "名称“%1$@”已被使用。每个名称都需要不同。";
 "Settings_Title" = "设置";
 "Settings_Close" = "关闭";
 "Setup_ExistingLibrary" = "这已经是一个 rpm 音乐文件夹，rpm 将直接打开它。";
@@ -2059,14 +2059,14 @@
 "Rpm_Profile_PlanFreeDetail" = "25 GB 云存储空间，全部功能，无时间限制。";
 
 /* Settings, Profile page: second paragraph under 'Not a supporter', asking the account to support rpm. */
-"Rpm_Profile_PlanFreeAppeal" = "请考虑支持 rpm。支持者让 rpm 得以运转，并可使用支持者专属功能。";
+"Rpm_Profile_PlanFreeAppeal" = "喜欢 rpm 吗？欢迎考虑支持它！支持者让 rpm 继续运转，还能获得一些专属福利。";
 "Rpm_Profile_PlanSupporter" = "支持者";
 
 /* Settings, Profile page: what supporting rpm gets you. */
 "Rpm_Profile_PlanSupporterDetail" = "无限云存储、更高码率、高级识别、DJ 模式等更多功能。";
 
 /* Settings, Profile page: second paragraph under 'Supporter', thanking the account for supporting rpm. */
-"Rpm_Profile_PlanSupporterThanks" = "感谢你支持 rpm。你帮助 rpm 持续运行，并资助新的开发。你的慷慨让我们深受感动。";
+"Rpm_Profile_PlanSupporterThanks" = "感谢你支持 rpm！是你让 rpm 继续前进，也帮我们为每一项新功能买单。我们真心感动。";
 
 /* Settings, Profile page: the standing of an account marked as a closed beta tester. */
 "Rpm_Profile_PlanTester" = "封闭测试用户";
@@ -2075,7 +2075,7 @@
 "Rpm_Profile_PlanTesterDetail" = "支持者功能和 100 GB 云存储。";
 
 /* Settings, Profile page: second paragraph under 'Closed beta tester', thanking the account for testing. */
-"Rpm_Profile_PlanTesterThanks" = "感谢你测试 rpm。你的反馈帮助我们在公开测试前修复问题。";
+"Rpm_Profile_PlanTesterThanks" = "感谢你测试 rpm！你的报告帮我们在公开测试前修好问题。";
 "Rpm_Profile_Playback" = "播放";
 
 /* Settings, Profile page: what the quality choices do. */
@@ -2116,7 +2116,7 @@
 "Naming_ApplyStop" = "停止";
 "Naming_ApplyStopped" = "已停止。已经移动的文件保持在原处。";
 "Naming_ApplyClose" = "关闭";
-"Settings_NamingSaveHint" = "保存后，上方的模板将成为音乐收藏的默认模板。";
+"Settings_NamingSaveHint" = "保存后，上面的模板就会成为你收藏的默认模板。";
 "Naming_ApplyTemplate" = "模板：%1$@";
 "CloudChip_Title" = "云端";
 "CloudChip_StageWaiting" = "等待中";
@@ -2147,7 +2147,7 @@
 /* Tooltip on the cloud chip's Resume button. */
 "CloudChip_ResumeTooltip" = "从中断处继续上传。";
 "Cloud_History" = "最近的云端活动";
-"Cloud_HistoryHint" = "最近 %1$@ 天的上传、移除和下载记录。";
+"Cloud_HistoryHint" = "最近 %1$@ 天内上传、移除和下载的全部内容。";
 "Cloud_HistoryEmpty" = "暂无记录。";
 "Cloud_HistoryClear" = "清除记录";
 "Cloud_HistoryUploaded" = "已上传";
@@ -2162,8 +2162,8 @@
 "CloudChip_SummaryPreparingRemove" = "正在从云端移除音乐。";
 "CloudChip_SummaryPreparingRestore" = "正在下载你的音乐。";
 "Settings_Profile" = "个人资料";
-"Profile_SignedOut" = "你尚未登录。云存储、目录服务和你的套餐都需要账户。";
-"Profile_SignOutDetail" = "退出登录会停止云端同步。这台电脑上的音乐保持原样。";
+"Profile_SignedOut" = "你还没有登录。有了帐户，就能使用云端存储、目录和你的方案。";
+"Profile_SignOutDetail" = "退出登录会停止云同步。别担心，这台电脑上的音乐原封不动。";
 
 /* Button in Settings, Profile (desktop), under Sign out. Opens the confirmation; also the confirmation's red button on the desktop and the iPhone, and the spoken label of the iPhone's shorter Rpm_Profile_DeleteAccount key. */
 "Account_Delete" = "删除账户";
@@ -2175,7 +2175,7 @@
 "Account_DeleteBody" = "这会删除你的 rpm 账户、个人资料以及云端音乐库中的所有内容：已上传的音乐、封面和播放列表。你的评论和留言会保留，显示为“已删除的用户”。此操作无法撤销。";
 
 /* Second line of the delete-account confirmation on the desktop. */
-"Account_DeleteKeepsFiles" = "此电脑上的音乐文件不会被删除。";
+"Account_DeleteKeepsFiles" = "这台电脑上的音乐文件不会受到影响。";
 
 /* Desktop delete-account confirmation, when exactly one track on this computer exists only in the cloud (offloaded). */
 "Account_DeleteCloudOnlyOne" = "有 1 首曲目仅存在于云端，将会丢失。";
@@ -2190,28 +2190,28 @@
 "Account_Deleting" = "正在删除…";
 
 /* Shown in the delete-account confirmation when the server refuses the typed address. */
-"Account_DeleteEmailRefused" = "此邮箱与你的账户不符。如果邮箱无误，请联系支持。";
+"Account_DeleteEmailRefused" = "这个邮箱和你的帐户不匹配。如果你确定没错，请联系客服。";
 
 /* Shown in the delete-account confirmation when the request did not get through or the server failed. Nothing was deleted. */
-"Account_DeleteFailed" = "无法删除你的账户。请检查网络连接后重试。";
+"Account_DeleteFailed" = "无法删除你的帐户。请检查网络连接后再试。";
 
 /* Title of the note shown after the account was deleted. */
 "Account_DeletedTitle" = "账户已删除";
 
 /* Body of the note shown after the account was deleted, on both heads. */
-"Account_DeletedBody" = "你的账户已删除，你已退出登录。你的云端音乐库将在两小时内移除。你可以继续在没有账户的情况下使用 rpm。";
+"Account_DeletedBody" = "你的帐户已删除，你也已退出登录。云端音乐库会在两小时内移除。当然，你仍然可以不登录继续使用 rpm。";
 
 /* Shown in place of the author's name on a review, comment or wall post whose account was deleted. */
 "Community_DeletedUser" = "已删除的用户";
 "Profile_DataFolder" = "应用数据";
-"Profile_DataFolderDetail" = "设置、封面缓存和登录信息保存在这里。你的音乐不在此处：它保存在你的音乐文件夹中。";
+"Profile_DataFolderDetail" = "你的设置、封面缓存和登录信息都在这里。音乐不在这里，它们留在你的音乐文件夹里。";
 "Profile_ShowFolder" = "显示文件夹";
 
 /* Settings, Profile page: title of the card for downloaded lookup data. */
 "Profile_Cache" = "缓存数据";
 
 /* Settings, Profile page: what the cached data card holds. */
-"Profile_CacheDetail" = "从互联网下载的封面、电台、歌词和专辑信息。保留 30 天，需要时会重新下载。";
+"Profile_CacheDetail" = "从网上下载的封面、电台、歌词和专辑信息。rpm 会保留 30 天，之后需要时再重新获取。";
 
 /* Settings, Profile page: size of the cache. {0} is a size such as 24.3 MB. */
 "Profile_CacheUsed" = "已用 %1$@";
@@ -2223,7 +2223,7 @@
 "Update_Title" = "有可用更新";
 
 /* Body of the update window. {0} is a version such as 0.2.0. */
-"Update_Body" = "rpm %1$@ 已可安装。可以立即重启，或在下次退出时自动安装。";
+"Update_Body" = "rpm %1$@ 已准备好安装。现在重启，或者在你下次退出时自动安装。";
 
 /* Button in the update window: quit and come back on the new version. */
 "Update_Restart" = "立即重启";
@@ -2235,7 +2235,7 @@
 "Profile_Updates" = "更新";
 
 /* Settings, Profile page: what the updates card does. */
-"Profile_UpdatesDetail" = "rpm 会在启动时检查新版本，在后台下载，并在退出时安装。";
+"Profile_UpdatesDetail" = "rpm 启动时会检查新版本，在后台悄悄下载，并在你退出时安装。你什么都不用做！";
 
 /* Settings, Profile page: button that reads the update feed now. */
 "Profile_CheckUpdates" = "检查更新";
@@ -2355,7 +2355,7 @@
 "Settings_CrashReports" = "发送崩溃报告";
 
 /* Settings > Profile: hint under the crash reports switch. */
-"Settings_CrashReportsDesc" = "rpm 意外关闭时发送报告，以便修复问题。";
+"Settings_CrashReportsDesc" = "如果 rpm 意外关闭，它会给我们发送一份报告，方便我们修复问题。";
 
 /* Settings, Profile page: confirmation shown after the cache is emptied. */
 "Profile_CacheCleared" = "缓存已清除";
@@ -2481,25 +2481,31 @@
 "Settings_Display" = "显示";
 
 /* Settings > Display: caption under the page heading. */
-"Settings_DisplayIntro" = "rpm 的外观：应用背景图片和封面显示。";
+"Settings_DisplayIntro" = "rpm 的外观：应用背后的图片，以及顶部的封面展示。";
 
 /* Settings rail: the section for the speakers the music comes out of. */
 "Settings_Sound" = "声音";
 
 /* Settings > Sound: caption under the page heading. */
-"Settings_SoundIntro" = "音乐通过哪些扬声器播放、音量大小，以及音效调节。";
+"Settings_SoundIntro" = "你的音乐从哪个音箱播放、音量多大，以及音色如何调整。";
 
 /* Settings, Sound: label above the output-device picker. */
 "Settings_Output" = "扬声器";
 
 /* Settings, Sound: hint under the output-device picker. */
-"Settings_OutputHint" = "音乐的播放位置。使用系统默认设备时，连接扬声器或切换输出后 rpm 会一同切换；选定某个设备后则固定不变。";
+"Settings_OutputHint" = "你的音乐在哪里播放。使用系统默认设备时，连接音箱或切换输出，rpm 都会跟着切换；选定一个设备后，rpm 就一直用它。";
 
 /* Settings, Sound: first item in the output picker, the default. */
 "Settings_OutputSystem" = "使用系统默认设备";
 
+/* Settings > Sound > Output: switch. On, the volume slider sets a Bluetooth speaker's own volume (the computer's output volume) instead of rpm's own volume. */
+"Settings_DeviceVolume" = "控制设备音量";
+
+/* Settings > Sound > Output: explains the device volume switch above. */
+"Settings_DeviceVolumeHint" = "连接蓝牙音箱时，滑块可以直接调节音箱本身的音量，保留声音的每一个细节。不过这也是电脑的音量，其他正在播放的声音会一起变大变小。关闭后，滑块只调节 rpm。";
+
 /* Settings, Sound: shown when the chosen device is not currently on the machine. */
-"Settings_OutputMissing" = "当前未连接，音乐将通过系统扬声器播放，直到重新连接。";
+"Settings_OutputMissing" = "暂时没有连接，在它回来之前，音乐会从系统音箱播放。";
 
 /* Settings, Sound: which endpoint the app is actually on. {0} is the device name. */
 "Settings_OutputNow" = "正在使用：%1$@";
@@ -2508,7 +2514,7 @@
 "Settings_Eq" = "均衡器";
 
 /* Settings, Sound: hint under the equalizer heading, explaining the per-device curves. */
-"Settings_EqHint" = "与播放器相同的十个频段，按扬声器分别保存：适合笔记本的曲线并不适合音响，因此各自单独记忆。";
+"Settings_EqHint" = "和播放器相同的十个频段，按每套音箱分别保存。适合笔记本的曲线放到 Hi-Fi 上会不对劲，所以 rpm 会分别记住每一套。";
 
 /* Settings, Sound: the equalizer's on/off switch. */
 "Settings_EqOn" = "启用均衡器";
@@ -2995,7 +3001,7 @@
 "Cloud_Errors" = "错误";
 
 /* Cloud settings: hint under the errors card title. */
-"Cloud_ErrorsHint" = "云端未能完成的操作及原因。发送报告后我们可以进一步排查。";
+"Cloud_ErrorsHint" = "云端没能完成的操作及原因。给我们发一份报告，我们会看看是怎么回事。";
 
 /* Cloud settings: shown in place of the error list when there are none. */
 "Cloud_ErrorsEmpty" = "没有错误。";
@@ -3010,7 +3016,7 @@
 "Cloud_ErrorsReported" = "报告已发送";
 
 /* Cloud settings: shown when sending the error report was refused. */
-"Cloud_ErrorsReportRefused" = "报告发送失败，请稍后再试。";
+"Cloud_ErrorsReportRefused" = "报告没能发出。请稍后再试。";
 
 /* Cloud chip flyout: link to the error list in cloud settings. */
 "CloudChip_ErrorsHint" = "部分曲目未能同步。打开云端设置查看原因。";
@@ -3030,12 +3036,12 @@
 /* Album context-menu item: download a cloud-only album onto this machine. */
 "AlbumMenu_KeepOnComputer" = "下载到这台电脑";
 "Cloud_BringBackTitle" = "取回你的文件？";
-"Cloud_BringBackBody" = "这台电脑缺少 %1$@ 首曲目，它们仍在云端。下载它们需要 %2$@，本磁盘剩余 %3$@。只会下载在这台电脑上删除的曲目，不包括在你其他机器上删除的。";
+"Cloud_BringBackBody" = "这台电脑上少了 %1$@ 首曲目，但它们还安全地保存在云端。下载需要 %2$@，这块磁盘还有 %3$@ 可用。只会找回在这台电脑上删除的曲目，不包括你在其他电脑上删除的。";
 "Cloud_BringBackConfirm" = "下载";
 "Cloud_BringBackLeave" = "保留在云端";
-"Cloud_BringBackNoSpace" = "磁盘空间不足：需要 %1$@，剩余 %2$@。";
+"Cloud_BringBackNoSpace" = "这块磁盘空间不够：需要 %1$@，可用 %2$@。";
 "Cloud_BringBackFailed" = "%2$@ 首中有 %1$@ 首无法下载。";
-"Cloud_OffloadState" = "有 %1$@ 首曲目仅存于云端，为这台电脑节省 %2$@。";
+"Cloud_OffloadState" = "有 %1$@ 首曲目只存放在云端，为这台电脑省下了 %2$@。";
 
 /* Cloud settings, shown when nothing of this machine's own music is missing. Says only what this machine has, never what the whole library holds. */
 "Cloud_OffloadStateNone" = "这台电脑没有缺少任何曲目。";
@@ -3049,7 +3055,7 @@
 
 /* Log book verb: the cloud copy was kept, the file on this computer was deleted. */
 "Cloud_HistoryOffloaded" = "已删除本地副本";
-"Cloud_OffloadElsewhere" = "有 %1$@ 首曲目从未存在于这台电脑。它们由你的其他电脑上传，从云端播放。";
+"Cloud_OffloadElsewhere" = "有 %1$@ 首曲目从未在这台电脑上出现过。它们由你的其他电脑上传，直接从云端播放。";
 
 /* Import pane: caption under the animation while a move-import is running. */
 "Queue_ImportingMove" = "正在将所选文件移动到你的收藏";
@@ -3061,7 +3067,7 @@
 "Settings_ImportAction" = "导入文件";
 
 /* Settings > Collection: hint under the import-action picker. */
-"Settings_ImportActionHint" = "导入队列加入收藏时，原始文件会如何处理。";
+"Settings_ImportActionHint" = "导入队列加入收藏时，你的原始文件会怎样处理。";
 
 /* Settings > Collection: import-action option, the default. */
 "Settings_ImportActionMove" = "移动到收藏中";
@@ -3208,7 +3214,7 @@
 "Settings_Normalize" = "音量统一";
 
 /* Explains what volume levelling does, under the Sound settings heading. */
-"Settings_NormalizeHint" = "让每张唱片以相同响度播放，专辑之间无需再调音量。每首曲目在后台测量一次。";
+"Settings_NormalizeHint" = "让每张唱片以相同响度播放，换专辑时不用再去调音量。rpm 会在后台悄悄把每首曲目测量一次。";
 
 /* Volume levelling mode: every record plays at the level it was mastered at. */
 "Settings_NormalizeOff" = "关闭";
@@ -3223,7 +3229,7 @@
 "Settings_NormalizeClassical" = "古典录音也一并统一";
 
 /* Explains why classical records are excluded from volume levelling by default. */
-"Settings_NormalizeClassicalHint" = "默认关闭。安静的乐章本就该安静，音量拉平会压掉演奏所依赖的动态。";
+"Settings_NormalizeClassicalHint" = "默认关闭。安静的乐章本就该安静，统一响度会抹平演奏所依赖的强弱变化。";
 
 /* Progress line while the background loudness pass works through the library. {0} is a track count. */
 "Settings_NormalizeMeasuring" = "正在测量收藏：还剩 %1$@ 首曲目。";
@@ -3364,7 +3370,7 @@
 "Supporters_Dj" = "DJ 模式仅向 rpm 的支持者提供。欢迎支持 rpm。";
 
 /* Supporters-only window: shown when the gold backdrop is picked by an account that is not a supporter. */
-"Supporters_Backdrop" = "此背景仅向 rpm 的支持者提供。欢迎支持 rpm。";
+"Supporters_Backdrop" = "这个背景只给 rpm 支持者使用。喜欢吗？欢迎考虑支持 rpm！";
 
 /* Supporters-only window: shown when word by word lyric timing is switched on by an account that is not a supporter. */
 "Supporters_Karaoke" = "卡拉 OK 模式仅向 rpm 的支持者提供。欢迎支持 rpm。";
@@ -3382,10 +3388,10 @@
 "Cloud_UsageFull" = "已使用 %1$@ / %2$@（已满）";
 
 /* Cloud settings: the warning shown while the account is almost full. */
-"Cloud_AlmostFullHint" = "剩余不足 %1$@。存储已满时，rpm 将停止上传。";
+"Cloud_AlmostFullHint" = "剩余不到 %1$@。空间满了之后，rpm 会停止上传。";
 
 /* Cloud settings: shown while the sync mode is the one the full store dropped it to. */
-"Cloud_SyncAllPaused" = "因云存储已满，已切换为同步选定的音乐。";
+"Cloud_SyncAllPaused" = "你的云端空间满了，所以 rpm 改为只同步你选中的音乐。";
 
 /* Cloud settings: title of the card showing whether the account supports rpm. */
 "Cloud_SupporterHeading" = "支持者状态";
@@ -3394,16 +3400,16 @@
 "Cloud_SupporterFree" = "免费账户，含 25 GB 云存储。";
 
 /* Cloud settings: the standing of a supporter. */
-"Cloud_SupporterYes" = "你是支持者。你的云存储无限。";
+"Cloud_SupporterYes" = "你是支持者，云端空间不限量。谢谢你！";
 
 /* Cloud settings: a supporter whose support has an end date. */
-"Cloud_SupporterYesUntil" = "你的支持者身份有效期至 %1$@。你的云存储无限。";
+"Cloud_SupporterYesUntil" = "你的支持者身份有效至 %1$@，云端空间不限量。谢谢你！";
 
 /* Cloud settings: the standing of an account marked as a closed beta tester. */
-"Cloud_SupporterTester" = "你是封闭测试用户。你可使用支持者功能，并拥有 100 GB 云存储。";
+"Cloud_SupporterTester" = "你是封闭测试成员，可以使用支持者功能和 100 GB 云端空间。谢谢你的帮忙！";
 
 /* Cloud settings: the server did not answer, which is not the same as 'not a supporter'. */
-"Cloud_SupporterUnknown" = "无法获取你的支持者状态。";
+"Cloud_SupporterUnknown" = "暂时无法查询你的支持者状态。";
 
 /* Storage-full window: the second line when the app dropped 'all music' to the selection. */
 "CloudFull_PausedAll" = "同步已从“所有音乐”切换为“仅选定的音乐”。移除其他专辑后，可以手动上传新专辑。";
@@ -3544,7 +3550,7 @@
 "Share_MyLibrary" = "我的音乐收藏";
 
 /* Strip above the sharing settings when nobody is signed in. */
-"Share_SignInNeeded" = "共享需要 rpm 账户。登录后即可共享您的音乐收藏，并打开别人共享给您的音乐收藏。";
+"Share_SignInNeeded" = "共享需要 rpm 帐户。登录后即可共享你的收藏，也能打开别人分享给你的收藏。";
 
 /* Header of the sharing chip flyout, and of the sharing section in settings. */
 "Share_Title" = "共享音乐收藏";
@@ -3574,16 +3580,16 @@
 "Settings_ShareLibrary" = "在此网络中共享我的音乐收藏";
 
 /* Settings: hint under the sharing toggle. */
-"Settings_ShareLibraryHint" = "此网络中运行 rpm 的电脑可以请求共享。由你决定谁可以访问。";
+"Settings_ShareLibraryHint" = "这个网络里运行 rpm 的电脑可以请求共享。谁能访问由你决定。";
 
 /* Settings: label of the text box holding the name other computers see. */
 "Settings_ShareName" = "本机名称";
 
 /* Settings, Sharing: hint under the "This computer is called" box. Empty falls back to the account display name, then to the machine name. */
-"Settings_ShareNameHint" = "留空则使用你的显示名称。未登录时使用这台电脑的名称。";
+"Settings_ShareNameHint" = "留空则使用你的显示名称。未登录时，rpm 会使用这台电脑的名称。";
 
 /* Settings: empty state of the shared computers list. */
-"Settings_ShareNobody" = "尚未共享。在此网络的另一台电脑上打开 rpm，它就会出现在这里。";
+"Settings_ShareNobody" = "还没有共享任何内容。在同一网络的另一台电脑上打开 rpm，它就会出现在这里。";
 
 /* Settings: button that removes one computer from the shared list. */
 "Settings_ShareRemove" = "停止共享";
@@ -3715,13 +3721,13 @@
 "Settings_RequiredTagsTitle" = "必填标签";
 
 /* Settings hint under the required tags checkboxes. */
-"Settings_RequiredTagsHint" = "队列中的文件如果缺少其中任何一项，就会被标记。这不会阻止导入。";
+"Settings_RequiredTagsHint" = "队列中的文件缺少其中任何一项时会被标记出来。别担心，照样可以导入。";
 
 /* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
 "Settings_CatalogueFill" = "添加音乐时补全缺失的流派和年份";
 
 /* Settings hint under the catalogue fill toggle. */
-"Settings_CatalogueFillHint" = "rpm 会在其目录中查找每张唱片，并在流派、子流派和年份为空或不在 rpm 流派列表中时补全它们。已设置的值会保留。在你导入之前，不会写入任何文件。";
+"Settings_CatalogueFillHint" = "rpm 会在目录中查找每张唱片，在流派、子流派和年份为空或不在 rpm 流派列表中时补上。你已经填好的内容保持不变，导入之前也不会写入你的文件。";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "隐藏重复项";
@@ -5377,7 +5383,7 @@
 "Settings_Hints" = "首次运行提示";
 
 /* Display settings, line under the first-run hints heading. */
-"Settings_HintsHint" = "这些箭头会指出音乐从哪里导入、封面横幅如何展开，以及如何切换视图。每个只出现一次。";
+"Settings_HintsHint" = "那些小箭头会告诉你音乐从哪里进来、封面顶栏怎么打开、视图怎么切换。每个只出现一次，之后就不再打扰你。";
 
 /* Display settings, what the replay button says once it has been pressed. */
 "Settings_HintsBack" = "提示已恢复";
@@ -6205,7 +6211,7 @@
 "Tv_SettingsKaraoke" = "卡拉 OK 歌词";
 
 /* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
-"Settings_MixtapeAfterHint" = "专辑、播放列表或单曲播完后，继续播放你收藏中与之相似的歌曲。";
+"Settings_MixtapeAfterHint" = "专辑、播放列表或单曲放完后，音乐会接着播放你收藏里相似的歌曲。";
 
 /* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
 "Tv_SettingsMixtapeAfter" = "唱片播完后播放混音带";
@@ -6385,7 +6391,7 @@
 "Settings_PegasusVisualizer" = "Pegasus 中的可视化效果";
 
 /* Line under the Visualizer in Pegasus heading. */
-"Settings_PegasusVisualizerHint" = "Pegasus 播放时音乐背后流动的光。";
+"Settings_PegasusVisualizerHint" = "Pegasus 播放时，音乐背后流动的光影。";
 
 /* Display settings, first entry of the language and country pickers: follow Windows. {0} is what Windows gives now. */
 "Settings_SameAsWindows" = "与 Windows 相同（%1$@）";
@@ -6403,7 +6409,7 @@
 "Settings_OpenMusicFiles" = "播放音乐文件时打开 rpm";
 
 /* Line under the Open rpm when a music file is played switch. */
-"Settings_OpenMusicFilesHint" = "你打开的音乐文件会在 rpm 中播放。Windows 会请你在其设置中确认使用 rpm。";
+"Settings_OpenMusicFilesHint" = "你打开的音乐文件会在 rpm 中播放。Windows 会请你在它自己的设置里确认 rpm。";
 
 /* What Windows calls a file type rpm opens, in Explorer's Type column and Open with. */
 "Settings_OpenMusicFilesType" = "音乐文件";
@@ -6412,7 +6418,7 @@
 "Settings_LibraryLayout" = "资料库布局";
 
 /* Line under the Library layout heading. */
-"Settings_LibraryLayoutHint" = "资料库打开时的视图。资料库顶部的按钮也可以切换。";
+"Settings_LibraryLayoutHint" = "音乐库打开时的视图。你随时可以用音乐库顶部的按钮切换。";
 
 /* Setup wizard, first launch: the line under the welcome greeting, shown after two seconds. */
 "Wizard_HelloSubtitle" = "让我们开始吧。";

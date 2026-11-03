@@ -180,20 +180,20 @@
 /* Tagline beside the rpm mark in the parked header, when nothing is playing. */
 "Art_ParkedTagline" = "entdecken Sie Ihre Sammlung neu";
 "Catalog_DiscogsConnect" = "Discogs verbinden";
-"Catalog_DiscogsConnectFailed" = "Discogs hat die Verbindung nicht abgeschlossen. Versuchen Sie es erneut.";
+"Catalog_DiscogsConnectFailed" = "Die Verbindung mit Discogs hat nicht geklappt. Versuch es gleich noch mal!";
 "Catalog_DiscogsConnected" = "verbunden";
 "Catalog_DiscogsConnectedAs" = "verbunden als %1$@";
 "Catalog_DiscogsDisconnect" = "Trennen";
 "Catalog_DiscogsNotConnected" = "nicht verbunden";
-"Catalog_DiscogsPending" = "Schließen Sie die Anmeldung bei Discogs in Ihrem Browser ab und prüfen Sie dann erneut.";
+"Catalog_DiscogsPending" = "Schließ die Anmeldung bei Discogs in deinem Browser ab, dann komm zurück und prüf es noch einmal.";
 
 /* Discogs status in Catalogues settings when nobody is signed in to rpm. */
 "Catalog_DiscogsSignIn" = "melde dich zuerst bei rpm an";
 "Catalog_DiscogsRecheck" = "Erneut prüfen";
 "Catalog_DiscogsUnavailable" = "hier nicht verfügbar";
-"Catalog_DiscogsWhy" = "Discogs wird von den Leuten katalogisiert, denen die Platten gehören. Pressungen, die in der rpm-Datenbank fehlen, sind dort meist zu finden. Mit einem eigenen Konto zählen deine Suchen auf dein Limit statt auf eines, das sich alle rpm-Nutzer teilen.";
+"Catalog_DiscogsWhy" = "Discogs wird von den Leuten gepflegt, denen die Platten gehören, deshalb findest du dort oft Pressungen, die die rpm-Datenbank nicht hat. Verbinde dein eigenes Konto, dann zählen deine Suchen gegen dein eigenes Limit statt gegen eines, das sich alle teilen.";
 "Catalog_Heading" = "Kataloge";
-"Catalog_Intro" = "Wo rpm sucht, wenn du ein Album nachschlägst. Die Suche benötigt ein rpm-Konto; verbinde ein Discogs-Konto, um auch Discogs zu durchsuchen.";
+"Catalog_Intro" = "Hier sucht rpm, wenn du ein Album nachschlägst. Zum Suchen brauchst du ein rpm-Konto, und wenn du Discogs verbindest, sucht rpm auch dort.";
 
 /* RPM catalogue status on the Catalog settings page, signed in. */
 "Catalog_RpmSearched" = "Wird immer durchsucht. Nichts zu verbinden.";
@@ -202,7 +202,7 @@
 "Catalog_RpmSignIn" = "Melde dich bei deinem rpm-Konto an, um die Kataloge zu durchsuchen.";
 
 /* Catalog settings page, fanart.tv section: what fanart.tv provides and what adding a personal key changes. */
-"Catalog_FanartWhy" = "rpm lädt Künstlerfotos, quadratische Künstlerbilder und Logos von fanart.tv. Füge deinen kostenlosen persönlichen fanart.tv-Schlüssel hinzu, um neue Bilder nach 2 statt nach 7 Tagen zu erhalten. Der Schlüssel wird in deinem rpm-Konto gespeichert und auf allen deinen Geräten verwendet.";
+"Catalog_FanartWhy" = "rpm holt Künstlerfotos, quadratische Bilder und Logos von fanart.tv. Füg deinen eigenen kostenlosen persönlichen Schlüssel hinzu, dann bekommst du neue Bilder schon nach 2 statt nach 7 Tagen. Der Schlüssel wird in deinem rpm-Konto gespeichert und funktioniert so auf all deinen Geräten.";
 
 /* Placeholder in the fanart.tv key box. */
 "Catalog_FanartKeyPlaceholder" = "Persönlicher fanart.tv-API-Schlüssel";
@@ -242,7 +242,7 @@
 "Cloud_Cancel" = "Abbrechen";
 "Cloud_Failed" = "%1$@ fehlgeschlagen";
 "Cloud_Heading" = "Cloud-Speicher";
-"Cloud_Intro" = "Bewahre deine Musik zusätzlich zu diesem Rechner in der rpm-Cloud auf. Deine Dateien bleiben auf der Festplatte, sofern du nichts anderes verlangst.";
+"Cloud_Intro" = "Bewahre deine Musik sicher in der rpm-Cloud auf, zusätzlich zu diesem Computer. Deine Dateien bleiben, wo sie sind, solange du nichts anderes sagst.";
 "Cloud_ModeAll" = "Alle Musik synchronisieren";
 "Cloud_ModeAllHint" = "Deine gesamte Sammlung und alles, was du hinzufügst.";
 "Cloud_ModeNone" = "Nicht synchronisieren";
@@ -254,7 +254,7 @@
 "Cloud_OnlyInCloud" = "Musik, die nur in der Cloud liegt";
 
 /* Cloud settings, under Cloud_OnlyInCloud. */
-"Cloud_OnlyInCloudHint" = "rpm entfernt deine Dateien nie. Wenn du Musik löschst, um Platz zu schaffen, bleibt die Cloud-Kopie erhalten, und du kannst sie über das Kontextmenü wieder herunterladen.";
+"Cloud_OnlyInCloudHint" = "rpm entfernt nie deine Dateien. Wenn du Musik löschst, um Platz zu schaffen, bleibt die Kopie in der Cloud, und du kannst sie jederzeit über das Rechtsklickmenü wieder herunterladen.";
 "Cloud_Pending" = "Noch %1$@";
 "Cloud_Retry" = "Fehlgeschlagene Uploads erneut versuchen";
 "Cloud_SignIn" = "Anmelden";
@@ -695,10 +695,10 @@
 "Settings_AnalysisTagsBackfill" = "In die ganze Sammlung schreiben";
 
 /* Settings > Collection: explanation under the tempo-and-key toggle. */
-"Settings_AnalysisTagsHint" = "rpm ermittelt Tempo und Tonart jedes Titels, der im DJ-Modus genutzt wird. Ist das aktiv, werden sie nach der Analyse in die Tags des Titels geschrieben, wo ein Dateimanager und jedes andere Musikprogramm sie lesen können. Nur leere Felder werden gefüllt: ein Wert, der schon in der Datei steht, bleibt unangetastet.";
+"Settings_AnalysisTagsHint" = "rpm ermittelt Tempo und Tonart jedes Titels für den DJ-Modus. Schalte das ein, und jeder analysierte Titel bekommt sie in seine eigenen Tags geschrieben, damit dein Dateibrowser und andere Musik-Apps sie auch lesen können. Nur leere Felder werden gefüllt, was schon in einer Datei steht, bleibt also, wie es ist.";
 
 /* Settings > Collection: shown in place of the count when nothing is waiting. */
-"Settings_AnalysisTagsNoneWaiting" = "Bei jedem analysierten Titel sind Tempo und Tonart geschrieben.";
+"Settings_AnalysisTagsNoneWaiting" = "Fertig! Jeder analysierte Titel hat Tempo und Tonart.";
 
 /* Settings > Collection: tick beside the backfill button. Off, the pass fills blanks only. */
 "Settings_AnalysisTagsOverwrite" = "Vorhandene Werte in den Dateien ersetzen";
@@ -710,7 +710,7 @@
 "Settings_AnalysisTagsStop" = "Anhalten";
 
 /* Settings > Collection: how many analysed tracks the backfill would write to. */
-"Settings_AnalysisTagsWaiting" = "%1$@ analysierte Titel warten auf Tempo und Tonart.";
+"Settings_AnalysisTagsWaiting" = "%1$@ analysierte Titel warten noch auf Tempo und Tonart.";
 
 /* Settings > Collection: the toggle that turns the automatic tagging pass on. */
 "Settings_AnalysisTagsWrite" = "Gemessenes Tempo und gemessene Tonart in die Dateien schreiben";
@@ -725,19 +725,19 @@
 "Settings_HeaderRecord" = "Drehende Schallplatte";
 
 /* Settings > Display: hint under the spinning record toggle. */
-"Settings_HeaderRecordHint" = "Zeigt die drehende Schallplatte rechts in der Coveranzeige. Aus füllt das Bild die volle Breite.";
+"Settings_HeaderRecordHint" = "Zeigt die drehende Platte rechts in der Cover-Anzeige. Schalte es aus, und das Artwork füllt die ganze Breite.";
 
 /* Settings > Display: toggle for the artist photograph behind the art display. */
 "Settings_HeaderArtistPhoto" = "Künstlerfoto";
 
 /* Settings > Display: hint under the artist photo toggle. */
-"Settings_HeaderArtistPhotoHint" = "Zeigt ein Foto des Künstlers hinter der Coveranzeige. Aus werden keine Fotos geladen und stattdessen die Albumfarben verwendet.";
+"Settings_HeaderArtistPhotoHint" = "Zeigt ein Foto des Künstlers hinter der Cover-Anzeige. Schalte es aus, dann lädt rpm keine Fotos und nimmt stattdessen die Farben des Albums.";
 
 /* Settings > Collection: title of the card choosing how multi-disc releases are handled. */
 "Settings_MultiDisc" = "Alben mit mehreren CDs";
 
 /* Settings > Collection: hint under the multi-disc mode picker. */
-"Settings_MultiDiscHint" = "Wie eine Veröffentlichung über mehrere CDs beim Rippen oder Importieren behandelt wird.";
+"Settings_MultiDiscHint" = "Wie rpm eine Veröffentlichung über mehrere Discs behandelt, wenn du sie rippst oder importierst.";
 
 /* Settings > Collection: multi-disc mode option, the default merged mode. */
 "Settings_MultiDiscMerged" = "Ein Album, fortlaufende Titelnummern";
@@ -755,10 +755,10 @@
 "Settings_ShareListening" = "Meine Wiedergaben teilen";
 
 /* Settings hint under the Share what I play toggle: what leaves the computer and what it is for. */
-"Settings_ShareListeningHint" = "Sendet, wie oft Sie jeden Titel spielen, ohne Zeiten und ohne Verlauf. Damit wird der meistgespielte Titel auf Albumseiten markiert. Ausgeschaltet wird nichts mehr gesendet.";
+"Settings_ShareListeningHint" = "Sendet, wie oft du jeden Song spielst, ohne Uhrzeiten und ohne Verlauf. So markieren die Albumseiten den meistgespielten Song. Schalte es aus, und es wird nichts mehr gesendet.";
 
 /* Settings > Collection: hint under the fingerprinting toggle. */
-"Settings_FingerprintHint" = "rpm berechnet für jeden Titel einen Audio-Fingerabdruck und teilt ihn mit dem Erkennungsdienst, was die Identifizierung für alle verbessert. Das läuft im Hintergrund und ändert deine Dateien nie.";
+"Settings_FingerprintHint" = "rpm erstellt von jedem Titel einen Audio-Fingerabdruck und teilt ihn mit dem Erkennungsdienst, das hilft allen, Musik besser zu erkennen. Das läuft leise im Hintergrund und ändert nie deine Dateien.";
 
 /* Settings section heading, above the setting that makes rpm the app the machine opens for a music CD. */
 "Settings_Discs" = "Discs";
@@ -767,7 +767,7 @@
 "Settings_DiscDefault" = "rpm öffnen, wenn eine Musik-CD eingelegt wird";
 
 /* Hint under the disc-handler toggle. */
-"Settings_DiscDefaultHint" = "Dieser Rechner öffnet Audio-Discs mit rpm statt mit der eigenen Musik-App. rpm fragt nach, bevor es etwas rippt. Es ist dieselbe Einstellung wie in den Systemeinstellungen, und beide Stellen ändern sie.";
+"Settings_DiscDefaultHint" = "Leg eine Audio-CD ein, und sie öffnet sich in rpm statt in der Musik-App deines Computers. Keine Sorge, rpm fragt immer, bevor es etwas rippt. Es ist dieselbe Einstellung wie in den Systemeinstellungen, du kannst sie also an beiden Stellen ändern.";
 
 /* Shown instead of the disc-handler toggle when the app is not running from an installed bundle. */
 "Settings_DiscDefaultUnavailable" = "Registrieren lässt sich nur die installierte App, daher ist dies in einem Entwicklungs-Build deaktiviert.";
@@ -780,7 +780,7 @@
 "Settings_Background" = "Hintergrund";
 
 /* Hint under the Background heading in Display settings, above the row of backdrop tiles. */
-"Settings_BackgroundHint" = "Wähle einen der mitgelieferten Hintergründe, oder verwende ein eigenes Bild.";
+"Settings_BackgroundHint" = "Wähle einen der Hintergründe von rpm oder nimm ein eigenes Bild.";
 
 /* Backdrop tile: the default backdrop, RPaMp's ground (bands of cyan light in deep blue). */
 "Settings_BackgroundDefault" = "Standard";
@@ -809,7 +809,7 @@
 "Settings_Library" = "Sammlung";
 
 /* Settings > Collection: caption under the page heading. */
-"Settings_LibraryIntro" = "Wo deine Musik liegt, wie Dateien benannt werden und was mit neuer Musik geschieht.";
+"Settings_LibraryIntro" = "Wo deine Musik zu Hause ist, wie deine Dateien heißen und was passiert, wenn neue Musik dazukommt.";
 "Settings_MusicFolder" = "Musikordner";
 "Settings_MusicFolderHint" = "Wo rpm deine Sammlung ablegt.";
 
@@ -825,7 +825,7 @@
 /* First-run setup, folder step: the chosen folder could not be opened as a library. There is no previous music folder at this point. */
 "Wizard_FolderFailed" = "Dieser Ordner konnte nicht geöffnet werden. Kein Problem, wähle einfach einen anderen.";
 "Settings_Naming" = "Dateibenennung";
-"Settings_NamingHint" = "Wie gerippte, aufgenommene und importierte Dateien benannt und abgelegt werden. Rips und Vinyl-Aufnahmen kommen mit der Standardvorlage in die Warteschlange, und der Import legt alles genauso ab. Baue dein eigenes Layout aus den Bausteinen unten.";
+"Settings_NamingHint" = "Wie deine gerippten, aufgenommenen und importierten Dateien heißen und abgelegt werden. Rips und Vinyl-Aufnahmen kommen mit der Standardvorlage in die Warteschlange, und der Import legt alles genauso ab. Bau dir mit den Bausteinen unten dein eigenes Schema!";
 "Settings_NamingNew" = "Neu";
 "Settings_NamingDuplicate" = "Duplizieren";
 "Settings_NamingDelete" = "Löschen";
@@ -839,7 +839,7 @@
 "Settings_NamingUnsaved" = "Nicht gespeicherte Änderungen";
 "Settings_NamingSaved" = "Gespeichert.";
 "Settings_NamingErrorEmpty" = "Jede Vorlage braucht einen Namen und ein Muster.";
-"Settings_NamingErrorDuplicate" = "Der Name „%1$@“ wird zweimal verwendet. Namen müssen eindeutig sein.";
+"Settings_NamingErrorDuplicate" = "Der Name „%1$@“ ist schon vergeben. Jeder Name muss anders sein.";
 "Settings_Title" = "Einstellungen";
 "Settings_Close" = "Schließen";
 "Setup_ExistingLibrary" = "Das ist bereits ein rpm-Musikordner. rpm öffnet ihn.";
@@ -2059,14 +2059,14 @@
 "Rpm_Profile_PlanFreeDetail" = "25 GB Cloud-Speicher, alle Funktionen, ohne Zeitlimit.";
 
 /* Settings, Profile page: second paragraph under 'Not a supporter', asking the account to support rpm. */
-"Rpm_Profile_PlanFreeAppeal" = "Bitte erwäge, rpm zu unterstützen. Unterstützer halten das Licht an und erhalten Zugang zu exklusiven Funktionen.";
+"Rpm_Profile_PlanFreeAppeal" = "Gefällt dir rpm? Überleg doch, es zu unterstützen! Unterstützer halten den Laden am Laufen und bekommen ein paar exklusive Extras.";
 "Rpm_Profile_PlanSupporter" = "Unterstützer";
 
 /* Settings, Profile page: what supporting rpm gets you. */
 "Rpm_Profile_PlanSupporterDetail" = "Unbegrenzter Cloud-Speicher, höhere Bitraten, erweiterte Erkennung, DJ-Modus und mehr.";
 
 /* Settings, Profile page: second paragraph under 'Supporter', thanking the account for supporting rpm. */
-"Rpm_Profile_PlanSupporterThanks" = "Danke, dass du rpm unterstützt. Du hilfst, rpm am Laufen zu halten, und finanzierst die Weiterentwicklung. Deine Großzügigkeit bewegt uns.";
+"Rpm_Profile_PlanSupporterThanks" = "Danke, dass du rpm unterstützt! Du hältst rpm am Laufen und hilfst, alles Neue zu finanzieren. Wir sind ehrlich gerührt.";
 
 /* Settings, Profile page: the standing of an account marked as a closed beta tester. */
 "Rpm_Profile_PlanTester" = "Tester der geschlossenen Beta";
@@ -2075,7 +2075,7 @@
 "Rpm_Profile_PlanTesterDetail" = "Unterstützer-Funktionen und 100 GB Cloud-Speicher.";
 
 /* Settings, Profile page: second paragraph under 'Closed beta tester', thanking the account for testing. */
-"Rpm_Profile_PlanTesterThanks" = "Danke, dass du rpm testest. Deine Meldungen helfen uns, Fehler vor der öffentlichen Beta zu beheben.";
+"Rpm_Profile_PlanTesterThanks" = "Danke, dass du rpm testest! Deine Berichte helfen uns, Probleme vor der öffentlichen Beta zu beheben.";
 "Rpm_Profile_Playback" = "Wiedergabe";
 
 /* Settings, Profile page: what the quality choices do. */
@@ -2116,7 +2116,7 @@
 "Naming_ApplyStop" = "Anhalten";
 "Naming_ApplyStopped" = "Gestoppt. Bereits verschobene Dateien bleiben, wo sie sind.";
 "Naming_ApplyClose" = "Schließen";
-"Settings_NamingSaveHint" = "Beim Speichern wird die Vorlage oben zur Standardvorlage der Sammlung.";
+"Settings_NamingSaveHint" = "Speichere, um die Vorlage oben zum Standard für deine Sammlung zu machen.";
 "Naming_ApplyTemplate" = "Vorlage: %1$@";
 "CloudChip_Title" = "Cloud";
 "CloudChip_StageWaiting" = "Wartet";
@@ -2147,7 +2147,7 @@
 /* Tooltip on the cloud chip's Resume button. */
 "CloudChip_ResumeTooltip" = "Upload dort fortsetzen, wo er gestoppt wurde.";
 "Cloud_History" = "Letzte Cloud-Aktivität";
-"Cloud_HistoryHint" = "Uploads, Entfernungen und Downloads der letzten %1$@ Tage.";
+"Cloud_HistoryHint" = "Alles, was in den letzten %1$@ Tagen hochgeladen, entfernt und heruntergeladen wurde.";
 "Cloud_HistoryEmpty" = "Noch nichts.";
 "Cloud_HistoryClear" = "Verlauf löschen";
 "Cloud_HistoryUploaded" = "Hochgeladen";
@@ -2162,8 +2162,8 @@
 "CloudChip_SummaryPreparingRemove" = "Musik wird aus der Cloud entfernt.";
 "CloudChip_SummaryPreparingRestore" = "Deine Musik wird heruntergeladen.";
 "Settings_Profile" = "Profil";
-"Profile_SignedOut" = "Du bist nicht angemeldet. Für Cloud-Speicher, die Kataloge und deinen Tarif wird ein Konto benötigt.";
-"Profile_SignOutDetail" = "Beim Abmelden stoppt die Cloud-Synchronisierung. Die Musik auf diesem Computer bleibt, wo sie ist.";
+"Profile_SignedOut" = "Du bist nicht angemeldet. Mit einem Konto bekommst du Cloud-Speicher, die Kataloge und deinen Tarif.";
+"Profile_SignOutDetail" = "Beim Abmelden stoppt die Cloud-Synchronisierung. Keine Sorge, die Musik auf diesem Computer bleibt genau, wo sie ist.";
 
 /* Button in Settings, Profile (desktop), under Sign out. Opens the confirmation; also the confirmation's red button on the desktop and the iPhone, and the spoken label of the iPhone's shorter Rpm_Profile_DeleteAccount key. */
 "Account_Delete" = "Konto löschen";
@@ -2175,7 +2175,7 @@
 "Account_DeleteBody" = "Dadurch werden dein rpm-Konto, dein Profil und alles in deiner Cloud-Bibliothek gelöscht: hochgeladene Musik, Cover und Playlists. Deine Rezensionen und Kommentare bleiben und werden als Gelöschter Nutzer angezeigt. Dies kann nicht rückgängig gemacht werden.";
 
 /* Second line of the delete-account confirmation on the desktop. */
-"Account_DeleteKeepsFiles" = "Musikdateien auf diesem Computer werden nicht gelöscht.";
+"Account_DeleteKeepsFiles" = "Die Musikdateien auf diesem Computer bleiben unberührt.";
 
 /* Desktop delete-account confirmation, when exactly one track on this computer exists only in the cloud (offloaded). */
 "Account_DeleteCloudOnlyOne" = "1 Titel ist nur in der Cloud und geht verloren.";
@@ -2190,28 +2190,28 @@
 "Account_Deleting" = "Wird gelöscht…";
 
 /* Shown in the delete-account confirmation when the server refuses the typed address. */
-"Account_DeleteEmailRefused" = "Diese E-Mail-Adresse passt nicht zu deinem Konto. Wenn sie stimmt, wende dich an den Support.";
+"Account_DeleteEmailRefused" = "Diese E-Mail-Adresse passt nicht zu deinem Konto. Wenn du sicher bist, dass sie stimmt, melde dich bitte beim Support.";
 
 /* Shown in the delete-account confirmation when the request did not get through or the server failed. Nothing was deleted. */
-"Account_DeleteFailed" = "Dein Konto konnte nicht gelöscht werden. Prüfe deine Verbindung und versuche es erneut.";
+"Account_DeleteFailed" = "Dein Konto konnte nicht gelöscht werden. Prüf deine Verbindung und versuch es noch einmal.";
 
 /* Title of the note shown after the account was deleted. */
 "Account_DeletedTitle" = "Konto gelöscht";
 
 /* Body of the note shown after the account was deleted, on both heads. */
-"Account_DeletedBody" = "Dein Konto ist gelöscht und du bist abgemeldet. Deine Cloud-Bibliothek wird innerhalb von zwei Stunden entfernt. Du kannst rpm ohne Konto weiter nutzen.";
+"Account_DeletedBody" = "Dein Konto ist gelöscht und du bist abgemeldet. Deine Cloud-Bibliothek wird innerhalb von zwei Stunden entfernt. Du kannst rpm natürlich auch ohne Konto weiter nutzen.";
 
 /* Shown in place of the author's name on a review, comment or wall post whose account was deleted. */
 "Community_DeletedUser" = "Gelöschter Nutzer";
 "Profile_DataFolder" = "App-Daten";
-"Profile_DataFolderDetail" = "Einstellungen, der Cover-Cache und deine Anmeldung liegen hier. Deine Musik nicht: die liegt in deinem Musikordner.";
+"Profile_DataFolderDetail" = "Hier liegen deine Einstellungen, der Artwork-Cache und deine Anmeldung. Deine Musik nicht: Die bleibt in deinem Musikordner.";
 "Profile_ShowFolder" = "Ordner anzeigen";
 
 /* Settings, Profile page: title of the card for downloaded lookup data. */
 "Profile_Cache" = "Zwischengespeicherte Daten";
 
 /* Settings, Profile page: what the cached data card holds. */
-"Profile_CacheDetail" = "Cover, Radiosender, Songtexte und Albuminformationen aus dem Internet. Sie werden 30 Tage aufbewahrt und bei Bedarf erneut geladen.";
+"Profile_CacheDetail" = "Artwork, Radiosender, Songtexte und Albuminfos aus dem Internet. rpm behält sie 30 Tage und holt sie danach neu, wenn sie gebraucht werden.";
 
 /* Settings, Profile page: size of the cache. {0} is a size such as 24.3 MB. */
 "Profile_CacheUsed" = "%1$@ belegt";
@@ -2223,7 +2223,7 @@
 "Update_Title" = "Update verfügbar";
 
 /* Body of the update window. {0} is a version such as 0.2.0. */
-"Update_Body" = "rpm %1$@ kann installiert werden. Jetzt neu starten, oder es wird beim nächsten Beenden installiert.";
+"Update_Body" = "rpm %1$@ ist bereit zur Installation. Starte jetzt neu, oder es installiert sich, wenn du die App das nächste Mal beendest.";
 
 /* Button in the update window: quit and come back on the new version. */
 "Update_Restart" = "Jetzt neu starten";
@@ -2235,7 +2235,7 @@
 "Profile_Updates" = "Updates";
 
 /* Settings, Profile page: what the updates card does. */
-"Profile_UpdatesDetail" = "rpm sucht beim Start nach einer neuen Version, lädt sie im Hintergrund und installiert sie beim Beenden.";
+"Profile_UpdatesDetail" = "rpm sucht beim Start nach einer neuen Version, lädt sie leise im Hintergrund und installiert sie, wenn du die App beendest. Du musst gar nichts tun!";
 
 /* Settings, Profile page: button that reads the update feed now. */
 "Profile_CheckUpdates" = "Nach Updates suchen";
@@ -2355,7 +2355,7 @@
 "Settings_CrashReports" = "Absturzberichte senden";
 
 /* Settings > Profile: hint under the crash reports switch. */
-"Settings_CrashReportsDesc" = "Wenn rpm unerwartet beendet wird, einen Bericht senden, damit das Problem behoben werden kann.";
+"Settings_CrashReportsDesc" = "Falls sich rpm unerwartet schließt, schickt es uns einen Bericht, damit wir das Problem beheben können.";
 
 /* Settings, Profile page: confirmation shown after the cache is emptied. */
 "Profile_CacheCleared" = "Cache geleert";
@@ -2481,25 +2481,31 @@
 "Settings_Display" = "Anzeige";
 
 /* Settings > Display: caption under the page heading. */
-"Settings_DisplayIntro" = "Das Aussehen von rpm: das Hintergrundbild und die Cover-Ansicht.";
+"Settings_DisplayIntro" = "Wie rpm aussieht: das Bild hinter der App und die Cover-Anzeige oben.";
 
 /* Settings rail: the section for the speakers the music comes out of. */
 "Settings_Sound" = "Ton";
 
 /* Settings > Sound: caption under the page heading. */
-"Settings_SoundIntro" = "Über welche Lautsprecher die Musik läuft, wie laut sie ist und wie sie eingestellt ist.";
+"Settings_SoundIntro" = "Über welche Lautsprecher deine Musik läuft, wie laut sie ist und wie sie klingt.";
 
 /* Settings, Sound: label above the output-device picker. */
 "Settings_Output" = "Lautsprecher";
 
 /* Settings, Sound: hint under the output-device picker. */
-"Settings_OutputHint" = "Wo die Musik spielt. Mit dem Systemstandard wechselt rpm mit, sobald du einen Lautsprecher anschließt oder die Ausgabe wechselst. Wähle ein Gerät, und es bleibt dabei.";
+"Settings_OutputHint" = "Wo deine Musik spielt. Mit dem Systemstandard zieht rpm mit, sobald du einen Lautsprecher anschließt oder die Ausgabe wechselst. Wähle ein Gerät, und rpm bleibt dabei.";
 
 /* Settings, Sound: first item in the output picker, the default. */
 "Settings_OutputSystem" = "Systemstandard verwenden";
 
+/* Settings > Sound > Output: switch. On, the volume slider sets a Bluetooth speaker's own volume (the computer's output volume) instead of rpm's own volume. */
+"Settings_DeviceVolume" = "Gerätelautstärke steuern";
+
+/* Settings > Sound > Output: explains the device volume switch above. */
+"Settings_DeviceVolumeHint" = "Bei einem Bluetooth-Lautsprecher kann der Regler die Lautstärke des Lautsprechers selbst einstellen, so bleibt jedes Detail des Klangs erhalten. Das ist aber auch die Lautstärke deines Computers, also wird alles andere, was gerade läuft, mit lauter und leiser. Schalte es aus, und der Regler ändert nur noch rpm.";
+
 /* Settings, Sound: shown when the chosen device is not currently on the machine. */
-"Settings_OutputMissing" = "Gerade nicht verbunden, die Musik läuft daher über die Systemlautsprecher, bis es wieder da ist.";
+"Settings_OutputMissing" = "Gerade nicht verbunden, deshalb läuft deine Musik über die Systemlautsprecher, bis es wieder da ist.";
 
 /* Settings, Sound: which endpoint the app is actually on. {0} is the device name. */
 "Settings_OutputNow" = "Ausgabe: %1$@";
@@ -2508,7 +2514,7 @@
 "Settings_Eq" = "Equalizer";
 
 /* Settings, Sound: hint under the equalizer heading, explaining the per-device curves. */
-"Settings_EqHint" = "Dieselben zehn Bänder wie im Player, pro Lautsprecherpaar gespeichert: eine Kurve, die zu einem Laptop passt, taugt nicht für eine Anlage, deshalb wird jede einzeln gemerkt.";
+"Settings_EqHint" = "Dieselben zehn Bänder wie im Player, für jedes Lautsprecherpaar gespeichert. Eine Kurve, die zu deinem Laptop passt, klingt an einer Hi-Fi-Anlage falsch, deshalb merkt sich rpm jede einzeln.";
 
 /* Settings, Sound: the equalizer's on/off switch. */
 "Settings_EqOn" = "Equalizer ein";
@@ -2995,7 +3001,7 @@
 "Cloud_Errors" = "Fehler";
 
 /* Cloud settings: hint under the errors card title. */
-"Cloud_ErrorsHint" = "Was die Cloud nicht ausführen konnte, und warum. Sende einen Bericht, dann sehen wir uns das an.";
+"Cloud_ErrorsHint" = "Was die Cloud nicht geschafft hat, und warum. Schick uns einen Bericht, und wir sehen uns das an.";
 
 /* Cloud settings: shown in place of the error list when there are none. */
 "Cloud_ErrorsEmpty" = "Keine Fehler.";
@@ -3010,7 +3016,7 @@
 "Cloud_ErrorsReported" = "Bericht gesendet";
 
 /* Cloud settings: shown when sending the error report was refused. */
-"Cloud_ErrorsReportRefused" = "Der Bericht konnte nicht gesendet werden. Bitte später erneut versuchen.";
+"Cloud_ErrorsReportRefused" = "Der Bericht konnte nicht gesendet werden. Versuch es bitte etwas später noch einmal.";
 
 /* Cloud chip flyout: link to the error list in cloud settings. */
 "CloudChip_ErrorsHint" = "Einige Titel konnten nicht synchronisiert werden. Öffnen Sie die Cloud-Einstellungen, um zu sehen, warum.";
@@ -3030,12 +3036,12 @@
 /* Album context-menu item: download a cloud-only album onto this machine. */
 "AlbumMenu_KeepOnComputer" = "Auf diesen Computer herunterladen";
 "Cloud_BringBackTitle" = "Deine Dateien zurückholen?";
-"Cloud_BringBackBody" = "%1$@ Titel fehlen auf diesem Rechner und liegen noch in der Cloud. Sie herunterzuladen braucht %2$@, und auf dieser Festplatte sind %3$@ frei. Geladen wird nur, was auf diesem Rechner entfernt wurde, nicht das von deinen anderen Rechnern.";
+"Cloud_BringBackBody" = "%1$@ Titel fehlen auf diesem Computer, sind aber noch sicher in der Cloud. Zum Herunterladen brauchst du %2$@, und auf diesem Laufwerk sind %3$@ frei. Es kommen nur Titel zurück, die auf diesem Computer entfernt wurden, nicht die von deinen anderen Rechnern.";
 "Cloud_BringBackConfirm" = "Herunterladen";
 "Cloud_BringBackLeave" = "In der Cloud lassen";
-"Cloud_BringBackNoSpace" = "Auf dieser Festplatte ist nicht genug Platz: %1$@ nötig, %2$@ frei.";
+"Cloud_BringBackNoSpace" = "Auf diesem Laufwerk ist nicht genug Platz: Du brauchst %1$@, frei sind %2$@.";
 "Cloud_BringBackFailed" = "%1$@ von %2$@ Titeln konnten nicht heruntergeladen werden.";
-"Cloud_OffloadState" = "%1$@ Titel liegen nur in der Cloud. Das spart %2$@ auf diesem Rechner.";
+"Cloud_OffloadState" = "%1$@ Titel liegen nur in der Cloud, das spart %2$@ auf diesem Computer.";
 
 /* Cloud settings, shown when nothing of this machine's own music is missing. Says only what this machine has, never what the whole library holds. */
 "Cloud_OffloadStateNone" = "Auf diesem Rechner fehlt kein Titel.";
@@ -3049,7 +3055,7 @@
 
 /* Log book verb: the cloud copy was kept, the file on this computer was deleted. */
 "Cloud_HistoryOffloaded" = "Lokale Kopie entfernt";
-"Cloud_OffloadElsewhere" = "%1$@ Titel waren nie auf diesem Rechner. Deine anderen Rechner haben sie hochgeladen, sie werden aus der Cloud gestreamt.";
+"Cloud_OffloadElsewhere" = "%1$@ Titel waren nie auf diesem Computer. Deine anderen Computer haben sie hochgeladen, und sie streamen direkt aus der Cloud.";
 
 /* Import pane: caption under the animation while a move-import is running. */
 "Queue_ImportingMove" = "Ausgewählte Dateien werden in deine Sammlung verschoben";
@@ -3061,7 +3067,7 @@
 "Settings_ImportAction" = "Dateien importieren";
 
 /* Settings > Collection: hint under the import-action picker. */
-"Settings_ImportActionHint" = "Was mit den Originaldateien passiert, wenn die Import-Warteschlange in deine Sammlung übernommen wird.";
+"Settings_ImportActionHint" = "Was mit deinen Originaldateien passiert, wenn die Import-Warteschlange zu deiner Sammlung hinzukommt.";
 
 /* Settings > Collection: import-action option, the default. */
 "Settings_ImportActionMove" = "In die Sammlung verschieben";
@@ -3208,7 +3214,7 @@
 "Settings_Normalize" = "Lautstärkeanpassung";
 
 /* Explains what volume levelling does, under the Sound settings heading. */
-"Settings_NormalizeHint" = "Spielt jede Platte gleich laut, damit du zwischen einem Album und dem nächsten nicht die Lautstärke ändern musst. Jeder Titel wird einmal gemessen, im Hintergrund.";
+"Settings_NormalizeHint" = "Spielt jede Platte gleich laut, damit du zwischen zwei Alben nicht zur Lautstärke greifen musst. rpm misst jeden Titel einmal, ganz leise im Hintergrund.";
 
 /* Volume levelling mode: every record plays at the level it was mastered at. */
 "Settings_NormalizeOff" = "Aus";
@@ -3223,7 +3229,7 @@
 "Settings_NormalizeClassical" = "Auch klassische Aufnahmen anpassen";
 
 /* Explains why classical records are excluded from volume levelling by default. */
-"Settings_NormalizeClassicalHint" = "Standardmäßig aus. Ein leiser Satz soll leise sein, und eine Lautheitsangleichung nimmt der Aufführung die Dynamik, auf der sie beruht.";
+"Settings_NormalizeClassicalHint" = "Standardmäßig aus. Ein leiser Satz soll leise sein, und das Angleichen würde die Dynamik plätten, von der die Aufführung lebt.";
 
 /* Progress line while the background loudness pass works through the library. {0} is a track count. */
 "Settings_NormalizeMeasuring" = "Sammlung wird gemessen: noch %1$@ Titel.";
@@ -3364,7 +3370,7 @@
 "Supporters_Dj" = "Der DJ-Modus steht nur Unterstützern von rpm zur Verfügung. Bitte unterstütze rpm.";
 
 /* Supporters-only window: shown when the gold backdrop is picked by an account that is not a supporter. */
-"Supporters_Backdrop" = "Dieser Hintergrund steht nur Unterstützern von rpm zur Verfügung. Bitte unterstütze rpm.";
+"Supporters_Backdrop" = "Dieser Hintergrund ist nur für Unterstützer von rpm. Gefällt er dir? Überleg doch, rpm zu unterstützen!";
 
 /* Supporters-only window: shown when word by word lyric timing is switched on by an account that is not a supporter. */
 "Supporters_Karaoke" = "Der Karaoke-Modus steht nur Unterstützern von rpm zur Verfügung. Bitte unterstütze rpm.";
@@ -3382,10 +3388,10 @@
 "Cloud_UsageFull" = "%1$@ von %2$@ belegt (voll)";
 
 /* Cloud settings: the warning shown while the account is almost full. */
-"Cloud_AlmostFullHint" = "Weniger als %1$@ übrig. Ist er voll, lädt rpm nichts mehr hoch.";
+"Cloud_AlmostFullHint" = "Weniger als %1$@ übrig. Sobald er voll ist, hört rpm mit dem Hochladen auf.";
 
 /* Cloud settings: shown while the sync mode is the one the full store dropped it to. */
-"Cloud_SyncAllPaused" = "Auf ausgewählte Musik umgestellt, weil der Cloud-Speicher voll war.";
+"Cloud_SyncAllPaused" = "Dein Cloud-Speicher ist voll, deshalb synchronisiert rpm jetzt nur noch deine ausgewählte Musik.";
 
 /* Cloud settings: title of the card showing whether the account supports rpm. */
 "Cloud_SupporterHeading" = "Unterstützerstatus";
@@ -3394,16 +3400,16 @@
 "Cloud_SupporterFree" = "Kostenloses Konto mit 25 GB Cloud-Speicher.";
 
 /* Cloud settings: the standing of a supporter. */
-"Cloud_SupporterYes" = "Du bist Unterstützer. Dein Cloud-Speicher ist unbegrenzt.";
+"Cloud_SupporterYes" = "Du bist Unterstützer, dein Cloud-Speicher ist also unbegrenzt. Danke!";
 
 /* Cloud settings: a supporter whose support has an end date. */
-"Cloud_SupporterYesUntil" = "Du bist Unterstützer bis zum %1$@. Dein Cloud-Speicher ist unbegrenzt.";
+"Cloud_SupporterYesUntil" = "Du bist bis %1$@ Unterstützer, dein Cloud-Speicher ist also unbegrenzt. Danke!";
 
 /* Cloud settings: the standing of an account marked as a closed beta tester. */
-"Cloud_SupporterTester" = "Du testest die geschlossene Beta. Du hast die Unterstützer-Funktionen und 100 GB Cloud-Speicher.";
+"Cloud_SupporterTester" = "Du bist Tester der geschlossenen Beta und bekommst die Unterstützer-Funktionen und 100 GB Cloud-Speicher. Danke fürs Mithelfen!";
 
 /* Cloud settings: the server did not answer, which is not the same as 'not a supporter'. */
-"Cloud_SupporterUnknown" = "Dein Unterstützer-Status konnte nicht abgerufen werden.";
+"Cloud_SupporterUnknown" = "Wir konnten deinen Unterstützer-Status gerade nicht prüfen.";
 
 /* Storage-full window: the second line when the app dropped 'all music' to the selection. */
 "CloudFull_PausedAll" = "Die Synchronisierung ist von aller Musik auf nur ausgewählte Musik umgestellt. Neue Alben lassen sich manuell hochladen, sobald andere Alben entfernt sind.";
@@ -3544,7 +3550,7 @@
 "Share_MyLibrary" = "Meine Sammlung";
 
 /* Strip above the sharing settings when nobody is signed in. */
-"Share_SignInNeeded" = "Zum Teilen ist ein rpm-Konto nötig. Melde dich an, um deine Sammlung zu teilen und die geteilten zu öffnen.";
+"Share_SignInNeeded" = "Zum Teilen brauchst du ein rpm-Konto. Melde dich an, um deine Sammlung zu teilen und die zu öffnen, die mit dir geteilt werden.";
 
 /* Header of the sharing chip flyout, and of the sharing section in settings. */
 "Share_Title" = "Sammlungen teilen";
@@ -3574,16 +3580,16 @@
 "Settings_ShareLibrary" = "Meine Sammlung in diesem Netzwerk teilen";
 
 /* Settings: hint under the sharing toggle. */
-"Settings_ShareLibraryHint" = "Computer mit rpm in diesem Netzwerk können eine Freigabe anfragen. Sie entscheiden, wer Zugriff erhält.";
+"Settings_ShareLibraryHint" = "Computer mit rpm in diesem Netzwerk können fragen, ob sie teilen dürfen. Du entscheidest, wer Zugriff bekommt.";
 
 /* Settings: label of the text box holding the name other computers see. */
 "Settings_ShareName" = "Dieser Computer heißt";
 
 /* Settings, Sharing: hint under the "This computer is called" box. Empty falls back to the account display name, then to the machine name. */
-"Settings_ShareNameHint" = "Lassen Sie dieses Feld leer, um Ihren Anzeigenamen zu verwenden. Wenn Sie nicht angemeldet sind, wird der Name dieses Computers verwendet.";
+"Settings_ShareNameHint" = "Lass das leer, um deinen Anzeigenamen zu verwenden. Wenn du nicht angemeldet bist, nimmt rpm den Namen dieses Computers.";
 
 /* Settings: empty state of the shared computers list. */
-"Settings_ShareNobody" = "Noch nichts geteilt. Öffnen Sie rpm auf einem anderen Computer in diesem Netzwerk, dann erscheint er hier.";
+"Settings_ShareNobody" = "Noch nichts geteilt. Öffne rpm auf einem anderen Computer in diesem Netzwerk, dann taucht er hier auf.";
 
 /* Settings: button that removes one computer from the shared list. */
 "Settings_ShareRemove" = "Teilen beenden";
@@ -3715,13 +3721,13 @@
 "Settings_RequiredTagsTitle" = "Erforderliche Tags";
 
 /* Settings hint under the required tags checkboxes. */
-"Settings_RequiredTagsHint" = "Eine Datei in der Warteschlange wird markiert, wenn eines dieser Tags fehlt. Der Import wird dadurch nicht blockiert.";
+"Settings_RequiredTagsHint" = "Eine Datei in der Warteschlange bekommt eine Markierung, wenn ihr eines davon fehlt. Keine Sorge, importieren kannst du sie trotzdem.";
 
 /* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
 "Settings_CatalogueFill" = "Fehlendes Genre und Jahr beim Hinzufügen von Musik ergänzen";
 
 /* Settings hint under the catalogue fill toggle. */
-"Settings_CatalogueFillHint" = "rpm sucht jede Platte in seinem Katalog und ergänzt Genre, Subgenre und Jahr, wo sie fehlen oder nicht in der Genreliste von rpm stehen. Bereits gesetzte Werte bleiben erhalten. Bis zum Import wird nichts in deine Dateien geschrieben.";
+"Settings_CatalogueFillHint" = "rpm schlägt jede Platte in seinem Katalog nach und ergänzt Genre, Subgenre und Jahr, wo sie leer sind oder nicht auf der Genreliste von rpm stehen. Was du schon eingetragen hast, bleibt, und in deine Dateien wird erst beim Import etwas geschrieben.";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "Duplikate ausblenden";
@@ -5377,7 +5383,7 @@
 "Settings_Hints" = "Erste-Schritte-Hinweise";
 
 /* Display settings, line under the first-run hints heading. */
-"Settings_HintsHint" = "Die Pfeile, die zeigen, wo Musik hereinkommt, wie sich das Cover-Banner öffnet und wie man die Ansicht wechselt. Jeder erscheint einmal und dann nicht mehr.";
+"Settings_HintsHint" = "Die kleinen Pfeile, die dir zeigen, wo Musik hereinkommt, wie sich die Cover-Leiste öffnet und wie du die Ansicht wechselst. Jeder taucht einmal auf und lässt dich dann in Ruhe.";
 
 /* Display settings, what the replay button says once it has been pressed. */
 "Settings_HintsBack" = "Die Hinweise sind zurück";
@@ -6205,7 +6211,7 @@
 "Tv_SettingsKaraoke" = "Karaoke-Liedtexte";
 
 /* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */
-"Settings_MixtapeAfterHint" = "Wenn ein Album, eine Playlist oder eine Single endet, geht die Musik mit ähnlichen Songs aus deiner Sammlung weiter.";
+"Settings_MixtapeAfterHint" = "Wenn ein Album, eine Playlist oder eine Single zu Ende ist, geht die Musik mit ähnlichen Songs aus deiner Sammlung weiter.";
 
 /* Row in the Android TV app's settings, and in Pegasus's, and the heading of its card on the desktop Sound settings page: whether a mixtape like the album or playlist that just finished starts by itself when it ends. */
 "Tv_SettingsMixtapeAfter" = "Mixtape nach dem Ende einer Platte";
@@ -6385,7 +6391,7 @@
 "Settings_PegasusVisualizer" = "Visualizer in Pegasus";
 
 /* Line under the Visualizer in Pegasus heading. */
-"Settings_PegasusVisualizerHint" = "Die bewegten Lichter hinter der Musik, wenn Pegasus spielt.";
+"Settings_PegasusVisualizerHint" = "Die bewegten Lichter hinter der Musik, während Pegasus spielt.";
 
 /* Display settings, first entry of the language and country pickers: follow Windows. {0} is what Windows gives now. */
 "Settings_SameAsWindows" = "Wie Windows (%1$@)";
@@ -6403,7 +6409,7 @@
 "Settings_OpenMusicFiles" = "rpm öffnen, wenn eine Musikdatei abgespielt wird";
 
 /* Line under the Open rpm when a music file is played switch. */
-"Settings_OpenMusicFilesHint" = "Musikdateien, die du öffnest, werden in rpm abgespielt. Windows bittet dich, rpm in den eigenen Einstellungen zu bestätigen.";
+"Settings_OpenMusicFilesHint" = "Musikdateien, die du öffnest, laufen dann in rpm. Windows bittet dich, rpm in seinen eigenen Einstellungen zu bestätigen.";
 
 /* What Windows calls a file type rpm opens, in Explorer's Type column and Open with. */
 "Settings_OpenMusicFilesType" = "Musikdatei";
@@ -6412,7 +6418,7 @@
 "Settings_LibraryLayout" = "Bibliotheksansicht";
 
 /* Line under the Library layout heading. */
-"Settings_LibraryLayoutHint" = "Die Ansicht, in der sich deine Bibliothek öffnet. Die Tasten oben in der Bibliothek wechseln sie ebenfalls.";
+"Settings_LibraryLayoutHint" = "Die Ansicht, in der deine Bibliothek öffnet. Mit den Knöpfen oben in der Bibliothek kannst du sie jederzeit wechseln.";
 
 /* Setup wizard, first launch: the line under the welcome greeting, shown after two seconds. */
 "Wizard_HelloSubtitle" = "Lass uns loslegen.";
