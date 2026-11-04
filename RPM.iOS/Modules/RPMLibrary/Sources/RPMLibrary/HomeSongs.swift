@@ -17,10 +17,8 @@ public enum HomeSongs {
     /// - Parameter played: everything anybody has played, by cloud id. See
     ///   ``PlayLog/everythingPlayed()``.
     /// - Parameter count: how many to choose, at most.
-    /// - Parameter since: When given (unix seconds), the songs last played at or after it come
-    ///   first, each part most played first: see ``HomeShelf/recentDays``.
     public static func mostPlayed(_ albums: [CloudAlbum], played: [String: PlayLog.Played],
-                                  count: Int, since: Int64? = nil) -> [String] {
+                                  count: Int) -> [String] {
         guard count > 0, !played.isEmpty else { return [] }
 
         var heard: [(id: String, plays: Int, at: Int64)] = []
@@ -41,10 +39,26 @@ public enum HomeSongs {
             return $0.id < $1.id
         }
 
-        if let since {
-            heard = heard.filter { $0.at >= since } + heard.filter { $0.at < since }
-        }
+        return heard.prefix(count).map(\.id)
+    }
 
+    /// The songs played last, newest first, then by id: what the quick selection deals
+    /// (Chivan, 2026-11-04). Ranked by plays, even with the last thirty days first, it was the
+    /// same favourites month after month, because they were also what was played that month; the
+    /// person wants what they are listening to now. The desktop's and the Android app's quick
+    /// selection keep the same rule. ``mostPlayed(_:played:count:)`` is for the rows that rank.
+    public static func playedLast(_ albums: [CloudAlbum], played: [String: PlayLog.Played],
+                                  count: Int) -> [String] {
+        guard count > 0, !played.isEmpty else { return [] }
+
+        var heard: [(id: String, at: Int64)] = []
+        for album in albums {
+            for track in album.tracks {
+                guard let played = played[track.rpmId], played.plays > 0 else { continue }
+                heard.append((track.rpmId, played.lastPlayedAt))
+            }
+        }
+        heard.sort { $0.at != $1.at ? $0.at > $1.at : $0.id < $1.id }
         return heard.prefix(count).map(\.id)
     }
 }

@@ -47,6 +47,16 @@ public enum QuickPicks {
     /// How many song radios the selection offers at most. The desktop's `QuickPicks.MostRadios`.
     public static let mostRadios = 2
 
+    /// A record by its artist and its name, folded and without a disc suffix: the same album
+    /// filed in two folders is two keys and one cover ("Awaken, My Love!" in quotes and
+    /// without). Nil when the name is blank, which matches nothing. The quick selection offers
+    /// each record once (Chivan, 2026-11-04: "a lot of duplicate images from the same album").
+    /// The desktop's `QuickPicks.RecordName`.
+    public static func recordName(_ artist: String?, _ album: String?) -> String? {
+        let name = SimilarAlbums.fold(AlbumName.normalized(album ?? ""))
+        return name.isEmpty ? nil : SimilarAlbums.fold(artist) + "|" + name
+    }
+
     /// The songs to offer a radio on: the one played most, and the next one by another act,
     /// because two radios on one act are one radio. A song whose tags name no act is never
     /// taken for another such song. The desktop's `QuickPicks.RadioSeeds`.
@@ -115,12 +125,13 @@ public struct HomeScreen: Sendable, Equatable {
     ///   banner and the quick selection skip a source that has nothing in it.
     /// - Parameter radios: The songs to offer a radio on (``QuickPicks/radioSeeds(_:)``). They
     ///   come first in the quick selection, ahead of the deal.
-    /// - Parameter since: When given (unix seconds), the quick selection's records played since
-    ///   then come first (``HomeShelf/playedLately(_:since:count:)``). The songs are put in that
-    ///   order by the caller (``HomeSongs/mostPlayed(_:played:count:since:)``).
+    ///   The songs are the ones played last, newest first (``HomeSongs/playedLast(_:played:count:)``),
+    ///   and the quick selection's records are too.
+    /// - Parameter songRecords: The record each song (and radio) is from
+    ///   (``QuickPicks/recordName(_:_:)``), by cloud id, so the quick selection offers each record once.
     public static func build(shelf: [HomeAlbum], songs: [String], lists: [String],
                              stations: [String], draw: Int, radios: [String] = [],
-                             since: Int64? = nil) -> HomeScreen {
+                             songRecords: [String: String] = [:]) -> HomeScreen {
         let gate = HomeGate.of(albums: shelf.count)
         let length = HomeShelf.rowLength
 
@@ -176,8 +187,24 @@ public struct HomeScreen: Sendable, Equatable {
 
         return HomeScreen(gate: gate, strip: strip, rows: rows, lists: lists,
                           quickPicks: picks(songs: songs,
-                                            played: since.map { HomeShelf.playedLately(shelf, since: $0, count: QuickPicks.count) } ?? played,
-                                            lists: lists, stations: stations, radios: radios))
+                                            played: HomeShelf.listened(shelf, count: QuickPicks.count * 3),
+                                            lists: lists, stations: stations, radios: radios,
+                                            recordOf: recordOf(shelf: shelf, songRecords: songRecords)))
+    }
+
+    /// Which record a quick pick stands for: a song's or a radio's from `songRecords`, a record's
+    /// by its name. Nil for a list or a station, and for anything unknown.
+    private static func recordOf(shelf: [HomeAlbum], songRecords: [String: String]) -> (QuickPick) -> String? {
+        let records = Dictionary(shelf.compactMap { album in
+            QuickPicks.recordName(album.artist, album.album).map { (album.key, $0) }
+        }, uniquingKeysWith: { first, _ in first })
+        return { pick in
+            switch pick.kind {
+            case .song, .radio: return songRecords[pick.key]
+            case .album: return records[pick.key]
+            default: return nil
+            }
+        }
     }
 
     /// The quick selection: the things a listener plays most, of whatever kind they are.
@@ -191,9 +218,13 @@ public struct HomeScreen: Sendable, Equatable {
     /// The four kinds are the same ones that the desktop deals, in the same order. See
     /// `QuickPicks.Choose`.
     private static func picks(songs: [String], played: [String], lists: [String],
-                              stations: [String], radios: [String]) -> [QuickPick] {
+                              stations: [String], radios: [String],
+                              recordOf: (QuickPick) -> String? = { _ in nil }) -> [QuickPick] {
         // The radios first: a suggestion made from the rest, not one more kind competing with it.
         var picks = radios.prefix(QuickPicks.mostRadios).map { QuickPick(kind: .radio, key: $0) }
+        // Each record once: a record a radio is on, or a song from it, or the record itself, and
+        // the next of that kind takes the place of one that would repeat it.
+        var records = Set(picks.compactMap(recordOf))
 
         let sources: [(kind: QuickPickKind, keys: [String])] = [
             (.song, songs), (.album, played), (.playlist, lists), (.station, stations),
@@ -204,11 +235,16 @@ public struct HomeScreen: Sendable, Equatable {
         while picks.count < QuickPicks.count {
             var dealtThisRound = false
 
-            for (i, source) in sources.enumerated() where cursor[i] < source.keys.count {
+            for (i, source) in sources.enumerated() {
                 if picks.count >= QuickPicks.count { break }
-                picks.append(QuickPick(kind: source.kind, key: source.keys[cursor[i]]))
-                cursor[i] += 1
-                dealtThisRound = true
+                while cursor[i] < source.keys.count {
+                    let pick = QuickPick(kind: source.kind, key: source.keys[cursor[i]])
+                    cursor[i] += 1
+                    if let record = recordOf(pick), !records.insert(record).inserted { continue }
+                    picks.append(pick)
+                    dealtThisRound = true
+                    break
+                }
             }
 
             // Every source has been read to the end. Without this check, the loop would run

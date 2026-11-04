@@ -134,25 +134,6 @@ public enum HomeShelf {
 
     /// Records with plays behind them, most first. The count is tracks played, not times
     /// through. That is what "most listened" means for a shelf of albums.
-    /// How far back the quick selection looks first: what was played in the last 30 days leads it
-    /// (Chivan, 2026-11-04). Ranked by all-time plays alone it showed the same records month after
-    /// month, whatever was played that month. The counts are running totals with the time of the
-    /// last play, so "lately" is when a thing was last played. The desktop's `QuickPicks` and the
-    /// Android app's `HomeShelf` keep the same rule.
-    public static let recentDays = 30
-
-    /// ``played(_:count:)`` with the records last played at or after `since` (unix seconds) first,
-    /// each part most played first. For the quick selection; the Most played row stays all-time.
-    public static func playedLately(_ shelf: [HomeAlbum], since: Int64, count: Int) -> [String] {
-        guard count > 0 else { return [] }
-
-        let ranked = played(shelf, count: shelf.count)
-        let at = Dictionary(shelf.map { ($0.key, $0.lastPlayedAt) }, uniquingKeysWith: { first, _ in first })
-        let lately = ranked.filter { (at[$0] ?? 0) >= since }
-        let rest = ranked.filter { (at[$0] ?? 0) < since }
-        return Array((lately + rest).prefix(count))
-    }
-
     public static func played(_ shelf: [HomeAlbum], count: Int) -> [String] {
         guard count > 0 else { return [] }
 

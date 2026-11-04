@@ -139,6 +139,23 @@ struct HomeScreenTests {
         #expect(screen.quickPicks.contains { $0.kind == .playlist })
     }
 
+    /// Each record is offered once: the record a radio is on, a song from it and the record
+    /// itself are stepped past, and the next of each kind takes the place. The same album filed
+    /// twice, its name once in quotes, is one record.
+    @Test func theQuickSelectionOffersEachRecordOnce() {
+        let shelf = [album("Awaken", artist: "Childish Gambino", lastPlayed: 900).renamed("Awaken, My Love!"),
+                     album("X", artist: "Childish Gambino", lastPlayed: 800),
+                     album("Z", artist: "Childish Gambino", lastPlayed: 700)]
+        let record = { QuickPicks.recordName("Childish Gambino", $0)! }
+        let screen = HomeScreen.build(
+            shelf: shelf, songs: ["redbone", "x", "y"], lists: [], stations: [], draw: 1,
+            radios: ["riot"],
+            songRecords: ["riot": record("\"Awaken, My Love!\""), "redbone": record("Awaken, My Love!"),
+                          "x": record("X"), "y": record("Y")])
+
+        #expect(screen.quickPicks.map(\.key) == ["riot", "x", "Z", "y"])
+    }
+
     /// A station heard on any of the listener's devices is added to the quick selection after a
     /// song, a record and a list. The banner can show it too. Stations reach the phone's home
     /// screen through the synced play log.
@@ -207,5 +224,13 @@ struct QuickPicksPanelsTests {
     @Test func nothingMakesNoPanels() {
         #expect(QuickPicks.inPanels([], tall: QuickPicks.tall).isEmpty)
         #expect(QuickPicks.inPanels(songs(1), tall: 0).isEmpty)
+    }
+}
+
+private extension HomeAlbum {
+    /// The same record under another name, for a test of names.
+    func renamed(_ name: String) -> HomeAlbum {
+        HomeAlbum(key: key, album: name, artist: artist, genres: genres, year: year,
+                  addedAt: addedAt, plays: plays, lastPlayedAt: lastPlayedAt)
     }
 }

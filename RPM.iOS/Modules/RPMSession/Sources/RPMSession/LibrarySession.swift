@@ -297,9 +297,15 @@ public final class LibrarySession {
         if case .reading = wallStanding { return }
 
         let shelf = HomeAlbums.of(albums, played: played)
-        // What was played in the last 30 days leads the quick selection (HomeShelf.recentDays).
-        let since = Int64(Date().timeIntervalSince1970) - Int64(HomeShelf.recentDays) * 24 * 60 * 60
-        let songs = HomeSongs.mostPlayed(albums, played: played, count: QuickPicks.count, since: since)
+        // What was played last, newest first (HomeSongs.playedLast).
+        // Three selections' worth: each record is offered once, and the songs played last are often
+        // several from one record.
+        let songs = HomeSongs.playedLast(albums, played: played, count: QuickPicks.count * 3)
+        var songRecords: [String: String] = [:]
+        for album in albums {
+            guard let record = QuickPicks.recordName(album.artist, album.album) else { continue }
+            for track in album.tracks { songRecords[track.rpmId] = record }
+        }
 
         // The stations heard most, on every device. Not shown on a borrowed shelf: the listening
         // belongs to the borrower, and the collection belongs to someone else.
@@ -307,7 +313,7 @@ public final class LibrarySession {
         homeStations = Dictionary(heard.map { ($0.station.uuid, $0.station) },
                                   uniquingKeysWith: { first, _ in first })
 
-        // A radio on the song played most, and on the next one by somebody else.
+        // A radio on the song played last, and on the next one by somebody else.
         let byId = Dictionary(albums.flatMap(\.tracks).map { ($0.rpmId, $0) }, uniquingKeysWith: { first, _ in first })
         let radios = QuickPicks.radioSeeds(songs.compactMap { id in
             byId[id].map { track in
@@ -319,7 +325,7 @@ public final class LibrarySession {
         home = HomeScreen.build(shelf: shelf, songs: songs,
                                 lists: HomeLists.offered(playlists, on: viewing),
                                 stations: heard.map(\.station.uuid), draw: homeDraw, radios: radios,
-                                since: since)
+                                songRecords: songRecords)
     }
 
     /// Reads the collection's playlists if they have not been read, and works home out again with
