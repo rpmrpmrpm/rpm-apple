@@ -34,6 +34,17 @@ struct HomeShelfTests {
 
     // ── what has been on ──
 
+    /// The quick selection's records: those played lately first, most played first, then the rest.
+    /// The Most played row keeps its all-time order.
+    @Test func theQuickSelectionPutsRecordsPlayedLatelyFirst() {
+        let shelf = [album("old", plays: 500, lastPlayed: 10),
+                     album("new", plays: 3, lastPlayed: 900),
+                     album("newer", plays: 7, lastPlayed: 500)]
+
+        #expect(HomeShelf.playedLately(shelf, since: 100, count: 16) == ["newer", "new", "old"])
+        #expect(HomeShelf.played(shelf, count: 16) == ["old", "newer", "new"])
+    }
+
     @Test func recentlyListenedIsTheNewestListenFirst() {
         let shelf = [album("old", lastPlayed: 10),
                      album("newest", lastPlayed: 30),

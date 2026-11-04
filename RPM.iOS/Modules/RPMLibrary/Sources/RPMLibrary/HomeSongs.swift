@@ -17,8 +17,10 @@ public enum HomeSongs {
     /// - Parameter played: everything anybody has played, by cloud id. See
     ///   ``PlayLog/everythingPlayed()``.
     /// - Parameter count: how many to choose, at most.
+    /// - Parameter since: When given (unix seconds), the songs last played at or after it come
+    ///   first, each part most played first: see ``HomeShelf/recentDays``.
     public static func mostPlayed(_ albums: [CloudAlbum], played: [String: PlayLog.Played],
-                                  count: Int) -> [String] {
+                                  count: Int, since: Int64? = nil) -> [String] {
         guard count > 0, !played.isEmpty else { return [] }
 
         var heard: [(id: String, plays: Int, at: Int64)] = []
@@ -37,6 +39,10 @@ public enum HomeSongs {
             if $0.plays != $1.plays { return $0.plays > $1.plays }
             if $0.at != $1.at { return $0.at > $1.at }
             return $0.id < $1.id
+        }
+
+        if let since {
+            heard = heard.filter { $0.at >= since } + heard.filter { $0.at < since }
         }
 
         return heard.prefix(count).map(\.id)

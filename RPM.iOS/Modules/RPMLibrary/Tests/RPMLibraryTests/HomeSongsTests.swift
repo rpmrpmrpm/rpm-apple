@@ -28,6 +28,18 @@ struct HomeSongsTests {
         #expect(songs == ["t2", "t3", "t1"])
     }
 
+    /// What was played lately leads, most played first, and the rest follows to fill the
+    /// selection: an old favourite not played for two months no longer holds the top.
+    @Test func whatWasPlayedLatelyComesFirst() {
+        let counts = ["old": PlayLog.Played(plays: 500, lastPlayedAt: 10),
+                      "new": PlayLog.Played(plays: 3, lastPlayedAt: 900),
+                      "newer": PlayLog.Played(plays: 7, lastPlayedAt: 500)]
+        let shelf = [album("k1", ["old", "new", "newer"])]
+
+        #expect(HomeSongs.mostPlayed(shelf, played: counts, count: 16, since: 100) == ["newer", "new", "old"])
+        #expect(HomeSongs.mostPlayed(shelf, played: counts, count: 16) == ["old", "newer", "new"])
+    }
+
     @Test func aSongNobodyHasPlayedIsNotOffered() {
         let songs = HomeSongs.mostPlayed([album("k1", ["t1", "t2"])],
                                          played: played(["t1": 3]), count: 16)

@@ -115,8 +115,12 @@ public struct HomeScreen: Sendable, Equatable {
     ///   banner and the quick selection skip a source that has nothing in it.
     /// - Parameter radios: The songs to offer a radio on (``QuickPicks/radioSeeds(_:)``). They
     ///   come first in the quick selection, ahead of the deal.
+    /// - Parameter since: When given (unix seconds), the quick selection's records played since
+    ///   then come first (``HomeShelf/playedLately(_:since:count:)``). The songs are put in that
+    ///   order by the caller (``HomeSongs/mostPlayed(_:played:count:since:)``).
     public static func build(shelf: [HomeAlbum], songs: [String], lists: [String],
-                             stations: [String], draw: Int, radios: [String] = []) -> HomeScreen {
+                             stations: [String], draw: Int, radios: [String] = [],
+                             since: Int64? = nil) -> HomeScreen {
         let gate = HomeGate.of(albums: shelf.count)
         let length = HomeShelf.rowLength
 
@@ -171,8 +175,9 @@ public struct HomeScreen: Sendable, Equatable {
             count: HomeFeatures.count)
 
         return HomeScreen(gate: gate, strip: strip, rows: rows, lists: lists,
-                          quickPicks: picks(songs: songs, played: played, lists: lists,
-                                            stations: stations, radios: radios))
+                          quickPicks: picks(songs: songs,
+                                            played: since.map { HomeShelf.playedLately(shelf, since: $0, count: QuickPicks.count) } ?? played,
+                                            lists: lists, stations: stations, radios: radios))
     }
 
     /// The quick selection: the things a listener plays most, of whatever kind they are.

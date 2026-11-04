@@ -297,7 +297,9 @@ public final class LibrarySession {
         if case .reading = wallStanding { return }
 
         let shelf = HomeAlbums.of(albums, played: played)
-        let songs = HomeSongs.mostPlayed(albums, played: played, count: QuickPicks.count)
+        // What was played in the last 30 days leads the quick selection (HomeShelf.recentDays).
+        let since = Int64(Date().timeIntervalSince1970) - Int64(HomeShelf.recentDays) * 24 * 60 * 60
+        let songs = HomeSongs.mostPlayed(albums, played: played, count: QuickPicks.count, since: since)
 
         // The stations heard most, on every device. Not shown on a borrowed shelf: the listening
         // belongs to the borrower, and the collection belongs to someone else.
@@ -316,7 +318,8 @@ public final class LibrarySession {
 
         home = HomeScreen.build(shelf: shelf, songs: songs,
                                 lists: HomeLists.offered(playlists, on: viewing),
-                                stations: heard.map(\.station.uuid), draw: homeDraw, radios: radios)
+                                stations: heard.map(\.station.uuid), draw: homeDraw, radios: radios,
+                                since: since)
     }
 
     /// Reads the collection's playlists if they have not been read, and works home out again with
