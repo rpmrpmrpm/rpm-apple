@@ -6580,7 +6580,44 @@
 "Wizard_ImportSlow" = "¡Aguanta! Una colección grande puede tardar un rato en importarse, así que tómate un café mientras rpm lo archiva todo.";
 
 /* Web app sign-in card, in place of the sign-up link while sign-up is closed. */
-"Web_BetaClosed" = "rpm está en beta cerrada. Inicia sesión si tienes una cuenta o solicita unirte a la beta.";
+"Web_BetaClosed" = "rpm está en beta cerrada. Necesitas el código de tu correo de bienvenida.";
 
 /* Web app sign-in card, a link to the beta form on the website. */
 "Web_BetaApply" = "Solicitar la beta";
+
+/* Web app library pane, when the account has no tracks yet. */
+"Web_LibraryEmpty" = "Aún no hay nada. Importa tu música y aparecerá aquí.";
+
+/* Web app import queue, on a file in a format the store cannot hold. */
+"Web_ImportCannotStore" = "Este tipo de archivo no se puede guardar en la nube.";
+
+/* Web app import queue, status of a track while its audio is prepared for upload. */
+"Web_ImportStagePreparing" = "Preparando";
+
+/* Web app import queue, status of a track while it uploads. */
+"Web_ImportStageUploading" = "Subiendo";
+
+/* Web app import queue, on a track whose audio the account already holds. */
+"Web_ImportAlreadyThere" = "Ya está en tu colección";
+
+/* Web app import queue, on a track that has reached the cloud. */
+"Web_ImportDone" = "Importado";
+
+/* Web app import pane, when the queue is empty. */
+"Web_ImportEmptyHint" = "Añade archivos o una carpeta. Aparecen aquí para que puedas revisarlos antes de pasarlos a tu colección.";
+
+/* Web app import pane, button that opens the file picker. */
+"Web_ImportAddFiles" = "Añadir archivos";
+
+/* Web app import pane, button that opens the folder picker. */
+"Web_ImportAddFolder" = "Añadir una carpeta";
+
+/* Web app import pane, while an import is running. */
+"Web_ImportKeepOpen" = "Mantén esta página abierta hasta que termine la importación.";
+
+/* Web app tag panel, placeholder of a field whose value differs between the ticked tracks. */
+"Web_ImportMixed" = "Valores distintos";
+"Web_CodeTitle" = "Tu código";
+"Web_CodeRefused" = "Ese código no funciona. Si coincide con tu correo de bienvenida, responde a ese correo y te ayudaremos.";
+"Web_CodeFailed" = "No se pudo comprobar tu código. Inténtalo de nuevo.";
+"Web_ImportClearDone" = "Quitar los terminados";

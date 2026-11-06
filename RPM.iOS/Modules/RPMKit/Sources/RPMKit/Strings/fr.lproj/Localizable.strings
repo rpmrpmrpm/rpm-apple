@@ -6580,7 +6580,44 @@
 "Wizard_ImportSlow" = "Patience ! Une grande collection peut prendre un moment à importer, alors prenez un café pendant que rpm range tout.";
 
 /* Web app sign-in card, in place of the sign-up link while sign-up is closed. */
-"Web_BetaClosed" = "rpm est en bêta fermée. Connectez-vous si vous avez un compte, ou demandez à rejoindre la bêta.";
+"Web_BetaClosed" = "rpm est en bêta fermée. Il vous faut le code de votre e-mail de bienvenue.";
 
 /* Web app sign-in card, a link to the beta form on the website. */
 "Web_BetaApply" = "Demander à rejoindre la bêta";
+
+/* Web app library pane, when the account has no tracks yet. */
+"Web_LibraryEmpty" = "Rien pour l'instant. Importez votre musique et elle apparaîtra ici.";
+
+/* Web app import queue, on a file in a format the store cannot hold. */
+"Web_ImportCannotStore" = "Ce type de fichier ne peut pas être stocké dans le cloud.";
+
+/* Web app import queue, status of a track while its audio is prepared for upload. */
+"Web_ImportStagePreparing" = "Préparation";
+
+/* Web app import queue, status of a track while it uploads. */
+"Web_ImportStageUploading" = "Envoi";
+
+/* Web app import queue, on a track whose audio the account already holds. */
+"Web_ImportAlreadyThere" = "Déjà dans votre collection";
+
+/* Web app import queue, on a track that has reached the cloud. */
+"Web_ImportDone" = "Importé";
+
+/* Web app import pane, when the queue is empty. */
+"Web_ImportEmptyHint" = "Ajoutez des fichiers ou un dossier. Ils apparaissent ici pour que vous puissiez les vérifier avant de les ajouter à votre collection.";
+
+/* Web app import pane, button that opens the file picker. */
+"Web_ImportAddFiles" = "Ajouter des fichiers";
+
+/* Web app import pane, button that opens the folder picker. */
+"Web_ImportAddFolder" = "Ajouter un dossier";
+
+/* Web app import pane, while an import is running. */
+"Web_ImportKeepOpen" = "Gardez cette page ouverte jusqu'à la fin de l'importation.";
+
+/* Web app tag panel, placeholder of a field whose value differs between the ticked tracks. */
+"Web_ImportMixed" = "Valeurs différentes";
+"Web_CodeTitle" = "Votre code";
+"Web_CodeRefused" = "Ce code ne fonctionne pas. S'il correspond à votre e-mail de bienvenue, répondez à cet e-mail et nous vous aiderons.";
+"Web_CodeFailed" = "Votre code n'a pas pu être vérifié. Veuillez réessayer.";
+"Web_ImportClearDone" = "Effacer les terminés";

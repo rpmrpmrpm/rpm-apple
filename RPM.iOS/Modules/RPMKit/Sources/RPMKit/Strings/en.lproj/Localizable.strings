@@ -6580,7 +6580,44 @@
 "Wizard_ImportSlow" = "Hang tight! A big collection can take a while to import, so feel free to grab a coffee while rpm files it all away.";
 
 /* Web app sign-in card, in place of the sign-up link while sign-up is closed. */
-"Web_BetaClosed" = "rpm is in a closed beta. Sign in if you have an account, or apply to join the beta.";
+"Web_BetaClosed" = "rpm is in a closed beta. You need the code from your welcome mail.";
 
 /* Web app sign-in card, a link to the beta form on the website. */
 "Web_BetaApply" = "Apply for the beta";
+
+/* Web app library pane, when the account has no tracks yet. */
+"Web_LibraryEmpty" = "Nothing here yet. Import your music and it shows up here.";
+
+/* Web app import queue, on a file in a format the store cannot hold. */
+"Web_ImportCannotStore" = "This file type can't be stored in the cloud.";
+
+/* Web app import queue, status of a track while its audio is prepared for upload. */
+"Web_ImportStagePreparing" = "Preparing";
+
+/* Web app import queue, status of a track while it uploads. */
+"Web_ImportStageUploading" = "Uploading";
+
+/* Web app import queue, on a track whose audio the account already holds. */
+"Web_ImportAlreadyThere" = "Already in your collection";
+
+/* Web app import queue, on a track that has reached the cloud. */
+"Web_ImportDone" = "Imported";
+
+/* Web app import pane, when the queue is empty. */
+"Web_ImportEmptyHint" = "Add files or a folder. They appear here so you can check them before they go to your collection.";
+
+/* Web app import pane, button that opens the file picker. */
+"Web_ImportAddFiles" = "Add files";
+
+/* Web app import pane, button that opens the folder picker. */
+"Web_ImportAddFolder" = "Add a folder";
+
+/* Web app import pane, while an import is running. */
+"Web_ImportKeepOpen" = "Keep this page open until the import has finished.";
+
+/* Web app tag panel, placeholder of a field whose value differs between the ticked tracks. */
+"Web_ImportMixed" = "Different values";
+"Web_CodeTitle" = "Your code";
+"Web_CodeRefused" = "That code doesn't work. If it matches your welcome mail, reply to that mail and we'll help.";
+"Web_CodeFailed" = "Your code could not be checked. Please try again.";
+"Web_ImportClearDone" = "Clear finished";

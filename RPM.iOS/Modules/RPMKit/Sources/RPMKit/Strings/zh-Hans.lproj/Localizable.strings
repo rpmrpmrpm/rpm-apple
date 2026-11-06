@@ -6580,7 +6580,44 @@
 "Wizard_ImportSlow" = "请稍候！大型收藏的导入可能需要一些时间，不妨去喝杯咖啡，让 rpm 慢慢整理。";
 
 /* Web app sign-in card, in place of the sign-up link while sign-up is closed. */
-"Web_BetaClosed" = "rpm 正处于封闭测试阶段。已有账户可直接登录，也可以申请加入测试。";
+"Web_BetaClosed" = "rpm 正处于封闭测试阶段。你需要欢迎邮件中的代码。";
 
 /* Web app sign-in card, a link to the beta form on the website. */
 "Web_BetaApply" = "申请加入测试";
+
+/* Web app library pane, when the account has no tracks yet. */
+"Web_LibraryEmpty" = "这里还没有内容。导入你的音乐后就会显示在这里。";
+
+/* Web app import queue, on a file in a format the store cannot hold. */
+"Web_ImportCannotStore" = "此文件类型无法存储到云端。";
+
+/* Web app import queue, status of a track while its audio is prepared for upload. */
+"Web_ImportStagePreparing" = "正在准备";
+
+/* Web app import queue, status of a track while it uploads. */
+"Web_ImportStageUploading" = "正在上传";
+
+/* Web app import queue, on a track whose audio the account already holds. */
+"Web_ImportAlreadyThere" = "已在你的收藏中";
+
+/* Web app import queue, on a track that has reached the cloud. */
+"Web_ImportDone" = "已导入";
+
+/* Web app import pane, when the queue is empty. */
+"Web_ImportEmptyHint" = "添加文件或文件夹。它们会显示在这里，方便你在加入收藏前检查。";
+
+/* Web app import pane, button that opens the file picker. */
+"Web_ImportAddFiles" = "添加文件";
+
+/* Web app import pane, button that opens the folder picker. */
+"Web_ImportAddFolder" = "添加文件夹";
+
+/* Web app import pane, while an import is running. */
+"Web_ImportKeepOpen" = "请在导入完成前保持此页面打开。";
+
+/* Web app tag panel, placeholder of a field whose value differs between the ticked tracks. */
+"Web_ImportMixed" = "多个不同的值";
+"Web_CodeTitle" = "你的代码";
+"Web_CodeRefused" = "此代码无效。如果它与欢迎邮件中的一致，请回复该邮件，我们会帮你解决。";
+"Web_CodeFailed" = "无法验证你的代码，请重试。";
+"Web_ImportClearDone" = "清除已完成";
