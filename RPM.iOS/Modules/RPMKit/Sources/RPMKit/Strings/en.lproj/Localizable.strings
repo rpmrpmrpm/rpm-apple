@@ -6578,3 +6578,9 @@
 
 /* Setup wizard step 4, over the import's progress bar after ten seconds of importing. */
 "Wizard_ImportSlow" = "Hang tight! A big collection can take a while to import, so feel free to grab a coffee while rpm files it all away.";
+
+/* Web app sign-in card, in place of the sign-up link while sign-up is closed. */
+"Web_BetaClosed" = "rpm is in a closed beta. Sign in if you have an account, or apply to join the beta.";
+
+/* Web app sign-in card, a link to the beta form on the website. */
+"Web_BetaApply" = "Apply for the beta";
