@@ -2582,6 +2582,9 @@
 /* Sound output message, a numbered step on macOS. Names macOS's own System Settings, Sound, Output, as macOS words them in each language. */
 "AudioOut_StepMacSound" = "打开系统设置中的声音，在输出下选择一个设备。";
 
+/* Sound output message, a numbered step on macOS 12. Names System Preferences, Sound, Output, as macOS 12 words them in each language: macOS 13 renamed System Preferences to System Settings. */
+"AudioOut_StepMacSoundPreferences" = "打开系统偏好设置中的声音，在输出下选择一个设备。";
+
 /* Sound output message, a numbered step on a system other than Windows or macOS. */
 "AudioOut_StepOtherSound" = "打开系统的声音设置，确认已选择输出设备。";
 
