@@ -4860,6 +4860,9 @@
 /* Credits section: the genre photographs and the generated playlists' photographs. */
 "Credits_Section_Photographs" = "Photographies";
 
+/* Credits section: recordings that ship with the app. */
+"Credits_Section_Music" = "Musique";
+
 /* Credits section: the lexicons the app reads. */
 "Credits_Section_Words" = "Listes de mots";
 
@@ -5085,6 +5088,9 @@
 /* About screen: what Pexels is asked for. */
 "Credits_Pexels_Use" = "Photographies pour les pochettes générées et les pages de genres.";
 
+/* Credits entry: what the Musopen recording is used for. */
+"Credits_Musopen_Use" = "L'enregistrement de la Sonate au clair de lune parmi les morceaux à essayer pendant la configuration.";
+
 /* About screen: what Radio Browser is asked for. */
 "Credits_RadioBrowser_Use" = "L'annuaire des radios en ligne.";
 
@@ -5279,6 +5285,15 @@
 
 /* Setup wizard step 2: the one source. Onboarding imports a folder of files and nothing else. */
 "Wizard_ChooseFolder" = "Choisir un dossier";
+
+/* Setup wizard step 2: the tile beside Choose a folder. It imports three tracks that ship with the app. */
+"Wizard_TryStarter" = "Essayer nos morceaux";
+
+/* Setup wizard step 2: the line under Try our tracks. */
+"Wizard_TryStarterHint" = "Pas de musique sous la main ? Pas de souci ! Commencez avec trois morceaux de notre part et découvrez ce que rpm sait faire.";
+
+/* Setup wizard step 2, review: shown where a chosen folder's path goes, when the source is the tracks that ship with the app. */
+"Wizard_StarterSource" = "Trois morceaux de rpm";
 
 /* Setup wizard step 2, destination grid: the folder a file lands in, relative to the collection. */
 "Wizard_PlanFolder" = "Dossier";
