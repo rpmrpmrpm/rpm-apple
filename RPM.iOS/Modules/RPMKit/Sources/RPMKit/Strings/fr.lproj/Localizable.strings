@@ -2465,6 +2465,9 @@
 "Profile_WallDetail" = "Votre nom affiché et votre image sont publics.";
 "Profile_DisplayName" = "Nom affiché";
 "Profile_NameTaken" = "Ce nom est déjà pris.";
+
+/* Settings, profile: the display name typed is too short or too long. */
+"Profile_NameInvalid" = "Un nom d'affichage compte de 2 à 40 caractères.";
 "Profile_NameSaved" = "Enregistré.";
 "Profile_ChoosePicture" = "Choisir une image";
 "Profile_RemovePicture" = "Retirer l’image";

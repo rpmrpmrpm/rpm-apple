@@ -2465,6 +2465,9 @@
 "Profile_WallDetail" = "Tu nombre visible y tu imagen son públicos.";
 "Profile_DisplayName" = "Nombre visible";
 "Profile_NameTaken" = "Ese nombre ya está en uso.";
+
+/* Settings, profile: the display name typed is too short or too long. */
+"Profile_NameInvalid" = "Un nombre visible tiene entre 2 y 40 caracteres.";
 "Profile_NameSaved" = "Guardado.";
 "Profile_ChoosePicture" = "Elegir imagen";
 "Profile_RemovePicture" = "Quitar imagen";
