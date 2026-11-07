@@ -6654,6 +6654,18 @@
 
 /* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
 "Web_ImportAlbumFileTip" = "Ce fichier ressemble à un album entier. L'application de bureau peut le découper en morceaux.";
+
+/* Web app, track and album editor: the desktop pushes its own tags to the cloud when it syncs. */
+"Web_EditDesktopNote" = "Si rpm sur un ordinateur contient aussi ces morceaux, ses tags remplaceront ceux-ci à sa prochaine synchronisation.";
+
+/* Web app, track and album editor: the save failed. */
+"Web_EditFailed" = "Les modifications n'ont pas pu être enregistrées. Réessayez.";
+
+/* Web app, playlists: under the field that files a playlist in a folder. */
+"Web_PlaylistFolderHint" = "Nom du dossier. Utilisez / pour un dossier dans un dossier. Laissez vide pour aucun dossier.";
+
+/* Web app, radio: on the play key of a saved station whose stream is not https, or is a format the browser has no player for. */
+"Web_RadioNotHere" = "Un navigateur ne peut pas lire le flux de cette station. Elle fonctionne dans l'application de bureau.";
 "Web_ImportRipNote" = "Pour extraire vos CD et enregistrer vos vinyles, téléchargez l'application de bureau.";
 
 /* Import pane of the web app: tracks were being prepared when the page was last closed. The browser cannot reopen files by itself. */

@@ -6654,6 +6654,18 @@
 
 /* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
 "Web_ImportAlbumFileTip" = "This looks like a whole album in one file. The desktop app can split it into tracks.";
+
+/* Web app, track and album editor: the desktop pushes its own tags to the cloud when it syncs. */
+"Web_EditDesktopNote" = "If rpm on a computer also holds these tracks, its tags replace these the next time it syncs.";
+
+/* Web app, track and album editor: the save failed. */
+"Web_EditFailed" = "The changes could not be saved. Try again.";
+
+/* Web app, playlists: under the field that files a playlist in a folder. */
+"Web_PlaylistFolderHint" = "Folder name. Use / for a folder inside a folder. Leave it empty for no folder.";
+
+/* Web app, radio: on the play key of a saved station whose stream is not https, or is a format the browser has no player for. */
+"Web_RadioNotHere" = "A browser cannot play this station's stream. It plays in the desktop app.";
 "Web_ImportRipNote" = "To rip your CDs and record your vinyl, download the desktop app.";
 
 /* Import pane of the web app: tracks were being prepared when the page was last closed. The browser cannot reopen files by itself. */
