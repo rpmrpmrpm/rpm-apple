@@ -82,10 +82,24 @@ public struct RPMCloudClient: Sendable {
     /// Unmarking sends a zero stamp and not the current time. A row that says both that it was
     /// favourited at a moment and that it is not a favourite could be read in two ways, and
     /// two clients could disagree about it.
+    ///
+    /// **Unmarking has a route of its own.** `cloud/catalog/tags` reads a push that says only
+    /// `favorite: false` as no tags at all, drops it, and answers 200. Sent that way, the mark
+    /// stays in the cloud and the heart comes back on the next read.
     public func setFavorite(rpmId: String, favorite: Bool, favoritedUtcTicks: Int64) async throws {
+        guard favorite else {
+            struct Body: Encodable { let favorite: Bool; let favoritedAt: Int64 }
+            struct Said: Decodable { let updatedAt: Int64? }
+
+            _ = try await transport.send(
+                "PUT", "cloud/track-mark/\(escaped(rpmId))",
+                body: Body(favorite: false, favoritedAt: 0), as: Said.self)
+            return
+        }
+
         var tags = CloudTrackTags()
-        tags.favorite = favorite
-        tags.favoritedAt = favorite ? favoritedUtcTicks : 0
+        tags.favorite = true
+        tags.favoritedAt = favoritedUtcTicks
         try await pushCatalog([CatalogPush(rpmId: rpmId, tags: tags)])
     }
 

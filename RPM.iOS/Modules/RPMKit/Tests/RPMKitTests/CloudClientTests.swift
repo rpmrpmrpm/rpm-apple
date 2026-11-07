@@ -278,6 +278,25 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
     #expect(!sent.contains("\"title\""), "a push that names a title would blank it")
 }
 
+/// The tags push reads `favorite: false` as no tags at all, drops it, and answers 200, so an
+/// unmark sent that way never reaches the row and the heart comes back on the next read.
+@Test func clearingATrackFavouriteUsesTheRouteThatCanSayNo() async throws {
+    let seen = Box<URLRequest>()
+    let body = Box<Data>()
+    let cloud = client { request in
+        seen.value = request
+        body.value = request.bodyData
+        return ok(request, #"{"updatedAt":7}"#)
+    }
+
+    try await cloud.setFavorite(rpmId: "rpm_1", favorite: false, favoritedUtcTicks: 42)
+    let sent = String(data: body.value ?? Data(), encoding: .utf8) ?? ""
+    #expect(seen.value?.httpMethod == "PUT")
+    #expect(seen.value?.url?.path.hasSuffix("cloud/track-mark/rpm_1") == true)
+    #expect(sent.contains("\"favorite\":false"))
+    #expect(sent.contains("\"favoritedAt\":0"), "an unmark carries no moment")
+}
+
 // ── head clips ──
 
 @Test func headClipsComeBackAsDecodedBytes() async throws {
