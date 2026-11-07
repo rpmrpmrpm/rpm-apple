@@ -470,10 +470,10 @@
 "Details_TabWork" = "Œuvre";
 
 /* Dense form group heading: how loud the record is (loudness, true peak). */
-"MassEdit_GroupLevel" = "Niveau";
+"MassEdit_GroupLevel" = "NIVEAU";
 
 /* Dense form group heading: the tempo and key fields, which the app measures itself. */
-"MassEdit_GroupMeasured" = "Mesuré";
+"MassEdit_GroupMeasured" = "MESURÉ";
 
 /* Dense form group heading: what the measurement came out of (grid, confidences, which analyser). */
 "MassEdit_GroupReading" = "LECTURE";
@@ -6655,11 +6655,20 @@
 /* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
 "Web_ImportAlbumFileTip" = "Ce fichier ressemble à un album entier. L'application de bureau peut le découper en morceaux.";
 
-/* Web app, track and album editor: the desktop pushes its own tags to the cloud when it syncs. */
-"Web_EditDesktopNote" = "Si rpm sur un ordinateur contient aussi ces morceaux, ses tags remplaceront ceux-ci à sa prochaine synchronisation.";
-
 /* Web app, track and album editor: the save failed. */
 "Web_EditFailed" = "Les modifications n'ont pas pu être enregistrées. Réessayez.";
+
+/* Web app, edit windows: shown while the tags of the tracks are read from the cloud. */
+"Web_EditReading" = "Lecture des tags…";
+
+/* Web app, edit windows: the tags could not be read from the cloud, so nothing can be edited. */
+"Web_EditReadFailed" = "Les tags n'ont pas pu être lus. Fermez la fenêtre et réessayez.";
+
+/* Web app, track metadata from a release: shown while the filled-in tags are saved. */
+"Web_EditSaving" = "Enregistrement…";
+
+/* Web app, track details, Artwork tab: where a picture chosen here is saved. */
+"Web_ArtHint" = "L'image est enregistrée comme pochette de l'album dans votre cloud, et ajoutée au fichier quand le morceau est téléchargé.";
 
 /* Web app, playlists: under the field that files a playlist in a folder. */
 "Web_PlaylistFolderHint" = "Nom du dossier. Utilisez / pour un dossier dans un dossier. Laissez vide pour aucun dossier.";

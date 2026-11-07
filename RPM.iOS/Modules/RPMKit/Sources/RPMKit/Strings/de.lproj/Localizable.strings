@@ -470,10 +470,10 @@
 "Details_TabWork" = "Werk";
 
 /* Dense form group heading: how loud the record is (loudness, true peak). */
-"MassEdit_GroupLevel" = "Pegel";
+"MassEdit_GroupLevel" = "PEGEL";
 
 /* Dense form group heading: the tempo and key fields, which the app measures itself. */
-"MassEdit_GroupMeasured" = "Gemessen";
+"MassEdit_GroupMeasured" = "GEMESSEN";
 
 /* Dense form group heading: what the measurement came out of (grid, confidences, which analyser). */
 "MassEdit_GroupReading" = "MESSWERT";
@@ -6655,11 +6655,20 @@
 /* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
 "Web_ImportAlbumFileTip" = "Das sieht nach einem ganzen Album in einer Datei aus. Die Desktop-App kann es in Titel aufteilen.";
 
-/* Web app, track and album editor: the desktop pushes its own tags to the cloud when it syncs. */
-"Web_EditDesktopNote" = "Wenn rpm auf einem Computer diese Titel ebenfalls hat, ersetzen dessen Tags diese bei der nächsten Synchronisierung.";
-
 /* Web app, track and album editor: the save failed. */
 "Web_EditFailed" = "Die Änderungen konnten nicht gespeichert werden. Versuche es erneut.";
+
+/* Web app, edit windows: shown while the tags of the tracks are read from the cloud. */
+"Web_EditReading" = "Tags werden gelesen…";
+
+/* Web app, edit windows: the tags could not be read from the cloud, so nothing can be edited. */
+"Web_EditReadFailed" = "Die Tags konnten nicht gelesen werden. Schließe das Fenster und versuche es erneut.";
+
+/* Web app, track metadata from a release: shown while the filled-in tags are saved. */
+"Web_EditSaving" = "Wird gespeichert…";
+
+/* Web app, track details, Artwork tab: where a picture chosen here is saved. */
+"Web_ArtHint" = "Das Bild wird als Albumcover in deiner Cloud gespeichert und beim Herunterladen des Titels in die Datei eingefügt.";
 
 /* Web app, playlists: under the field that files a playlist in a folder. */
 "Web_PlaylistFolderHint" = "Ordnername. Mit / legst du einen Ordner in einem Ordner an. Leer lassen für keinen Ordner.";

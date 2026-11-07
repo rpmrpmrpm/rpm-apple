@@ -470,10 +470,10 @@
 "Details_TabWork" = "Work";
 
 /* Dense form group heading: how loud the record is (loudness, true peak). */
-"MassEdit_GroupLevel" = "Level";
+"MassEdit_GroupLevel" = "LEVEL";
 
 /* Dense form group heading: the tempo and key fields, which the app measures itself. */
-"MassEdit_GroupMeasured" = "Measured";
+"MassEdit_GroupMeasured" = "MEASURED";
 
 /* Dense form group heading: what the measurement came out of (grid, confidences, which analyser). */
 "MassEdit_GroupReading" = "READING";
@@ -6655,11 +6655,20 @@
 /* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
 "Web_ImportAlbumFileTip" = "This looks like a whole album in one file. The desktop app can split it into tracks.";
 
-/* Web app, track and album editor: the desktop pushes its own tags to the cloud when it syncs. */
-"Web_EditDesktopNote" = "If rpm on a computer also holds these tracks, its tags replace these the next time it syncs.";
-
 /* Web app, track and album editor: the save failed. */
 "Web_EditFailed" = "The changes could not be saved. Try again.";
+
+/* Web app, edit windows: shown while the tags of the tracks are read from the cloud. */
+"Web_EditReading" = "Reading the tags…";
+
+/* Web app, edit windows: the tags could not be read from the cloud, so nothing can be edited. */
+"Web_EditReadFailed" = "The tags could not be read. Close the window and try again.";
+
+/* Web app, track metadata from a release: shown while the filled-in tags are saved. */
+"Web_EditSaving" = "Saving…";
+
+/* Web app, track details, Artwork tab: where a picture chosen here is saved. */
+"Web_ArtHint" = "The picture is saved as the album cover in your cloud, and added to the file when the track is downloaded.";
 
 /* Web app, playlists: under the field that files a playlist in a folder. */
 "Web_PlaylistFolderHint" = "Folder name. Use / for a folder inside a folder. Leave it empty for no folder.";
