@@ -4206,6 +4206,9 @@
 /* Recognize dialog, and the split window's status line after Recognize selected: the server refused the advanced layer mid-run, so the run carried on without it. */
 "Recognize_AdvancedRefused" = "Die erweiterte Erkennung ist Unterstützern vorbehalten. Der Rest des Durchlaufs nutzte nur die einfache Erkennung.";
 
+/* Recognize window: the advanced layer failed mid-run, so the run carried on without it. */
+"Recognize_AdvancedDown" = "Die erweiterte Erkennung ist gerade nicht verfügbar. Der Rest des Durchlaufs nutzte nur die einfache Erkennung.";
+
 /* Recognize dialog, column header over each target track’s state. */
 "Recognize_ColStatus" = "Status";
 
@@ -6636,3 +6639,30 @@
 "Web_CodeRefused" = "Dieser Code funktioniert nicht. Wenn er mit deiner Willkommensmail übereinstimmt, antworte auf diese Mail, dann helfen wir dir.";
 "Web_CodeFailed" = "Dein Code konnte nicht geprüft werden. Bitte versuche es noch einmal.";
 "Web_ImportClearDone" = "Erledigte entfernen";
+"Web_DesktopPitch" = "Die Desktop-App bietet zusätzlich deine lokale Bibliothek, Aufnahme und CD-Rippen.";
+"Web_DesktopDownload" = "rpm für %1$@ laden";
+"Web_DesktopMac" = "Mac";
+"Web_DesktopWindows" = "Windows";
+"Web_DesktopOpen" = "rpm öffnen";
+"Web_DesktopHere" = "rpm ist auf diesem Computer installiert.";
+"Web_DesktopDidNotOpen" = "rpm wurde nicht geöffnet. Vielleicht ist es noch nicht installiert.";
+"Web_DesktopFailed" = "Der Download konnte nicht gestartet werden. Bitte versuche es noch einmal.";
+"Web_DesktopAppleSilicon" = "Mac mit Apple-Chip";
+"Web_DesktopIntel" = "Mac mit Intel-Prozessor";
+"Web_DesktopIntelOld" = "Intel-Mac mit macOS 12 bis 14";
+"Web_DeleteAsk" = "%1$@ aus deiner Cloud-Bibliothek löschen? Das lässt sich nicht rückgängig machen.";
+
+/* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
+"Web_ImportAlbumFileTip" = "Das sieht nach einem ganzen Album in einer Datei aus. Die Desktop-App kann es in Titel aufteilen.";
+"Web_ImportRipNote" = "Um CDs zu rippen und Schallplatten aufzunehmen, lade die Desktop-App herunter.";
+
+/* Import pane of the web app: tracks were being prepared when the page was last closed. The browser cannot reopen files by itself. */
+"Web_ImportSavedNote" = "%1$@ Titel von deinem letzten Besuch warten noch. Füge denselben Ordner oder dieselben Dateien hinzu, dann sind deine Änderungen wieder da.";
+
+/* Import pane of the web app: button that reopens the folder picked on the last visit, in browsers that can. */
+"Web_ImportSavedReopen" = "Ordner wieder öffnen";
+
+/* Import pane of the web app: button that drops the tracks kept from the last visit. */
+"Web_ImportSavedForget" = "Verwerfen";
+"Web_PlaylistsDesktopNote" = "Automatische Playlists, Stimmungslisten und intelligente Playlists entstehen in der Desktop-App.";
+"Web_DeleteAccountFailed" = "Das Konto konnte nicht gelöscht werden. Bitte versuche es noch einmal.";

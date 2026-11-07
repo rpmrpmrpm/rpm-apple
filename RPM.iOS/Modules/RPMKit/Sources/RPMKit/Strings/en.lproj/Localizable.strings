@@ -4206,6 +4206,9 @@
 /* Recognize dialog, and the split window's status line after Recognize selected: the server refused the advanced layer mid-run, so the run carried on without it. */
 "Recognize_AdvancedRefused" = "Advanced recognition is for supporters. The rest of the run used basic recognition only.";
 
+/* Recognize window: the advanced layer failed mid-run, so the run carried on without it. */
+"Recognize_AdvancedDown" = "Advanced recognition is not available right now. The rest of the run used basic recognition only.";
+
 /* Recognize dialog, column header over each target track’s state. */
 "Recognize_ColStatus" = "Status";
 
@@ -6636,3 +6639,30 @@
 "Web_CodeRefused" = "That code doesn't work. If it matches your welcome mail, reply to that mail and we'll help.";
 "Web_CodeFailed" = "Your code could not be checked. Please try again.";
 "Web_ImportClearDone" = "Clear finished";
+"Web_DesktopPitch" = "The desktop app adds your local library, recording and ripping.";
+"Web_DesktopDownload" = "Download rpm for %1$@";
+"Web_DesktopMac" = "Mac";
+"Web_DesktopWindows" = "Windows";
+"Web_DesktopOpen" = "Open rpm";
+"Web_DesktopHere" = "rpm is installed on this computer.";
+"Web_DesktopDidNotOpen" = "rpm did not open. It may not be installed yet.";
+"Web_DesktopFailed" = "The download could not start. Please try again.";
+"Web_DesktopAppleSilicon" = "Mac with Apple silicon";
+"Web_DesktopIntel" = "Mac with an Intel processor";
+"Web_DesktopIntelOld" = "Intel Mac with macOS 12 to 14";
+"Web_DeleteAsk" = "Delete %1$@ from your cloud library? This cannot be undone.";
+
+/* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
+"Web_ImportAlbumFileTip" = "This looks like a whole album in one file. The desktop app can split it into tracks.";
+"Web_ImportRipNote" = "To rip your CDs and record your vinyl, download the desktop app.";
+
+/* Import pane of the web app: tracks were being prepared when the page was last closed. The browser cannot reopen files by itself. */
+"Web_ImportSavedNote" = "%1$@ track(s) from your last visit are waiting. Add the same folder or files and your changes come back.";
+
+/* Import pane of the web app: button that reopens the folder picked on the last visit, in browsers that can. */
+"Web_ImportSavedReopen" = "Open the folder again";
+
+/* Import pane of the web app: button that drops the tracks kept from the last visit. */
+"Web_ImportSavedForget" = "Forget them";
+"Web_PlaylistsDesktopNote" = "Auto playlists, mood lists and smart playlists are made in the desktop app.";
+"Web_DeleteAccountFailed" = "The account could not be deleted. Please try again.";

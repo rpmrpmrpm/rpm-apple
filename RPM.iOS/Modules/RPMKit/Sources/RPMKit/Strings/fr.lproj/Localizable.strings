@@ -4206,6 +4206,9 @@
 /* Recognize dialog, and the split window's status line after Recognize selected: the server refused the advanced layer mid-run, so the run carried on without it. */
 "Recognize_AdvancedRefused" = "La reconnaissance avancée est réservée aux soutiens. Le reste de l’analyse a utilisé la reconnaissance de base.";
 
+/* Recognize window: the advanced layer failed mid-run, so the run carried on without it. */
+"Recognize_AdvancedDown" = "La reconnaissance avancée n’est pas disponible pour le moment. Le reste de l’analyse a utilisé la reconnaissance de base.";
+
 /* Recognize dialog, column header over each target track’s state. */
 "Recognize_ColStatus" = "Statut";
 
@@ -6636,3 +6639,30 @@
 "Web_CodeRefused" = "Ce code ne fonctionne pas. S'il correspond à votre e-mail de bienvenue, répondez à cet e-mail et nous vous aiderons.";
 "Web_CodeFailed" = "Votre code n'a pas pu être vérifié. Veuillez réessayer.";
 "Web_ImportClearDone" = "Effacer les terminés";
+"Web_DesktopPitch" = "L'application de bureau ajoute votre bibliothèque locale, l'enregistrement et l'extraction de CD.";
+"Web_DesktopDownload" = "Télécharger rpm pour %1$@";
+"Web_DesktopMac" = "Mac";
+"Web_DesktopWindows" = "Windows";
+"Web_DesktopOpen" = "Ouvrir rpm";
+"Web_DesktopHere" = "rpm est installé sur cet ordinateur.";
+"Web_DesktopDidNotOpen" = "rpm ne s'est pas ouvert. Il n'est peut-être pas encore installé.";
+"Web_DesktopFailed" = "Le téléchargement n'a pas pu démarrer. Veuillez réessayer.";
+"Web_DesktopAppleSilicon" = "Mac avec puce Apple";
+"Web_DesktopIntel" = "Mac avec processeur Intel";
+"Web_DesktopIntelOld" = "Mac Intel avec macOS 12 à 14";
+"Web_DeleteAsk" = "Supprimer %1$@ de votre bibliothèque cloud ? Cette action est irréversible.";
+
+/* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
+"Web_ImportAlbumFileTip" = "Ce fichier ressemble à un album entier. L'application de bureau peut le découper en morceaux.";
+"Web_ImportRipNote" = "Pour extraire vos CD et enregistrer vos vinyles, téléchargez l'application de bureau.";
+
+/* Import pane of the web app: tracks were being prepared when the page was last closed. The browser cannot reopen files by itself. */
+"Web_ImportSavedNote" = "%1$@ morceau(x) de votre dernière visite sont en attente. Ajoutez le même dossier ou les mêmes fichiers pour retrouver vos modifications.";
+
+/* Import pane of the web app: button that reopens the folder picked on the last visit, in browsers that can. */
+"Web_ImportSavedReopen" = "Rouvrir le dossier";
+
+/* Import pane of the web app: button that drops the tracks kept from the last visit. */
+"Web_ImportSavedForget" = "Les oublier";
+"Web_PlaylistsDesktopNote" = "Les playlists automatiques, les listes d'ambiance et les playlists intelligentes sont créées dans l'application de bureau.";
+"Web_DeleteAccountFailed" = "Le compte n'a pas pu être supprimé. Veuillez réessayer.";

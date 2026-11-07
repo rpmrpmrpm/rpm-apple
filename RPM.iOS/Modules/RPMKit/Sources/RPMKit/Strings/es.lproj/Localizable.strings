@@ -4206,6 +4206,9 @@
 /* Recognize dialog, and the split window's status line after Recognize selected: the server refused the advanced layer mid-run, so the run carried on without it. */
 "Recognize_AdvancedRefused" = "El reconocimiento avanzado es para patrocinadores. El resto del proceso usó solo el reconocimiento básico.";
 
+/* Recognize window: the advanced layer failed mid-run, so the run carried on without it. */
+"Recognize_AdvancedDown" = "El reconocimiento avanzado no está disponible en este momento. El resto del proceso usó solo el reconocimiento básico.";
+
 /* Recognize dialog, column header over each target track’s state. */
 "Recognize_ColStatus" = "Estado";
 
@@ -6636,3 +6639,30 @@
 "Web_CodeRefused" = "Ese código no funciona. Si coincide con tu correo de bienvenida, responde a ese correo y te ayudaremos.";
 "Web_CodeFailed" = "No se pudo comprobar tu código. Inténtalo de nuevo.";
 "Web_ImportClearDone" = "Quitar los terminados";
+"Web_DesktopPitch" = "La aplicación de escritorio añade tu biblioteca local, la grabación y la copia de CD.";
+"Web_DesktopDownload" = "Descargar rpm para %1$@";
+"Web_DesktopMac" = "Mac";
+"Web_DesktopWindows" = "Windows";
+"Web_DesktopOpen" = "Abrir rpm";
+"Web_DesktopHere" = "rpm está instalado en este ordenador.";
+"Web_DesktopDidNotOpen" = "rpm no se ha abierto. Puede que aún no esté instalado.";
+"Web_DesktopFailed" = "No se pudo iniciar la descarga. Inténtalo de nuevo.";
+"Web_DesktopAppleSilicon" = "Mac con chip de Apple";
+"Web_DesktopIntel" = "Mac con procesador Intel";
+"Web_DesktopIntelOld" = "Mac Intel con macOS 12 a 14";
+"Web_DeleteAsk" = "¿Eliminar %1$@ de tu biblioteca en la nube? No se puede deshacer.";
+
+/* Import pane of the web app: tooltip on the mark beside a file that looks like a whole album. The web app does not split files. */
+"Web_ImportAlbumFileTip" = "Parece un álbum completo en un solo archivo. La aplicación de escritorio puede dividirlo en pistas.";
+"Web_ImportRipNote" = "Para copiar tus CD y grabar tus vinilos, descarga la aplicación de escritorio.";
+
+/* Import pane of the web app: tracks were being prepared when the page was last closed. The browser cannot reopen files by itself. */
+"Web_ImportSavedNote" = "%1$@ pista(s) de tu última visita están esperando. Añade la misma carpeta o los mismos archivos y tus cambios volverán.";
+
+/* Import pane of the web app: button that reopens the folder picked on the last visit, in browsers that can. */
+"Web_ImportSavedReopen" = "Volver a abrir la carpeta";
+
+/* Import pane of the web app: button that drops the tracks kept from the last visit. */
+"Web_ImportSavedForget" = "Olvidarlas";
+"Web_PlaylistsDesktopNote" = "Las listas automáticas, las listas de ambiente y las listas inteligentes se crean en la aplicación de escritorio.";
+"Web_DeleteAccountFailed" = "No se pudo eliminar la cuenta. Inténtalo de nuevo.";
