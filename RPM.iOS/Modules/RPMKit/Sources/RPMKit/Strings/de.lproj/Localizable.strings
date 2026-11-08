@@ -6693,3 +6693,6 @@
 "Web_ImportSavedForget" = "Verwerfen";
 "Web_PlaylistsDesktopNote" = "Automatische Playlists, Stimmungslisten und intelligente Playlists entstehen in der Desktop-App.";
 "Web_DeleteAccountFailed" = "Das Konto konnte nicht gelöscht werden. Bitte versuche es noch einmal.";
+
+/* Web app, Import pane and setup: shown under Try our tracks when the three tracks that ship with the app could not be fetched. */
+"Web_StarterFailed" = "Unsere Titel konnten nicht heruntergeladen werden. Versuche es noch einmal.";

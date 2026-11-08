@@ -6693,3 +6693,6 @@
 "Web_ImportSavedForget" = "Forget them";
 "Web_PlaylistsDesktopNote" = "Auto playlists, mood lists and smart playlists are made in the desktop app.";
 "Web_DeleteAccountFailed" = "The account could not be deleted. Please try again.";
+
+/* Web app, Import pane and setup: shown under Try our tracks when the three tracks that ship with the app could not be fetched. */
+"Web_StarterFailed" = "Our tracks could not be downloaded. Try again.";

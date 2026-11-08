@@ -6693,3 +6693,6 @@
 "Web_ImportSavedForget" = "Olvidarlas";
 "Web_PlaylistsDesktopNote" = "Las listas automáticas, las listas de ambiente y las listas inteligentes se crean en la aplicación de escritorio.";
 "Web_DeleteAccountFailed" = "No se pudo eliminar la cuenta. Inténtalo de nuevo.";
+
+/* Web app, Import pane and setup: shown under Try our tracks when the three tracks that ship with the app could not be fetched. */
+"Web_StarterFailed" = "No se pudieron descargar nuestras pistas. Inténtalo de nuevo.";

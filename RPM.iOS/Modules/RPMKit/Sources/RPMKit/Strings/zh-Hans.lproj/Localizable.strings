@@ -6693,3 +6693,6 @@
 "Web_ImportSavedForget" = "不再保留";
 "Web_PlaylistsDesktopNote" = "自动播放列表、心情列表和智能播放列表由桌面版生成。";
 "Web_DeleteAccountFailed" = "无法删除账户，请重试。";
+
+/* Web app, Import pane and setup: shown under Try our tracks when the three tracks that ship with the app could not be fetched. */
+"Web_StarterFailed" = "无法下载我们的曲目。请重试。";

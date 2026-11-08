@@ -6693,3 +6693,6 @@
 "Web_ImportSavedForget" = "Les oublier";
 "Web_PlaylistsDesktopNote" = "Les playlists automatiques, les listes d'ambiance et les playlists intelligentes sont créées dans l'application de bureau.";
 "Web_DeleteAccountFailed" = "Le compte n'a pas pu être supprimé. Veuillez réessayer.";
+
+/* Web app, Import pane and setup: shown under Try our tracks when the three tracks that ship with the app could not be fetched. */
+"Web_StarterFailed" = "Nos morceaux n’ont pas pu être téléchargés. Réessayez.";
