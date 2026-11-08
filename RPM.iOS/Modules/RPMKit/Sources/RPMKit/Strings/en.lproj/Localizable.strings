@@ -6696,3 +6696,6 @@
 
 /* Web app, Import pane and setup: shown under Try our tracks when the three tracks that ship with the app could not be fetched. */
 "Web_StarterFailed" = "Our tracks could not be downloaded. Try again.";
+
+/* Web app, Settings, Sound: under Streaming quality, what the choices do. */
+"Web_QualityDetail" = "The original is exactly as it was uploaded. A lower bitrate uses less data.";
