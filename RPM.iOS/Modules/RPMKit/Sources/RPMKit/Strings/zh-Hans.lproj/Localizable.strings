@@ -6642,6 +6642,21 @@
 "Web_CodeRefused" = "此代码无效。如果它与欢迎邮件中的一致，请回复该邮件，我们会帮你解决。";
 "Web_CodeFailed" = "无法验证你的代码，请重试。";
 "Web_ImportClearDone" = "清除已完成";
+
+/* Web app import pane: caption under the animation while an import is running. The web app uploads the files to the cloud. */
+"Web_ImportingUpload" = "正在将所选文件上传到你的收藏";
+
+/* Web app: title of the dialog shown when an import has finished and every track in the import list is imported. */
+"Web_ImportAllDoneTitle" = "导入完成";
+
+/* Web app: body of the dialog shown when an import has finished and every track in the import list is imported. */
+"Web_ImportAllDoneBody" = "所有曲目均已导入。要关闭导入面板吗？";
+
+/* Web app, import finished dialog: primary button. Closes the import pane. */
+"Web_ImportAllDoneClose" = "关闭";
+
+/* Web app, import finished dialog: secondary button. Keeps the import pane open. */
+"Web_ImportAllDoneStay" = "留在此处";
 "Web_DesktopPitch" = "桌面版还提供本地音乐库、录音和 CD 抓轨。";
 "Web_DesktopDownload" = "下载 %1$@ 版 rpm";
 "Web_DesktopMac" = "Mac";

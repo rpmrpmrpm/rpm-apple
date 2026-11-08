@@ -6642,6 +6642,21 @@
 "Web_CodeRefused" = "Ce code ne fonctionne pas. S'il correspond à votre e-mail de bienvenue, répondez à cet e-mail et nous vous aiderons.";
 "Web_CodeFailed" = "Votre code n'a pas pu être vérifié. Veuillez réessayer.";
 "Web_ImportClearDone" = "Effacer les terminés";
+
+/* Web app import pane: caption under the animation while an import is running. The web app uploads the files to the cloud. */
+"Web_ImportingUpload" = "Envoi des fichiers sélectionnés vers votre collection";
+
+/* Web app: title of the dialog shown when an import has finished and every track in the import list is imported. */
+"Web_ImportAllDoneTitle" = "Importation terminée";
+
+/* Web app: body of the dialog shown when an import has finished and every track in the import list is imported. */
+"Web_ImportAllDoneBody" = "Toutes les pistes sont importées. Voulez-vous fermer le panneau d'importation ?";
+
+/* Web app, import finished dialog: primary button. Closes the import pane. */
+"Web_ImportAllDoneClose" = "Fermer";
+
+/* Web app, import finished dialog: secondary button. Keeps the import pane open. */
+"Web_ImportAllDoneStay" = "Rester";
 "Web_DesktopPitch" = "L'application de bureau ajoute votre bibliothèque locale, l'enregistrement et l'extraction de CD.";
 "Web_DesktopDownload" = "Télécharger rpm pour %1$@";
 "Web_DesktopMac" = "Mac";
