@@ -6667,6 +6667,9 @@
 /* Web app, edit windows: the tags could not be read from the cloud, so nothing can be edited. */
 "Web_EditReadFailed" = "Die Tags konnten nicht gelesen werden. Schließe das Fenster und versuche es erneut.";
 
+/* Web app, track details, Sound tab: the shared analysis of the track could not be fetched from the cloud. */
+"Web_AnalysisFailed" = "Die Analyse konnte nicht geladen werden.";
+
 /* Web app, track metadata from a release: shown while the filled-in tags are saved. */
 "Web_EditSaving" = "Wird gespeichert…";
 
