@@ -3399,6 +3399,18 @@
 /* Button that opens the page where supporting rpm is bought. */
 "Cloud_BecomeSupporter" = "成为支持者";
 
+/* Button in Settings for a paying supporter. Opens the Stripe page where the subscription is cancelled or the card is changed. */
+"Supporter_Manage" = "管理订阅";
+
+/* Shown under Become a supporter or Manage subscription when the payment page could not be opened. */
+"Supporter_CheckoutFailed" = "目前无法付款，请稍后重试。";
+
+/* Shown under Manage subscription for a supporter who did not pay through Stripe (for example, support given by rpm). */
+"Supporter_NoSubscription" = "此账户没有订阅。";
+
+/* Web app beta code card, above the Become a supporter button: paying opens the closed beta. */
+"Web_BetaSupporter" = "支持者现在即可使用 rpm，无需代码。";
+
 /* Cloud settings usage line for a supporter, who has no ceiling to show. */
 "Cloud_UsageUnlimited" = "已使用 %1$@（存储无限）";
 
