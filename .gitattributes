@@ -1,0 +1,2 @@
+# Byte offsets inside a PDF break if its line endings are changed, so PDFs are never converted.
+*.pdf binary
