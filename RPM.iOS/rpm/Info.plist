@@ -45,5 +45,19 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<!--
+	    The launch screen: black, with the dimmed rpm wordmark in the middle at its own size,
+	    exactly where the opening screen (RPMUI/Opening.swift) draws it. So the opening is on the
+	    screen from the moment the app is tapped, and nothing moves when the app's first frame
+	    replaces this picture. Both assets are written by scripts/gen_opening_wordmark.py in the
+	    rpm repo. The generated launch screen is off in the project, so this one is used.
+	-->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>OpeningGround</string>
+		<key>UIImageName</key>
+		<string>OpeningWordmark</string>
+	</dict>
 </dict>
 </plist>

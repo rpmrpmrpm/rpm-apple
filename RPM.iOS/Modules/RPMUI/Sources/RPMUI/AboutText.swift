@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import RPMKit
 import RPMLibrary
 
@@ -127,6 +128,174 @@ struct AboutText: View {
                                         inset: 11, size: 12))
             .fixedSize()
             .measure { key = $0 }
+    }
+}
+
+/// Three lines of what Wikipedia says about an artist, centred, with "Read more" in bold at the end
+/// of the third line when the text is longer than that. The artist page shows it under the name.
+///
+/// **The text stops at a whole word, and "Read more" ends the line.** The text is cut at the last
+/// word that leaves room for the key on the third line (``cut(_:width:size:)``). It is not faded out
+/// under a button, as ``AboutText`` does on the record page. The key is joined to the last word with
+/// spaces that do not break, so it never starts a line of its own.
+///
+/// The whole block is one key and opens ``AboutSheet``, also when the text fits, as ``AboutText`` is.
+struct CentredAboutText: View {
+    let article: EncyclopediaArticle
+    let onOpen: () -> Void
+
+    private static let lines = 3
+
+    /// The key's ink: brighter than the text, so it reads as something to press.
+    private static let keyInk = RPMInk.white(0xF0 / 255)
+
+    /// What stands between the last word and the key: four spaces that do not break.
+    private static let gap = String(repeating: "\u{00A0}", count: 4)
+
+    /// The width the text is laid out in. Zero until the first layout.
+    @State private var width: CGFloat = 0
+
+    /// The reader's text size. ``RPMFont`` faces grow with it, so the cut is measured at it too.
+    @Environment(\.dynamicTypeSize) private var size
+
+    /// Whether the fade-in has run. See ``AboutText``.
+    @State private var faded = false
+
+    private var words: String { article.paragraphs.joined(separator: " ") }
+
+    private var key: String {
+        Loc.get("Rpm_About_ReadMore").replacingOccurrences(of: " ", with: "\u{00A0}")
+    }
+
+    var body: some View {
+        let shown = Self.cut(words, key: key, width: width, size: size)
+
+        Button(action: onOpen) {
+            written(shown)
+                .font(AboutText.font)
+                .lineSpacing(AboutText.lineSpacing)
+                .multilineTextAlignment(.center)
+                .lineLimit(Self.lines)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(Loc.get("Rpm_About_ReadMore"))
+        .background {
+            GeometryReader { box in
+                Color.clear.onChange(of: box.size.width, initial: true) { _, now in width = now }
+            }
+        }
+        .opacity(faded ? 1 : 0)
+        .onAppear { withAnimation(.easeOut(duration: 0.3)) { faded = true } }
+    }
+
+    private func written(_ shown: Cut) -> Text {
+        let text = Text(shown.text).foregroundStyle(AboutText.ink)
+        guard shown.clipped else { return text }
+
+        return text
+            + Text(Self.gap)
+            + Text(key).font(RPMFont.displayBold(14)).foregroundStyle(Self.keyInk)
+    }
+
+    // ── where the text is cut ──
+
+    /// The text to show, and whether it was cut (and so ends with the key).
+    struct Cut: Equatable {
+        let text: String
+        let clipped: Bool
+    }
+
+    /// The longest run of whole words that fits in three lines with the key after it, or all of the
+    /// text when it fits in three lines by itself.
+    ///
+    /// It is measured with TextKit, in the faces and size that SwiftUI draws. A `Font.custom` face
+    /// grows with the reader's text size as the body style does, so the measuring fonts are scaled
+    /// with `UIFontMetrics` for the body style at `size`. The width is measured a little narrower
+    /// than it is, so that a rounding difference between TextKit and SwiftUI cannot push the key
+    /// onto a fourth line, which `lineLimit` would cut off.
+    static func cut(_ words: String, key: String, width: CGFloat, size: DynamicTypeSize) -> Cut {
+        guard width > 0 else { return Cut(text: words, clipped: false) }
+
+        let room = width - 2
+        let body = scaled(RPMFont.mediumFace, size: size)
+        let bold = scaled(RPMFont.boldFace, size: size)
+
+        if lineCount(NSAttributedString(string: words, attributes: [.font: body]), width: room) <= lines {
+            return Cut(text: words, clipped: false)
+        }
+
+        // Three lines never hold this much on a phone, at any text size. Only the start of a long
+        // article is searched.
+        let start = String(words.prefix(600))
+
+        var ends: [String.Index] = []
+        start.enumerateSubstrings(in: start.startIndex..., options: [.byWords, .substringNotRequired]) {
+            _, range, _, _ in ends.append(range.upperBound)
+        }
+
+        func fits(_ end: String.Index) -> Bool {
+            let line = NSMutableAttributedString(string: String(start[..<end]) + gap,
+                                                 attributes: [.font: body])
+            line.append(NSAttributedString(string: key, attributes: [.font: bold]))
+            return lineCount(line, width: room) <= lines
+        }
+
+        var low = 0, high = ends.count - 1, best: Int?
+        while low <= high {
+            let middle = (low + high) / 2
+            if fits(ends[middle]) {
+                best = middle
+                low = middle + 1
+            } else {
+                high = middle - 1
+            }
+        }
+
+        return Cut(text: best.map { String(start[..<ends[$0]]) } ?? "", clipped: true)
+    }
+
+    /// A face at the text's size, grown or shrunk as SwiftUI grows a custom face at `size`. The
+    /// system face stands in where the face did not load, as ``RPMFont`` does.
+    private static func scaled(_ name: String?, size: DynamicTypeSize) -> UIFont {
+        let base = name.flatMap { UIFont(name: $0, size: 14) } ?? .systemFont(ofSize: 14)
+        let traits = UITraitCollection(preferredContentSizeCategory: category(size))
+        return UIFontMetrics(forTextStyle: .body).scaledFont(for: base, compatibleWith: traits)
+    }
+
+    private static func category(_ size: DynamicTypeSize) -> UIContentSizeCategory {
+        switch size {
+        case .xSmall: .extraSmall
+        case .small: .small
+        case .medium: .medium
+        case .large: .large
+        case .xLarge: .extraLarge
+        case .xxLarge: .extraExtraLarge
+        case .xxxLarge: .extraExtraExtraLarge
+        case .accessibility1: .accessibilityMedium
+        case .accessibility2: .accessibilityLarge
+        case .accessibility3: .accessibilityExtraLarge
+        case .accessibility4: .accessibilityExtraExtraLarge
+        case .accessibility5: .accessibilityExtraExtraExtraLarge
+        @unknown default: .large
+        }
+    }
+
+    /// How many lines `text` takes at `width`.
+    private static func lineCount(_ text: NSAttributedString, width: CGFloat) -> Int {
+        let storage = NSTextStorage(attributedString: text)
+        let layout = NSLayoutManager()
+        let box = NSTextContainer(size: CGSize(width: width, height: .greatestFiniteMagnitude))
+        box.lineFragmentPadding = 0
+        layout.addTextContainer(box)
+        storage.addLayoutManager(layout)
+
+        var count = 0
+        layout.enumerateLineFragments(forGlyphRange: layout.glyphRange(for: box)) { _, _, _, _, _ in
+            count += 1
+        }
+        return count
     }
 }
 

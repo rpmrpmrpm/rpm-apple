@@ -104,6 +104,11 @@ public struct ArtistPage: View {
 
     @State private var portrait: Cover?
 
+    /// The photograph's colour, which leads the page's ground (``ArtGround``): its best vivid
+    /// colour, no brighter than white text allows (``GroundLead``). Read once, when the photograph
+    /// arrives. Nil without a photograph, or for one with no colour to give.
+    @State private var lead: Color?
+
     /// What the title is, once the logo lookup has answered: their logo or their name. Nil until
     /// then. See ``title``.
     @State private var titleRead: TitleRead?
@@ -164,15 +169,10 @@ public struct ArtistPage: View {
 
                 popularSection
 
-                shelf(Loc.get("Artists_Albums"), shelves.records)
-                shelf(Loc.get("Artists_Collaborations"), shelves.together)
-                shelf(Loc.get("Artists_Eps"), shelves.eps)
-                shelf(Loc.get("Artists_LiveAlbums"), shelves.live)
-                shelf(Loc.get("Artists_Mixtapes"), shelves.mixtapes)
-                shelf(Loc.get("Artists_Soundtracks"), shelves.soundtracks)
-                shelf(Loc.get("Artists_Compilations"), shelves.compilations)
-                shelf(Loc.get("Artists_Singles"), shelves.singles)
-                shelf(Loc.get("Artists_AppearsOn"), shelves.appearances)
+                // The first shelf opens a new part of the page, so it has the larger space above it.
+                ForEach(shownShelves) { row in
+                    shelf(row.heading, row.records, top: row.first ? Self.sectionTop : Self.shelfTop)
+                }
 
                 relatedSection
 
@@ -218,7 +218,7 @@ public struct ArtistPage: View {
     @ViewBuilder
     private var aboutThem: some View {
         if let article = about.article(for: subject) {
-            AboutText(article: article) {
+            CentredAboutText(article: article) {
                 reading = AboutReading(heading: Loc.get("TrackInfo_AboutArtist"),
                                        name: artist.name, article: article)
             }
@@ -256,11 +256,13 @@ public struct ArtistPage: View {
 
     // ── the page's ground ──
 
-    /// Their photograph blurred under the whole page, over the app's own grooves. Unlike a
-    /// record's, it has no tint over it: the colour on an artist's page comes from the photograph.
-    /// The layers are ``ArtGround``'s.
+    /// The photograph's main colour under the whole page, with the photograph blurred over it
+    /// faintly, so the page reads as the artist's colour and not as a blurred picture (``lead``).
+    /// Unlike a record's, it has no tint over it: the colour on an artist's page comes from the
+    /// photograph. In night mode the blurred photograph is the ground, as it is on every other
+    /// page. The layers are ``ArtGround``'s.
     private var ground: some View {
-        ArtGround(picture: portrait?.image, showing: artist.name)
+        ArtGround(picture: portrait?.image, showing: artist.name, lead: lead)
     }
 
     // ── the band across the top ──
@@ -334,7 +336,7 @@ public struct ArtistPage: View {
             }
 
             RunOff(plate: plate, depth: depth, blurs: portrait != nil, blurFrom: Self.blurFrom,
-                   reflection: Self.reflection(plate: plate, depth: depth)) {
+                   reflection: Self.reflection) {
                 face
             }
         }
@@ -356,20 +358,19 @@ public struct ArtistPage: View {
         }
     }
 
-    /// The photograph mirrored as drawn while the mirror stays within the blurred part of the
-    /// plate, and blurred all the way down when the mirror is deeper than that.
+    /// The photograph mirrored at the blur of its foot all the way down, so the text and the keys
+    /// stand on colour that is as soft as the band's foot.
     ///
-    /// A mirror as drawn reaches as far up the plate as it is deep under it. When it reaches above
-    /// ``blurFrom`` it reflects the sharp part of the photograph, which then shows upside down
-    /// behind the text and the keys. On a square plate the keys and three lines of text stay within
-    /// the blurred part. A narrow plate or longer writing can go past it. See ``RunOffReflection``.
-    private static func reflection(plate: Double, depth: Double) -> RunOffReflection {
-        depth <= plate * (1 - blurFrom) ? .asDrawn : .blurred
-    }
+    /// Not the photograph as drawn: a mirror as drawn reaches as far up the plate as it is deep under
+    /// it, and so reflects the part of the photograph that is only lightly blurred, where a face can
+    /// still be made out upside down behind the text. See ``RunOffReflection``.
+    private static let reflection = RunOffReflection.blurred
 
-    /// The photograph, dimmed, and the wash that the name is read through. Both are the same two
-    /// layers as the home banner's card, so the band and the card look like one surface. ``RunOff``
-    /// blurs both toward the foot and mirrors them under the band.
+    /// The photograph as it is, which ``RunOff`` blurs toward the foot and mirrors under the band.
+    /// The name and the text over it are read by their shadow.
+    ///
+    /// In night mode (``NightMode``) the photograph is dimmed and has the wash that the name is read
+    /// through, the same two layers as the home banner's card.
     private var face: some View {
         ZStack {
             if let portrait {
@@ -380,7 +381,7 @@ public struct ArtistPage: View {
                             .aspectRatio(contentMode: .fill)
                     }
                     .clipped()
-                    .overlay { Color.black.opacity(HomeFeatureCard.held) }
+                    .overlay { if night { Color.black.opacity(HomeFeatureCard.held) } }
                     .transition(.opacity)
             } else if !RoomView.works {
                 // There is no photograph and no room. The band is then the page's own
@@ -388,9 +389,12 @@ public struct ArtistPage: View {
                 Color.black.opacity(0x22 / 255)
             }
 
-            HomeFeatureCard.foot
+            if night { HomeFeatureCard.foot }
         }
     }
+
+    /// Whether the photograph is drawn darker. See ``NightMode``.
+    @AppStorage(NightMode.key) private var night = false
 
     /// Whether the band shows the room: the photograph was looked for and not found, and the room
     /// can be drawn.
@@ -412,6 +416,7 @@ public struct ArtistPage: View {
     /// with the face above the name. See ``BackdropStore/portrait(artist:album:cutFor:)``.
     private func dress() async {
         portrait = nil
+        lead = nil
         looked = false
 
         if let first = shelves.records.first ?? shelves.together.first,
@@ -423,6 +428,7 @@ public struct ArtistPage: View {
         }
 
         var found: Cover?
+        var colour: RGB?
         if let backdrops {
             // The band starts at the top of the screen, so the status bar covers its top.
             let scene = ArtScene.forClearLeft(
@@ -434,6 +440,11 @@ public struct ArtistPage: View {
             if let picture = await backdrops.portrait(artist: artist.name, album: nil,
                                                       cutFor: scene) {
                 found = Cover(image: Image(decorative: picture, scale: 1), accent: nil)
+                // The photograph's colour (``GroundLead``), from a 48 pixel copy, off the main actor.
+                colour = await Task.detached(priority: .userInitiated) {
+                    let read = Thumbnail.colours(of: picture)
+                    return GroundLead.of(glow: read.highlight, dominant: read.dominant)
+                }.value
             }
         } else {
             found = await covers.portrait(of: artist.name, edge: bandWidth)
@@ -443,6 +454,7 @@ public struct ArtistPage: View {
 
         withAnimation(.easeOut(duration: 0.35)) {
             portrait = found
+            lead = colour?.color
             looked = true
         }
     }
@@ -545,32 +557,72 @@ public struct ArtistPage: View {
         }
     }
 
-    /// Play their work, and play the same work in another order. These are the keys of the album
-    /// page without the mark, because a user marks a record or a song, and an artist is neither.
+    /// Three keys in the middle of the page: a mixtape, Play, and Shuffle. Play is a round glass key
+    /// and is the one in the middle. The two beside it are their glyphs alone, with no glass, so
+    /// Play is the key the eye finds first.
+    ///
+    /// There is no mark, as on the album page, because a user marks a record or a song, and an
+    /// artist is neither.
+    ///
+    /// The mixtape starts from one of their songs, chosen at random each time, so the key gives a
+    /// different mix when it is pressed again. Without a way to start a mixtape (a preview), its
+    /// place is kept empty so Play stays in the middle.
     @ViewBuilder
     private var keys: some View {
         if !shelves.songs.isEmpty {
-            HStack(spacing: 10) {
-                Button { onPlay(shelves.songs.map(\.track), 0, .list) } label: {
-                    HStack(spacing: 10) {
-                        Text(Glyph.play).font(RPMFont.icon(15))
-                        Text(Loc.get("Rpm_Artist_PlayAll")).font(RPMFont.display(17))
+            HStack(spacing: Self.keysApart) {
+                if let startRadio {
+                    Button {
+                        if let song = shelves.songs.randomElement() { startRadio(song.track) }
+                    } label: {
+                        sideKey(Glyph.mixtape)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Loc.get("Track_StartMixtape"))
+                } else {
+                    Color.clear.frame(width: Self.sideKeyWidth, height: Self.keysHeight)
                 }
-                .buttonStyle(RPMGlassButton(.primary, radius: 14, height: Self.keysHeight))
+
+                Button { onPlay(shelves.songs.map(\.track), 0, .list) } label: {
+                    // The triangle's weight is left of its middle, so it is moved right a little
+                    // to look centred in the circle.
+                    Text(Glyph.play)
+                        .font(RPMFont.icon(18))
+                        .foregroundStyle(RPMInk.white(0xF5 / 255))
+                        .offset(x: 2)
+                }
+                .buttonStyle(RPMGlassKey(edge: Self.keysHeight))
+                .accessibilityLabel(Loc.get("Rpm_Artist_PlayAll"))
 
                 Button(action: onShuffle) {
-                    Text(Glyph.shuffle).font(RPMFont.icon(17))
+                    sideKey(Glyph.shuffle)
                 }
-                .buttonStyle(RPMGlassButton(.ghost, radius: 14, height: Self.keysHeight))
-                .frame(width: 56)
+                .buttonStyle(.plain)
                 .accessibilityLabel(Loc.get("AlbumMenu_Shuffle"))
             }
-            .padding(.horizontal, RPMLayout.margin)
+            .frame(maxWidth: .infinity)
             .padding(.top, Self.keysTop)
             .padding(.bottom, Self.keysBottom)
         }
     }
+
+    /// A key beside Play: its glyph, in a box as tall as Play, which is the part that answers a tap.
+    private func sideKey(_ glyph: String) -> some View {
+        Text(glyph)
+            .font(RPMFont.icon(17))
+            .foregroundStyle(RPMInk.white(0xF0 / 255))
+            .frame(width: Self.sideKeyWidth, height: Self.keysHeight)
+            .contentShape(Rectangle())
+    }
+
+    /// The width a key beside Play answers taps in.
+    private static let sideKeyWidth: Double = 56
+
+    /// The space between Play and each key beside it.
+    private static let keysApart: Double = 12
+
+    /// Starts a mixtape from a song. Nil in a preview. See ``EnvironmentValues/startRadio``.
+    @Environment(\.startRadio) private var startRadio
 
     // ── popular tracks ──
 
@@ -598,7 +650,7 @@ public struct ArtistPage: View {
                          songMenu: TrackMenu(isMarked: isTrackMarked, isMine: isTrackMine,
                                              upNext: upNext, onMark: onMarkTrack,
                                              onFile: onFile))
-                .padding(.top, 18)
+                .padding(.top, Self.sectionTop)
         }
     }
 
@@ -685,31 +737,62 @@ public struct ArtistPage: View {
 
     // ── the shelves ──
 
-    /// One shelf, or nothing at all if the artist has no records of that kind. It is drawn
-    /// only when it holds something, because a heading over an empty row would tell the
-    /// reader what this artist did not do.
-    @ViewBuilder
-    private func shelf(_ heading: String, _ records: [CloudAlbum]) -> some View {
-        if !records.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(heading)
-                    .rpmKicker()
-                    .textCase(.uppercase)
-                    .padding(.horizontal, RPMLayout.margin)
+    /// The space above Popular tracks, above the first shelf and above Related artists: the
+    /// places where a new part of the page starts.
+    private static let sectionTop: Double = 40
 
-                ScrollView(.horizontal) {
-                    LazyHStack(alignment: .top, spacing: 14) {
-                        ForEach(records) { album in
-                            AlbumTile(album: album, art: sleeve, covers: covers)
-                                .onTapGesture { onOpen(album) }
-                        }
-                    }
-                    .padding(.horizontal, RPMLayout.margin)
-                }
-                .scrollIndicators(.hidden)
-            }
-            .padding(.top, 18)
+    /// The space above every shelf after the first.
+    private static let shelfTop: Double = 18
+
+    /// The shelves that hold something, in the order the page shows them. A shelf is drawn only
+    /// when it holds something, because a heading over an empty row would tell the reader what
+    /// this artist did not do.
+    private var shownShelves: [ShelfRow] {
+        let all: [(String, [CloudAlbum])] = [
+            (Loc.get("Artists_Albums"), shelves.records),
+            (Loc.get("Artists_Collaborations"), shelves.together),
+            (Loc.get("Artists_Eps"), shelves.eps),
+            (Loc.get("Artists_LiveAlbums"), shelves.live),
+            (Loc.get("Artists_Mixtapes"), shelves.mixtapes),
+            (Loc.get("Artists_Soundtracks"), shelves.soundtracks),
+            (Loc.get("Artists_Compilations"), shelves.compilations),
+            (Loc.get("Artists_Singles"), shelves.singles),
+            (Loc.get("Artists_AppearsOn"), shelves.appearances)]
+
+        return all.filter { !$0.1.isEmpty }.enumerated().map { index, shelf in
+            ShelfRow(heading: shelf.0, records: shelf.1, first: index == 0)
         }
+    }
+
+    /// One shelf on the page: its heading, its records, and whether it is the first shelf shown.
+    private struct ShelfRow: Identifiable {
+        let heading: String
+        let records: [CloudAlbum]
+        let first: Bool
+
+        var id: String { heading }
+    }
+
+    /// One shelf: its heading over a row of sleeves, `top` points under what is above it.
+    private func shelf(_ heading: String, _ records: [CloudAlbum], top: Double) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(heading)
+                .rpmKicker()
+                .textCase(.uppercase)
+                .padding(.horizontal, RPMLayout.margin)
+
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 14) {
+                    ForEach(records) { album in
+                        AlbumTile(album: album, art: sleeve, covers: covers)
+                            .onTapGesture { onOpen(album) }
+                    }
+                }
+                .padding(.horizontal, RPMLayout.margin)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(.top, top)
     }
 
     /// The sleeve size that a shelf uses. One whole sleeve and the edge of the next one are
@@ -745,7 +828,7 @@ public struct ArtistPage: View {
                 }
                 .scrollIndicators(.hidden)
             }
-            .padding(.top, 18)
+            .padding(.top, Self.sectionTop)
         }
     }
 

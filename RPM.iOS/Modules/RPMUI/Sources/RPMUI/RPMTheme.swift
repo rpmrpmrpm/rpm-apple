@@ -564,6 +564,10 @@ public enum RPMFont {
     /// of drawing nothing.
     static var boldFace: String? { name(of: .cabinBold) }
 
+    /// The registered name of the body face that ``display(_:)`` draws, for text that is measured
+    /// before it is drawn: see ``CentredAboutText``. Nil where the face did not load.
+    static var mediumFace: String? { name(of: .cabinMedium) }
+
     private static func face(_ which: Face, _ size: CGFloat) -> Font {
         guard let name = name(of: which) else { return .system(size: size) }
         return .custom(name, size: size)

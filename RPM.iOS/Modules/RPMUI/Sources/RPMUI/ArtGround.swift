@@ -34,6 +34,12 @@ public struct ArtGround: View {
     /// gradient an artist's box is painted in. See `PageBackdrop.Ground.Colour`.
     private let colours: [Color]
 
+    /// The colour that leads the ground, read off the picture: the artist page passes its
+    /// photograph's main colour. The page then stands on this colour, with the picture blurred
+    /// over it at only ``underLead``, so the colour is what the page reads as and the photograph
+    /// is a texture in it. Nil, and in night mode (``NightMode``), the picture is the ground.
+    private let lead: Color?
+
     /// What the picture is OF, so that a page moving from one picture to another
     /// dissolves between them instead of switching at once. The home screen's banner needs
     /// it: the ground follows the card in front, and the card in front moves under a
@@ -53,11 +59,12 @@ public struct ArtGround: View {
     private let dissolve: Double
 
     public init(picture: Image?, accent: Accent? = nil, showing: String = "",
-                colours: [Color] = [], dissolve: Double = 0.25) {
+                colours: [Color] = [], lead: Color? = nil, dissolve: Double = 0.25) {
         self.picture = picture
         self.accent = accent
         self.showing = showing
         self.colours = colours
+        self.lead = lead
         self.dissolve = dissolve
     }
 
@@ -77,14 +84,16 @@ public struct ArtGround: View {
     @State private var over: Worn?
     @State private var covered: Double = 1
 
-    /// One ground: a picture, the colour read off it, and what it is of.
+    /// One ground: a picture, the colours read off it, and what it is of. The leading colour is
+    /// part of it, so a new picture and its colour dissolve in together.
     private struct Worn: Equatable {
         let of: String
         let picture: Image?
         let accent: Accent?
+        let lead: Color?
     }
 
-    private var worn: Worn { Worn(of: standing, picture: picture, accent: accent) }
+    private var worn: Worn { Worn(of: standing, picture: picture, accent: accent, lead: lead) }
 
     public var body: some View {
         ZStack {
@@ -104,11 +113,8 @@ public struct ArtGround: View {
             // Heavier at the foot, where the listings are: the head of a page is a sleeve
             // or a photograph with a title on it and can stand on colour, and a list of
             // forty rows cannot.
-            LinearGradient(
-                stops: [.init(color: .black.opacity(0x59 / 255), location: 0),
-                        .init(color: .black.opacity(0x8C / 255), location: 0.42),
-                        .init(color: .black.opacity(0xBF / 255), location: 1)],
-                startPoint: .top, endPoint: .bottom)
+            LinearGradient(stops: night ? Self.nightVeil : Self.veil,
+                           startPoint: .top, endPoint: .bottom)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
@@ -131,22 +137,50 @@ public struct ArtGround: View {
     @ViewBuilder
     private func wash(_ worn: Worn) -> some View {
         if let picture = worn.picture {
+            let led = night ? nil : worn.lead
+
             // **Clipped, and inside a `Color.clear`.** A resizable image filling its
             // frame reports the SCALED size as its own, not the size it was offered.
             // A square sleeve over a tall page would make the page eight hundred points
             // wide, and everything centred in it would sit off the right of the screen.
             // The clip keeps the ground at the size of the page.
             Color.clear
+                .background { if let led { led } }
                 .overlay {
                     picture
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .blur(radius: 60, opaque: true)
+                        .saturation(night ? 1 : Self.colourful)
+                        .opacity(led == nil ? 1 : Self.underLead)
                 }
                 .clipped()
                 .overlay(worn.accent?.base.color.opacity(0.18) ?? .clear)
         }
     }
+
+    /// Whether the page is drawn in its darker way. See ``NightMode``.
+    @AppStorage(NightMode.key) private var night = false
+
+    /// The veil over the picture. It is light over the top half of the page and gets heavier
+    /// toward the foot, where the rows of text are. The picture under it is made a little more
+    /// colourful (``colourful``), so the page keeps its colour and does not look washed out.
+    private static let veil: [Gradient.Stop] = [
+        .init(color: .black.opacity(0x38 / 255), location: 0),
+        .init(color: .black.opacity(0x3D / 255), location: 0.42),
+        .init(color: .black.opacity(0x80 / 255), location: 1)]
+
+    /// The veil in night mode: heavy over the whole page, over the picture's own colours.
+    private static let nightVeil: [Gradient.Stop] = [
+        .init(color: .black.opacity(0x59 / 255), location: 0),
+        .init(color: .black.opacity(0x8C / 255), location: 0.42),
+        .init(color: .black.opacity(0xBF / 255), location: 1)]
+
+    /// How strongly the blurred picture is drawn over a leading colour (``lead``).
+    private static let underLead: Double = 0.2
+
+    /// How much more colourful the blurred picture is drawn outside night mode.
+    private static let colourful: Double = 1.4
 }
 
 // ── what a picture casts under itself ──

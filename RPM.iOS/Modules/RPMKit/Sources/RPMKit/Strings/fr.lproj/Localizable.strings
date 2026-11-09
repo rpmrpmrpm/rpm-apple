@@ -502,6 +502,12 @@
 
 /* Empty state on the album wall and the album list when a search matches nothing. */
 "Library_NoSearchResults" = "Aucun résultat";
+
+/* Library search results (phone): at the right of a group's heading (Artists, Albums, Tracks, Playlists, Genres) that has more than five results. Shows all of that group. */
+"Library_SearchViewMore" = "Voir plus";
+
+/* Library search results (phone): the same key once the group shows all its results. Shows the first five again. */
+"Library_SearchViewLess" = "Voir moins";
 "Library_Syncing" = "Mise à jour de l'index de la collection…";
 
 /* Status line after a library sync moved one hand-copied file into the inbox folder. {0} is the inbox folder name, which is not translated. */
@@ -778,6 +784,12 @@
 /* Settings > Collection: progress readout under the fingerprinting toggle. {0} done, {1} total. */
 "Settings_FingerprintProgress" = "%1$@ morceaux sur %2$@ traités.";
 "Settings_Background" = "Arrière-plan";
+
+/* Settings > Profile (phone), Background card: switch that keeps photo backgrounds darker on artist, album and playlist pages. */
+"Settings_NightMode" = "Mode nuit";
+
+/* Settings > Profile (phone): hint under the Night mode switch. */
+"Settings_NightModeHint" = "Garde les photos derrière les pages d'artiste, d'album et de playlist dans l'ombre. Plus doux pour vos yeux dans le noir.";
 
 /* Hint under the Background heading in Display settings, above the row of backdrop tiles. */
 "Settings_BackgroundHint" = "Choisissez l’un des fonds de rpm, ou utilisez une image à vous.";
@@ -5520,8 +5532,11 @@
 /* Empty state of the iPhone downloads list. */
 "Rpm_Downloads_Empty" = "Aucun téléchargement pour l'instant. Ouvrez un album et touchez le bouton de téléchargement pour l'écouter sans connexion Internet.";
 
-/* Album and artist pages, phone: small glass button at the end of the shortened Wikipedia text. Opens the full text in a sheet. */
+/* Album and artist pages, phone: at the end of the shortened Wikipedia text. Unfolds the first paragraph in place, under the text. */
 "Rpm_About_ReadMore" = "Lire la suite";
+
+/* Album and artist pages, phone: at the end of the unfolded Wikipedia paragraph, in the same style as Read more. Folds it back to three lines. */
+"Rpm_About_ReadLess" = "Réduire";
 
 /* Shown in place of a .NET exception message wherever a step fails (sign-in, cloud, casting, import). No network, or the server name could not be found. */
 "Fault_Offline" = "Pas de connexion Internet.";
@@ -6191,6 +6206,15 @@
 
 /* iPhone album page: the date under a review that was rewritten after it was first posted. {0} is the date, for example "2 days ago". */
 "Rpm_Album_Edited" = "%1$@ (modifié)";
+
+/* Up next drawer (phone): heading over the songs the person added with Play next or Add to queue. */
+"Rpm_Queue_YourQueue" = "Votre file d'attente";
+
+/* Up next drawer (phone): heading over the songs a mixtape added, songs like the one it started from. */
+"Rpm_Queue_Mixtape" = "Mixtape";
+
+/* Up next drawer (phone): switch. On, an album, playlist or single that ends goes on as a mixtape of similar songs (the same setting as Tv_SettingsMixtapeAfter). */
+"Rpm_Queue_AutoMixtape" = "Mixtape automatique";
 
 /* Title of the iPhone dialog shown when a tap would replace a queue the user changed (added, moved or removed songs). */
 "Rpm_Queue_DiscardTitle" = "Supprimer votre file d'attente ?";

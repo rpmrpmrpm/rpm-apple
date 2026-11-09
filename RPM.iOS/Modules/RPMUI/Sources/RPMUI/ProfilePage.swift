@@ -548,8 +548,25 @@ public struct ProfilePage: View {
                 .padding(.vertical, 2)
             }
             .scrollClipDisabled()
+
+            // Under the backdrops: it changes the other kind of background, the photograph a
+            // page stands on. See ``NightMode``.
+            Toggle(isOn: $night) {
+                Text(Loc.get("Settings_NightMode"))
+                    .font(RPMFont.display(13))
+                    .foregroundStyle(RPMInk.white(0xB3 / 255))
+            }
+            .tint(RPMInk.white(0x88 / 255))
+
+            Text(Loc.get("Settings_NightModeHint"))
+                .font(RPMFont.display(11))
+                .foregroundStyle(RPMInk.white(0x88 / 255))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
+
+    /// Whether the pages that stand on a photograph are drawn darker. See ``NightMode``.
+    @AppStorage(NightMode.key) private var night = false
 
     /// The tile that is selected. It shows what is actually in use and not what is stored, so the
     /// gold tile cannot be selected while the app's own background is on the screen. See

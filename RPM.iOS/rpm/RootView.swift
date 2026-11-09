@@ -104,6 +104,14 @@ struct RootView: View {
     /// It is cleared when the shell goes away, because a new shell is a new home screen.
     @State private var homeReady = false
 
+    /// Whether the opening screen is still up. It is shown once per launch. See the overlay that
+    /// draws it.
+    @State private var opening = true
+
+    /// Whether the shell has been shown with its home screen drawn, so the opening may hand over.
+    /// Set when the launch hold below ends.
+    @State private var shellShown = false
+
     /// The longest time that the launch keeps the wait mark for the home screen, after the wall's
     /// own 400 ms. A photograph is a network request, and a slow one must not block the app. After
     /// this time the page is shown, and the card fades its photograph in when it arrives.
@@ -343,6 +351,19 @@ struct RootView: View {
             // playing, and the place to see what played is the collection it came from.
             tab = model.player.wasTheRadio ? .radio : .library
         }
+        // The opening screen (`Opening`), over everything until the sign-in form is up or the home
+        // screen has drawn what it opens on, then faded away. Once per launch: a later read of the
+        // library (another collection, a retry) shows its own wait mark.
+        .overlay {
+            if opening {
+                Opening(ready: model.standing == .signedOut || shellShown,
+                        reading: model.standing == .loading ? Loc.get("Rpm_Library_Reading") : nil,
+                        onSwept: {
+                            withAnimation(.easeOut(duration: Opening.fade)) { opening = false }
+                        })
+                    .transition(.opacity)
+            }
+        }
         .preferredColorScheme(.dark)
         // Passed to the views that fetch a picture from an address that the app does not own. They
         // read it to decide whether to make the request. They do not draw anything with it.
@@ -455,6 +476,7 @@ struct RootView: View {
                     try? await Task.sleep(for: .milliseconds(50))
                 }
                 withAnimation(.easeOut(duration: 0.35)) { covering = false }
+                shellShown = true
             }
         }
         // **When offline, show all of the user's own records, with the ones that are not on the
