@@ -5076,6 +5076,9 @@
 /* About screen: what Font Awesome is used for. */
 "Credits_FontAwesome_Use" = "Every icon in the app.";
 
+/* About screen: what the marks of other music apps are used for. */
+"Credits_AppMarks_Use" = "The marks on the buttons of the import from another app, to name those apps.";
+
 /* About screen: what the Open Sans typeface is used for. */
 "Credits_OpenSans_Use" = "The fallback face when a glyph is missing from the app's own type.";
 
