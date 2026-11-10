@@ -6820,6 +6820,9 @@
 /* Import from another app, connect step (desktop): heading above the media servers found on the network. Clicking one fills in the server address. */
 "Migration_FoundServers" = "Encontrados en tu red";
 
+/* Import from another app, connect step (desktop): the search for media servers on the local network found none. */
+"Migration_NoServersFound" = "No se encontraron servidores en tu red. Escribe la dirección abajo.";
+
 /* Import from another app, connect step (desktop): a media server found on the network. {0} is its name, {1} its address. */
 "Migration_FoundServer" = "%1$@ (%2$@)";
 
@@ -6831,6 +6834,9 @@
 
 /* Import from another app: button that signs in to the media server. */
 "Migration_SignIn" = "Iniciar sesión";
+
+/* Import from another app (desktop): shown with a moving bar while the media server checks the user name and password. */
+"Migration_SigningIn" = "Iniciando sesión";
 
 /* Import from another app: Jellyfin's code sign-in. Quick Connect is Jellyfin's name for it. */
 "Migration_QuickConnect" = "Usar Quick Connect";
