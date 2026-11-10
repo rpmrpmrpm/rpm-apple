@@ -6796,6 +6796,12 @@
 /* Import from another app: button for an import that has not finished. {0} is the source, for example MusicBee. */
 "Migration_ContinueImport" = "Reprendre l'import depuis %1$@";
 
+/* Import from another app, list of apps: button beside 'Continue import from ...' that forgets that unfinished import. */
+"Migration_Forget" = "Oublier";
+
+/* Import from another app, list of apps: tooltip of the Forget button. */
+"Migration_ForgetHint" = "Oublie cette importation inachevée et sa connexion enregistrée. Ce qui a été importé reste dans rpm.";
+
 /* Import from another app: how to get MusicBee's library file. MusicBee's menu names are in English in the app; keep them as they are. */
 "Migration_HowMusicBee" = "Dans MusicBee, ouvrez Edit > Preferences > Library et activez « Save a copy of the library tags as an iTunes formatted XML file ». Fermez MusicBee, puis choisissez le fichier « iTunes Music Library.xml » dans le dossier de bibliothèque de MusicBee.";
 

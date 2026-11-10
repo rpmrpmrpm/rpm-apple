@@ -6796,6 +6796,12 @@
 /* Import from another app: button for an import that has not finished. {0} is the source, for example MusicBee. */
 "Migration_ContinueImport" = "继续从 %1$@ 导入";
 
+/* Import from another app, list of apps: button beside 'Continue import from ...' that forgets that unfinished import. */
+"Migration_Forget" = "忘记";
+
+/* Import from another app, list of apps: tooltip of the Forget button. */
+"Migration_ForgetHint" = "忘记这次未完成的导入及其保存的登录信息。已导入的内容保留在 rpm 中。";
+
 /* Import from another app: how to get MusicBee's library file. MusicBee's menu names are in English in the app; keep them as they are. */
 "Migration_HowMusicBee" = "在 MusicBee 中打开 Edit > Preferences > Library，开启“Save a copy of the library tags as an iTunes formatted XML file”。关闭 MusicBee，然后选择 MusicBee 资料库文件夹中的“iTunes Music Library.xml”文件。";
 
