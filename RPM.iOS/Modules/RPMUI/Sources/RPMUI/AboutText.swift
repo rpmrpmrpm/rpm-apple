@@ -131,26 +131,42 @@ struct AboutText: View {
     }
 }
 
-/// Three lines of what Wikipedia says about an artist, centred, with "Read more" in bold at the end
-/// of the third line when the text is longer than that. The artist page shows it under the name.
+/// What Wikipedia says about an artist or a record, centred: its first paragraph, folded to three
+/// lines with "Read more" in bold at the end of the third line when it is longer than that.
 ///
 /// **The text stops at a whole word, and "Read more" ends the line.** The text is cut at the last
-/// word that leaves room for the key on the third line (``cut(_:width:size:)``). It is not faded out
-/// under a button, as ``AboutText`` does on the record page. The key is joined to the last word with
-/// spaces that do not break, so it never starts a line of its own.
+/// word that leaves room for the key on the third line (``cut(_:key:keySize:width:size:)``). The key
+/// is joined to the last word with spaces that do not break, so it never starts a line of its own.
 ///
-/// The whole block is one key and opens ``AboutSheet``, also when the text fits, as ``AboutText`` is.
+/// **A tap unfolds it in place**, with "Read less" at its end in the same style to fold it again, and
+/// Wikipedia's credit under it (``WikipediaCredit``). A paragraph short enough to show whole has the
+/// credit under it from the start. Only the first paragraph is shown; the rest is on Wikipedia.
+///
+/// **The row grows in one step and the new text fades in.** Both pages are Lists, and a List row that
+/// changes height under an animation slides everything in it up and back down (see ``AboutRead``). So
+/// the change of height is not animated, and the fade runs in a transaction of its own after it.
+///
+/// - `lead`: words before the text, dimmer than it, that say what it is: "About the album" on a
+///   record's page. They are part of the first line and are measured with the text.
+/// - `capitalKeys`: Read more and Read less in small capitals, as the record's page has them.
 struct CentredAboutText: View {
     let article: EncyclopediaArticle
-    let onOpen: () -> Void
+    var lead: String? = nil
+    var capitalKeys = false
 
     private static let lines = 3
 
-    /// The key's ink: brighter than the text, so it reads as something to press.
+    /// The keys' ink: brighter than the text, so they read as something to press.
     private static let keyInk = RPMInk.white(0xF0 / 255)
+
+    /// The lead-in words' ink: dimmer than the text.
+    private static let leadInk = RPMInk.white(0x80 / 255)
 
     /// What stands between the last word and the key: four spaces that do not break.
     private static let gap = String(repeating: "\u{00A0}", count: 4)
+
+    /// Between the lead-in words and the text.
+    private static let leadGap = " \u{2013} "
 
     /// The width the text is laid out in. Zero until the first layout.
     @State private var width: CGFloat = 0
@@ -158,45 +174,81 @@ struct CentredAboutText: View {
     /// The reader's text size. ``RPMFont`` faces grow with it, so the cut is measured at it too.
     @Environment(\.dynamicTypeSize) private var size
 
-    /// Whether the fade-in has run. See ``AboutText``.
-    @State private var faded = false
+    /// Whether the paragraph is unfolded.
+    @State private var open = false
 
-    private var words: String { article.paragraphs.joined(separator: " ") }
+    /// How far the text shown has faded in: on the first appearance, and after every fold.
+    @State private var shown: Double = 0
 
-    private var key: String {
-        Loc.get("Rpm_About_ReadMore").replacingOccurrences(of: " ", with: "\u{00A0}")
+    private var prefix: String { lead.map { $0 + Self.leadGap } ?? "" }
+
+    /// The first paragraph, after the lead-in words.
+    private var words: String { prefix + (article.paragraphs.first { !$0.isEmpty } ?? "") }
+
+    private func keyWord(_ key: String) -> String {
+        (capitalKeys ? Loc.get(key).uppercased() : Loc.get(key)).replacingOccurrences(of: " ", with: "\u{00A0}")
     }
 
-    var body: some View {
-        let shown = Self.cut(words, key: key, width: width, size: size)
+    /// The keys' size: the text's, or two points smaller in capitals, which read larger.
+    private var keySize: CGFloat { capitalKeys ? 12 : 14 }
 
-        Button(action: onOpen) {
-            written(shown)
+    var body: some View {
+        let folded = Self.cut(words, key: keyWord("Rpm_About_ReadMore"), keySize: keySize, width: width, size: size)
+        let fits = !folded.clipped
+        let unfolded = open && !fits
+
+        VStack(spacing: 10) {
+            Button {
+                guard !fits else { return }
+                // The row's height changes here, with no animation; then the text fades in.
+                open.toggle()
+                shown = 0
+                Task { @MainActor in withAnimation(.easeOut(duration: 0.32)) { shown = 1 } }
+            } label: {
+                Group {
+                    if unfolded {
+                        written(words, key: keyWord("Rpm_About_ReadLess"))
+                    } else {
+                        written(folded.text, key: folded.clipped ? keyWord("Rpm_About_ReadMore") : nil)
+                            .lineLimit(Self.lines)
+                    }
+                }
                 .font(AboutText.font)
                 .lineSpacing(AboutText.lineSpacing)
                 .multilineTextAlignment(.center)
-                .lineLimit(Self.lines)
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(fits ? "" : Loc.get(unfolded ? "Rpm_About_ReadLess" : "Rpm_About_ReadMore"))
+
+            if unfolded || fits {
+                WikipediaCredit(article: article)
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityHint(Loc.get("Rpm_About_ReadMore"))
         .background {
             GeometryReader { box in
                 Color.clear.onChange(of: box.size.width, initial: true) { _, now in width = now }
             }
         }
-        .opacity(faded ? 1 : 0)
-        .onAppear { withAnimation(.easeOut(duration: 0.3)) { faded = true } }
+        .opacity(shown)
+        .onAppear { withAnimation(.easeOut(duration: 0.3)) { shown = 1 } }
     }
 
-    private func written(_ shown: Cut) -> Text {
-        let text = Text(shown.text).foregroundStyle(AboutText.ink)
-        guard shown.clipped else { return text }
+    /// The words with the lead-in dimmer, and the key after them in bold where there is one.
+    private func written(_ said: String, key: String?) -> Text {
+        let split = said.hasPrefix(prefix) ? prefix.count : 0
+        let head = String(said.prefix(split))
+        let rest = String(said.dropFirst(split))
 
+        var text = Text(head).foregroundStyle(Self.leadInk) + Text(rest).foregroundStyle(AboutText.ink)
+        if let key {
+            text = text
+                + Text(Self.gap)
+                + Text(key).font(RPMFont.displayBold(keySize)).kerning(capitalKeys ? 0.6 : 0)
+                    .foregroundStyle(Self.keyInk)
+        }
         return text
-            + Text(Self.gap)
-            + Text(key).font(RPMFont.displayBold(14)).foregroundStyle(Self.keyInk)
     }
 
     // ── where the text is cut ──
@@ -215,12 +267,13 @@ struct CentredAboutText: View {
     /// with `UIFontMetrics` for the body style at `size`. The width is measured a little narrower
     /// than it is, so that a rounding difference between TextKit and SwiftUI cannot push the key
     /// onto a fourth line, which `lineLimit` would cut off.
-    static func cut(_ words: String, key: String, width: CGFloat, size: DynamicTypeSize) -> Cut {
+    static func cut(_ words: String, key: String, keySize: CGFloat = 14, width: CGFloat,
+                    size: DynamicTypeSize) -> Cut {
         guard width > 0 else { return Cut(text: words, clipped: false) }
 
         let room = width - 2
-        let body = scaled(RPMFont.mediumFace, size: size)
-        let bold = scaled(RPMFont.boldFace, size: size)
+        let body = scaled(RPMFont.mediumFace, points: 14, size: size)
+        let bold = scaled(RPMFont.boldFace, points: keySize, size: size)
 
         if lineCount(NSAttributedString(string: words, attributes: [.font: body]), width: room) <= lines {
             return Cut(text: words, clipped: false)
@@ -258,8 +311,8 @@ struct CentredAboutText: View {
 
     /// A face at the text's size, grown or shrunk as SwiftUI grows a custom face at `size`. The
     /// system face stands in where the face did not load, as ``RPMFont`` does.
-    private static func scaled(_ name: String?, size: DynamicTypeSize) -> UIFont {
-        let base = name.flatMap { UIFont(name: $0, size: 14) } ?? .systemFont(ofSize: 14)
+    private static func scaled(_ name: String?, points: CGFloat, size: DynamicTypeSize) -> UIFont {
+        let base = name.flatMap { UIFont(name: $0, size: points) } ?? .systemFont(ofSize: points)
         let traits = UITraitCollection(preferredContentSizeCategory: category(size))
         return UIFontMetrics(forTextStyle: .body).scaledFont(for: base, compatibleWith: traits)
     }
@@ -296,6 +349,30 @@ struct CentredAboutText: View {
             count += 1
         }
         return count
+    }
+}
+
+/// Wikipedia's credit, under text of theirs shown whole: a link to the article and the licence it is
+/// shared under, which CC BY-SA asks a reuse to name and link to.
+struct WikipediaCredit: View {
+    let article: EncyclopediaArticle
+
+    @Environment(\.openURL) private var openUrl
+
+    private static let licence = URL(string: "https://creativecommons.org/licenses/by-sa/4.0/")!
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(Loc.get("TrackInfo_ReadOnWikipedia")) {
+                if let url = URL(string: article.url) { openUrl(url) }
+            }
+            Text("\u{00B7}")
+            Button(Loc.get("Wikipedia_Licence")) { openUrl(Self.licence) }
+                .accessibilityHint(Loc.get("Wikipedia_LicenceTip"))
+        }
+        .buttonStyle(.plain)
+        .font(RPMFont.display(11))
+        .foregroundStyle(RPMInk.white(0x80 / 255))
     }
 }
 

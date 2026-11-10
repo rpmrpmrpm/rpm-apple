@@ -126,9 +126,6 @@ public struct ArtistPage: View {
     /// page is built, so an artist opened earlier has their text on the first frame.
     @State private var about: AboutRead
 
-    /// The text in the sheet, while it is up.
-    @State private var reading: AboutReading?
-
     /// Whether the photograph has been looked for and the answer is in. A band with no photograph
     /// yet and a band with no photograph at all both hold a nil portrait. Only the second shows the
     /// room, for the reason ``HomeFeatureCard`` gives.
@@ -206,7 +203,6 @@ public struct ArtistPage: View {
         .task(id: popularAsk) { await rankPopular() }
         .task(id: relatedAsk) { await readRelated(relatedAsk) }
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
-        .aboutSheet($reading)
     }
 
     /// What the Wikipedia text is about: the artist, asked with the name alone, as the desktop
@@ -218,11 +214,8 @@ public struct ArtistPage: View {
     @ViewBuilder
     private var aboutThem: some View {
         if let article = about.article(for: subject) {
-            CentredAboutText(article: article) {
-                reading = AboutReading(heading: Loc.get("TrackInfo_AboutArtist"),
-                                       name: artist.name, article: article)
-            }
-            .padding(.top, 10)
+            CentredAboutText(article: article)
+                .padding(.top, 10)
         }
     }
 

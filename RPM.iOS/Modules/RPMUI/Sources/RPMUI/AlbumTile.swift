@@ -76,6 +76,11 @@ public protocol CoverStore: Sendable {
     /// wrong band is easy to see. Nil is the ordinary answer,
     /// because most artists in most libraries have no photograph anywhere.
     func portrait(of artist: String, edge: Double) async -> Cover?
+
+    /// The disc the record page takes out of its sleeve, `edge` points across: the record's own
+    /// photographed disc where the desktop uploaded one, and otherwise a CD printed with its sleeve.
+    /// Nil where there is neither.
+    func disc(for album: CloudAlbum, edge: Double) async -> ScannedDisc?
 }
 
 extension CoverStore {
@@ -89,6 +94,8 @@ extension CoverStore {
     /// Nothing, for a store that has no pictures of playlists (the stand-ins a preview
     /// and a test hand over).
     public func picture(of list: ListPicture, edge: Double) async -> Cover? { nil }
+
+    public func disc(for album: CloudAlbum, edge: Double) async -> ScannedDisc? { nil }
 
     /// The sleeve of the record a **track** belongs to.
     ///

@@ -2,6 +2,7 @@ import SwiftUI
 import RPMKit
 import RPMLibrary
 import RPMArt
+import RPMDesign
 
 /// Supplies the covers for the wall from the cloud store.
 ///
@@ -55,6 +56,16 @@ public struct CloudCovers: CoverStore {
         // Decorative: the record's name and artist are next to the cover, so a screen reader
         // should not announce the cover as well.
         return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
+    }
+
+    /// The record's photographed disc, or a CD printed with its sleeve where the desktop uploaded no
+    /// disc. A sleeve is opaque out to its rim, so ``ScannedDisc`` reads it as a whole CD, and the
+    /// disc is drawn with the CD's rim and hub over it, as the desktop dresses one.
+    public func disc(for album: CloudAlbum, edge: Double) async -> ScannedDisc? {
+        let shelf = shelves.shelf(ofAlbum: album)
+        if let scanned = await store.disc(for: album, on: shelf, edge: pixels(edge)) { return scanned }
+        guard let art = await store.cover(for: album, on: shelf, edge: pixels(edge)) else { return nil }
+        return ScannedDisc(art.image)
     }
 
     /// Returns the bundled photograph for a generated list that has one, and the store's picture

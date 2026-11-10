@@ -21,6 +21,10 @@ public struct RecordDisc: View {
     private let label: CGImage?
     private let disc: ScannedDisc?
 
+    /// Seconds for one turn. ``revolution`` (33 1/3 turns a minute) unless the caller asks for
+    /// another pace: the disc that comes out of its sleeve on the record page turns slowly.
+    private let turn: Double
+
     /// The shadow the record casts. Each app chooses its own: the iPhone record stands on its own
     /// background, and the Apple TV record comes out of a sleeve, as on the desktop.
     public enum Halo {
@@ -32,6 +36,9 @@ public struct RecordDisc: View {
         /// that the record comes out of. A round halo would cast above it on the Apple TV record
         /// page.
         case cast
+        /// Round and concentric, reaching 2.5% past the edge. For the disc that comes out of its
+        /// sleeve on the record page: a wider shadow would show past the sleeve above and below it.
+        case close
     }
 
     /// - Parameters:
@@ -48,17 +55,18 @@ public struct RecordDisc: View {
     ///     visible around it. ``ScannedDisc/coversRecord`` says which case applies, and it is
     ///     read from the picture.
     public init(diameter: CGFloat, halo: Halo, spinning: Bool = true, hue: RGB? = VinylPressing.houseHue,
-                label: CGImage? = nil, disc: ScannedDisc? = nil) {
+                label: CGImage? = nil, disc: ScannedDisc? = nil, turn: Double = RecordDisc.revolution) {
         self.diameter = diameter
         self.halo = halo
         self.spinning = spinning
         self.hue = hue
         self.label = label
         self.disc = disc
+        self.turn = turn
     }
 
     /// One turn every 1.8 s, which is 33 1/3 turns per minute.
-    private static let revolution: Double = 1.8
+    public static let revolution: Double = 1.8
 
     /// How long the record takes to reach full speed, like a real turntable.
     private static let spinUp: Double = 1.0
@@ -73,6 +81,9 @@ public struct RecordDisc: View {
     /// The cast halo values: the desktop's `DiscHaloScale`, `DiscShadowThrowX`/`Y` and the halo
     /// opacity on the record screen.
     private static let castScale: CGFloat = 1.06
+
+    /// The close halo's box against the disc. See ``Halo/close``.
+    private static let closeScale: CGFloat = 1.05
     private static let castThrow = CGSize(width: 0.025, height: 0.015)
     private static let castOpacity: Double = 0.55
 
@@ -97,7 +108,7 @@ public struct RecordDisc: View {
 
     public var body: some View {
         TimelineView(.animation(paused: !spinning)) { timeline in
-            let angle = spinning ? Self.angle(after: timeline.date.timeIntervalSince(from)) : 0
+            let angle = spinning ? Self.angle(after: timeline.date.timeIntervalSince(from), turn: turn) : 0
             let orbit = Double(diameter) * Self.wobble
 
             record(angle: angle)
@@ -133,18 +144,26 @@ public struct RecordDisc: View {
             // A soft halo just past the disc's edge, concentric with it, so the band looks the
             // same along the top as along the bottom. It is a sibling of the record, not a child,
             // because a child would turn with the record and the shadow must not turn.
-            let spread = halo == .round ? Self.haloScale : Self.castScale
+            let spread = switch halo {
+            case .round: Self.haloScale
+            case .cast: Self.castScale
+            case .close: Self.closeScale
+            }
+            // The close halo starts at the disc's edge and is gone at its own. The other two keep
+            // their own figures.
+            let edge = halo == .close ? 1 / spread : 0.86
+            let half = halo == .close ? (edge + 1) / 2 : 0.94
             Circle()
                 .fill(RadialGradient(
-                    stops: [.init(color: .black.opacity(0xB3 / 255), location: 0.86),
-                            .init(color: .black.opacity(0x59 / 255), location: 0.94),
+                    stops: [.init(color: .black.opacity(0xB3 / 255), location: edge),
+                            .init(color: .black.opacity(0x59 / 255), location: half),
                             .init(color: .black.opacity(0), location: 1)],
                     center: .center, startRadius: 0,
                     endRadius: diameter * spread / 2))
                 .frame(width: diameter * spread, height: diameter * spread)
-                .opacity(halo == .round ? 1 : Self.castOpacity)
-                .offset(x: halo == .round ? 0 : diameter * Self.castThrow.width,
-                        y: halo == .round ? 0 : diameter * Self.castThrow.height)
+                .opacity(halo == .cast ? Self.castOpacity : 1)
+                .offset(x: halo == .cast ? diameter * Self.castThrow.width : 0,
+                        y: halo == .cast ? diameter * Self.castThrow.height : 0)
 
             if let pressed, !wearingCd {
                 // **Nothing under a CD.** A photographed record replaces the drawn one completely,
@@ -246,7 +265,7 @@ public struct RecordDisc: View {
     /// as a closed formula, so the angle depends on the clock and not on how many frames were
     /// drawn. Otherwise a device that dropped frames would show a record that had turned less than
     /// one that did not.
-    static func angle(after elapsed: TimeInterval) -> Double {
+    static func angle(after elapsed: TimeInterval, turn: Double = revolution) -> Double {
         guard elapsed > 0 else { return 0 }
 
         // The integral of the smoothstep 3u² - 2u³ over the ramp. At the end of the ramp it equals
@@ -259,7 +278,7 @@ public struct RecordDisc: View {
             turned = spinUp * (u * u * u - u * u * u * u / 2)
         }
 
-        return (turned / revolution * 360).truncatingRemainder(dividingBy: 360)
+        return (turned / turn * 360).truncatingRemainder(dividingBy: 360)
     }
 }
 
