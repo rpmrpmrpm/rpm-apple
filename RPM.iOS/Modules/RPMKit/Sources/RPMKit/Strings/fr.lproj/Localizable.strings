@@ -6755,7 +6755,7 @@
 "AddMusic_OtherApp" = "Depuis une autre app";
 
 /* Add music window: the line under 'From another app', naming the apps it can import from. */
-"AddMusic_OtherAppHint" = "MusicBee, iTunes, Jellyfin, Plex, Navidrome";
+"AddMusic_OtherAppHint" = "MusicBee, iTunes, Plex et plus";
 
 /* Title of the window that imports a library from another music app. */
 "Migration_Title" = "Importer depuis une autre app";
@@ -7029,3 +7029,12 @@
 
 /* Import from another app: why an item of the source was not imported. */
 "Migration_SkipNotMusic" = "Pas de la musique (podcast, livre audio ou vidéo)";
+
+/* Import from another app: summary line for one track. {0} is a size. */
+"Migration_SummaryTracksOne" = "1 titre (%1$@)";
+
+/* Import from another app: summary line for one playlist. */
+"Migration_SummaryPlaylistsOne" = "1 playlist";
+
+/* Import from another app: report line for one playlist. */
+"Migration_ReportPlaylistsOne" = "1 playlist ajoutée";

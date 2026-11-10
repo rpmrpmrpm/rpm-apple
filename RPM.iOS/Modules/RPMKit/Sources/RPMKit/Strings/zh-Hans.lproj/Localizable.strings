@@ -6755,7 +6755,7 @@
 "AddMusic_OtherApp" = "从其他应用导入";
 
 /* Add music window: the line under 'From another app', naming the apps it can import from. */
-"AddMusic_OtherAppHint" = "MusicBee、iTunes、Jellyfin、Plex、Navidrome";
+"AddMusic_OtherAppHint" = "MusicBee、iTunes、Plex 等";
 
 /* Title of the window that imports a library from another music app. */
 "Migration_Title" = "从其他应用导入";
@@ -7029,3 +7029,12 @@
 
 /* Import from another app: why an item of the source was not imported. */
 "Migration_SkipNotMusic" = "不是音乐（播客、有声书或视频）";
+
+/* Import from another app: summary line for one track. {0} is a size. */
+"Migration_SummaryTracksOne" = "1 首曲目（%1$@）";
+
+/* Import from another app: summary line for one playlist. */
+"Migration_SummaryPlaylistsOne" = "1 个播放列表";
+
+/* Import from another app: report line for one playlist. */
+"Migration_ReportPlaylistsOne" = "已添加 1 个播放列表";
