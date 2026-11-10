@@ -6928,6 +6928,9 @@
 /* Import from another app: progress stage. */
 "Migration_StageFinishing" = "Finalisation";
 
+/* Import from another app: progress stage while the media server or the cloud gives no answer. The import tries again by itself. */
+"Migration_StageWaiting" = "En attente de la connexion";
+
 /* Import from another app: progress line. {0} and {1} are numbers, {2} and {3} sizes such as 14.2 GB. */
 "Migration_ProgressTracks" = "%1$@ sur %2$@ titres, %3$@ sur %4$@";
 
@@ -6960,6 +6963,9 @@
 
 /* Import from another app: why the import stopped. */
 "Migration_StoppedCloudFull" = "Arrêté : votre stockage cloud est plein.";
+
+/* Import from another app: why a cloud-only import stopped. */
+"Migration_StoppedCloudOff" = "Arrêté : vous êtes déconnecté, ou le stockage cloud est désactivé.";
 
 /* Status line while an import runs with its window hidden. {0} is the source, {1} and {2} numbers. */
 "Migration_Status" = "Import depuis %1$@ : %2$@ sur %3$@";
@@ -7014,6 +7020,9 @@
 
 /* Import from another app: why a track was not imported. */
 "Migration_ReasonCouldNotCopy" = "Copie impossible";
+
+/* Import from another app: why a track was not imported (cloud-only import, the cloud refused the file). The upload's own reason follows in brackets. */
+"Migration_ReasonUploadFailed" = "Envoi impossible";
 
 /* Import from another app: why a track was not imported. */
 "Migration_ReasonRemoved" = "Supprimé de rpm pendant l'import";

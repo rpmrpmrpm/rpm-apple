@@ -6928,6 +6928,9 @@
 /* Import from another app: progress stage. */
 "Migration_StageFinishing" = "正在完成";
 
+/* Import from another app: progress stage while the media server or the cloud gives no answer. The import tries again by itself. */
+"Migration_StageWaiting" = "正在等待连接";
+
 /* Import from another app: progress line. {0} and {1} are numbers, {2} and {3} sizes such as 14.2 GB. */
 "Migration_ProgressTracks" = "%2$@ 首中的第 %1$@ 首，%4$@ 中的 %3$@";
 
@@ -6960,6 +6963,9 @@
 
 /* Import from another app: why the import stopped. */
 "Migration_StoppedCloudFull" = "已停止：你的云存储已满。";
+
+/* Import from another app: why a cloud-only import stopped. */
+"Migration_StoppedCloudOff" = "已停止：你已退出登录，或云存储已关闭。";
 
 /* Status line while an import runs with its window hidden. {0} is the source, {1} and {2} numbers. */
 "Migration_Status" = "正在从 %1$@ 导入：%3$@ 首中的第 %2$@ 首";
@@ -7014,6 +7020,9 @@
 
 /* Import from another app: why a track was not imported. */
 "Migration_ReasonCouldNotCopy" = "无法复制";
+
+/* Import from another app: why a track was not imported (cloud-only import, the cloud refused the file). The upload's own reason follows in brackets. */
+"Migration_ReasonUploadFailed" = "无法上传";
 
 /* Import from another app: why a track was not imported. */
 "Migration_ReasonRemoved" = "导入期间已从 rpm 中移除";
