@@ -35,6 +35,7 @@
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_rpm._tcp</string>
+		<string>_rpm-nas._tcp</string>
 		<string>_googlecast._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>

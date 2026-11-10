@@ -45,6 +45,12 @@ public struct HeldCatalog: Sendable, Equatable {
     public let computer: String
     public let version: String
     public let tracks: [String: PeerTrack]
+    /// True when the catalogue came from a NAS rather than a computer. A NAS is tried first.
+    public let fromNas: Bool
+
+    public init(computer: String, version: String, tracks: [String: PeerTrack], fromNas: Bool) {
+        self.computer = computer; self.version = version; self.tracks = tracks; self.fromNas = fromNas
+    }
 }
 
 /// The computers this device pairs with and reads from. It is the client side of the protocol in
@@ -73,10 +79,44 @@ public final class HomeNetwork {
     /// The account signed in on this device, read for each session proof. See `init`.
     @ObservationIgnored private let account: @Sendable () async -> String
     private let client = PeerClient()
-    @ObservationIgnored private let discovery = Discovery()
+    @ObservationIgnored private let discovery = Discovery(serviceType: PeerWire.serviceType, role: nil)
+    @ObservationIgnored private let nasDiscovery = Discovery(serviceType: PeerWire.nasServiceType, role: "library")
 
     public private(set) var paired: [PairedComputer]
     public private(set) var found: [String: FoundComputer] = [:]
+
+    /// The NAS machines each paired computer's catalogue names, by that computer's key. A NAS is trusted
+    /// without a code only because a computer this device paired with named it, with its key.
+    public private(set) var vouched: [String: [PeerHost]]
+
+    /// The NAS libraries on the network now, and their library ids, whether or not anyone named them.
+    private var nasFound: [String: FoundComputer] = [:]
+    private var nasLibraryIds: [String: String] = [:]
+
+    /// The NAS libraries to use now: named by a paired computer and on the network, with the named key.
+    public var trustedNas: [String: FoundComputer] {
+        Self.trustedNas(vouched: vouched, paired: paired, found: nasFound, libraryIds: nasLibraryIds)
+    }
+
+    /// See ``trustedNas``. A host counts only when the computer that named it is still paired, and the
+    /// announcement on the network has the device id, key and library id that computer named.
+    nonisolated public static func trustedNas(vouched: [String: [PeerHost]], paired: [PairedComputer],
+                                  found: [String: FoundComputer], libraryIds: [String: String])
+        -> [String: FoundComputer] {
+        let owners = Set(paired.map { $0.deviceId.uppercased() })
+        var trusted: [String: FoundComputer] = [:]
+        for (owner, hosts) in vouched where owners.contains(owner.uppercased()) {
+            for host in hosts {
+                let key = host.deviceId.uppercased()
+                guard let seen = found[key],
+                      let named = PeerWire.fromBase64Url(host.publicKey), named == seen.publicKey,
+                      libraryIds[key]?.caseInsensitiveCompare(host.libraryId) == .orderedSame
+                else { continue }
+                trusted[key] = seen
+            }
+        }
+        return trusted
+    }
     public private(set) var pairing: Pairing?
 
     /// Every catalogue read, by computer key, whether or not its computer is on the network now.
@@ -85,7 +125,7 @@ public final class HomeNetwork {
     /// The paired computers on the network now, by key, with their current address.
     public var reachable: [String: FoundComputer] {
         let keys = Set(paired.map { $0.deviceId.uppercased() })
-        return found.filter { keys.contains($0.key) }
+        return found.filter { keys.contains($0.key) }.merging(trustedNas) { computer, _ in computer }
     }
 
     /// The catalogues of the paired computers that are on the network now.
@@ -126,11 +166,14 @@ public final class HomeNetwork {
         self.deviceName = deviceName
         self.account = account
         paired = Self.readPaired(store)
+        vouched = Self.readVouched(store)
     }
 
     public func start() {
         discovery.onChange = { [weak self] in self?.foundChanged() }
         discovery.start()
+        nasDiscovery.onChange = { [weak self] in self?.foundChanged() }
+        nasDiscovery.start()
     }
 
     public func isPaired(_ key: String) -> Bool {
@@ -139,6 +182,8 @@ public final class HomeNetwork {
 
     private func foundChanged() {
         found = discovery.found
+        nasFound = nasDiscovery.found
+        nasLibraryIds = nasDiscovery.libraryIds
         restartPolling()
         onCatalogsChanged()
     }
@@ -331,6 +376,23 @@ public final class HomeNetwork {
     }
 
     private static let pairedKey = "rpm.computers"
+    private static let vouchedKey = "rpm.computers.nas"
+
+    /// Replaces the NAS machines `owner` names with the list from its latest catalogue.
+    private func learnHosts(_ owner: String, _ hosts: [PeerHost]) {
+        guard vouched[owner] ?? [] != hosts else { return }
+        vouched[owner] = hosts.isEmpty ? nil : hosts
+        if let data = try? JSONEncoder().encode(vouched) { store.set(data, forKey: Self.vouchedKey) }
+        restartPolling()
+        onCatalogsChanged()
+    }
+
+    private static func readVouched(_ store: UserDefaults) -> [String: [PeerHost]] {
+        guard let data = store.data(forKey: vouchedKey),
+              let read = try? JSONDecoder().decode([String: [PeerHost]].self, from: data)
+        else { return [:] }
+        return read
+    }
 
     private static func readPaired(_ store: UserDefaults) -> [PairedComputer] {
         guard let data = store.data(forKey: pairedKey),
@@ -438,7 +500,12 @@ public final class HomeNetwork {
         do {
             guard let catalog = try await catalog(computer, have: held[computer.key]?.version) else { return }
             let tracks = Dictionary(catalog.tracks.map { ($0.rpmId, $0) }, uniquingKeysWith: { first, _ in first })
-            held[computer.key] = HeldCatalog(computer: computer.key, version: catalog.version, tracks: tracks)
+            let fromNas = trustedNas[computer.key] != nil
+            held[computer.key] = HeldCatalog(computer: computer.key, version: catalog.version, tracks: tracks,
+                                             fromNas: fromNas)
+            // Only a paired computer names NAS machines. A NAS's copy of the catalogue carries the same
+            // list, uploaded by that computer, and is not read for it.
+            if !fromNas { learnHosts(computer.key, catalog.hosts) }
             onCatalogsChanged()
         } catch {
             // The catalogue held stays. The next poll tries again.
@@ -472,7 +539,7 @@ public final class HomeNetwork {
     /// The computer to read from now: paired, on the network, and not failed recently at the
     /// address it is found at.
     public func usable(_ key: String) -> FoundComputer? {
-        guard isPaired(key), let computer = found[key] else { return nil }
+        guard let computer = isPaired(key) ? found[key] : trustedNas[key] else { return nil }
         guard let failed = failures[key] else { return computer }
         if failed.base != computer.base || Date().timeIntervalSince(failed.at) > Self.awayFor {
             failures[key] = nil
@@ -483,13 +550,23 @@ public final class HomeNetwork {
 
     /// The computer that holds `rpmId` in a format that plays on this device, if one is usable now.
     public func computer(holding rpmId: String) -> FoundComputer? {
-        for catalog in here.values {
+        for catalog in Self.nasFirst(Array(here.values)) {
             guard let track = catalog.tracks[rpmId], PeerFormats.playsHere(track),
                   let computer = usable(catalog.computer)
             else { continue }
             return computer
         }
         return nil
+    }
+
+    /// Catalogues from a NAS before catalogues from computers, then by key: the files are on the NAS, and
+    /// the computer would read them from it anyway. A NAS that fails is marked away like a computer and
+    /// skipped without a message.
+    nonisolated public static func nasFirst(_ catalogs: [HeldCatalog]) -> [HeldCatalog] {
+        catalogs.sorted { a, b in
+            if a.fromNas != b.fromNas { return a.fromNas }
+            return a.computer < b.computer
+        }
     }
 
     /// The address to stream `rpmId` from `computer`. Its query carries a ticket for this one track,

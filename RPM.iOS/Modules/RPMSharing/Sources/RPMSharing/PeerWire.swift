@@ -10,6 +10,9 @@ public enum PeerWire {
     /// request without it with 426. See ``PairingAsker``.
     public static let pairing = 2
     public static let serviceType = "_rpm._tcp"
+
+    /// The service type a NAS announces, for itself and for each library on it.
+    public static let nasServiceType = "_rpm-nas._tcp"
     public static let sessionPurpose = "rpm-share-session"
 
     /// Where a computer serves a track's bytes. A ticket is made over this route and the track's id.
@@ -265,14 +268,33 @@ public struct PeerTrack: Decodable, Sendable, Equatable {
     }
 }
 
-/// A computer's catalogue: its version and every track it shares.
+/// A NAS that also serves a computer's library, as that computer's catalogue names it.
+public struct PeerHost: Codable, Sendable, Equatable {
+    public var deviceId: String
+    /// SubjectPublicKeyInfo DER, base64url. The NAS is used only with this key.
+    public var publicKey: String
+    public var name: String
+    public var libraryId: String
+
+    public init(deviceId: String, publicKey: String, name: String, libraryId: String) {
+        self.deviceId = deviceId; self.publicKey = publicKey; self.name = name; self.libraryId = libraryId
+    }
+}
+
+/// A computer's catalogue: its version, every track it shares, and the NAS machines that also serve it.
 public struct PeerCatalog: Decodable, Sendable {
     public var version = ""
     public var name = ""
     public var tracks: [PeerTrack] = []
+    /// Empty in a catalogue from an older build, and for a library that is not on a NAS.
+    public var hosts: [PeerHost] = []
 
     public init(version: String, name: String, tracks: [PeerTrack]) {
-        self.version = version; self.name = name; self.tracks = tracks
+        self.version = version; self.name = name; self.tracks = tracks; self.hosts = []
+    }
+
+    public init(version: String, name: String, tracks: [PeerTrack], hosts: [PeerHost]) {
+        self.version = version; self.name = name; self.tracks = tracks; self.hosts = hosts
     }
 
     public init(from decoder: any Decoder) throws {
@@ -280,7 +302,8 @@ public struct PeerCatalog: Decodable, Sendable {
         version = try c.decodeIfPresent(String.self, forKey: .version) ?? ""
         name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
         tracks = try c.decodeIfPresent([PeerTrack].self, forKey: .tracks) ?? []
+        hosts = try c.decodeIfPresent([PeerHost].self, forKey: .hosts) ?? []
     }
 
-    private enum CodingKeys: String, CodingKey { case version, name, tracks }
+    private enum CodingKeys: String, CodingKey { case version, name, tracks, hosts }
 }

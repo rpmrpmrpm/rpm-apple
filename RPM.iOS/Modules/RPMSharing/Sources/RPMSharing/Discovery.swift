@@ -31,6 +31,10 @@ public struct Beacon: Equatable, Sendable {
     public let deviceId: String
     public let name: String
     public let publicKey: Data
+    /// In a NAS announcement, `nas` or `library`. Nil for a computer.
+    public let role: String?
+    /// In a NAS library's announcement, the library id.
+    public let libraryId: String?
 
     public init?(txt: [String: String]) {
         var text: [String: String] = [:]
@@ -52,10 +56,13 @@ public struct Beacon: Equatable, Sendable {
         // The beacon names no person and no account, only the machine.
         name = said("n") ?? id
         publicKey = key
+        role = said("r")
+        libraryId = said("l")
     }
 }
 
-/// Computers that share on the network, found through `_rpm._tcp` beacons. A computer's port
+/// Computers that share on the network, found through `_rpm._tcp` beacons, or the libraries on a NAS,
+/// found through `_rpm-nas._tcp` beacons. A computer's port
 /// changes each time its server restarts, so a changed beacon is resolved again. Reads always use
 /// the latest address. Each address is pinned to its key in ``PeerPins``.
 ///
@@ -69,6 +76,12 @@ public final class Discovery {
     /// Told after every change to ``found``. Set once by the owner.
     var onChange: @MainActor () -> Void = {}
 
+    /// The library id of each NAS library found, by key. Empty when browsing for computers.
+    public private(set) var libraryIds: [String: String] = [:]
+
+    private let serviceType: String
+    private let role: String?
+
     private var browser: NWBrowser?
 
     /// Maps each service name to its device key, so a lost service can be removed.
@@ -77,14 +90,22 @@ public final class Discovery {
     /// The resolve running for each service name. A newer resolve replaces it.
     private var resolving: [String: NWConnection] = [:]
 
-    public init() {}
+    /// - Parameters:
+    ///   - serviceType: ``PeerWire/serviceType`` for computers, ``PeerWire/nasServiceType`` for NAS
+    ///     libraries.
+    ///   - role: the announcement role to accept: nil for computers, which announce none, or
+    ///     `library` for the libraries on a NAS.
+    public init(serviceType: String, role: String?) {
+        self.serviceType = serviceType
+        self.role = role
+    }
 
     public func start() {
         guard browser == nil else { return }
 
         let parameters = NWParameters()
         parameters.includePeerToPeer = false
-        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: PeerWire.serviceType, domain: nil),
+        let browser = NWBrowser(for: .bonjourWithTXTRecord(type: serviceType, domain: nil),
                                 using: parameters)
         browser.browseResultsChangedHandler = { [weak self] _, changes in
             MainActor.assumeIsolated { self?.apply(changes) }
@@ -112,6 +133,7 @@ public final class Discovery {
                 resolving.removeValue(forKey: name)?.cancel()
                 if let key = names.removeValue(forKey: name) {
                     found[key] = nil
+                    libraryIds[key] = nil
                     onChange()
                 }
             case .identical:
@@ -133,7 +155,8 @@ public final class Discovery {
     private func resolve(_ result: NWBrowser.Result) {
         guard let name = Self.serviceName(result.endpoint),
               case .bonjour(let record) = result.metadata,
-              let beacon = Beacon(txt: record.dictionary)
+              let beacon = Beacon(txt: record.dictionary),
+              beacon.role == role
         else { return }
 
         let tcp = NWProtocolTCP.Options()
@@ -171,8 +194,9 @@ public final class Discovery {
     private func place(name: String, beacon: Beacon, address: String, port: Int) {
         let computer = FoundComputer(deviceId: beacon.deviceId, name: beacon.name, address: address,
                                      port: port, publicKey: beacon.publicKey)
-        PeerPins.shared.pin(address, spki: beacon.publicKey)
+        PeerPins.shared.pin(address, port: port, spki: beacon.publicKey)
         names[name] = computer.key
+        if let libraryId = beacon.libraryId { libraryIds[computer.key] = libraryId }
         guard found[computer.key] != computer else { return }
         found[computer.key] = computer
         onChange()

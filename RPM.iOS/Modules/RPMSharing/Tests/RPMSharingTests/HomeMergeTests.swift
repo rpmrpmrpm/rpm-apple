@@ -12,7 +12,7 @@ import RPMKit
     @Test func aTrackInTheCloudAndOnAComputerIsOneTrackTheCloudsRow() {
         let cloud = [CloudTrack(rpmId: "1", title: "Cloud title")]
         let merged = HomeMerge.merge(cloud, [HeldCatalog(computer: "PC", version: "v",
-                                                         tracks: ["1": peer("1"), "2": peer("2")])])
+                                                         tracks: ["1": peer("1"), "2": peer("2")], fromNas: false)])
         #expect(merged.map(\.rpmId) == ["1", "2"])
         #expect(merged[0].title == "Cloud title")
         #expect(merged[1].title == "T2")
@@ -20,8 +20,8 @@ import RPMKit
     }
 
     @Test func aTrackOnTwoComputersIsTakenOnce() {
-        let merged = HomeMerge.merge([], [HeldCatalog(computer: "A", version: "v", tracks: ["9": peer("9")]),
-                                          HeldCatalog(computer: "B", version: "v", tracks: ["9": peer("9")])])
+        let merged = HomeMerge.merge([], [HeldCatalog(computer: "A", version: "v", tracks: ["9": peer("9")], fromNas: false),
+                                          HeldCatalog(computer: "B", version: "v", tracks: ["9": peer("9")], fromNas: false)])
         #expect(merged.count == 1)
     }
 

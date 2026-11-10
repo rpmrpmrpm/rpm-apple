@@ -26,14 +26,18 @@ public final class PeerPins: @unchecked Sendable {
 
     /// Pins `address` to the key in `spki`, the SubjectPublicKeyInfo DER that a computer advertises.
     /// A key that is not P-256 is not pinned.
-    public func pin(_ address: String, spki: Data) {
+    /// Pins `address` and `port` to `spki`. The port is part of the pin because a NAS serves each of
+    /// its libraries with its own key on its own port, all at one address.
+    public func pin(_ address: String, port: Int, spki: Data) {
         guard let key = try? P256.Signing.PublicKey(derRepresentation: spki) else { return }
-        lock.withLock { pins[address] = key.x963Representation }
+        lock.withLock { pins[Self.place(address, port)] = key.x963Representation }
     }
 
-    public func isPinned(_ address: String) -> Bool {
-        lock.withLock { pins[address] != nil }
+    public func isPinned(_ address: String, port: Int) -> Bool {
+        lock.withLock { pins[Self.place(address, port)] != nil }
     }
+
+    private static func place(_ address: String, _ port: Int) -> String { "\(address):\(port)" }
 
     /// The answer to a TLS challenge. For a pinned address, the certificate's key must match the pinned
     /// key. For every other host, the system decides. Call this from
@@ -43,7 +47,7 @@ public final class PeerPins: @unchecked Sendable {
         let space = challenge.protectionSpace
         guard space.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let trust = space.serverTrust,
-              let wanted = lock.withLock({ pins[space.host] })
+              let wanted = lock.withLock({ pins[Self.place(space.host, space.port)] })
         else { return (.performDefaultHandling, nil) }
 
         guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
