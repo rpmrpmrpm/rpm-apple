@@ -6750,3 +6750,282 @@
 
 /* Web app, Settings, Sound: under Streaming quality, what the choices do. */
 "Web_QualityDetail" = "原始文件与上传时完全相同。较低的比特率使用更少的数据。";
+
+/* Add music window: the tile that imports a library from another music app. */
+"AddMusic_OtherApp" = "从其他应用导入";
+
+/* Add music window: the line under 'From another app', naming the apps it can import from. */
+"AddMusic_OtherAppHint" = "MusicBee、iTunes、Jellyfin、Plex、Navidrome";
+
+/* Title of the window that imports a library from another music app. */
+"Migration_Title" = "从其他应用导入";
+
+/* Import from another app: heading above the list of apps. */
+"Migration_ChooseKicker" = "你的音乐现在在哪里？";
+
+/* Import from another app: the MusicBee choice. A product name. */
+"Migration_SourceMusicBee" = "MusicBee";
+
+/* Import from another app: the iTunes / Apple Music choice. */
+"Migration_SourceITunes" = "iTunes 或 Apple Music";
+
+/* Import from another app: the Jellyfin choice. A product name. */
+"Migration_SourceJellyfin" = "Jellyfin";
+
+/* Import from another app: the Plex choice. A product name. */
+"Migration_SourcePlex" = "Plex";
+
+/* Import from another app: the Navidrome / Subsonic server choice. */
+"Migration_SourceNavidrome" = "Navidrome 或 Subsonic";
+
+/* Import from another app: the choice for .m3u/.pls playlist files. Also the name shown for this source in the report. */
+"Migration_SourcePlaylistFiles" = "播放列表文件";
+
+/* Import from another app: line under MusicBee and iTunes. */
+"Migration_HintFile" = "使用它保存的资料库文件";
+
+/* Import from another app: line under Jellyfin, Plex and Navidrome. */
+"Migration_HintServer" = "登录你的服务器";
+
+/* Import from another app: line under Playlist files. */
+"Migration_HintPlaylistFiles" = "任何播放器的 .m3u、.m3u8 和 .pls";
+
+/* Import from another app: button for an import that has not finished. {0} is the source, for example MusicBee. */
+"Migration_ContinueImport" = "继续从 %1$@ 导入";
+
+/* Import from another app: how to get MusicBee's library file. MusicBee's menu names are in English in the app; keep them as they are. */
+"Migration_HowMusicBee" = "在 MusicBee 中打开 Edit > Preferences > Library，开启“Save a copy of the library tags as an iTunes formatted XML file”。关闭 MusicBee，然后选择 MusicBee 资料库文件夹中的“iTunes Music Library.xml”文件。";
+
+/* Import from another app: how to get the iTunes / Apple Music library file. */
+"Migration_HowITunes" = "在 Apple Music 中选择“文件 > 资料库 > 导出资料库”。在 Windows 版 iTunes 中选择“编辑 > 偏好设置 > 高级”，开启“与其他应用程序共享 iTunes 资料库 XML”。然后选择资料库文件。";
+
+/* Import from another app: explanation for playlist files. */
+"Migration_HowPlaylistFiles" = "选择一个或多个播放列表文件。其中列出的音乐必须在这台电脑上。";
+
+/* Import from another app: button that opens a file picker for the library file. */
+"Migration_ChooseFile" = "选择文件";
+
+/* Import from another app: button that opens a file picker for playlist files. */
+"Migration_ChoosePlaylists" = "选择播放列表";
+
+/* Import from another app: label of the media server address box. */
+"Migration_ServerAddress" = "服务器地址";
+
+/* Import from another app: label of the user name box. */
+"Migration_UserName" = "用户名";
+
+/* Import from another app: label of the password box. */
+"Migration_Password" = "密码";
+
+/* Import from another app: button that signs in to the media server. */
+"Migration_SignIn" = "登录";
+
+/* Import from another app: Jellyfin's code sign-in. Quick Connect is Jellyfin's name for it. */
+"Migration_QuickConnect" = "使用 Quick Connect";
+
+/* Import from another app: shown while waiting for a Jellyfin Quick Connect approval. {0} is the six-digit code. */
+"Migration_QuickConnectCode" = "在另一个 Jellyfin 应用的“设置 > Quick Connect”中输入此代码：%1$@";
+
+/* Import from another app: button that opens Plex's sign-in page in the browser. */
+"Migration_PlexSignIn" = "使用 Plex 登录";
+
+/* Import from another app: shown while waiting for the Plex sign-in in the browser. */
+"Migration_PlexWaiting" = "请在浏览器中登录 Plex。完成后此窗口会继续。";
+
+/* Import from another app: label of the Plex server list. */
+"Migration_PlexServer" = "服务器";
+
+/* Import from another app: error when the Plex account has no server that answers. */
+"Migration_PlexNoServer" = "从这里无法连接到任何 Plex 服务器。";
+
+/* Import from another app: error after a refused sign-in. */
+"Migration_SignInFailed" = "服务器不接受此用户名或密码。";
+
+/* Import from another app: error when the server does not answer. */
+"Migration_ServerUnreachable" = "无法连接到服务器。请检查地址。";
+
+/* Import from another app, web app only: a page on https cannot reach a server on plain http. */
+"Migration_ServerBlocked" = "你的浏览器无法连接此服务器。请使用它的 https 地址，或在电脑上用 rpm 导入。";
+
+/* Import from another app: error when the chosen file is not an iTunes library XML. */
+"Migration_FileUnreadable" = "无法将此文件读取为资料库文件。";
+
+/* Import from another app, web app only: button to pick the folder that holds the music the library file lists. */
+"Migration_ChooseMusicFolder" = "选择音乐文件夹";
+
+/* Import from another app, web app only: why the music folder is needed. */
+"Migration_MusicFolderHint" = "浏览器无法打开资料库文件中的路径。请选择存放音乐的文件夹，rpm 会在其中找到每首曲目。";
+
+/* Import from another app: shown while the source library is read. {0} is a number. */
+"Migration_Reading" = "正在读取资料库（已找到 %1$@ 首曲目）";
+
+/* Import from another app: heading of the summary. */
+"Migration_SummaryKicker" = "找到的内容";
+
+/* Import from another app: summary line. {0} is a number, {1} a size such as 212 GB. */
+"Migration_SummaryTracks" = "%1$@ 首曲目（%2$@）";
+
+/* Import from another app: summary line. {0} is a number. */
+"Migration_SummaryPlaylists" = "%1$@ 个播放列表";
+
+/* Import from another app: summary line, an estimate. {0} is a number. */
+"Migration_SummaryAlready" = "约 %1$@ 首已在 rpm 中";
+
+/* Import from another app: summary line. {0} is a number. */
+"Migration_SummarySkipped" = "%1$@ 个项目不会导入（流媒体、视频、播客，或不在这台电脑上的文件）";
+
+/* Import from another app: shown on the summary and while importing from a library file. {0} is MusicBee or iTunes. */
+"Migration_KeepsOriginalsFile" = "rpm 会复制你的音乐，原文件保留在原处。你的 %1$@ 资料库中不会有任何更改或删除。";
+
+/* Import from another app: shown on the summary and while importing from a media server. {0} is Jellyfin, Plex or the server's name. */
+"Migration_KeepsOriginalsServer" = "rpm 只读取你的 %1$@ 服务器，不会更改或删除上面的任何内容。";
+
+/* Import from another app: shown on the summary and while importing playlist files. */
+"Migration_KeepsOriginalsPlaylists" = "rpm 会复制音乐，原文件和播放列表文件保留在原处。";
+
+/* Import from another app: heading above the choice of this computer or the cloud. */
+"Migration_WhereKicker" = "导入到";
+
+/* Import from another app: destination choice. */
+"Migration_ToThisComputer" = "这台电脑";
+
+/* Import from another app: line under 'This computer'. */
+"Migration_ToThisComputerHint" = "文件保存在你的 rpm 资料库文件夹中";
+
+/* Import from another app: destination choice. */
+"Migration_ToCloud" = "仅云端";
+
+/* Import from another app: line under 'Cloud only'. */
+"Migration_ToCloudHint" = "文件会存入你的 rpm 云端，不保留在这台电脑上";
+
+/* Import from another app: space line. {0} and {1} are sizes such as 12 GB. */
+"Migration_SpaceDisk" = "约需 %1$@。此磁盘可用 %2$@。";
+
+/* Import from another app: shown instead of the Start button when the disk is too small. {0} and {1} are sizes. */
+"Migration_SpaceDiskShort" = "此磁盘空间不足：约需 %1$@，可用 %2$@。";
+
+/* Import from another app: space line for a cloud import. {0} and {1} are sizes. */
+"Migration_SpaceCloud" = "约需 %1$@。你的云存储可用 %2$@。";
+
+/* Import from another app: space line when the cloud storage is too small. {0} and {1} are sizes. */
+"Migration_SpaceCloudShort" = "约需 %1$@，你的云存储可用 %2$@。专辑会一直导入到空间用完为止。";
+
+/* Import from another app: shown under 'Cloud only' when not signed in. */
+"Migration_CloudSignInNeeded" = "登录你的 rpm 帐户才能导入到云端。";
+
+/* Import from another app: button on the summary. */
+"Migration_Start" = "开始导入";
+
+/* Import from another app: progress stage. */
+"Migration_StageReading" = "正在读取资料库";
+
+/* Import from another app: progress stage. */
+"Migration_StageTracks" = "正在导入曲目";
+
+/* Import from another app: progress stage. */
+"Migration_StagePlaylists" = "正在添加播放列表";
+
+/* Import from another app: progress stage. */
+"Migration_StageFinishing" = "正在完成";
+
+/* Import from another app: progress line. {0} and {1} are numbers, {2} and {3} sizes such as 14.2 GB. */
+"Migration_ProgressTracks" = "%2$@ 首中的第 %1$@ 首，%4$@ 中的 %3$@";
+
+/* Import from another app: progress counts. Numbers. */
+"Migration_ProgressCounts" = "已导入：%1$@。已在 rpm 中：%2$@。未导入：%3$@。";
+
+/* Import from another app: the album being imported. {0} is an album name. */
+"Migration_ProgressAlbum" = "当前：%1$@";
+
+/* Import from another app: estimate. {0} is a duration such as 2 h 10 min. */
+"Migration_ProgressTimeLeft" = "约剩 %1$@";
+
+/* Import from another app: button. */
+"Migration_Pause" = "暂停";
+
+/* Import from another app: button. */
+"Migration_Continue" = "继续";
+
+/* Import from another app: button that closes the window while the import goes on. */
+"Migration_Hide" = "隐藏";
+
+/* Import from another app: state after Pause. */
+"Migration_Paused" = "已暂停";
+
+/* Import from another app: why the import stopped. */
+"Migration_StoppedSignIn" = "已停止：服务器要求重新登录。";
+
+/* Import from another app: why the import stopped. */
+"Migration_StoppedDiskFull" = "已停止：磁盘已满。";
+
+/* Import from another app: why the import stopped. */
+"Migration_StoppedCloudFull" = "已停止：你的云存储已满。";
+
+/* Status line while an import runs with its window hidden. {0} is the source, {1} and {2} numbers. */
+"Migration_Status" = "正在从 %1$@ 导入：%3$@ 首中的第 %2$@ 首";
+
+/* Import from another app: button back to the previous step. */
+"Migration_Back" = "返回";
+
+/* Import from another app: button. */
+"Migration_Close" = "关闭";
+
+/* Import from another app: heading of the report. {0} is the source. */
+"Migration_ReportTitle" = "从 %1$@ 导入已完成";
+
+/* Import from another app: report line. Numbers. */
+"Migration_ReportCounts" = "%1$@ 首曲目。已导入 %2$@ 首，%3$@ 首已在 rpm 中，%4$@ 首未导入。";
+
+/* Import from another app: heading of the list of tracks that were not imported. */
+"Migration_ReportNotImported" = "未导入";
+
+/* Import from another app: heading of the list of lossless files whose songs rpm has in a lossy format. */
+"Migration_ReportLowerQuality" = "rpm 中已有较低质量的版本";
+
+/* Import from another app: explanation under the lower quality list. */
+"Migration_ReportLowerQualityHint" = "rpm 中已有这些歌曲的有损格式版本。这里列出无损文件，你可以自行导入。";
+
+/* Import from another app: report line. {0} is a number. */
+"Migration_ReportPlaylists" = "已添加 %1$@ 个播放列表";
+
+/* Import from another app: report line for one playlist. {0} is its name, {1} a number. */
+"Migration_ReportPlaylistUnmatched" = "%1$@：%2$@ 个条目未找到";
+
+/* Import from another app: report line. {0} is a playlist name. */
+"Migration_ReportSmart" = "%1$@（智能播放列表，现为普通列表）";
+
+/* Import from another app: heading of the items the source listed that are not music files. */
+"Migration_ReportSkipped" = "一开始就未导入";
+
+/* Import from another app: button that tries the tracks that were not imported again. */
+"Migration_TryAgain" = "重试";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonFileNotFound" = "找不到文件";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonReadFailed" = "无法读取";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonDiskFull" = "磁盘已满";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonCloudFull" = "云存储已满";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonCouldNotCopy" = "无法复制";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonRemoved" = "导入期间已从 rpm 中移除";
+
+/* Import from another app: note on a track rpm already had in a lossy format. */
+"Migration_ReasonLowerQualityInRpm" = "rpm 中已有较低质量的版本";
+
+/* Import from another app: why an item of the source was not imported. */
+"Migration_SkipNotAFile" = "不是文件（流媒体或网址）";
+
+/* Import from another app: why an item of the source was not imported (for example a track only in Apple Music's cloud). */
+"Migration_SkipNotOnThisComputer" = "不在这台电脑上";
+
+/* Import from another app: why an item of the source was not imported. */
+"Migration_SkipNotMusic" = "不是音乐（播客、有声书或视频）";

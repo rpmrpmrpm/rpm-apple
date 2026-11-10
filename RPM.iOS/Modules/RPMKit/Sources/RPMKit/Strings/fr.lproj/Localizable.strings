@@ -6750,3 +6750,282 @@
 
 /* Web app, Settings, Sound: under Streaming quality, what the choices do. */
 "Web_QualityDetail" = "L’original est exactement tel qu’il a été envoyé. Un débit plus faible consomme moins de données.";
+
+/* Add music window: the tile that imports a library from another music app. */
+"AddMusic_OtherApp" = "Depuis une autre app";
+
+/* Add music window: the line under 'From another app', naming the apps it can import from. */
+"AddMusic_OtherAppHint" = "MusicBee, iTunes, Jellyfin, Plex, Navidrome";
+
+/* Title of the window that imports a library from another music app. */
+"Migration_Title" = "Importer depuis une autre app";
+
+/* Import from another app: heading above the list of apps. */
+"Migration_ChooseKicker" = "Où se trouve votre musique ?";
+
+/* Import from another app: the MusicBee choice. A product name. */
+"Migration_SourceMusicBee" = "MusicBee";
+
+/* Import from another app: the iTunes / Apple Music choice. */
+"Migration_SourceITunes" = "iTunes ou Apple Music";
+
+/* Import from another app: the Jellyfin choice. A product name. */
+"Migration_SourceJellyfin" = "Jellyfin";
+
+/* Import from another app: the Plex choice. A product name. */
+"Migration_SourcePlex" = "Plex";
+
+/* Import from another app: the Navidrome / Subsonic server choice. */
+"Migration_SourceNavidrome" = "Navidrome ou Subsonic";
+
+/* Import from another app: the choice for .m3u/.pls playlist files. Also the name shown for this source in the report. */
+"Migration_SourcePlaylistFiles" = "Fichiers de playlist";
+
+/* Import from another app: line under MusicBee and iTunes. */
+"Migration_HintFile" = "Utilise le fichier de bibliothèque qu'elle enregistre";
+
+/* Import from another app: line under Jellyfin, Plex and Navidrome. */
+"Migration_HintServer" = "Se connecte à votre serveur";
+
+/* Import from another app: line under Playlist files. */
+"Migration_HintPlaylistFiles" = ".m3u, .m3u8 et .pls de tout lecteur";
+
+/* Import from another app: button for an import that has not finished. {0} is the source, for example MusicBee. */
+"Migration_ContinueImport" = "Reprendre l'import depuis %1$@";
+
+/* Import from another app: how to get MusicBee's library file. MusicBee's menu names are in English in the app; keep them as they are. */
+"Migration_HowMusicBee" = "Dans MusicBee, ouvrez Edit > Preferences > Library et activez « Save a copy of the library tags as an iTunes formatted XML file ». Fermez MusicBee, puis choisissez le fichier « iTunes Music Library.xml » dans le dossier de bibliothèque de MusicBee.";
+
+/* Import from another app: how to get the iTunes / Apple Music library file. */
+"Migration_HowITunes" = "Dans Apple Music, choisissez Fichier > Bibliothèque > Exporter la bibliothèque. Dans iTunes pour Windows, choisissez Édition > Préférences > Avancé et activez « Partager le fichier XML de la bibliothèque iTunes avec d'autres applications ». Choisissez ensuite le fichier de bibliothèque.";
+
+/* Import from another app: explanation for playlist files. */
+"Migration_HowPlaylistFiles" = "Choisissez un ou plusieurs fichiers de playlist. La musique qu'ils contiennent doit être sur cet ordinateur.";
+
+/* Import from another app: button that opens a file picker for the library file. */
+"Migration_ChooseFile" = "Choisir le fichier";
+
+/* Import from another app: button that opens a file picker for playlist files. */
+"Migration_ChoosePlaylists" = "Choisir des playlists";
+
+/* Import from another app: label of the media server address box. */
+"Migration_ServerAddress" = "Adresse du serveur";
+
+/* Import from another app: label of the user name box. */
+"Migration_UserName" = "Nom d'utilisateur";
+
+/* Import from another app: label of the password box. */
+"Migration_Password" = "Mot de passe";
+
+/* Import from another app: button that signs in to the media server. */
+"Migration_SignIn" = "Se connecter";
+
+/* Import from another app: Jellyfin's code sign-in. Quick Connect is Jellyfin's name for it. */
+"Migration_QuickConnect" = "Utiliser Quick Connect";
+
+/* Import from another app: shown while waiting for a Jellyfin Quick Connect approval. {0} is the six-digit code. */
+"Migration_QuickConnectCode" = "Saisissez ce code dans une autre app Jellyfin, dans Paramètres > Quick Connect : %1$@";
+
+/* Import from another app: button that opens Plex's sign-in page in the browser. */
+"Migration_PlexSignIn" = "Se connecter avec Plex";
+
+/* Import from another app: shown while waiting for the Plex sign-in in the browser. */
+"Migration_PlexWaiting" = "Connectez-vous à Plex dans votre navigateur. Cette fenêtre continue ensuite.";
+
+/* Import from another app: label of the Plex server list. */
+"Migration_PlexServer" = "Serveur";
+
+/* Import from another app: error when the Plex account has no server that answers. */
+"Migration_PlexNoServer" = "Aucun serveur Plex n'est joignable d'ici.";
+
+/* Import from another app: error after a refused sign-in. */
+"Migration_SignInFailed" = "Le serveur n'a pas accepté le nom d'utilisateur ou le mot de passe.";
+
+/* Import from another app: error when the server does not answer. */
+"Migration_ServerUnreachable" = "Le serveur est injoignable. Vérifiez l'adresse.";
+
+/* Import from another app, web app only: a page on https cannot reach a server on plain http. */
+"Migration_ServerBlocked" = "Votre navigateur ne peut pas joindre ce serveur. Utilisez son adresse https, ou importez avec rpm sur votre ordinateur.";
+
+/* Import from another app: error when the chosen file is not an iTunes library XML. */
+"Migration_FileUnreadable" = "Ce fichier n'a pas pu être lu comme fichier de bibliothèque.";
+
+/* Import from another app, web app only: button to pick the folder that holds the music the library file lists. */
+"Migration_ChooseMusicFolder" = "Choisir le dossier de musique";
+
+/* Import from another app, web app only: why the music folder is needed. */
+"Migration_MusicFolderHint" = "Le navigateur ne peut pas ouvrir les chemins du fichier de bibliothèque. Choisissez le dossier qui contient la musique, et rpm y trouve chaque titre.";
+
+/* Import from another app: shown while the source library is read. {0} is a number. */
+"Migration_Reading" = "Lecture de la bibliothèque (%1$@ titres trouvés)";
+
+/* Import from another app: heading of the summary. */
+"Migration_SummaryKicker" = "Ce qui a été trouvé";
+
+/* Import from another app: summary line. {0} is a number, {1} a size such as 212 GB. */
+"Migration_SummaryTracks" = "%1$@ titres (%2$@)";
+
+/* Import from another app: summary line. {0} is a number. */
+"Migration_SummaryPlaylists" = "%1$@ playlists";
+
+/* Import from another app: summary line, an estimate. {0} is a number. */
+"Migration_SummaryAlready" = "Environ %1$@ déjà dans rpm";
+
+/* Import from another app: summary line. {0} is a number. */
+"Migration_SummarySkipped" = "%1$@ éléments ne sont pas importés (flux, vidéos, podcasts, ou fichiers absents de cet ordinateur)";
+
+/* Import from another app: shown on the summary and while importing from a library file. {0} is MusicBee or iTunes. */
+"Migration_KeepsOriginalsFile" = "rpm copie votre musique et laisse les originaux à leur place. Rien n'est modifié ni supprimé dans votre bibliothèque %1$@.";
+
+/* Import from another app: shown on the summary and while importing from a media server. {0} is Jellyfin, Plex or the server's name. */
+"Migration_KeepsOriginalsServer" = "rpm ne fait que lire votre serveur %1$@. Rien n'y est modifié ni supprimé.";
+
+/* Import from another app: shown on the summary and while importing playlist files. */
+"Migration_KeepsOriginalsPlaylists" = "rpm copie la musique et laisse les originaux et les fichiers de playlist à leur place.";
+
+/* Import from another app: heading above the choice of this computer or the cloud. */
+"Migration_WhereKicker" = "Destination";
+
+/* Import from another app: destination choice. */
+"Migration_ToThisComputer" = "Cet ordinateur";
+
+/* Import from another app: line under 'This computer'. */
+"Migration_ToThisComputerHint" = "Les fichiers sont enregistrés dans votre dossier rpm";
+
+/* Import from another app: destination choice. */
+"Migration_ToCloud" = "Cloud uniquement";
+
+/* Import from another app: line under 'Cloud only'. */
+"Migration_ToCloudHint" = "Les fichiers vont dans votre cloud rpm et ne restent pas sur cet ordinateur";
+
+/* Import from another app: space line. {0} and {1} are sizes such as 12 GB. */
+"Migration_SpaceDisk" = "Nécessite environ %1$@. %2$@ libres sur ce disque.";
+
+/* Import from another app: shown instead of the Start button when the disk is too small. {0} and {1} are sizes. */
+"Migration_SpaceDiskShort" = "Espace insuffisant sur ce disque : environ %1$@ nécessaires, %2$@ libres.";
+
+/* Import from another app: space line for a cloud import. {0} and {1} are sizes. */
+"Migration_SpaceCloud" = "Nécessite environ %1$@. %2$@ libres dans votre stockage cloud.";
+
+/* Import from another app: space line when the cloud storage is too small. {0} and {1} are sizes. */
+"Migration_SpaceCloudShort" = "Nécessite environ %1$@, et votre stockage cloud a %2$@ libres. Les albums sont importés jusqu'à ce que l'espace soit utilisé.";
+
+/* Import from another app: shown under 'Cloud only' when not signed in. */
+"Migration_CloudSignInNeeded" = "Connectez-vous à votre compte rpm pour importer dans le cloud.";
+
+/* Import from another app: button on the summary. */
+"Migration_Start" = "Lancer l'import";
+
+/* Import from another app: progress stage. */
+"Migration_StageReading" = "Lecture de la bibliothèque";
+
+/* Import from another app: progress stage. */
+"Migration_StageTracks" = "Import des titres";
+
+/* Import from another app: progress stage. */
+"Migration_StagePlaylists" = "Ajout des playlists";
+
+/* Import from another app: progress stage. */
+"Migration_StageFinishing" = "Finalisation";
+
+/* Import from another app: progress line. {0} and {1} are numbers, {2} and {3} sizes such as 14.2 GB. */
+"Migration_ProgressTracks" = "%1$@ sur %2$@ titres, %3$@ sur %4$@";
+
+/* Import from another app: progress counts. Numbers. */
+"Migration_ProgressCounts" = "Importés : %1$@. Déjà dans rpm : %2$@. Non importés : %3$@.";
+
+/* Import from another app: the album being imported. {0} is an album name. */
+"Migration_ProgressAlbum" = "En cours : %1$@";
+
+/* Import from another app: estimate. {0} is a duration such as 2 h 10 min. */
+"Migration_ProgressTimeLeft" = "Environ %1$@ restant";
+
+/* Import from another app: button. */
+"Migration_Pause" = "Pause";
+
+/* Import from another app: button. */
+"Migration_Continue" = "Reprendre";
+
+/* Import from another app: button that closes the window while the import goes on. */
+"Migration_Hide" = "Masquer";
+
+/* Import from another app: state after Pause. */
+"Migration_Paused" = "En pause";
+
+/* Import from another app: why the import stopped. */
+"Migration_StoppedSignIn" = "Arrêté : le serveur demande de vous reconnecter.";
+
+/* Import from another app: why the import stopped. */
+"Migration_StoppedDiskFull" = "Arrêté : le disque est plein.";
+
+/* Import from another app: why the import stopped. */
+"Migration_StoppedCloudFull" = "Arrêté : votre stockage cloud est plein.";
+
+/* Status line while an import runs with its window hidden. {0} is the source, {1} and {2} numbers. */
+"Migration_Status" = "Import depuis %1$@ : %2$@ sur %3$@";
+
+/* Import from another app: button back to the previous step. */
+"Migration_Back" = "Retour";
+
+/* Import from another app: button. */
+"Migration_Close" = "Fermer";
+
+/* Import from another app: heading of the report. {0} is the source. */
+"Migration_ReportTitle" = "Import depuis %1$@ terminé";
+
+/* Import from another app: report line. Numbers. */
+"Migration_ReportCounts" = "%1$@ titres. %2$@ importés, %3$@ déjà dans rpm, %4$@ non importés.";
+
+/* Import from another app: heading of the list of tracks that were not imported. */
+"Migration_ReportNotImported" = "Non importés";
+
+/* Import from another app: heading of the list of lossless files whose songs rpm has in a lossy format. */
+"Migration_ReportLowerQuality" = "rpm a une copie de moindre qualité";
+
+/* Import from another app: explanation under the lower quality list. */
+"Migration_ReportLowerQualityHint" = "rpm avait déjà ces morceaux dans un format avec perte. Les fichiers sans perte sont listés pour que vous puissiez les importer vous-même.";
+
+/* Import from another app: report line. {0} is a number. */
+"Migration_ReportPlaylists" = "%1$@ playlists ajoutées";
+
+/* Import from another app: report line for one playlist. {0} is its name, {1} a number. */
+"Migration_ReportPlaylistUnmatched" = "%1$@ : %2$@ éléments introuvables";
+
+/* Import from another app: report line. {0} is a playlist name. */
+"Migration_ReportSmart" = "%1$@ (playlist intelligente, désormais une liste simple)";
+
+/* Import from another app: heading of the items the source listed that are not music files. */
+"Migration_ReportSkipped" = "Non importés dès le départ";
+
+/* Import from another app: button that tries the tracks that were not imported again. */
+"Migration_TryAgain" = "Réessayer";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonFileNotFound" = "Fichier introuvable";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonReadFailed" = "Lecture impossible";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonDiskFull" = "Le disque est plein";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonCloudFull" = "Stockage cloud plein";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonCouldNotCopy" = "Copie impossible";
+
+/* Import from another app: why a track was not imported. */
+"Migration_ReasonRemoved" = "Supprimé de rpm pendant l'import";
+
+/* Import from another app: note on a track rpm already had in a lossy format. */
+"Migration_ReasonLowerQualityInRpm" = "rpm a une copie de moindre qualité";
+
+/* Import from another app: why an item of the source was not imported. */
+"Migration_SkipNotAFile" = "Pas un fichier (flux ou adresse web)";
+
+/* Import from another app: why an item of the source was not imported (for example a track only in Apple Music's cloud). */
+"Migration_SkipNotOnThisComputer" = "Absent de cet ordinateur";
+
+/* Import from another app: why an item of the source was not imported. */
+"Migration_SkipNotMusic" = "Pas de la musique (podcast, livre audio ou vidéo)";
