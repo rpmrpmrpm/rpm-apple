@@ -65,6 +65,40 @@ public struct LibraryPage: View {
     /// artists page has the same key, and switching there must be able to return here.
     @Binding private var mode: LibraryMode
 
+    /// What else the search looks through: the artists, the genres and the playlists, so a name
+    /// typed is found whichever view it lives in. See ``Findable``.
+    private let findable: Findable
+    private let onOpenArtist: (ArtistWallItem) -> Void
+    private let onOpenGenre: (GenreWallItem) -> Void
+    private let onOpenList: (PlaylistSet) -> Void
+
+    /// The rest of the collection the search looks through, besides the records and their songs.
+    public struct Findable: Equatable, Sendable {
+        public let artists: [ArtistWallItem]
+        public let genres: [GenreWallItem]
+        public let playlists: [PlaylistSet]
+
+        /// The records by key, for an artist found with no photograph: their row shows one of
+        /// their own records, as their box on the artists wall stands on one. Not compared: it is
+        /// read from the same records the wall is.
+        public let albums: [String: CloudAlbum]
+
+        public init(artists: [ArtistWallItem], genres: [GenreWallItem], playlists: [PlaylistSet],
+                    albums: [String: CloudAlbum]) {
+            self.artists = artists
+            self.genres = genres
+            self.playlists = playlists
+            self.albums = albums
+        }
+
+        /// Nothing besides the records: a page built without the rest (a preview).
+        public static let nothing = Findable(artists: [], genres: [], playlists: [], albums: [:])
+
+        public static func == (a: Findable, b: Findable) -> Bool {
+            a.artists == b.artists && a.genres == b.genres && a.playlists == b.playlists
+        }
+    }
+
     public init(albums: [CloudAlbum], standing: Standing,
                 covers: any CoverStore, playing: String?,
                 inOrder: SortedWall, mode: Binding<LibraryMode>,
@@ -76,7 +110,15 @@ public struct LibraryPage: View {
                 isTrackMine: @escaping (CloudTrack) -> Bool,
                 onMarkTrack: @escaping (CloudTrack, Bool) -> Void = { _, _ in },
                 onFile: @escaping (CloudTrack) -> Void = { _ in },
-                upNext: TrackActions.UpNext) {
+                upNext: TrackActions.UpNext,
+                found findable: Findable = .nothing,
+                onOpenArtist: @escaping (ArtistWallItem) -> Void = { _ in },
+                onOpenGenre: @escaping (GenreWallItem) -> Void = { _ in },
+                onOpenList: @escaping (PlaylistSet) -> Void = { _ in }) {
+        self.findable = findable
+        self.onOpenArtist = onOpenArtist
+        self.onOpenGenre = onOpenGenre
+        self.onOpenList = onOpenList
         self.isTrackMarked = isTrackMarked
         self.isTrackMine = isTrackMine
         self.onMarkTrack = onMarkTrack
@@ -117,6 +159,15 @@ public struct LibraryPage: View {
     /// record and should not have to scroll past forty of its tracks.
     @State private var records: [CloudAlbum] = []
 
+    /// The artists, genres and playlists the same words found. See ``CollectionSearch``.
+    @State private var artists: [ArtistWallItem] = []
+    @State private var genres: [GenreWallItem] = []
+    @State private var lists: [PlaylistSet] = []
+
+    /// The groups of results that show all their answers, by name. Every new answer starts them
+    /// folded. See ``group(_:_:_:row:)``.
+    @State private var unfolded: Set<String> = []
+
     @State private var settled = ""
 
     /// The width of a card. It is saved between launches, so the wall opens at the size the
@@ -153,10 +204,12 @@ public struct LibraryPage: View {
             }
             .frame(maxHeight: .infinity)
             .scrollsUnder {
+                // While the search is open the heading and the views fade away, and the field rises
+                // into their place. They come back only when the search is closed with its cross.
                 VStack(spacing: 0) {
-                    header.zIndex(1)
+                    if !searching { header.transition(.opacity) }
                     if searching { field }
-                    LibraryModeTabs($mode)
+                    if !searching { LibraryModeTabs($mode).transition(.opacity) }
                 }
             }
         }
@@ -168,12 +221,16 @@ public struct LibraryPage: View {
         //
         // The wall is part of the search key, not only the text: if the library arrives
         // while the user is typing, the search must run again.
-        .task(id: Hunt(asked: asked, wall: ordered)) {
+        .task(id: Hunt(asked: asked, wall: ordered, rest: findable)) {
             let asking = asked
 
             guard !asking.trimmingCharacters(in: .whitespaces).isEmpty else {
                 found = []
                 records = []
+                artists = []
+                genres = []
+                lists = []
+                unfolded = []
                 settled = asking
                 return
             }
@@ -182,8 +239,9 @@ public struct LibraryPage: View {
             guard !Task.isCancelled else { return }
 
             let library = ordered
+            let rest = findable
             let began = Date()
-            let hits = await Self.look(through: library, for: asking)
+            let hits = await Self.look(through: library, and: rest, for: asking)
 
             guard !Task.isCancelled else { return }
 
@@ -194,6 +252,10 @@ public struct LibraryPage: View {
 
             records = hits.records
             found = hits.songs
+            artists = hits.artists
+            genres = hits.genres
+            lists = hits.lists
+            unfolded = []
             settled = asking
         }
     }
@@ -215,11 +277,25 @@ public struct LibraryPage: View {
     ///
     /// Both searches run in one hop. With two hops, the records would appear a frame before
     /// the songs, and the list would grow under the finger of a user who is still typing.
+    ///
+    /// The artists, genres and playlists are searched in the same hop, for the same reason.
     private nonisolated static func look(
-        through library: [CloudAlbum], for asking: String
-    ) async -> (records: [CloudAlbum], songs: [SongSearch.SongHit]) {
-        (records: SongSearch.records(library, for: asking),
-         songs: SongSearch.through(library, for: asking))
+        through library: [CloudAlbum], and rest: Findable, for asking: String
+    ) async -> Hits {
+        Hits(records: SongSearch.records(library, for: asking),
+             songs: SongSearch.through(library, for: asking),
+             artists: CollectionSearch.artists(rest.artists, for: asking),
+             genres: CollectionSearch.genres(rest.genres, for: asking),
+             lists: CollectionSearch.playlists(rest.playlists, for: asking))
+    }
+
+    /// What one search found.
+    private struct Hits: Sendable {
+        let records: [CloudAlbum]
+        let songs: [SongSearch.SongHit]
+        let artists: [ArtistWallItem]
+        let genres: [GenreWallItem]
+        let lists: [PlaylistSet]
     }
 
     /// Leaves the search completely: clears the text and the results, hides the box and
@@ -232,6 +308,11 @@ public struct LibraryPage: View {
         asked = ""
         settled = ""
         found = []
+        records = []
+        artists = []
+        genres = []
+        lists = []
+        unfolded = []
         typing = false
         withAnimation(.easeOut(duration: 0.22)) { searching = false }
     }
@@ -445,13 +526,24 @@ public struct LibraryPage: View {
 
     // ── searching ──
 
-    /// **Records first, then songs, shown as separate groups.** A typed name matches both
-    /// the record with that name and every song on it. In one mixed list, the row the user
-    /// wanted could be the fortieth, and a tap would be ambiguous: a record is opened and a
-    /// song is played.
+    /// Whether the search found nothing at all.
+    private var foundNothing: Bool {
+        records.isEmpty && found.isEmpty && artists.isEmpty && genres.isEmpty && lists.isEmpty
+    }
+
+    /// **Everything the collection holds that the words name, whichever view it lives in, each
+    /// kind under its own heading**: artists, records, songs, playlists, genres. A typed name
+    /// matches both the record with that name and every song on it. In one mixed list, the row
+    /// the user wanted could be the fortieth, and a tap would be ambiguous: a record is opened and
+    /// a song is played.
+    ///
+    /// **A group shows its first ``firstShown`` answers.** One with more has View more at the right
+    /// of its heading, which shows the rest, and then View less. The rest come in as the Wikipedia
+    /// text unfolds on the record and artist pages: they fade in while everything under them moves
+    /// down to make room, in the same time (``unfoldTime``). A new search starts every group folded.
     @ViewBuilder
     private var results: some View {
-        if records.isEmpty && found.isEmpty {
+        if foundNothing {
             // **Only once the search has caught up with the typing.** Showing "no
             // results" while the text is still changing would wrongly suggest that the
             // library does not hold what the next keystroke would find.
@@ -466,29 +558,38 @@ public struct LibraryPage: View {
         } else {
             DissolvingScroll {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    if !records.isEmpty {
-                        heading(Loc.get("Viz_BrowseAlbums"))
-
-                        ForEach(records) { album in
-                            Button { onOpen(album) } label: { record(album) }
-                                .buttonStyle(RowPress())
-                        }
+                    group("artists", Loc.get("Artists_Title"), artists) { artist in
+                        Button { onOpenArtist(artist) } label: { artistRow(artist) }
+                            .buttonStyle(RowPress())
                     }
 
-                    if !found.isEmpty {
-                        heading(Loc.get("Album_Tracks"))
-
-                        ForEach(found) { hit in
-                            Button { onPlay(hit.track) } label: { row(hit) }
-                                .buttonStyle(RowPress())
-                                .trackActions(hit.track, marked: isTrackMarked(hit.track),
-                                              mine: isTrackMine(hit.track),
-                                              upNext: upNext,
-                                              onMark: onMarkTrack, onFile: onFile)
-                        }
+                    group("records", Loc.get("Viz_BrowseAlbums"), records) { album in
+                        Button { onOpen(album) } label: { record(album) }
+                            .buttonStyle(RowPress())
                     }
 
-                    if found.count >= SongSearch.ceiling { cut }
+                    group("songs", Loc.get("Album_Tracks"), found) { hit in
+                        Button { onPlay(hit.track) } label: { row(hit) }
+                            .buttonStyle(RowPress())
+                            .trackActions(hit.track, marked: isTrackMarked(hit.track),
+                                          mine: isTrackMine(hit.track),
+                                          upNext: upNext,
+                                          onMark: onMarkTrack, onFile: onFile)
+                    }
+
+                    if found.count >= SongSearch.ceiling && unfolded.contains("songs") {
+                        cut.transition(.opacity)
+                    }
+
+                    group("playlists", Loc.get("Playlists_Title"), lists) { list in
+                        Button { onOpenList(list) } label: { listRow(list) }
+                            .buttonStyle(RowPress())
+                    }
+
+                    group("genres", Loc.get("Genres_Title"), genres) { genre in
+                        Button { onOpenGenre(genre) } label: { genreRow(genre) }
+                            .buttonStyle(RowPress())
+                    }
                 }
                 .padding(.bottom, RPMLayout.foot)
             }
@@ -502,37 +603,97 @@ public struct LibraryPage: View {
         }
     }
 
-    /// A heading for one group of results. It uses the same kicker style as the counts line,
-    /// so it looks like a label on the app's background and not like a row that can be
-    /// tapped.
-    private func heading(_ said: String) -> some View {
-        Text(said)
-            .rpmKicker()
-            .textCase(.uppercase)
-            .padding(.leading, RPMLayout.margin)
-            .padding(.top, 14)
-            .padding(.bottom, 6)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    /// How many answers a group shows before View more.
+    private static let firstShown = 5
+
+    /// How long a group takes to unfold or fold: the Wikipedia text's time on the record and
+    /// artist pages.
+    private static let unfoldTime: Double = 0.32
+
+    /// One group of answers: its heading, its first ``firstShown`` rows, and the rest while it is
+    /// open. Nothing at all for a kind with no answers. The rows past the first fade in and out,
+    /// and the rows and groups under them move in the same time, so the group seems to open
+    /// downward from its last row.
+    @ViewBuilder
+    private func group<Answer: Identifiable, Row: View>(
+        _ id: String, _ title: String, _ answers: [Answer],
+        @ViewBuilder row: @escaping (Answer) -> Row
+    ) -> some View {
+        if !answers.isEmpty {
+            let open = unfolded.contains(id)
+            let folds = answers.count > Self.firstShown
+
+            heading(title, toggle: folds ? Loc.get(open ? "Library_SearchViewLess"
+                                                        : "Library_SearchViewMore") : nil) {
+                withAnimation(.easeInOut(duration: Self.unfoldTime)) {
+                    if open { unfolded.remove(id) } else { unfolded.insert(id) }
+                }
+            }
+
+            ForEach(open || !folds ? answers : Array(answers.prefix(Self.firstShown))) { answer in
+                row(answer).transition(.opacity)
+            }
+        }
     }
 
-    /// One record found. Tapping it opens the record, which is why it has its own kind of
-    /// row.
-    private func record(_ album: CloudAlbum) -> some View {
-        HStack(spacing: 10) {
-            // The same 3 points of empty space that song rows keep for the playing mark, so
-            // both kinds of row start their sleeves on the same line.
-            Color.clear.frame(width: 3, height: 26)
+    /// A heading for one group of results. It uses the same kicker style as the counts line,
+    /// so it looks like a label on the app's background and not like a row that can be
+    /// tapped. `toggle` is the words of the key at its right that shows the rest of the group or
+    /// folds it again; nil for a group that shows all it has.
+    private func heading(_ said: String, toggle: String? = nil,
+                         onToggle: @escaping () -> Void = {}) -> some View {
+        HStack(spacing: 8) {
+            Text(said)
+                .rpmKicker()
+                .textCase(.uppercase)
 
-            SearchSleeve(album: album, covers: covers)
+            Spacer(minLength: 0)
+
+            if let toggle {
+                Button {
+                    Haptics.pick()
+                    onToggle()
+                } label: {
+                    Text(toggle)
+                        .font(RPMFont.display(12))
+                        .foregroundStyle(RPMInk.white(0xCC / 255))
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, RPMLayout.margin)
+        .padding(.top, 14)
+        .padding(.bottom, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The shape every row of the results shares: the playing mark in the margin, a 40-point
+    /// picture, two lines, and whatever goes at the end.
+    private func entry<Picture: View, End: View>(
+        _ title: String, _ line: String, playing: Bool = false,
+        @ViewBuilder picture: () -> Picture,
+        @ViewBuilder end: () -> End
+    ) -> some View {
+        HStack(spacing: 10) {
+            // The playing mark sits in the padding, so the pictures start on the same line as
+            // the header and the field above them.
+            Rectangle()
+                .fill(playing ? Color.white : .clear)
+                .frame(width: 3, height: 26)
+                .clipShape(Capsule())
+
+            picture()
                 .padding(.leading, 9)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(album.album)
+                Text(title)
                     .font(RPMFont.display(15))
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
-                Text(album.artist)
+                Text(line)
                     .font(RPMFont.display(12))
                     .foregroundStyle(RPMInk.white(0x88 / 255))
                     .lineLimit(1)
@@ -540,16 +701,67 @@ public struct LibraryPage: View {
 
             Spacer(minLength: 8)
 
-            // A song row has nothing here. The track count shows that this row is a record
-            // and not a song with a long title.
+            end()
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 16)
+        .frame(minHeight: 58)
+        .contentShape(Rectangle())
+    }
+
+    /// A row with nothing at its end.
+    private func entry<Picture: View>(
+        _ title: String, _ line: String, playing: Bool = false,
+        @ViewBuilder picture: () -> Picture
+    ) -> some View {
+        entry(title, line, playing: playing, picture: picture) { EmptyView() }
+    }
+
+    /// An artist found: their photograph where there is one, in a circle, their name, and how many
+    /// records of theirs are here. Round, so an artist reads apart from the records, playlists and
+    /// genres around them, which are square.
+    private func artistRow(_ artist: ArtistWallItem) -> some View {
+        entry(artist.name, Self.albumCount(artist.own.count)) {
+            SearchFace(artist: artist,
+                       first: artist.own.lazy.compactMap { findable.albums[$0] }.first,
+                       covers: covers)
+        }
+    }
+
+    /// A playlist found: its square, its name, and how many songs it holds.
+    private func listRow(_ list: PlaylistSet) -> some View {
+        entry(list.name, Loc.get("Home_Songs", list.tracks.count)) {
+            PlaylistSleeve(list: list.picture, track: list.tracks.first, glyph: Glyph.playlists,
+                           edge: 40, corner: 6, mark: 15, covers: covers,
+                           framed: FramedList.of(list))
+        }
+    }
+
+    /// A genre found: its photograph, its name, and how many records it holds.
+    private func genreRow(_ genre: GenreWallItem) -> some View {
+        entry(genre.name, Self.albumCount(genre.albums.count)) {
+            GenrePicture(genre: genre.name)
+                .frame(width: 40, height: 40)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+    }
+
+    private static func albumCount(_ count: Int) -> String {
+        count == 1 ? Loc.get("Stats_AlbumsOne") : Loc.get("Stats_Albums", count)
+    }
+
+    /// One record found. Tapping it opens the record, which is why it has its own kind of
+    /// row: a song row has nothing at its end, and the track count shows that this row is a
+    /// record and not a song with a long title.
+    private func record(_ album: CloudAlbum) -> some View {
+        entry(album.album, album.artist) {
+            SearchSleeve(album: album, covers: covers)
+        } end: {
             Text(Loc.get("Rpm_Album_Tracks", album.tracks.count))
                 .font(RPMFont.display(12))
                 .foregroundStyle(RPMInk.white(0x66 / 255))
                 .lineLimit(1)
         }
-        .padding(.leading, 8)
-        .padding(.trailing, 16)
-        .frame(minHeight: 58)
     }
 
     /// Tells the user that the results were cut off at the limit. Without it, a list that
@@ -568,34 +780,9 @@ public struct LibraryPage: View {
     /// Finding it per row would scan the whole library once per row, which costs most of a
     /// frame on any collection of real size. See ``SongSearch/SongHit``.
     private func row(_ hit: SongSearch.SongHit) -> some View {
-        HStack(spacing: 10) {
-            // The playing mark sits in the padding, so the sleeves start on the same line
-            // as the header and the field above them.
-            Rectangle()
-                .fill(hit.track.rpmId == playing ? Color.white : .clear)
-                .frame(width: 3, height: 26)
-                .clipShape(Capsule())
-
+        entry(hit.track.title ?? "", hit.track.artist ?? "", playing: hit.track.rpmId == playing) {
             SearchSleeve(album: hit.album, covers: covers)
-                .padding(.leading, 9)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(hit.track.title ?? "")
-                    .font(RPMFont.display(15))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-
-                Text(hit.track.artist ?? "")
-                    .font(RPMFont.display(12))
-                    .foregroundStyle(RPMInk.white(0x88 / 255))
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 0)
         }
-        .padding(.leading, 8)
-        .padding(.trailing, 16)
-        .frame(minHeight: 58)
     }
 }
 
@@ -607,6 +794,58 @@ public struct LibraryPage: View {
 private struct Hunt: Equatable {
     let asked: String
     let wall: [CloudAlbum]
+
+    /// The artists, genres and playlists searched as well: a list that arrives during a search is
+    /// searched again.
+    let rest: LibraryPage.Findable
+}
+
+/// The 40-point circle of an artist found: their photograph, or one of their own records where
+/// there is none, or their mark.
+private struct SearchFace: View {
+    let artist: ArtistWallItem
+    let first: CloudAlbum?
+    let covers: any CoverStore
+
+    @State private var picture: Cover?
+
+    init(artist: ArtistWallItem, first: CloudAlbum?, covers: any CoverStore) {
+        self.artist = artist
+        self.first = first
+        self.covers = covers
+        // What the store already holds, so a row shown again has its picture from the first frame.
+        _picture = State(initialValue: covers.portraitHeld(of: artist.name, edge: 40)
+                         ?? first.flatMap { covers.coverHeld(for: $0, edge: 40) })
+    }
+
+    var body: some View {
+        ZStack {
+            Circle().fill(Color.black.opacity(0x22 / 255))
+
+            if let picture {
+                Color.clear
+                    .overlay {
+                        picture.image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    }
+                    .clipShape(Circle())
+                    .transition(.opacity)
+            } else {
+                ArtistMark.key(15)
+                    .foregroundStyle(RPMInk.white(0x3A / 255))
+            }
+        }
+        .frame(width: 40, height: 40)
+        .animation(.easeOut(duration: 0.2), value: picture != nil)
+        .task(id: artist.name) {
+            if let found = await covers.portrait(of: artist.name, edge: 40) {
+                picture = found
+            } else if let first, let sleeve = await covers.cover(for: first, edge: 40) {
+                picture = sleeve
+            }
+        }
+    }
 }
 
 /// The 40-point sleeve of a search result.
@@ -615,6 +854,13 @@ private struct SearchSleeve: View {
     let covers: any CoverStore
 
     @State private var cover: Cover?
+
+    init(album: CloudAlbum, covers: any CoverStore) {
+        self.album = album
+        self.covers = covers
+        // What the store already holds, so a row shown again has its sleeve from the first frame.
+        _cover = State(initialValue: covers.coverHeld(for: album, edge: 40))
+    }
 
     var body: some View {
         ZStack {
@@ -637,8 +883,8 @@ private struct SearchSleeve: View {
         }
         .frame(width: 40, height: 40)
         .task(id: album.key) {
-            cover = nil
-            cover = await covers.cover(for: album, edge: 40)
+            cover = covers.coverHeld(for: album, edge: 40)
+            if let fetched = await covers.cover(for: album, edge: 40) { cover = fetched }
         }
     }
 }

@@ -392,8 +392,12 @@ final class AppModel {
         player.onTrackChanged = { [weak self] track in
             guard let self else { return }
             Task { await self.record.show(track) }
-            // A song the radio queued is playing: the radio queues the songs after it.
-            Task { @MainActor in self.songRadio?.topUp(self.player) }
+            // A song the radio queued is playing: the radio queues the songs after it. A last song
+            // starts one first, with Auto mixtape on.
+            Task { @MainActor in
+                self.carryOnAsAMixtape()
+                self.songRadio?.topUp(self.player)
+            }
         }
 
         player.onStationChanged = { [weak self] station in
@@ -821,6 +825,20 @@ final class AppModel {
             await startPlaying(start)
             run.topUp(player)
         }
+    }
+
+    /// With Auto mixtape on (the up next drawer's switch, ``QueueOverlay/mixtapeAfter``), a record,
+    /// a playlist or a single that reaches its last song goes on as a mixtape of songs like it: a
+    /// mixtape starts from that song, and the queue fills after it as a mixtape's does. Nothing
+    /// changes while a mixtape is already on, on the radio, or before the last song.
+    private func carryOnAsAMixtape() {
+        guard songRadio == nil,
+              UserDefaults.standard.bool(forKey: QueueOverlay.mixtapeAfter),
+              !player.onTheRadio,
+              let current = player.current,
+              let at = player.index, at == player.queue.count - 1
+        else { return }
+        songRadio = session.startRadio(on: current)
     }
 
     /// The question that is asked before a queue that the user changed is replaced. It is set

@@ -68,8 +68,9 @@ public struct ArtGround: View {
         self.dissolve = dissolve
     }
 
-    /// What is on screen, as one value: nothing until a picture lands, and then which picture.
-    private var standing: String { picture == nil ? "" : showing }
+    /// What is on screen, as one value: nothing until a picture or a leading colour lands, and
+    /// then which picture.
+    private var standing: String { picture == nil && (lead == nil || night) ? "" : showing }
 
     /// The ground that is being replaced, held while the new one comes in over it.
     ///
@@ -136,9 +137,9 @@ public struct ArtGround: View {
 
     @ViewBuilder
     private func wash(_ worn: Worn) -> some View {
-        if let picture = worn.picture {
-            let led = night ? nil : worn.lead
+        let led = night ? nil : worn.lead
 
+        if let picture = worn.picture {
             // **Clipped, and inside a `Color.clear`.** A resizable image filling its
             // frame reports the SCALED size as its own, not the size it was offered.
             // A square sleeve over a tall page would make the page eight hundred points
@@ -156,6 +157,10 @@ public struct ArtGround: View {
                 }
                 .clipped()
                 .overlay(worn.accent?.base.color.opacity(0.18) ?? .clear)
+        } else if let led {
+            // No picture, only its colour: an artist with no photograph stands on the room, and
+            // their page on the room's own colour.
+            led
         }
     }
 

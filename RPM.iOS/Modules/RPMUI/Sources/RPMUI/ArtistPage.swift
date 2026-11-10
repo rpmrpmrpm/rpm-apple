@@ -83,7 +83,23 @@ public struct ArtistPage: View {
         self.shelves = shelves
         self.covers = covers
         self.articles = articles
-        self._about = State(initialValue: AboutRead(.artist(artist.name), in: articles))
+        let read = AboutRead(.artist(artist.name), in: articles)
+        self._about = State(initialValue: read)
+        self.aboutAtOpen = read.article(for: .artist(artist.name)) != nil
+
+        // What the band was last dressed in, so a page shown again has its photograph, its colour,
+        // its room and its title from the first frame. See ``HeldBand``.
+        if let band = Self.heldBands[artist.name] {
+            self._portrait = State(initialValue: band.portrait)
+            self._pixels = State(initialValue: band.pixels)
+            self._lead = State(initialValue: band.lead)
+            self._paint = State(initialValue: band.paint)
+            self._looked = State(initialValue: true)
+        }
+        if let title = Self.heldTitles[artist.name] {
+            self._titleRead = State(initialValue: title.read)
+            self._logoInverted = State(initialValue: title.inverted)
+        }
         self.worldPlays = worldPlays
         self._popular = State(initialValue: Self.popularKept(artist: artist.name, shelves: shelves,
                                                              in: worldPlays))
@@ -103,6 +119,19 @@ public struct ArtistPage: View {
     }
 
     @State private var portrait: Cover?
+
+    /// The photograph's pixels, for reading whether a white logo would be lost on it
+    /// (``logoIsLost(_:scale:on:plate:foot:)``). Nil without a photograph.
+    @State private var pixels: CGImage?
+
+    /// Whether the logo is drawn in its inverse colours: a white logo on a bright part of the
+    /// photograph is drawn dark, so it can be read. Never in night mode, where the photograph is
+    /// darkened.
+    @State private var logoInverted = false
+
+    /// Whether their Wikipedia text was there when the page was built, read before and kept. Text
+    /// that arrives after comes in from the top (``CentredAboutText/arrives``).
+    private let aboutAtOpen: Bool
 
     /// The photograph's colour, which leads the page's ground (``ArtGround``): its best vivid
     /// colour, no brighter than white text allows (``GroundLead``). Read once, when the photograph
@@ -194,12 +223,19 @@ public struct ArtistPage: View {
         // there, as on home.
         .dissolvesAtTop(under: RPMSafeArea.top + RPMLayout.backRow)
         .onPreferenceChange(PageWidth.self) { width = $0 }
+        // A soft dark outline on all the page's text, so it stays readable where the photograph
+        // under it is bright. See ``TextFeatherKey``.
+        .environment(\.textFeather, true)
         .background { ground }
         .rpmFloatingBack(RPMBackKey(label: Loc.get("Artists_Back"), action: onBack))
         .task(id: BandAsk(artist: artist.name, width: bandWidth, plate: plate)) {
             await dress()
         }
         .task(id: logoAsk) { await letter(logoAsk) }
+        .task(id: InvertAsk(title: titleRead?.id ?? "", photo: pixels.map { ObjectIdentifier($0) },
+                            night: night)) {
+            await judgeTheLogo()
+        }
         .task(id: popularAsk) { await rankPopular() }
         .task(id: relatedAsk) { await readRelated(relatedAsk) }
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
@@ -214,7 +250,7 @@ public struct ArtistPage: View {
     @ViewBuilder
     private var aboutThem: some View {
         if let article = about.article(for: subject) {
-            CentredAboutText(article: article)
+            CentredAboutText(article: article, arrives: !aboutAtOpen)
                 .padding(.top, 10)
         }
     }
@@ -315,17 +351,11 @@ public struct ArtistPage: View {
     private func photograph(depth: Double) -> some View {
         ZStack(alignment: .top) {
             // When there is no photograph: the room, in the colours of their first record, as the
-            // home banner's card stands on it. One fragment program is told where the band ends, so
-            // it draws its own reflection. See ``RoomView/fold``.
+            // home banner's card stands on it, blurred and mirrored as the photograph is
+            // (``roomRunOff(depth:)``).
             if standingOnARoom {
-                Color.clear
-                    .overlay {
-                        RoomView(colours: paint, sound: .still, foot: 1,
-                                 running: phase == .active, breathes: true, zero: .whenShown,
-                                 seed: artist.name, fold: plate)
-                    }
-                    .frame(height: plate + depth)
-                    .clipped()
+                roomRunOff(depth: depth)
+                    .transition(.opacity)
             }
 
             RunOff(plate: plate, depth: depth, blurs: portrait != nil, blurFrom: Self.blurFrom,
@@ -350,6 +380,44 @@ public struct ArtistPage: View {
             }
         }
     }
+
+    /// The room, drawn as the photograph is: blurred toward the band's foot from where the
+    /// photograph's blur starts (``blurFrom``), and mirrored under the band at the blur of its foot,
+    /// all the way down (``reflection``). It fades in, as the photograph does, and the page stands on
+    /// its colour (``lead``).
+    ///
+    /// Two passes of the one fragment program: the room as it is, folded at the plate so it draws its
+    /// own mirror (``RoomView/fold``), and the same room blurred over it, let in from the blur's start
+    /// and whole by the band's foot.
+    private func roomRunOff(depth: Double) -> some View {
+        ZStack(alignment: .top) {
+            Color.clear.overlay { room }
+
+            Color.clear
+                .overlay { room }
+                .blur(radius: Self.roomBlur, opaque: true)
+                .mask {
+                    VStack(spacing: 0) {
+                        Color.clear.frame(height: plate * Self.blurFrom)
+                        LinearGradient(colors: [.clear, .white], startPoint: .top, endPoint: .bottom)
+                            .frame(height: plate * (1 - Self.blurFrom))
+                        Color.white
+                    }
+                }
+        }
+        .frame(height: plate + depth)
+        .clipped()
+    }
+
+    /// The room, in the colours of their first record.
+    private var room: some View {
+        RoomView(colours: paint, sound: .still, foot: 1,
+                 running: phase == .active, breathes: true, zero: .whenShown,
+                 seed: artist.name, fold: plate)
+    }
+
+    /// How far the room is blurred at the band's foot and under it: as far as the photograph's foot.
+    private static let roomBlur: Double = 28
 
     /// The photograph mirrored at the blur of its foot all the way down, so the text and the keys
     /// stand on colour that is as soft as the band's foot.
@@ -408,19 +476,39 @@ public struct ArtistPage: View {
     /// band: a square picture is kept from the top, and a backdrop is read for the face and cut
     /// with the face above the name. See ``BackdropStore/portrait(artist:album:cutFor:)``.
     private func dress() async {
-        portrait = nil
-        lead = nil
-        looked = false
+        // Not before the page is measured: the band is cut for its width.
+        guard width > 0 else { return }
 
+        if let band = Self.heldBands[artist.name] {
+            // Dressed before: shown at once, while the one held stays on screen. Cut again only for
+            // another width, or looked for again where none was found, which may have been the
+            // network and not the artist.
+            portrait = band.portrait
+            pixels = band.pixels
+            lead = band.lead
+            paint = band.paint
+            looked = true
+            if band.width == bandWidth && band.portrait != nil { return }
+        } else {
+            portrait = nil
+            pixels = nil
+            lead = nil
+            looked = false
+        }
+
+        // The room's own colour leads the ground of an artist who stands on it (``GroundLead``).
+        var roomLead: Color?
         if let first = shelves.records.first ?? shelves.together.first,
            let read = await covers.cover(for: first, edge: HomeBannerMetrics.sleeve)?.colours {
             paint = paint.toward(.from(tint: read.dominant?.asFloats,
                                        glow: read.highlight?.asFloats,
                                        shade: read.shade?.asFloats),
                                  at: CACurrentMediaTime())
+            roomLead = GroundLead.of(glow: read.highlight, dominant: read.dominant)?.color
         }
 
         var found: Cover?
+        var foundPixels: CGImage?
         var colour: RGB?
         if let backdrops {
             // The band starts at the top of the screen, so the status bar covers its top.
@@ -433,6 +521,7 @@ public struct ArtistPage: View {
             if let picture = await backdrops.portrait(artist: artist.name, album: nil,
                                                       cutFor: scene) {
                 found = Cover(image: Image(decorative: picture, scale: 1), accent: nil)
+                foundPixels = picture
                 // The photograph's colour (``GroundLead``), from a 48 pixel copy, off the main actor.
                 colour = await Task.detached(priority: .userInitiated) {
                     let read = Thumbnail.colours(of: picture)
@@ -445,11 +534,53 @@ public struct ArtistPage: View {
 
         guard !Task.isCancelled else { return }
 
+        let led = colour?.color ?? (found == nil ? roomLead : nil)
         withAnimation(.easeOut(duration: 0.35)) {
             portrait = found
-            lead = colour?.color
+            pixels = foundPixels
+            lead = led
             looked = true
         }
+        Self.hold(artist.name, HeldBand(width: bandWidth, portrait: found, pixels: foundPixels,
+                                        lead: led, paint: paint))
+    }
+
+    /// What an artist's band was last dressed in: the photograph cut for the band and its pixels,
+    /// the colour that leads the ground, and the room's colours. Kept for the session, for the last
+    /// few artists, so a page shown again (from another tab, or opened again) has them on its first
+    /// frame instead of fading them in a second time.
+    private struct HeldBand {
+        let width: Double
+        let portrait: Cover?
+        let pixels: CGImage?
+        let lead: Color?
+        let paint: RoomDissolve
+    }
+
+    /// An artist's title, and whether their logo is drawn inverted, kept as ``HeldBand`` is.
+    private struct HeldTitle {
+        let read: TitleRead
+        var inverted: Bool
+    }
+
+    @MainActor private static var heldBands: [String: HeldBand] = [:]
+    @MainActor private static var heldTitles: [String: HeldTitle] = [:]
+
+    /// How many artists' bands are kept.
+    private static let heldMost = 12
+
+    private static func hold(_ artist: String, _ band: HeldBand) {
+        if heldBands[artist] == nil, heldBands.count >= heldMost, let any = heldBands.keys.first {
+            heldBands[any] = nil
+        }
+        heldBands[artist] = band
+    }
+
+    private static func hold(_ artist: String, _ title: HeldTitle) {
+        if heldTitles[artist] == nil, heldTitles.count >= heldMost, let any = heldTitles.keys.first {
+            heldTitles[any] = nil
+        }
+        heldTitles[artist] = title
     }
 
     // ── the title ──
@@ -470,6 +601,7 @@ public struct ArtistPage: View {
         switch titleRead {
         case let .logo(logo) where logo.artist == artist.name:
             Image(logo.picture, scale: logo.scale, label: Text(artist.name))
+                .modifier(InvertedLogo(on: logoInverted && !night))
                 .transition(.opacity)
 
         case let .name(who) where who == artist.name:
@@ -548,6 +680,123 @@ public struct ArtistPage: View {
         } else {
             titleRead = .name(ask.artist)
         }
+        if let titleRead {
+            Self.hold(ask.artist, HeldTitle(read: titleRead,
+                                            inverted: Self.heldTitles[ask.artist]?.inverted ?? logoInverted))
+        }
+    }
+
+    // ── a white logo on a bright photograph ──
+
+    /// What the logo's colours are read for: the title, the photograph under it, and night mode.
+    private struct InvertAsk: Hashable {
+        let title: String
+        let photo: ObjectIdentifier?
+        let night: Bool
+    }
+
+    /// Reads, off the main actor, whether the logo would be lost on the photograph, and draws it
+    /// inverted if so. Not in night mode, where the photograph is darkened and the logo is always
+    /// drawn as it is, and not for a name, which has its shadow.
+    private func judgeTheLogo() async {
+        guard !night, case let .logo(logo)? = titleRead, logo.artist == artist.name,
+              let photo = pixels else {
+            return
+        }
+
+        let plate = self.plate
+        let foot = Self.writingFoot
+        let mark = logo.picture
+        let scale = logo.scale
+        let lost = await Task.detached(priority: .utility) {
+            Self.logoIsLost(mark, scale: scale, on: photo, plate: plate, foot: foot)
+        }.value
+
+        guard !Task.isCancelled else { return }
+        logoInverted = lost
+        if var kept = Self.heldTitles[artist.name] {
+            kept.inverted = lost
+            Self.hold(artist.name, kept)
+        }
+    }
+
+    /// Whether a white `logo` would be lost on the `photo` under it: the logo is mostly white and
+    /// grey, and the part of the photograph it stands on is bright. The logo is drawn centred at the
+    /// foot of a `plate`-point square band, `foot` points above its foot, at its own pixel size
+    /// (`scale` pixels a point); the photograph fills the band as `.fill` fills it. Both are read
+    /// small, not whole. The Android phone's `logoIsLost` is the same.
+    nonisolated private static func logoIsLost(_ logo: CGImage, scale: Double, on photo: CGImage,
+                                               plate: Double, foot: Double) -> Bool {
+        // A logo this light on average, over its drawn pixels, is a white logo, and this grey: the
+        // spread between its brightest and darkest channel, on average. A coloured logo is left
+        // alone. A photograph this light on average, under the logo, is too bright for it.
+        let white = 0.8
+        let grey = 0.15
+        let bright = 0.6
+
+        guard let marks = rgba(logo, width: 48, height: 24) else { return false }
+        var drawn = 0
+        var light = 0.0
+        var colour = 0.0
+        for at in stride(from: 0, to: marks.count, by: 4) {
+            let alpha = Double(marks[at + 3]) / 255
+            guard alpha >= 0.5 else { continue }
+            // Premultiplied, so each channel is divided by the alpha to be read as drawn.
+            let r = min(1, Double(marks[at]) / 255 / alpha)
+            let g = min(1, Double(marks[at + 1]) / 255 / alpha)
+            let b = min(1, Double(marks[at + 2]) / 255 / alpha)
+            drawn += 1
+            light += 0.2126 * r + 0.7152 * g + 0.0722 * b
+            colour += max(r, g, b) - min(r, g, b)
+        }
+        guard drawn > 0, light / Double(drawn) >= white, colour / Double(drawn) <= grey else {
+            return false
+        }
+
+        // The photograph under it, mapped from the band to the photograph's pixels as `.fill`
+        // maps them.
+        let wide = Double(photo.width)
+        let tall = Double(photo.height)
+        guard wide > 0, tall > 0, plate > 0 else { return false }
+        let fit = max(plate / wide, plate / tall)
+        let left = (wide * fit - plate) / 2
+        let top = (tall * fit - plate) / 2
+        let logoWide = Double(logo.width) / scale
+        let logoTall = Double(logo.height) / scale
+        let x0 = ((plate - logoWide) / 2 + left) / fit
+        let x1 = ((plate + logoWide) / 2 + left) / fit
+        let y1 = (plate - foot + top) / fit
+        let y0 = y1 - logoTall / fit
+
+        let under = CGRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0)
+            .intersection(CGRect(x: 0, y: 0, width: wide, height: tall))
+            .integral
+        guard !under.isNull, under.width >= 1, under.height >= 1,
+              let cut = photo.cropping(to: under),
+              let seen = rgba(cut, width: 32, height: 16) else { return false }
+
+        var sum = 0.0
+        for at in stride(from: 0, to: seen.count, by: 4) {
+            sum += 0.2126 * Double(seen[at]) / 255 + 0.7152 * Double(seen[at + 1]) / 255
+                + 0.0722 * Double(seen[at + 2]) / 255
+        }
+        return sum / Double(seen.count / 4) > bright
+    }
+
+    /// The picture drawn into `width` by `height` pixels of premultiplied RGBA, eight bits each.
+    nonisolated private static func rgba(_ image: CGImage, width: Int, height: Int) -> [UInt8]? {
+        var bytes = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = bytes.withUnsafeMutableBytes { raw -> Bool in
+            guard let context = CGContext(data: raw.baseAddress, width: width, height: height,
+                                          bitsPerComponent: 8, bytesPerRow: width * 4,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.interpolationQuality = .medium
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        return drawn ? bytes : nil
     }
 
     /// Three keys in the middle of the page: a mixtape, Play, and Shuffle. Play is a round glass key
@@ -604,6 +853,7 @@ public struct ArtistPage: View {
         Text(glyph)
             .font(RPMFont.icon(17))
             .foregroundStyle(RPMInk.white(0xF0 / 255))
+            .feathered()
             .frame(width: Self.sideKeyWidth, height: Self.keysHeight)
             .contentShape(Rectangle())
     }
@@ -849,5 +1099,19 @@ public struct ArtistPage: View {
         }.value
         guard !Task.isCancelled else { return }
         related = (ask, acts)
+    }
+}
+
+/// A logo drawn in its inverse colours, keeping its alpha: white becomes black. See
+/// ``ArtistPage``'s `judgeTheLogo`.
+private struct InvertedLogo: ViewModifier {
+    let on: Bool
+
+    func body(content: Content) -> some View {
+        if on {
+            content.colorInvert()
+        } else {
+            content
+        }
     }
 }

@@ -96,6 +96,10 @@ public struct AlbumPage: View {
     /// page is built, so a record opened before has its text on the first frame.
     @State private var about: AboutRead
 
+    /// Whether the text was there when the page was built, read before and kept. Text that arrives
+    /// after comes in from the top (``CentredAboutText/arrives``).
+    private let aboutAtOpen: Bool
+
     /// The disc the sleeve holds, read when the page opens so it is ready for the first tap. See
     /// ``caseAndDisc(edge:)``.
     @State private var disc: ScannedDisc?
@@ -133,7 +137,9 @@ public struct AlbumPage: View {
         self.album = album
         self.covers = covers
         self.articles = articles
-        self._about = State(initialValue: AboutRead(Self.subject(of: album), in: articles))
+        let read = AboutRead(Self.subject(of: album), in: articles)
+        self._about = State(initialValue: read)
+        self.aboutAtOpen = read.article(for: Self.subject(of: album)) != nil
         self.marked = marked
         self.classical = classical
         self.playing = playing
@@ -329,7 +335,7 @@ public struct AlbumPage: View {
             // grows is not animated (see AboutRead). The text fades in.
             if let article = about.article(for: subject) {
                 CentredAboutText(article: article, lead: Loc.get("TrackInfo_AboutAlbum"),
-                                 capitalKeys: true)
+                                 capitalKeys: true, arrives: !aboutAtOpen)
                     .padding(.top, 6)
             }
 

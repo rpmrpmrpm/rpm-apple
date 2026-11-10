@@ -93,6 +93,26 @@ public struct CloudCovers: CoverStore {
         return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
     }
 
+    public func coverHeld(for album: CloudAlbum, edge: Double) -> Cover? {
+        let shelf = shelves.shelf(ofAlbum: album)
+        guard let art = store.coverInMemory(for: album, on: shelf, edge: pixels(edge)) else { return nil }
+        return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
+    }
+
+    public func portraitHeld(of artist: String, edge: Double) -> Cover? {
+        guard let picture = portraits?.portraitInMemory(of: artist, edge: pixels(edge)) else { return nil }
+        return Cover(image: Image(decorative: picture, scale: 1), accent: nil)
+    }
+
+    public func pictureHeld(of list: ListPicture, edge: Double) -> Cover? {
+        if let cut = list.cut, let photo = PlaylistPhotos.coverInMemory(for: cut, edge: pixels(edge)) {
+            return Cover(image: Image(decorative: photo.image, scale: 1), colours: photo.colours)
+        }
+        guard let art = lists?.pictureInMemory(playlistId: list.id, on: list.shelf, edge: pixels(edge))
+        else { return nil }
+        return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
+    }
+
     public func portrait(of artist: String, edge: Double) async -> Cover? {
         guard let portraits,
               let picture = await portraits.portrait(of: artist, edge: pixels(edge))

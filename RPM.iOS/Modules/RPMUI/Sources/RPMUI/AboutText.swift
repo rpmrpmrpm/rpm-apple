@@ -154,6 +154,12 @@ struct CentredAboutText: View {
     var lead: String? = nil
     var capitalKeys = false
 
+    /// Whether the text arrived after the page was drawn. It then comes in from the top as it fades
+    /// in, opening down over the time Read more takes, as on the Android phone. The row it stands in
+    /// still grows in one step, for the reason above: what is under it moves down at once. Text that
+    /// is there on the first frame (read before, and kept) only fades in.
+    var arrives = false
+
     private static let lines = 3
 
     /// The keys' ink: brighter than the text, so they read as something to press.
@@ -179,6 +185,9 @@ struct CentredAboutText: View {
 
     /// How far the text shown has faded in: on the first appearance, and after every fold.
     @State private var shown: Double = 0
+
+    /// How far down the text has come in, when it arrives late (``arrives``).
+    @State private var reveal: CGFloat = 0
 
     private var prefix: String { lead.map { $0 + Self.leadGap } ?? "" }
 
@@ -231,8 +240,14 @@ struct CentredAboutText: View {
                 Color.clear.onChange(of: box.size.width, initial: true) { _, now in width = now }
             }
         }
+        .mask(alignment: .top) {
+            Rectangle().scaleEffect(x: 1, y: arrives ? reveal : 1, anchor: .top)
+        }
         .opacity(shown)
-        .onAppear { withAnimation(.easeOut(duration: 0.3)) { shown = 1 } }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.3)) { shown = 1 }
+            withAnimation(.easeInOut(duration: 0.32)) { reveal = 1 }
+        }
     }
 
     /// The words with the lead-in dimmer, and the key after them in bold where there is one.

@@ -185,6 +185,16 @@ public final class Player {
     /// the list, which a queue edit has to keep correct.
     public private(set) var earliest = 0
 
+    /// Which part of the queue a song is in, by its id, for the songs that were added to it: the
+    /// songs the person added with Play next (``QueuePart/yours``), and the songs a mixtape added
+    /// (``QueuePart/mixtape``). Every other song is the record or list that was played
+    /// (``QueuePart/list``). Emptied when a list from outside the queue replaces it. The up next
+    /// drawer puts a heading where each part begins.
+    public private(set) var parts: [String: QueuePart] = [:]
+
+    /// The part of the queue `track` is in. See ``parts``.
+    public func part(of track: CloudTrack) -> QueuePart { parts[track.rpmId] ?? .list }
+
     public private(set) var isPlaying = false
 
     /// Set from the tap until the engine is holding a source: the address signed, the
@@ -587,6 +597,7 @@ public final class Player {
         index = nil
         earliest = 0
         started = []
+        parts = [:]
         position = .zero
         duration = .zero
         levelling = .none
@@ -1022,6 +1033,9 @@ public final class Player {
 
         // Set together with the queue, so an offline start that exits above leaves both unchanged.
         if list == .outside { started = tracks.map(\.rpmId) }
+
+        // A new list from outside has none of the songs that were added to the last one.
+        if list == .outside && !carriedOn { parts = [:] }
         failure = .none
         trouble = nil
         playingKilobits = nil
@@ -1484,6 +1498,7 @@ public final class Player {
         index = nil
         earliest = 0
         started = []
+        parts = [:]
         position = .zero
         duration = .zero
         isPlaying = false
@@ -1737,6 +1752,7 @@ public final class Player {
         // playing.
         let at = index.map { min($0 + 1, queue.count) } ?? queue.count
         queue.insert(contentsOf: tracks, at: at)
+        for track in tracks { parts[track.rpmId] = .yours }
 
         // Everything went in AFTER the playing position, so the playing record's number and
         // the count of rows above the session are both unchanged.
@@ -1745,10 +1761,14 @@ public final class Player {
 
     /// Puts songs at the end of the queue. Nothing starts and nothing stops: with nothing playing
     /// they wait in the queue, as ``insertNext(_:)``'s do.
-    public func append(_ tracks: [CloudTrack]) {
+    ///
+    /// `part` is the part of the queue they are, for the up next drawer's headings (``parts``): a
+    /// mixtape says so.
+    public func append(_ tracks: [CloudTrack], as part: QueuePart = .list) {
         guard !tracks.isEmpty else { return }
         let hadNext = hasNext
         queue.append(contentsOf: tracks)
+        if part != .list { for track in tracks { parts[track.rpmId] = part } }
 
         // Everything went in at the end, so the playing record keeps its number. The record
         // after it changes only when the queue ended at the playing position.
@@ -3323,4 +3343,13 @@ final class Snapshot<Value: Sendable>: @unchecked Sendable {
         get { lock.withLock { stored } }
         set { lock.withLock { stored = newValue } }
     }
+}
+
+/// Which part of the queue a song is in: the record or list that was played, the songs the person
+/// added to it with Play next, or the songs a mixtape added. See ``Player/parts``. The Android
+/// phone's `QueuePart` is the same.
+public enum QueuePart: Sendable, Equatable {
+    case list
+    case yours
+    case mixtape
 }

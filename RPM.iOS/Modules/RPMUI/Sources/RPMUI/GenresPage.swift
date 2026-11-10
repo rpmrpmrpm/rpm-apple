@@ -55,8 +55,8 @@ enum GenreLooks {
 }
 
 /// A genre's photograph, filling its box. The genre's colour fades in from the bottom so the
-/// lettering is easy to read.
-private struct GenrePicture: View {
+/// lettering is easy to read. The library's search draws it small beside a genre it found.
+struct GenrePicture: View {
     let genre: String
 
     var body: some View {

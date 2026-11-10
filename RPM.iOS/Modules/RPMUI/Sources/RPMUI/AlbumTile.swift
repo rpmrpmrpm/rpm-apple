@@ -81,6 +81,17 @@ public protocol CoverStore: Sendable {
     /// photographed disc where the desktop uploaded one, and otherwise a CD printed with its sleeve.
     /// Nil where there is neither.
     func disc(for album: CloudAlbum, edge: Double) async -> ScannedDisc?
+
+    /// The sleeve the store already holds for this record, at this size or the nearest, read at
+    /// once. **What stops a screen shown again from popping its pictures in**: a view starts from
+    /// this on its first frame, and still asks ``cover(for:edge:)``, whose answer replaces it.
+    func coverHeld(for album: CloudAlbum, edge: Double) -> Cover?
+
+    /// An artist's photograph the store already holds, read at once. See ``coverHeld(for:edge:)``.
+    func portraitHeld(of artist: String, edge: Double) -> Cover?
+
+    /// A playlist's picture the store already holds, read at once. See ``coverHeld(for:edge:)``.
+    func pictureHeld(of list: ListPicture, edge: Double) -> Cover?
 }
 
 extension CoverStore {
@@ -97,6 +108,11 @@ extension CoverStore {
 
     public func disc(for album: CloudAlbum, edge: Double) async -> ScannedDisc? { nil }
 
+    /// Nothing held, for a store that keeps nothing in memory (a preview's, a test's).
+    public func coverHeld(for album: CloudAlbum, edge: Double) -> Cover? { nil }
+    public func portraitHeld(of artist: String, edge: Double) -> Cover? { nil }
+    public func pictureHeld(of list: ListPicture, edge: Double) -> Cover? { nil }
+
     /// The sleeve of the record a **track** belongs to.
     ///
     /// A track does not carry a cover; a record does. So a playlist shows the sleeve
@@ -104,11 +120,19 @@ extension CoverStore {
     /// its own. The way to that picture is the same grouping key the wall drew
     /// the record under.
     public func cover(for track: CloudTrack, edge: Double) async -> Cover? {
-        await cover(for: CloudAlbum(key: AlbumGrouping.key(for: track),
-                                    album: track.album ?? "",
-                                    artist: track.artist ?? "",
-                                    tracks: [track]),
-                    edge: edge)
+        await cover(for: Self.record(of: track), edge: edge)
+    }
+
+    /// The sleeve the store already holds for the record a track belongs to. See
+    /// ``coverHeld(for:edge:)``.
+    public func coverHeld(for track: CloudTrack, edge: Double) -> Cover? {
+        coverHeld(for: Self.record(of: track), edge: edge)
+    }
+
+    /// The record a track belongs to, under the same grouping key the wall drew it under.
+    private static func record(of track: CloudTrack) -> CloudAlbum {
+        CloudAlbum(key: AlbumGrouping.key(for: track), album: track.album ?? "",
+                   artist: track.artist ?? "", tracks: [track])
     }
 }
 
@@ -133,6 +157,8 @@ public struct AlbumTile: View {
         self.album = album
         self.art = art
         self.covers = covers
+        // What the store already holds, so a wall shown again has its sleeves on its first frame.
+        _cover = State(initialValue: covers.coverHeld(for: album, edge: art))
     }
 
     private var caption: AlbumCaption { .of(art: art) }
@@ -155,6 +181,7 @@ public struct AlbumTile: View {
             Text(album.album)
                 .font(.system(size: caption.album, weight: .medium))
                 .lineLimit(1)
+                .feathered()
                 .frame(height: caption.albumLine, alignment: .leading)
 
             Spacer().frame(height: AlbumCaption.lineGap)
@@ -163,6 +190,7 @@ public struct AlbumTile: View {
                 .font(.system(size: caption.artist))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .feathered()
                 .frame(height: caption.artistLine, alignment: .leading)
 
             Spacer().frame(height: AlbumCaption.below)
@@ -208,9 +236,13 @@ public struct AlbumTile: View {
     }
 
     private func load() async {
-        // Cleared first, so a recycled card never shows the last record's sleeve
-        // for a frame while this one's is being fetched.
-        cover = nil
-        cover = await covers.cover(for: album, edge: art)
+        // Replaced first, so a recycled card never shows the last record's sleeve for a frame
+        // while this one's is being fetched: with what the store holds for this one, else nothing.
+        cover = covers.coverHeld(for: album, edge: art)
+        if let fetched = await covers.cover(for: album, edge: art) {
+            cover = fetched
+        } else if !Task.isCancelled {
+            cover = nil
+        }
     }
 }

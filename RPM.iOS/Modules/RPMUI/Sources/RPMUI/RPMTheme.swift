@@ -361,6 +361,8 @@ extension View {
         font(.system(size: 11, weight: .semibold))
             .tracking(0)
             .foregroundStyle(RPMInk.white(0x88 / 255))
+            // The artist page's soft outline, where it asks for it. See ``TextFeatherKey``.
+            .feathered()
     }
 }
 

@@ -510,6 +510,7 @@ struct HomePicksRow: View {
             HStack(spacing: 8) {
                 Text(heading)
                     .font(RPMFont.display(19))
+                    .feathered()
 
                 // **Only the songs.** A record is about a dozen songs and a station is not a set
                 // of songs at all. Playing "everything here" would make a queue whose length
@@ -520,6 +521,7 @@ struct HomePicksRow: View {
                         Text(Glyph.play)
                             .font(RPMFont.icon(12))
                             .foregroundStyle(RPMInk.white(0xB8 / 255))
+                            .feathered()
                             .frame(width: 34, height: 34)
                             .contentShape(Rectangle())
                     }
@@ -697,6 +699,7 @@ struct HomePicksRow: View {
                         .lineLimit(1)
                 }
             }
+            .feathered()
 
             Spacer(minLength: 0)
         }
