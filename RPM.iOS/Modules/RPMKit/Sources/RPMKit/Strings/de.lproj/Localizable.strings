@@ -826,7 +826,7 @@
 "Settings_MusicFolderHint" = "Wo rpm deine Sammlung ablegt.";
 
 /* Settings, Music folder card: the chosen folder has files in it and no RPM mirror. */
-"Settings_MusicFolderNotEmpty" = "Dieser Ordner ist nicht leer. Wähle einen leeren Ordner, oder einen vorhandenen rpm-Musikordner, um ihn zu öffnen.";
+"Settings_MusicFolderNotEmpty" = "Dieser Ordner enthält andere Dateien. Wähle einen leeren Ordner, einen Ordner mit Musik oder einen vorhandenen rpm Musikordner.";
 
 /* Settings, Music folder card: the chosen folder and the current one are nested. */
 "Settings_MusicFolderOverlaps" = "Dieser Ordner liegt in deinem Musikordner oder enthält ihn. Wähle einen separaten Ordner.";
@@ -857,7 +857,7 @@
 "Setup_ExistingLibrary" = "Das ist bereits ein rpm-Musikordner. rpm öffnet ihn.";
 
 /* Shown under the folder picker when the chosen folder has visible content and no RPM mirror. */
-"Setup_NotEmpty" = "Dieser Ordner ist nicht leer. Wähle einen leeren Ordner, oder einen vorhandenen rpm-Musikordner, um ihn zu öffnen.";
+"Setup_NotEmpty" = "Dieser Ordner enthält andere Dateien. Wähle einen leeren Ordner, einen Ordner mit Musik oder einen vorhandenen rpm Musikordner.";
 "Shell_Help" = "Hilfe";
 "Shell_Privacy" = "Datenschutzrichtlinie";
 
@@ -7164,3 +7164,57 @@
 
 /* Problem screen at launch: the library is on a NAS that could not be mounted. {0} is the NAS name. */
 "Nas_NotAvailable" = "%1$@ ist nicht erreichbar. Deine Bibliothek liegt darauf.";
+
+/* Existing music dialog: title. Shown when the chosen library folder already holds music. */
+"ExistingMusic_Title" = "Musik schon vorhanden";
+
+/* Existing music dialog: body. {0} is the folder or NAS name. */
+"ExistingMusic_Body" = "%1$@ enthält bereits Musik. Wie soll rpm mit diesen Dateien umgehen?";
+
+/* Existing music dialog: first choice. */
+"ExistingMusic_Keep" = "Dateien so lassen, wie sie sind";
+
+/* Existing music dialog: explanation under the first choice. */
+"ExistingMusic_KeepBody" = "rpm liest deine Musik dort, wo sie liegt. Es benennt diese Dateien nie um, verschiebt sie nicht, ändert keine Tags und löscht nichts. Deine Änderungen in rpm bleiben in rpm.";
+
+/* Existing music dialog: second choice. Also the button in Library settings for a kept library. */
+"ExistingMusic_Organise" = "rpm ordnen lassen";
+
+/* Existing music dialog: explanation under the second choice. */
+"ExistingMusic_OrganiseBody" = "rpm liest deine Musik und benennt und sortiert sie dann in eigene Ordner, wie alles, was du importierst. Geänderte Tags werden in die Dateien geschrieben.";
+
+/* Setup and Settings: status under a chosen folder with music, after Keep was chosen. */
+"Setup_HasMusicKept" = "Dieser Ordner enthält Musik. rpm lässt die Dateien, wie sie sind.";
+
+/* Setup and Settings: status under a chosen folder with music, after Organise was chosen. */
+"Setup_HasMusicOrganised" = "Dieser Ordner enthält Musik. rpm wird sie ordnen.";
+
+/* Status bar while a folder adopted with Organise is re-filed. */
+"Library_Organising" = "Musik wird geordnet: %1$@ von %2$@";
+
+/* Status bar when that re-file has finished. */
+"Library_Organised" = "Deine Musik ist geordnet (%1$@ Dateien verschoben)";
+
+/* Status bar when that re-file failed part-way. */
+"Library_OrganiseStopped" = "Das Ordnen wurde angehalten. rpm beendet es beim nächsten Öffnen der Bibliothek.";
+
+/* Setup and Library settings: line on a NAS row when the NAS folder already holds music. {0} is the NAS name. */
+"Nas_ExistingMusicHint" = "%1$@ enthält bereits Musik. Nutze sie als deine Sammlung, so wie sie ist oder von rpm geordnet.";
+
+/* NAS sign-in dialog: the choice that makes the NAS folder itself the library. {0} is the NAS name. */
+"Nas_UseExistingMusic" = "Die Musik auf %1$@";
+
+/* Library settings: button on a NAS row when the NAS folder already holds music. {0} is the NAS name. */
+"Nas_UseMusic" = "Musik auf %1$@ verwenden";
+
+/* Library settings: line for a library whose files are kept as they are. */
+"Settings_FilesKept" = "Die Dateien bleiben, wie sie sind. rpm benennt sie nicht um, verschiebt sie nicht, ändert keine Tags und löscht sie nicht.";
+
+/* Library settings: confirmation shown after pressing Let rpm organise them for a kept library. */
+"Settings_OrganiseKeptConfirm" = "rpm schreibt seine IDs in diese Dateien und benennt sie dann um und verschiebt sie in eigene Ordner. Das lässt sich nicht rückgängig machen.";
+
+/* Library settings: button that confirms organising a kept library. */
+"Settings_OrganiseKeptConfirmButton" = "Dateien ordnen";
+
+/* Tooltip on actions that would change files (Apply naming, Split album, Delete) in a library whose files are kept as they are. */
+"Kept_Unavailable" = "Die Dateien in diesem Ordner bleiben, wie sie sind";
