@@ -7055,12 +7055,6 @@
 "Migration_ReasonReadFailed" = "Konnte nicht gelesen werden";
 
 /* Import from another app: why a track was not imported. */
-"Migration_ReasonDiskFull" = "Das Laufwerk ist voll";
-
-/* Import from another app: why a track was not imported. */
-"Migration_ReasonCloudFull" = "Cloud-Speicher voll";
-
-/* Import from another app: why a track was not imported. */
 "Migration_ReasonCouldNotCopy" = "Konnte nicht kopiert werden";
 
 /* Import from another app: why a track was not imported (cloud-only import, the cloud refused the file). The upload's own reason follows in brackets. */
