@@ -7218,3 +7218,6 @@
 
 /* Tooltip on actions that would change files (Apply naming, Split album, Delete) in a library whose files are kept as they are. */
 "Kept_Unavailable" = "Los archivos de esta carpeta se dejan como están";
+
+/* Setup, last step: shown instead of the album count when the library is a folder of music the person already had. */
+"Wizard_DoneAdopted" = "rpm lee tu música en segundo plano cuando se abre la biblioteca. Una colección grande puede tardar unos minutos.";
