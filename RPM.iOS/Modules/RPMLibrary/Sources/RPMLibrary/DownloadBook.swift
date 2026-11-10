@@ -124,12 +124,15 @@ public final class DownloadBook: @unchecked Sendable {
 
     /// Every track that is wanted and has no file yet, in the order the albums were asked
     /// for and each album's own order. What the downloader works down.
-    public var missing: [String] {
+    public var missing: [String] { missingTracks.map(\.rpmId) }
+
+    /// The same tracks as ``missing``, as they were when their album was asked for. The
+    /// downloader reads each one's file type from them, to choose the rate to ask for.
+    public var missingTracks: [CloudTrack] {
         lock.withLock {
             held.albums.values.sorted { $0.asked < $1.asked }
                 .flatMap(\.tracks)
-                .map(\.rpmId)
-                .filter { held.copies[$0] == nil }
+                .filter { held.copies[$0.rpmId] == nil }
         }
     }
 

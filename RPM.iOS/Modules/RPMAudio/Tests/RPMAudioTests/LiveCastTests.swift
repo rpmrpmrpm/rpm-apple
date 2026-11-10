@@ -37,7 +37,7 @@ struct LiveCastTests {
                                  reach: NetworkReach()))
 
         let track = try #require(try await cloud.list(.own).first)
-        let signed = try await cloud.stream(.own, rpmId: track.rpmId, kilobits: 128)
+        let signed = try await cloud.stream(.own, rpmId: track.rpmId, rate: AudioLadder.asked(128, for: track))
         print("  \(track.artist ?? "?") — \(track.title ?? "?")")
 
         // ── the engine ──

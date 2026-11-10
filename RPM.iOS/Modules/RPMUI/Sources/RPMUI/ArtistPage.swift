@@ -241,7 +241,7 @@ public struct ArtistPage: View {
     /// the shelf's own top padding below.
     private static let keysTop: Double = 14
     private static let keysBottom: Double = 10
-    private static let keysHeight: Double = 50
+    private static let keysHeight = PlayKeys.height
 
     /// The keys' row, which stands on the band's reflection. This height is also kept when an
     /// artist has no songs and so no keys.
@@ -557,9 +557,7 @@ public struct ArtistPage: View {
         }
     }
 
-    /// Three keys in the middle of the page: a mixtape, Play, and Shuffle. Play is a round glass key
-    /// and is the one in the middle. The two beside it are their glyphs alone, with no glass, so
-    /// Play is the key the eye finds first.
+    /// Three keys in the middle of the page: a mixtape, Play, and Shuffle (``PlayKeys``).
     ///
     /// There is no mark, as on the album page, because a user marks a record or a song, and an
     /// artist is neither.
@@ -570,32 +568,25 @@ public struct ArtistPage: View {
     @ViewBuilder
     private var keys: some View {
         if !shelves.songs.isEmpty {
-            HStack(spacing: Self.keysApart) {
+            HStack(spacing: PlayKeys.apart) {
                 if let startRadio {
                     Button {
                         if let song = shelves.songs.randomElement() { startRadio(song.track) }
                     } label: {
-                        sideKey(Glyph.mixtape)
+                        Text(Glyph.mixtape).playSideKey()
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(Loc.get("Track_StartMixtape"))
                 } else {
-                    Color.clear.frame(width: Self.sideKeyWidth, height: Self.keysHeight)
+                    PlayKeys.emptySide
                 }
 
-                Button { onPlay(shelves.songs.map(\.track), 0, .list) } label: {
-                    // The triangle's weight is left of its middle, so it is moved right a little
-                    // to look centred in the circle.
-                    Text(Glyph.play)
-                        .font(RPMFont.icon(18))
-                        .foregroundStyle(RPMInk.white(0xF5 / 255))
-                        .offset(x: 2)
+                PlayKey(label: Loc.get("Rpm_Artist_PlayAll")) {
+                    onPlay(shelves.songs.map(\.track), 0, .list)
                 }
-                .buttonStyle(RPMGlassKey(edge: Self.keysHeight))
-                .accessibilityLabel(Loc.get("Rpm_Artist_PlayAll"))
 
                 Button(action: onShuffle) {
-                    sideKey(Glyph.shuffle)
+                    Text(Glyph.shuffle).playSideKey()
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Loc.get("AlbumMenu_Shuffle"))
@@ -605,21 +596,6 @@ public struct ArtistPage: View {
             .padding(.bottom, Self.keysBottom)
         }
     }
-
-    /// A key beside Play: its glyph, in a box as tall as Play, which is the part that answers a tap.
-    private func sideKey(_ glyph: String) -> some View {
-        Text(glyph)
-            .font(RPMFont.icon(17))
-            .foregroundStyle(RPMInk.white(0xF0 / 255))
-            .frame(width: Self.sideKeyWidth, height: Self.keysHeight)
-            .contentShape(Rectangle())
-    }
-
-    /// The width a key beside Play answers taps in.
-    private static let sideKeyWidth: Double = 56
-
-    /// The space between Play and each key beside it.
-    private static let keysApart: Double = 12
 
     /// Starts a mixtape from a song. Nil in a preview. See ``EnvironmentValues/startRadio``.
     @Environment(\.startRadio) private var startRadio

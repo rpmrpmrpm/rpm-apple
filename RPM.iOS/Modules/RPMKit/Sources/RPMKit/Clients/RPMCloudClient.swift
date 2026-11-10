@@ -114,17 +114,20 @@ public struct RPMCloudClient: Sendable {
     /// The grant behind a borrowed shelf is checked when the URL is signed, not once at
     /// pairing. A share that is taken back stops the music at the next track and not at the
     /// end of the hour.
+    ///
+    /// The rate is an ``AudioLadder/AskedRate`` and not a number, so the original of a file this
+    /// device cannot decode is never asked for. See ``AudioLadder/asked(_:for:)``.
     public func stream(
-        _ shelf: CloudShelf, rpmId: String, kilobits: Int
+        _ shelf: CloudShelf, rpmId: String, rate: AudioLadder.AskedRate
     ) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
         let said = try await transport.get(
-            "cloud/stream/\(escaped(rpmId))?rate=\(kilobits)" + shelf.query(first: false),
+            "cloud/stream/\(escaped(rpmId))?rate=\(rate.kilobits)" + shelf.query(first: false),
             as: UrlResponse.self)
 
         guard let url = URL(string: said.url) else {
             throw RPMError.decoding(URLError(.badURL))
         }
-        return (url, said.kilobits ?? kilobits, said.live == true ? .live : .stored)
+        return (url, said.kilobits ?? rate.kilobits, said.live == true ? .live : .stored)
     }
 
     /// The opening seconds of each track, so a wall can sound like something

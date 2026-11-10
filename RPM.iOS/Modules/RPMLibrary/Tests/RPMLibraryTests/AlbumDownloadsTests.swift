@@ -17,9 +17,9 @@ struct AlbumDownloadsTests {
 
         func failNextAsk() { failing += 1 }
 
-        func sign(_ rpmId: String, _ kilobits: Int) -> (url: URL, kilobits: Int, kind: StreamKind) {
-            signed.append((rpmId, kilobits))
-            return (URL(string: "https://transcoder.invalid/live")!, kilobits, .live)
+        func sign(_ rpmId: String, _ rate: AudioLadder.AskedRate) -> (url: URL, kilobits: Int, kind: StreamKind) {
+            signed.append((rpmId, rate.kilobits))
+            return (URL(string: "https://transcoder.invalid/live")!, rate.kilobits, .live)
         }
 
         func make(_ rpmIds: [String], _ kilobits: Int) throws {
@@ -138,6 +138,27 @@ struct AlbumDownloadsTests {
         let asked = await store.asked
         #expect(asked.map(\.kilobits) == [320, 256])
         #expect(asked.last?.rpmIds == ["t1", "t2"])
+    }
+
+    /// The phone has no Ogg Vorbis decoder, so with the original as the setting an Ogg file is
+    /// asked for as the store's 320 AAC copy. A FLAC on the same record is still the original.
+    @Test func anOggOriginalIsAskedForAtTheTopLossyRate() async {
+        setting.kilobits = AudioLadder.original
+        let downloads = downloads()
+        downloads.download(CloudAlbum(key: "s", album: "s", artist: "Satie", tracks: [
+            CloudTrack(rpmId: "ogg", relativePath: "Satie/starter-gymnopedie.ogg", title: "ogg"),
+            CloudTrack(rpmId: "flac", relativePath: "Satie/Gnossienne.flac", title: "flac"),
+        ]))
+        await until { await self.store.signed.count == 2 }
+
+        let signed = await store.signed
+        #expect(signed.first { $0.rpmId == "ogg" }?.kilobits == 320)
+        #expect(signed.first { $0.rpmId == "flac" }?.kilobits == AudioLadder.original)
+
+        // The ask for 320 copies is for the Ogg file only, not for the FLAC that is downloaded
+        // as it is.
+        await until { await self.store.asked.contains { $0.kilobits == 320 } }
+        #expect(await store.asked.first { $0.kilobits == 320 }?.rpmIds == ["ogg"])
     }
 
     @Test func tryingAgainStartsTheWaitOver() async {

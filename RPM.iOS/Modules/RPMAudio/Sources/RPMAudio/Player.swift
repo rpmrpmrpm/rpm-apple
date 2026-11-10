@@ -3159,10 +3159,12 @@ public final class Player {
     /// Never from one held since the queue was made: the store's signature expires,
     /// and a queue left paused overnight is a queue of dead addresses.
     private func sign(_ track: CloudTrack) async throws -> StreamUrlCache.Signed {
+        // The cache is keyed by the setting and not by the rate asked for. That is safe because
+        // the rate asked for depends only on the setting and the track.
         if let known = urls.known(track.rpmId, rate: kilobits) { return known }
 
-        let said = try await source.stream(shelves.shelf(of: track.rpmId),
-                                           rpmId: track.rpmId, kilobits: kilobits)
+        let said = try await source.stream(shelves.shelf(of: track.rpmId), rpmId: track.rpmId,
+                                           rate: AudioLadder.asked(kilobits, for: track))
         let signed = StreamUrlCache.Signed(
             url: said.url, kilobits: said.kilobits, kind: said.kind)
         urls.note(track.rpmId, asked: kilobits, signed: signed)

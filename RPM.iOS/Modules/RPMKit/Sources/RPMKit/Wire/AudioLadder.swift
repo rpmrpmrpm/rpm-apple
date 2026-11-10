@@ -122,6 +122,29 @@ public enum AudioLadder {
             AudioLadder.serve(asked, mayHaveOriginal: !capped)
         }
     }
+
+    /// The rate one track is asked for at the store.
+    ///
+    /// **Only ``AudioLadder/asked(_:for:)`` makes one**, and every request for a track's address
+    /// takes one. So no request can ask for the original of a file without the check that this
+    /// device decodes it.
+    public struct AskedRate: Sendable, Equatable {
+        public let kilobits: Int
+
+        fileprivate init(_ kilobits: Int) { self.kilobits = kilobits }
+    }
+
+    /// The rate to ask the store for one track: the listener's setting, except for the original
+    /// of a file this device cannot decode (``PlaysHere``). That is asked for at the highest lossy
+    /// rate, an AAC copy that this device can decode.
+    ///
+    /// The store still caps a free account as it does for any rate. The answer depends only on
+    /// the setting and the track, so a cache keyed by the setting gives the same answer for the
+    /// same track.
+    public static func asked(_ setting: Int, for track: CloudTrack) -> AskedRate {
+        guard setting == original, !PlaysHere.decodes(track) else { return AskedRate(setting) }
+        return AskedRate(rates[rates.count - 1])
+    }
 }
 
 /// **Where a track's bytes come from, and therefore how a seek works.**

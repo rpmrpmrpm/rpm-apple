@@ -134,7 +134,7 @@ struct LiveSmokeTests {
         let (_, cloud, _) = try await signedIn()
         let first = try #require(try await cloud.list(.own).first)
 
-        let got = try await cloud.stream(.own, rpmId: first.rpmId, kilobits: 320)
+        let got = try await cloud.stream(.own, rpmId: first.rpmId, rate: AudioLadder.asked(320, for: first))
         #expect(got.url.scheme == "https")
         #expect(got.kilobits > 0)
     }

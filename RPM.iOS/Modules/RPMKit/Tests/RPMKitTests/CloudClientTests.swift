@@ -94,7 +94,8 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
         return ok(request, #"{"url":"https://s3.example.com/x","kilobits":320}"#)
     }
 
-    let got = try await cloud.stream(.of("owner-1"), rpmId: "rpm_1", kilobits: 320)
+    let got = try await cloud.stream(.of("owner-1"), rpmId: "rpm_1",
+                                    rate: AudioLadder.asked(320, for: CloudTrack(rpmId: "rpm_1")))
     #expect(got.kilobits == 320)
     #expect(got.url.absoluteString == "https://s3.example.com/x")
     #expect(seen.value?.path == "/cloud/stream/rpm_1")

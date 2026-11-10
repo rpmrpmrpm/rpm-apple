@@ -34,7 +34,7 @@ struct LiveEngineTests {
         let tracks = try await cloud.list(.own)
         let track = try #require(tracks.first, "the account has no music in it")
 
-        let signed = try await cloud.stream(.own, rpmId: track.rpmId, kilobits: 128)
+        let signed = try await cloud.stream(.own, rpmId: track.rpmId, rate: AudioLadder.asked(128, for: track))
         return (signed.url, track)
     }
 

@@ -73,7 +73,7 @@ public final class AlbumDownloads {
     public private(set) var onPhone: Set<String> = []
 
     private let reach: NetworkReach
-    private let sign: @Sendable (String, Int) async throws
+    private let sign: @Sendable (String, AudioLadder.AskedRate) async throws
         -> (url: URL, kilobits: Int, kind: StreamKind)
     private let make: @Sendable ([String], Int) async throws -> Void
     private let rate: @MainActor () -> Int
@@ -108,9 +108,10 @@ public final class AlbumDownloads {
     ///     is actually served at, and whether it is a stored object or a live encode.
     ///   - make: asks the store to make these tracks at a rate. Used when a sign answers with
     ///     a live encode, which a download never takes.
-    ///   - rate: the rate to ask for, read at the start of each pass.
+    ///   - rate: the rate setting, read at the start of each pass. Each track is asked for at
+    ///     ``AudioLadder/asked(_:for:)`` of it.
     public init(book: DownloadBook, reach: NetworkReach,
-                sign: @escaping @Sendable (String, Int) async throws
+                sign: @escaping @Sendable (String, AudioLadder.AskedRate) async throws
                     -> (url: URL, kilobits: Int, kind: StreamKind),
                 make: @escaping @Sendable ([String], Int) async throws -> Void,
                 rate: @escaping @MainActor () -> Int) {
@@ -252,25 +253,31 @@ public final class AlbumDownloads {
         // the network comes back, which calls this again.
         guard reach.now.isOnline else { return }
 
-        // Read once per pass, so every track in one pass is asked for at the same rate. A
+        // Read once per pass, so every track in one pass is asked for by the same setting. A
         // change of setting is picked up by the next pass, which the setting's own change
         // starts.
-        let asked = rate()
+        let setting = rate()
 
-        let waiting = book.missing.filter {
-            !inFlight.contains($0) && (goes[$0] ?? 0) < Self.mostGoes
-                && making.isDue($0, kilobits: asked, now: Date())
+        // The rate each track is asked for: the setting, except for an original this device
+        // cannot decode, which is asked for as an AAC copy. So one pass can ask for two rates.
+        let waiting: [(rpmId: String, rate: AudioLadder.AskedRate)] = book.missingTracks.compactMap {
+            let rate = AudioLadder.asked(setting, for: $0)
+            guard !inFlight.contains($0.rpmId), (goes[$0.rpmId] ?? 0) < Self.mostGoes,
+                  making.isDue($0.rpmId, kilobits: rate.kilobits, now: Date()) else { return nil }
+            return ($0.rpmId, rate)
         }
 
         var more = false
 
-        for rpmId in waiting.prefix(max(0, Self.atOnce - inFlight.count)) {
+        for (rpmId, rate) in waiting.prefix(max(0, Self.atOnce - inFlight.count)) {
+            let asked = rate.kilobits
+
             // Claimed before the await, so a second pump arriving in the gap does not sign
             // the same track again.
             inFlight.insert(rpmId)
 
             do {
-                let signed = try await sign(rpmId, asked)
+                let signed = try await sign(rpmId, rate)
 
                 // Removed while it was being signed.
                 guard book.isWanted(rpmId) else { inFlight.remove(rpmId); continue }
@@ -311,7 +318,7 @@ public final class AlbumDownloads {
             }
         }
 
-        await askTheStoreToMake()
+        await askTheStoreToMake(setting: setting)
         redraw()
         scheduleWake()
 
@@ -329,18 +336,23 @@ public final class AlbumDownloads {
     ///
     /// An ask that fails is left unasked and sent again on the next pass, so a lost request
     /// costs one backoff and not the whole ``RenditionWait/giveUp``.
-    private func askTheStoreToMake() async {
+    ///
+    /// The other tracks still to come are only those that this pass asks for at the same rate
+    /// (see `setting`). With the original as the setting, a FLAC is downloaded as it is and
+    /// needs no copy made, while an Ogg file is asked for at 320.
+    private func askTheStoreToMake(setting: Int) async {
         for (kilobits, waiting) in making.unasked {
             let wanted = Set(waiting.filter { book.isWanted($0) })
             making.forget(waiting.filter { !wanted.contains($0) })
             guard !wanted.isEmpty else { continue }
 
             // In the book's order, which is the order the transcoder is handed them.
-            let send = book.missing.filter {
-                wanted.contains($0) || (!inFlight.contains($0)
-                    && (goes[$0] ?? 0) < Self.mostGoes
-                    && !making.wasAsked($0, kilobits: kilobits))
-            }
+            let send = book.missingTracks.filter {
+                wanted.contains($0.rpmId) || (!inFlight.contains($0.rpmId)
+                    && (goes[$0.rpmId] ?? 0) < Self.mostGoes
+                    && AudioLadder.asked(setting, for: $0).kilobits == kilobits
+                    && !making.wasAsked($0.rpmId, kilobits: kilobits))
+            }.map(\.rpmId)
             let ahead = send.filter { !wanted.contains($0) }
 
             do {

@@ -204,6 +204,12 @@ public struct AlbumPage: View {
         // layout, so the page keeps the geometry it would have had on its own.
         .background { ground }
         .rpmFloatingBack(RPMBackKey(label: Loc.get("Album_Back"), action: onBack))
+        // In the back key's row, at the other side: the same height and the same margin.
+        .overlay(alignment: .topTrailing) {
+            markKey
+                .frame(height: RPMLayout.backRow)
+                .padding(.trailing, RPMLayout.margin)
+        }
         .task(id: album.key) { cover = await covers.cover(for: album, edge: coverEdge) }
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
         .task(id: SimilarAsk(album: album.key, shelf: shelf.count)) { await readSimilar() }
@@ -357,45 +363,42 @@ public struct AlbumPage: View {
         .frame(width: edge, height: edge)
     }
 
-    /// Play, the same record in another order, and the mark on it.
+    /// Shuffle, Play and the download, as on the artist page (``PlayKeys``). Without a download
+    /// key (a borrowed shelf) its place is kept empty, so Play stays in the middle.
     ///
     /// Shuffle is beside the play key rather than in a menu, because it is the second
-    /// thing anybody does to an album.
+    /// thing anybody does to an album. The mark is not in this row: see ``markKey``.
     private var keys: some View {
-        HStack(spacing: 10) {
-            Button { onPlay(0, .list) } label: {
-                HStack(spacing: 10) {
-                    Text(Glyph.play).font(RPMFont.icon(15))
-                    Text(Loc.get("AlbumGrid_PlayAll")).font(RPMFont.display(17))
-                }
-            }
-            .buttonStyle(RPMGlassButton(.primary, radius: 14, height: 50))
-            .disabled(!anyPlayable)
-            .opacity(anyPlayable ? 1 : 0.4)
-
+        HStack(spacing: PlayKeys.apart) {
             Button(action: onShuffle) {
-                Text(Glyph.shuffle).font(RPMFont.icon(17))
+                Text(Glyph.shuffle).playSideKey()
             }
-            .buttonStyle(RPMGlassButton(.ghost, radius: 14, height: 50))
-            .frame(width: 56)
+            .buttonStyle(.plain)
             .accessibilityLabel(Loc.get("AlbumMenu_Shuffle"))
             .disabled(!anyPlayable)
             .opacity(anyPlayable ? 1 : 0.4)
 
-            // The mark on the **record**, which is not the same thing as a mark on
-            // its songs. It goes to the shared wall, so an album loved on the phone is
-            // loved on the computer.
-            Button { onMark(!marked) } label: {
-                Text(Glyph.heart)
-                    .font(marked ? RPMFont.icon(17) : RPMFont.iconOutline(17))
-            }
-            .buttonStyle(RPMGlassButton(.ghost, radius: 14, height: 50))
-            .frame(width: 56)
-            .accessibilityLabel(marked ? Loc.get("Album_UnsetFavorite") : Loc.get("Album_SetFavorite"))
+            PlayKey(label: Loc.get("AlbumGrid_PlayAll")) { onPlay(0, .list) }
+                .disabled(!anyPlayable)
+                .opacity(anyPlayable ? 1 : 0.4)
 
-            if let download { DownloadButton(key: download) }
+            if let download { DownloadButton(key: download) } else { PlayKeys.emptySide }
         }
+        .frame(maxWidth: .infinity)
         .padding(.top, 6)
+    }
+
+    /// The mark on the **record**, which is not the same thing as a mark on its songs: a round
+    /// glass key across from back, as on the Android phone app. It goes to the shared wall, so an
+    /// album loved on the phone is loved on the computer.
+    private var markKey: some View {
+        Button { onMark(!marked) } label: {
+            Text(Glyph.heart)
+                .font(marked ? RPMFont.icon(15) : RPMFont.iconOutline(15))
+                .foregroundStyle(RPMInk.white(0xE6 / 255))
+        }
+        .buttonStyle(RPMGlassKey(edge: 40))
+        .accessibilityLabel(marked ? Loc.get("Album_UnsetFavorite") : Loc.get("Album_SetFavorite"))
     }
 
     /// Whether anything on this record can be played now. Offline and with nothing on the

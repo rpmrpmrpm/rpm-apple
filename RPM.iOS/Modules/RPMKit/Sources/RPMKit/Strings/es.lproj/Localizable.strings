@@ -6967,6 +6967,9 @@
 /* Import from another app: why a cloud-only import stopped. */
 "Migration_StoppedCloudOff" = "Detenido: has cerrado sesión o el almacenamiento en la nube está desactivado.";
 
+/* Import from another app: the import stopped because of an unexpected error. Continue starts it again where it stopped. */
+"Migration_StoppedError" = "Detenido por un error. Continúa para volver a intentarlo.";
+
 /* Status line while an import runs with its window hidden. {0} is the source, {1} and {2} numbers. */
 "Migration_Status" = "Importando desde %1$@: %2$@ de %3$@";
 

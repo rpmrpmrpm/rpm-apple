@@ -153,21 +153,22 @@ public struct PlaylistsPage: View {
             Spacer(minLength: 8)
 
             // The folder's keys on one glass capsule, as in the records wall's header.
-            HStack(spacing: 0) {
-                // Switches the same folder between covers and rows. It is placed next to the
-                // keys that act on the folder, not in the menu that leaves the lists, because
-                // it does neither of those things.
-                PlaylistLayoutKey(layout: $layout)
+            //
+            // Hidden on a borrowed collection: a playlist created there would belong to the
+            // user's own account but contain records they do not have, so it would appear empty
+            // in every app that opened it. The layout key is then alone, on a glass circle like
+            // every other single key. A capsule around one key is a pill, not a circle.
+            if lender == nil {
+                HStack(spacing: 0) {
+                    // Switches the same folder between covers and rows. It is placed next to
+                    // the keys that act on the folder, not in the menu that leaves the lists,
+                    // because it does neither of those things.
+                    PlaylistLayoutKey(layout: $layout)
 
-                // In the header and not floating over the list: the list scrolls, and a button
-                // that disappears when the user scrolls is hard to find again. It creates the
-                // playlist in the folder that is open, which is the only way the phone lets
-                // the user choose where a playlist goes.
-                //
-                // Hidden on a borrowed collection: a playlist created there would belong to
-                // the user's own account but contain records they do not have, so it would
-                // appear empty in every app that opened it.
-                if lender == nil {
+                    // In the header and not floating over the list: the list scrolls, and a
+                    // button that disappears when the user scrolls is hard to find again. It
+                    // creates the playlist in the folder that is open, which is the only way the
+                    // phone lets the user choose where a playlist goes.
                     Button { making = browse.at } label: {
                         Text(Glyph.plus)
                             .font(RPMFont.icon(15))
@@ -178,8 +179,11 @@ public struct PlaylistsPage: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(Loc.get("Playlists_NewPlaylist"))
                 }
+                .rpmGlassGroup()
+            } else {
+                PlaylistLayoutKey(layout: $layout)
+                    .rpmGlass(Circle())
             }
-            .rpmGlassGroup()
 
         }
         .padding(.leading, RPMLayout.margin)

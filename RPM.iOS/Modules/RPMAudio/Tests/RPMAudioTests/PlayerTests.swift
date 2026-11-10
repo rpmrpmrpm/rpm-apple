@@ -9,8 +9,8 @@ import RPMRadio
 
 private struct Signs: StreamSource {
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
-        (URL(string: "https://example.invalid/\(rpmId)")!, kilobits, .stored)
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+        (URL(string: "https://example.invalid/\(rpmId)")!, rate.kilobits, .stored)
     }
 
     /// Returns no head clips. These are queue tests. They check which record is next, not how
@@ -21,7 +21,7 @@ private struct Signs: StreamSource {
 private struct Refuses: StreamSource {
     struct No: Error {}
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) { throw No() }
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) { throw No() }
     func headClips(_ rpmIds: [String]) async throws -> [String: Data] { throw No() }
 }
 
@@ -151,9 +151,9 @@ private struct Held: StreamSource {
     let gate: Gate
 
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
         await gate.hold()
-        return (URL(string: "https://example.invalid/\(rpmId)")!, kilobits, .stored)
+        return (URL(string: "https://example.invalid/\(rpmId)")!, rate.kilobits, .stored)
     }
 
     func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }
@@ -190,6 +190,47 @@ private func untilAsked(_ gate: Gate) async -> Bool {
 
     try #require(await untilAsked(gate))
     #expect(rpm.wantsToPlay)
+
+    await gate.letGo()
+    await start.value
+}
+
+/// The rate each track was asked for at the store, by track.
+private actor AskedRates {
+    private(set) var rates: [String: Int] = [:]
+    func note(_ rpmId: String, _ kilobits: Int) { rates[rpmId] = kilobits }
+}
+
+/// Notes the rate it is asked for, then holds like ``Held``.
+private struct NotesTheRate: StreamSource {
+    let asked: AskedRates
+    let gate: Gate
+
+    func stream(_ shelf: CloudShelf, rpmId: String,
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+        await asked.note(rpmId, rate.kilobits)
+        await gate.hold()
+        return (URL(string: "https://example.invalid/\(rpmId)")!, rate.kilobits, .stored)
+    }
+
+    func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }
+}
+
+/// The phone has no Ogg Vorbis decoder, and the starter songs are Ogg Vorbis. With the original
+/// as the setting, an Ogg file is asked for as the store's 320 AAC copy and a FLAC as the original.
+@MainActor
+@Test(arguments: [("starter-gymnopedie.ogg", 320), ("Gnossienne.flac", AudioLadder.original)])
+func anOriginalIsAskedForOnlyWhereThePhoneDecodesIt(file: (String, Int)) async throws {
+    let gate = Gate()
+    let rates = AskedRates()
+    let rpm = player(NotesTheRate(asked: rates, gate: gate))
+    rpm.kilobits = AudioLadder.original
+
+    let song = CloudTrack(rpmId: "s", relativePath: "Satie/\(file.0)", title: "s")
+    let start = Task { await rpm.play([song], from: 0, because: .somebodyAskedForIt) }
+
+    try #require(await untilAsked(gate))
+    #expect(await rates.rates["s"] == file.1)
 
     await gate.letGo()
     await start.value
@@ -750,8 +791,8 @@ private struct SignsOneRealOneDead: StreamSource {
     let url: URL
 
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
-        (rpmId == real ? url : URL(string: "https://nothing.invalid/\(rpmId)")!, kilobits, .stored)
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+        (rpmId == real ? url : URL(string: "https://nothing.invalid/\(rpmId)")!, rate.kilobits, .stored)
     }
 
     func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }
@@ -1050,11 +1091,11 @@ private struct SilenceExcept: StreamSource {
     let dead: Set<String>
 
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
         let url = dead.contains(rpmId)
             ? URL(string: "https://nothing.invalid/\(rpmId)")!
             : store.address(of: rpmId)
-        return (url, kilobits, .stored)
+        return (url, rate.kilobits, .stored)
     }
 
     func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }
@@ -1089,9 +1130,9 @@ private struct HoldsOne: StreamSource {
     let held: String
 
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
         if rpmId == held { await gate.hold() }
-        return (store.address(of: rpmId), kilobits, .stored)
+        return (store.address(of: rpmId), rate.kilobits, .stored)
     }
 
     func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }

@@ -60,7 +60,7 @@ struct StationReconnectTests {
 
 /// A stream source that never signs anything. A radio station needs no signature.
 private struct NeverSigns: StreamSource {
-    func stream(_ shelf: CloudShelf, rpmId: String, kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+    func stream(_ shelf: CloudShelf, rpmId: String, rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
         throw URLError(.cannotConnectToHost)
     }
 }

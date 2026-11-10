@@ -13,8 +13,11 @@ public protocol StreamSource: Sendable {
     /// The second and third values cannot be derived from the requested rate: a free
     /// account is capped, a rendition that does not exist yet is encoded while it is
     /// downloaded, and only the store knows which of these happened.
+    ///
+    /// The rate is made by ``AudioLadder/asked(_:for:)`` from the setting and the track, so
+    /// the original of a file this device cannot decode (an Ogg Vorbis file) is not asked for.
     func stream(
-        _ shelf: CloudShelf, rpmId: String, kilobits: Int
+        _ shelf: CloudShelf, rpmId: String, rate: AudioLadder.AskedRate
     ) async throws -> (url: URL, kilobits: Int, kind: StreamKind)
 
 }

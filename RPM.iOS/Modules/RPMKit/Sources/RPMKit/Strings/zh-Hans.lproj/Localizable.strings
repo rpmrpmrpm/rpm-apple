@@ -6967,6 +6967,9 @@
 /* Import from another app: why a cloud-only import stopped. */
 "Migration_StoppedCloudOff" = "已停止：你已退出登录，或云存储已关闭。";
 
+/* Import from another app: the import stopped because of an unexpected error. Continue starts it again where it stopped. */
+"Migration_StoppedError" = "因出错而停止。继续即可重试。";
+
 /* Status line while an import runs with its window hidden. {0} is the source, {1} and {2} numbers. */
 "Migration_Status" = "正在从 %1$@ 导入：%3$@ 首中的第 %2$@ 首";
 

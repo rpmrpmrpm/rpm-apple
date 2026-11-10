@@ -136,8 +136,8 @@ struct SilenceSigned: StreamSource {
     let store: SilentStore
 
     func stream(_ shelf: CloudShelf, rpmId: String,
-                kilobits: Int) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
-        (store.address(of: rpmId), kilobits, .stored)
+                rate: AudioLadder.AskedRate) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {
+        (store.address(of: rpmId), rate.kilobits, .stored)
     }
 
     func headClips(_ rpmIds: [String]) async throws -> [String: Data] { [:] }

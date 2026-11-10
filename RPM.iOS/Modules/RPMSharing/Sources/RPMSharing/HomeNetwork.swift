@@ -525,15 +525,10 @@ extension CharacterSet {
 
 /// Which of a computer's files this device decodes itself.
 public enum PeerFormats {
-    /// File types Core Audio's stream parser reads.
-    static let containers: Set<String> = ["flac", "mp3", "m4a", "m4b", "mp4", "aac", "wav", "aif", "aiff"]
-
-    /// Whether this device can decode the computer's file. Its container must be in `containers`,
-    /// and its codec must not be AC-3 or E-AC-3. TagLib names these in the codec text, for example
-    /// "MPEG-4 Audio (ec-3)". A track that does not play here is played from the cloud's AAC copy.
+    /// Whether this device can decode the computer's file, by the same rule as a cloud original
+    /// (``PlaysHere``). TagLib names the codec in its text, for example "MPEG-4 Audio (ec-3)". A
+    /// track that does not play here is played from the cloud's AAC copy.
     public static func playsHere(_ track: PeerTrack) -> Bool {
-        guard containers.contains(track.container) else { return false }
-        let codec = (track.codec ?? "").lowercased()
-        return !["ac-3", "ec-3"].contains { codec.contains($0) }
+        PlaysHere.decodes(extension: track.container, codec: track.codec)
     }
 }

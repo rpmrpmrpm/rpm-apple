@@ -21,7 +21,8 @@ public struct DownloadKey {
     }
 }
 
-/// The key itself, the same size as the shuffle and heart keys next to it.
+/// The key itself, beside Play on the album page: its mark alone, the same size as the shuffle key
+/// at the other side of Play. See ``PlayKeys``.
 ///
 /// It has five faces: an arrow to download, a turning arc while the store prepares the chosen
 /// bitrate, a ring that fills while downloading, a tick when every track is on the phone, and a
@@ -42,10 +43,9 @@ struct DownloadButton: View {
             case .downloading, .onPhone: asking = true
             }
         } label: {
-            face
+            face.playSideKey()
         }
-        .buttonStyle(RPMGlassButton(.ghost, radius: 14, height: 50))
-        .frame(width: 56)
+        .buttonStyle(.plain)
         .accessibilityLabel(label)
         .confirmationDialog(question, isPresented: $asking, titleVisibility: .visible) {
             Button(action, role: .destructive) { key.onRemove() }

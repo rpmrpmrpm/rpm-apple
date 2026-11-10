@@ -338,8 +338,8 @@ final class AppModel {
         let signer = cloud
         downloads = AlbumDownloads(
             book: book, reach: reach,
-            sign: { rpmId, kilobits in
-                let said = try await signer.stream(.own, rpmId: rpmId, kilobits: kilobits)
+            sign: { rpmId, rate in
+                let said = try await signer.stream(.own, rpmId: rpmId, rate: rate)
                 return (said.url, said.kilobits, said.kind)
             },
             make: { rpmIds, kilobits in

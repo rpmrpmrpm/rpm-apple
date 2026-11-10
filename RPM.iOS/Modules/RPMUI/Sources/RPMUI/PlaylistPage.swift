@@ -424,7 +424,7 @@ public struct PlaylistPage: View {
 
     /// Play, and the keys that always apply, as in the album page. **The queue has no Play**,
     /// because what is in it is already playing, or there is nothing to play. Its row has only
-    /// the round keys, centred.
+    /// the small keys, centred.
     ///
     /// The desktop app has one more key: it sends the whole set to the DJ and plays it as one run.
     /// It is not here because the mixer is not available in this app, and a key that does nothing
@@ -476,7 +476,8 @@ public struct PlaylistPage: View {
         .padding(.top, 6)
     }
 
-    /// One of the round keys beside Play, like the shuffle and heart keys on the album page.
+    /// One of the keys beside Play: a glass key in a rounded rectangle, as the Android phone app
+    /// draws them on a playlist.
     private func key(_ glyph: String, _ said: String,
                      action: @escaping () -> Void) -> some View {
         Button(action: action) {
