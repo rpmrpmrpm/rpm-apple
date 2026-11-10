@@ -81,7 +81,7 @@ extension SongRadioRun {
             let adding = Array(picks.filter { !inQueue.contains($0.rpmId) }.prefix(space))
             guard !adding.isEmpty else { return }
             note(adding)
-            player.append(adding)
+            player.append(adding, as: .mixtape)
         }
     }
 

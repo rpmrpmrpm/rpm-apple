@@ -368,6 +368,18 @@ struct ArtistBox: View {
 
     private var height: Double { (width * Self.shape).rounded() }
 
+    init(artist: ArtistWallItem, width: Double, first: CloudAlbum?, covers: any CoverStore) {
+        self.artist = artist
+        self.width = width
+        self.first = first
+        self.covers = covers
+        // What the store already holds, so a wall shown again has its photographs on its first
+        // frame: the photograph, else their record's sleeve.
+        let held = covers.portraitHeld(of: artist.name, edge: width)
+        _picture = State(initialValue: held)
+        _sleeve = State(initialValue: held == nil ? first.flatMap { covers.coverHeld(for: $0, edge: width) } : nil)
+    }
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -390,6 +402,7 @@ struct ArtistBox: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.75)
+                .feathered()
                 .padding(.horizontal, 10)
         }
         .frame(width: width, height: height)
@@ -439,15 +452,20 @@ struct ArtistBox: View {
     /// photograph, and a wall that also fetched a sleeve for every box would double the work
     /// for a ground that is thrown away on every box that does have a photograph.
     private func dress() async {
-        picture = nil
-        sleeve = nil
+        // What the store holds for this artist, so a box that shows another artist never keeps
+        // the last one's picture for a frame.
+        picture = covers.portraitHeld(of: artist.name, edge: width)
+        sleeve = picture == nil ? first.flatMap { covers.coverHeld(for: $0, edge: width) } : nil
 
         if let found = await covers.portrait(of: artist.name, edge: width) {
             picture = found
+            sleeve = nil
             return
         }
+        guard !Task.isCancelled else { return }
+        picture = nil
 
-        guard let first else { return }
+        guard let first else { sleeve = nil; return }
         sleeve = await covers.cover(for: first, edge: width)
     }
 }

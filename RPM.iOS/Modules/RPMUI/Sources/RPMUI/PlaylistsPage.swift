@@ -424,6 +424,29 @@ struct PlaylistSleeve: View {
 
     @State private var cover: Cover?
 
+    init(list: ListPicture? = nil, track: CloudTrack?, glyph: String, edge: CGFloat,
+         corner: CGFloat, mark: CGFloat, covers: any CoverStore, framed: FramedList? = nil,
+         roomDrifts: Bool = false) {
+        self.list = list
+        self.track = track
+        self.glyph = glyph
+        self.edge = edge
+        self.corner = corner
+        self.mark = mark
+        self.covers = covers
+        self.framed = framed
+        self.roomDrifts = roomDrifts
+        // What the store already holds, so a list shown again has its squares on its first frame.
+        _cover = State(initialValue: Self.held(list: list, track: track, edge: edge, covers: covers))
+    }
+
+    /// The list's own picture the store holds, else its first record's sleeve.
+    private static func held(list: ListPicture?, track: CloudTrack?, edge: CGFloat,
+                             covers: any CoverStore) -> Cover? {
+        if let list, let own = covers.pictureHeld(of: list, edge: edge) { return own }
+        return track.flatMap { covers.coverHeld(for: $0, edge: edge) }
+    }
+
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
 

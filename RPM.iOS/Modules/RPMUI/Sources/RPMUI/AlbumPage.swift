@@ -3,6 +3,7 @@ import RPMKit
 import RPMLibrary
 import RPMAudio
 import RPMDesign
+import RPMSharedUI
 
 /// One record.
 ///
@@ -95,8 +96,21 @@ public struct AlbumPage: View {
     /// page is built, so a record opened before has its text on the first frame.
     @State private var about: AboutRead
 
-    /// The text in the sheet, while it is up.
-    @State private var reading: AboutReading?
+    /// Whether the text was there when the page was built, read before and kept. Text that arrives
+    /// after comes in from the top (``CentredAboutText/arrives``).
+    private let aboutAtOpen: Bool
+
+    /// The disc the sleeve holds, read when the page opens so it is ready for the first tap. See
+    /// ``caseAndDisc(edge:)``.
+    @State private var disc: ScannedDisc?
+
+    /// Whether the disc is out of its sleeve, and whether it is drawn at all: it is drawn from the
+    /// tap until it is back in.
+    @State private var out = false
+    @State private var discShown = false
+
+    /// The trip under way: out, turning, and back in.
+    @State private var trip: Task<Void, Never>?
 
     public init(album: CloudAlbum, covers: any CoverStore, articles: ArticleStore, marked: Bool,
                 classical: Bool, download: DownloadKey?, canPlay: @escaping (CloudTrack) -> Bool,
@@ -123,7 +137,9 @@ public struct AlbumPage: View {
         self.album = album
         self.covers = covers
         self.articles = articles
-        self._about = State(initialValue: AboutRead(Self.subject(of: album), in: articles))
+        let read = AboutRead(Self.subject(of: album), in: articles)
+        self._about = State(initialValue: read)
+        self.aboutAtOpen = read.article(for: Self.subject(of: album)) != nil
         self.marked = marked
         self.classical = classical
         self.playing = playing
@@ -204,16 +220,32 @@ public struct AlbumPage: View {
         // layout, so the page keeps the geometry it would have had on its own.
         .background { ground }
         .rpmFloatingBack(RPMBackKey(label: Loc.get("Album_Back"), action: onBack))
-        // In the back key's row, at the other side: the same height and the same margin.
+        // The mark on the record, across from the back key and in the same glass. It goes to the
+        // shared wall, so an album loved on the phone is loved on the computer. The mark on the
+        // **record** is not a mark on its songs.
         .overlay(alignment: .topTrailing) {
-            markKey
-                .frame(height: RPMLayout.backRow)
-                .padding(.trailing, RPMLayout.margin)
+            Button { onMark(!marked) } label: {
+                Text(Glyph.heart)
+                    .font(marked ? RPMFont.icon(15) : RPMFont.iconOutline(15))
+                    .foregroundStyle(RPMInk.white(0xE6 / 255))
+            }
+            .buttonStyle(RPMGlassKey(edge: 40))
+            .accessibilityLabel(marked ? Loc.get("Album_UnsetFavorite") : Loc.get("Album_SetFavorite"))
+            .frame(height: RPMLayout.backRow)
+            .padding(.trailing, RPMLayout.margin)
         }
-        .task(id: album.key) { cover = await covers.cover(for: album, edge: coverEdge) }
+        .task(id: album.key) {
+            cover = await covers.cover(for: album, edge: coverEdge)
+            disc = await covers.disc(for: album, edge: coverEdge * Self.discShare)
+        }
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
         .task(id: SimilarAsk(album: album.key, shelf: shelf.count)) { await readSimilar() }
-        .aboutSheet($reading)
+        .onChange(of: album.key) { _, _ in
+            trip?.cancel()
+            trip = nil
+            out = false
+            discShown = false
+        }
     }
 
     /// What the Wikipedia text is about: the record, named as the desktop's album page names it.
@@ -231,10 +263,20 @@ public struct AlbumPage: View {
 
     // ── the ground ──
 
-    /// The sleeve blurred under the whole page, over the app's own grooves. The layers
-    /// and the veil are ``ArtGround``'s, which every page that dresses itself stands on.
+    /// The sleeve's colour under the whole page, with the sleeve blurred over it faintly, as an
+    /// artist's page stands on their photograph's colour (``GroundLead``). In night mode the blurred
+    /// sleeve is the ground, under the colour read off it. The layers and the veil are
+    /// ``ArtGround``'s, which every page that dresses itself stands on.
     private var ground: some View {
-        ArtGround(picture: cover?.image, accent: cover?.accent, showing: album.key)
+        ArtGround(picture: cover?.image, accent: lead == nil ? cover?.accent : nil,
+                  showing: album.key, lead: lead)
+    }
+
+    /// The colour that leads the ground: the sleeve's vivid colour, no brighter than white text
+    /// allows. Nil until the cover is in.
+    private var lead: Color? {
+        guard let colours = cover?.colours else { return nil }
+        return GroundLead.of(glow: colours.highlight, dominant: colours.dominant)?.color
     }
 
     // ── the record ──
@@ -245,7 +287,7 @@ public struct AlbumPage: View {
             // with the page. The list starts at the top of the screen.
             Color.clear.frame(height: RPMSafeArea.top + RPMLayout.backRow)
 
-            sleeve(edge: edge)
+            caseAndDisc(edge: edge)
 
             VStack(spacing: 4) {
                 Text(album.album)
@@ -262,9 +304,8 @@ public struct AlbumPage: View {
             // because it describes the record above it. The format sits under it,
             // quieter, because it describes the file and not the music.
             VStack(spacing: 4) {
-                Text(count)
+                (yearLead + Text(count).foregroundStyle(RPMInk.white(0xE6 / 255)))
                     .font(RPMFont.display(12))
-                    .foregroundStyle(RPMInk.white(0xE6 / 255))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 3)
                     .background(Capsule().fill(RPMInk.white(0x1F / 255)))
@@ -287,16 +328,15 @@ public struct AlbumPage: View {
                 }
             }
 
-            // What Wikipedia says about the record, where it says anything. Above the keys, so
-            // it is read before the record is played. Text that arrives from the network moves
-            // the keys and the songs down in one step, and nothing else moves: the row grows,
-            // and a row that grows is not animated (see AboutRead). The text fades in.
+            // What Wikipedia says about the record, where it says anything, centred and said to be
+            // about the album. Above the keys, so it is read before the record is played. The space
+            // above it and under it are the same. Text that arrives from the network moves the keys
+            // and the songs down in one step, and nothing else moves: the row grows, and a row that
+            // grows is not animated (see AboutRead). The text fades in.
             if let article = about.article(for: subject) {
-                AboutText(article: article) {
-                    reading = AboutReading(heading: Loc.get("TrackInfo_AboutAlbum"),
-                                           name: album.album, article: article)
-                }
-                .padding(.top, 4)
+                CentredAboutText(article: article, lead: Loc.get("TrackInfo_AboutAlbum"),
+                                 capitalKeys: true, arrives: !aboutAtOpen)
+                    .padding(.top, 6)
             }
 
             keys
@@ -311,7 +351,8 @@ public struct AlbumPage: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, RPMLayout.margin)
-        .padding(.bottom, 14)
+        // The space under the keys sets the songs apart from the header.
+        .padding(.bottom, 30)
     }
 
     /// The record's artist. Pressing it opens their page; on a record two acts made, it
@@ -363,43 +404,139 @@ public struct AlbumPage: View {
         .frame(width: edge, height: edge)
     }
 
-    /// Shuffle, Play and the download, as on the artist page (``PlayKeys``). Without a download
-    /// key (a borrowed shelf) its place is kept empty, so Play stays in the middle.
-    ///
-    /// Shuffle is beside the play key rather than in a menu, because it is the second
-    /// thing anybody does to an album. The mark is not in this row: see ``markKey``.
+    /// Shuffle, Play and the download, as the artist page's keys: Play a round glass key in the
+    /// middle, the two beside it their marks alone, so Play is the key the eye finds first. Without a
+    /// download key its place is kept, so Play stays in the middle. The mark on the record is at the
+    /// top right, across from the back key.
     private var keys: some View {
-        HStack(spacing: PlayKeys.apart) {
+        HStack(spacing: 12) {
             Button(action: onShuffle) {
-                Text(Glyph.shuffle).playSideKey()
+                Text(Glyph.shuffle)
+                    .font(RPMFont.icon(17))
+                    .foregroundStyle(RPMInk.white(0xF0 / 255))
+                    .frame(width: 56, height: 50)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Loc.get("AlbumMenu_Shuffle"))
             .disabled(!anyPlayable)
             .opacity(anyPlayable ? 1 : 0.4)
 
-            PlayKey(label: Loc.get("AlbumGrid_PlayAll")) { onPlay(0, .list) }
-                .disabled(!anyPlayable)
-                .opacity(anyPlayable ? 1 : 0.4)
+            Button { onPlay(0, .list) } label: {
+                // The triangle's weight is left of its middle, so it is moved right a little to
+                // look centred in the circle.
+                Text(Glyph.play)
+                    .font(RPMFont.icon(18))
+                    .foregroundStyle(RPMInk.white(0xF5 / 255))
+                    .offset(x: 2)
+            }
+            .buttonStyle(RPMGlassKey(edge: 50))
+            .accessibilityLabel(Loc.get("AlbumGrid_PlayAll"))
+            .disabled(!anyPlayable)
+            .opacity(anyPlayable ? 1 : 0.4)
 
-            if let download { DownloadButton(key: download) } else { PlayKeys.emptySide }
+            if let download {
+                DownloadButton(key: download, bare: true)
+            } else {
+                Color.clear.frame(width: 56, height: 50)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 6)
     }
 
-    /// The mark on the **record**, which is not the same thing as a mark on its songs: a round
-    /// glass key across from back, as on the Android phone app. It goes to the shared wall, so an
-    /// album loved on the phone is loved on the computer.
-    private var markKey: some View {
-        Button { onMark(!marked) } label: {
-            Text(Glyph.heart)
-                .font(marked ? RPMFont.icon(15) : RPMFont.iconOutline(15))
-                .foregroundStyle(RPMInk.white(0xE6 / 255))
-        }
-        .buttonStyle(RPMGlassKey(edge: 40))
-        .accessibilityLabel(marked ? Loc.get("Album_UnsetFavorite") : Loc.get("Album_SetFavorite"))
+    /// The year the record came out, before the count in the pill and dimmer than it. The earliest
+    /// year on its songs; nothing where none has one.
+    private var yearLead: Text {
+        guard let year = album.tracks.compactMap({ $0.tags?.year }).filter({ $0 > 0 }).min()
+        else { return Text("") }
+        return Text("\(String(year)) \u{2013} ").foregroundStyle(RPMInk.white(0x8A / 255))
     }
+
+    // ── the disc in its sleeve ──
+
+    /// The sleeve, as the case the record is kept in. A tap takes the disc out: it slides out from
+    /// behind the sleeve while the sleeve moves aside to make room, turns slowly, and slides back
+    /// in, eight seconds in all (``caseSlide``, ``caseHold``). A tap while it is out puts it back.
+    ///
+    /// The disc is the record's own where the desktop photographed it, and otherwise a CD printed
+    /// with the sleeve (``CoverStore/disc(for:edge:)``). It is drawn only from the tap until it is
+    /// back in.
+    ///
+    /// **Both move by offset, inside a box as tall as the sleeve.** Nothing in the header's layout
+    /// changes, so nothing under the sleeve moves while the disc comes and goes, and the disc's
+    /// close shadow stays within the sleeve's height.
+    private func caseAndDisc(edge: CGFloat) -> some View {
+        let diameter = edge * Self.discShare
+        let page = width > 0 ? width : 390
+        // How far each goes: the sleeve aside and the disc past it, so the two sit in the middle
+        // together, kept clear of the page's edges.
+        let room = page / 2 - Self.caseEdge
+        let travel = max(0, min(edge * Self.discOut, room * 2 - diameter / 2 - edge / 2))
+        let aside = max(0, (travel + diameter / 2 - edge / 2) / 2)
+
+        return ZStack {
+            if discShown, let disc {
+                RecordDisc(diameter: diameter, halo: .close, spinning: true, disc: disc,
+                           turn: Self.caseTurn)
+                    .offset(x: out ? travel - aside : 0)
+                    .allowsHitTesting(false)
+            }
+
+            sleeve(edge: edge)
+                .offset(x: out ? -aside : 0)
+                .contentShape(Rectangle())
+                .onTapGesture { takeTheDiscOut() }
+        }
+        .frame(height: edge)
+    }
+
+    /// Out, a turn, and back in; or back in at once when it is out.
+    private func takeTheDiscOut() {
+        if let running = trip {
+            running.cancel()
+            trip = nil
+            withAnimation(.easeInOut(duration: Self.caseSlide)) { out = false }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(Self.caseSlide))
+                if trip == nil { discShown = false }
+            }
+            return
+        }
+        guard disc != nil else { return }
+
+        discShown = true
+        trip = Task { @MainActor in
+            // A frame for the disc to be drawn behind the sleeve before it moves.
+            try? await Task.sleep(for: .milliseconds(30))
+            withAnimation(.easeInOut(duration: Self.caseSlide)) { out = true }
+            try? await Task.sleep(for: .seconds(Self.caseSlide + Self.caseHold))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: Self.caseSlide)) { out = false }
+            try? await Task.sleep(for: .seconds(Self.caseSlide))
+            guard !Task.isCancelled else { return }
+            discShown = false
+            trip = nil
+        }
+    }
+
+    /// The disc against the sleeve: a CD in its case is a little smaller than the case.
+    private static let discShare: CGFloat = 0.94
+
+    /// How far the disc comes out at most, as a share of the sleeve.
+    private static let discOut: CGFloat = 0.55
+
+    /// The space kept between the moved sleeve or disc and the page's edge.
+    private static let caseEdge: CGFloat = 8
+
+    /// How long the disc takes to slide out, and to slide back in.
+    private static let caseSlide: Double = 0.9
+
+    /// How long it stays out, turning, between: with the two slides, eight seconds.
+    private static let caseHold: Double = 6.2
+
+    /// One slow turn of the disc while it is out, in seconds.
+    private static let caseTurn: Double = 6
 
     /// Whether anything on this record can be played now. Offline and with nothing on the
     /// phone, the play and shuffle keys are dimmed.

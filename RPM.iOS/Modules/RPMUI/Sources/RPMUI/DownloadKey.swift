@@ -21,8 +21,7 @@ public struct DownloadKey {
     }
 }
 
-/// The key itself, beside Play on the album page: its mark alone, the same size as the shuffle key
-/// at the other side of Play. See ``PlayKeys``.
+/// The key itself, the same size as the shuffle and heart keys next to it.
 ///
 /// It has five faces: an arrow to download, a turning arc while the store prepares the chosen
 /// bitrate, a ring that fills while downloading, a tick when every track is on the phone, and a
@@ -30,6 +29,10 @@ public struct DownloadKey {
 /// because a removed album must be downloaded again to play offline.
 struct DownloadButton: View {
     let key: DownloadKey
+
+    /// Its mark alone, with no glass, in a box as tall as the Play key beside it: the record page's
+    /// keys beside Play are their marks alone.
+    var bare = false
 
     @State private var asking = false
 
@@ -43,9 +46,10 @@ struct DownloadButton: View {
             case .downloading, .onPhone: asking = true
             }
         } label: {
-            face.playSideKey()
+            face
         }
-        .buttonStyle(.plain)
+        .buttonStyle(Bare(bare: bare))
+        .frame(width: 56)
         .accessibilityLabel(label)
         .confirmationDialog(question, isPresented: $asking, titleVisibility: .visible) {
             Button(action, role: .destructive) { key.onRemove() }
@@ -120,5 +124,24 @@ struct DownloadButton: View {
     private var action: String {
         if case .downloading = key.standing { return Loc.get("Rpm_Download_Stop") }
         return Loc.get("Rpm_Download_Remove")
+    }
+}
+
+/// The download key's face: the ghost glass button, or with ``DownloadButton/bare`` its mark alone in
+/// a box as tall as that button.
+private struct Bare: ButtonStyle {
+    let bare: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        if bare {
+            configuration.label
+                .font(RPMFont.icon(17))
+                .foregroundStyle(RPMInk.white(0xF0 / 255))
+                .frame(width: 56, height: 50)
+                .contentShape(Rectangle())
+                .opacity(configuration.isPressed ? 0.6 : 1)
+        } else {
+            RPMGlassButton(.ghost, radius: 14, height: 50).makeBody(configuration: configuration)
+        }
     }
 }

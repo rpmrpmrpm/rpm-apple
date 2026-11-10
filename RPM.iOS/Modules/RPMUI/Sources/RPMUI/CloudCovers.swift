@@ -2,6 +2,7 @@ import SwiftUI
 import RPMKit
 import RPMLibrary
 import RPMArt
+import RPMDesign
 
 /// Supplies the covers for the wall from the cloud store.
 ///
@@ -57,6 +58,16 @@ public struct CloudCovers: CoverStore {
         return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
     }
 
+    /// The record's photographed disc, or a CD printed with its sleeve where the desktop uploaded no
+    /// disc. A sleeve is opaque out to its rim, so ``ScannedDisc`` reads it as a whole CD, and the
+    /// disc is drawn with the CD's rim and hub over it, as the desktop dresses one.
+    public func disc(for album: CloudAlbum, edge: Double) async -> ScannedDisc? {
+        let shelf = shelves.shelf(ofAlbum: album)
+        if let scanned = await store.disc(for: album, on: shelf, edge: pixels(edge)) { return scanned }
+        guard let art = await store.cover(for: album, on: shelf, edge: pixels(edge)) else { return nil }
+        return ScannedDisc(art.image)
+    }
+
     /// Returns the bundled photograph for a generated list that has one, and the store's picture
     /// otherwise. The desktop chooses in the same order (`GeneratedCover.BehindAsync`), so a list
     /// shows the same picture on both. The store may hold a picture for a list that has a
@@ -79,6 +90,26 @@ public struct CloudCovers: CoverStore {
         //
         // The colours are returned with it. The banner lights a list's card with these colours,
         // as the desktop does. See HomeFeatureCard.
+        return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
+    }
+
+    public func coverHeld(for album: CloudAlbum, edge: Double) -> Cover? {
+        let shelf = shelves.shelf(ofAlbum: album)
+        guard let art = store.coverInMemory(for: album, on: shelf, edge: pixels(edge)) else { return nil }
+        return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
+    }
+
+    public func portraitHeld(of artist: String, edge: Double) -> Cover? {
+        guard let picture = portraits?.portraitInMemory(of: artist, edge: pixels(edge)) else { return nil }
+        return Cover(image: Image(decorative: picture, scale: 1), accent: nil)
+    }
+
+    public func pictureHeld(of list: ListPicture, edge: Double) -> Cover? {
+        if let cut = list.cut, let photo = PlaylistPhotos.coverInMemory(for: cut, edge: pixels(edge)) {
+            return Cover(image: Image(decorative: photo.image, scale: 1), colours: photo.colours)
+        }
+        guard let art = lists?.pictureInMemory(playlistId: list.id, on: list.shelf, edge: pixels(edge))
+        else { return nil }
         return Cover(image: Image(decorative: art.image, scale: 1), colours: art.colours)
     }
 

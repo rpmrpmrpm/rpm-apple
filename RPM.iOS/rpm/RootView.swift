@@ -160,6 +160,10 @@ struct RootView: View {
     enum LibraryStep: Hashable {
         case artist(String)
         case album(String)
+
+        /// A genre or a list, which the records' search finds.
+        case genre(String)
+        case list(OpenList)
     }
 
     var body: some View {
@@ -597,6 +601,9 @@ struct RootView: View {
 
     /// A screen, the player and the tab bar. The player and the tab bar below the screen are one
     /// stack, because they move together.
+    /// How long one view of the library takes to fade into another.
+    private static let libraryFade: Double = 0.25
+
     private var shell: some View {
         ZStack {
             // **Home is built once and kept, under whichever tab is shown.** If it were rebuilt
@@ -613,90 +620,110 @@ struct RootView: View {
             case .home:
                 EmptyView()
 
-            case .library where mode == .artists:
-                // This view has its own stack and its own path. Switching back to the records must
-                // not leave an artist's page on the screen, and returning to the artists must not
-                // show the place where the user was in the records.
-                NavigationStack(path: $browsing) {
-                    ArtistsPage(
-                        inOrder: { readArtists.artists(model.albums, in: $0) },
-                        albums: readArtists.albums(model.albums),
-                        standing: model.wallStanding, covers: covers,
-                        mode: $mode, lender: model.lender,
-                        onOpen: { browsing.append(.artist($0.name)) },
-                        onRefresh: { await model.refresh() })
-                        .footRoom(chrome, .insideAStack)
-                        .navigationDestination(for: LibraryStep.self) { step in
-                            page(step, on: $browsing).footRoom(chrome, .insideAStack)
+            case .library:
+                // The four views of the library fade into one another (``libraryFade``), and the row
+                // of views under each header moves across the change (``LibraryModeTabs``).
+                ZStack {
+                    switch mode {
+                    case .artists:
+                        // This view has its own stack and its own path. Switching back to the records must
+                        // not leave an artist's page on the screen, and returning to the artists must not
+                        // show the place where the user was in the records.
+                        NavigationStack(path: $browsing) {
+                            ArtistsPage(
+                                inOrder: { readArtists.artists(model.albums, in: $0) },
+                                albums: readArtists.albums(model.albums),
+                                standing: model.wallStanding, covers: covers,
+                                mode: $mode, lender: model.lender,
+                                onOpen: { browsing.append(.artist($0.name)) },
+                                onRefresh: { await model.refresh() })
+                                .footRoom(chrome, .insideAStack)
+                                .navigationDestination(for: LibraryStep.self) { step in
+                                    page(step, on: $browsing).footRoom(chrome, .insideAStack)
+                                }
                         }
-                }
 
-            case .library where mode == .genres:
-                // This view has its own stack and path, as the artists view does. A genre opened
-                // here must not be on screen after the user goes to the records.
-                NavigationStack(path: $genrePath) {
-                    GenresPage(genres: readGenres.genres(model.albums),
-                               standing: model.wallStanding,
-                               mode: $mode, lender: model.lender,
-                               onOpen: { genrePath.append(.genre($0.name)) },
-                               onRefresh: { await model.refresh() })
-                        .toolbar(.hidden, for: .navigationBar)
-                        .footRoom(chrome, .insideAStack)
-                        .navigationDestination(for: GenreStep.self) { step in
-                            genrePage(step).footRoom(chrome, .insideAStack)
-                        }
-                }
-
-            case .library where mode == .playlists:
-                // The lists have their own stack, so that a playlist pushed here is not still on
-                // screen after the user goes to the records. Both views are on the library tab.
-                NavigationStack(path: $lists) {
-                    PlaylistsPage(
-                        playlists: model.playlists,
-                        mode: $mode,
-                        queue: model.player.queue,
-                        // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
-                        // cannot be marked from a phone, so the list would always be empty.
-                        favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
-                        covers: covers, lender: model.lender,
-                        standing: model.playlistStanding,
-                        albums: model.albums,
-                        onOpen: { row in lists.append(named(row)) },
-                        onReread: { await model.rereadPlaylists() },
-                        onMake: { name, folder, tracks in
-                            await model.makePlaylist(name: name, in: folder, tracks: tracks)
-                        })
-                        .footRoom(chrome, .insideAStack)
-                        .navigationDestination(for: OpenList.self) { open in
-                            page(open, back: { lists.removeLast() })
+                    case .genres:
+                        // This view has its own stack and path, as the artists view does. A genre opened
+                        // here must not be on screen after the user goes to the records.
+                        NavigationStack(path: $genrePath) {
+                            GenresPage(genres: readGenres.genres(model.albums),
+                                       standing: model.wallStanding,
+                                       mode: $mode, lender: model.lender,
+                                       onOpen: { genrePath.append(.genre($0.name)) },
+                                       onRefresh: { await model.refresh() })
                                 .toolbar(.hidden, for: .navigationBar)
                                 .footRoom(chrome, .insideAStack)
+                                .navigationDestination(for: GenreStep.self) { step in
+                                    genrePage(step).footRoom(chrome, .insideAStack)
+                                }
                         }
-                }
-                .task { await model.showPlaylists() }
 
-            case .library:
-                // The stack belongs to the library and not to the app. A record pushed here must
-                // not still be on screen after the user goes to the account.
-                NavigationStack(path: $opened) {
-                    LibraryPage(
-                        albums: model.albums, standing: model.wallStanding, covers: covers,
-                        playing: model.nowPlaying,
-                        inOrder: inOrder, mode: $mode,
-                        lender: model.lender,
-                        onOpen: { opened.append(.album($0.key)) },
-                        onPlay: { track in Task { await model.play(track) } },
-                        onRefresh: { await model.refresh() },
-                        isTrackMarked: { model.isTrackMarked($0) },
-                        isTrackMine: { model.isTrackMine($0) },
-                        onMarkTrack: { track, on in Task { await model.mark(track, on) } },
-                        onFile: { model.filing = $0 },
-                        upNext: .send { model.playNext($0) })
-                        .footRoom(chrome, .insideAStack)
-                        .navigationDestination(for: LibraryStep.self) { step in
-                            page(step, on: $opened).footRoom(chrome, .insideAStack)
+                    case .playlists:
+                        // The lists have their own stack, so that a playlist pushed here is not still on
+                        // screen after the user goes to the records. Both views are on the library tab.
+                        NavigationStack(path: $lists) {
+                            PlaylistsPage(
+                                playlists: model.playlists,
+                                mode: $mode,
+                                queue: model.player.queue,
+                                // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
+                                // cannot be marked from a phone, so the list would always be empty.
+                                favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
+                                covers: covers, lender: model.lender,
+                                standing: model.playlistStanding,
+                                albums: model.albums,
+                                onOpen: { row in lists.append(named(row)) },
+                                onReread: { await model.rereadPlaylists() },
+                                onMake: { name, folder, tracks in
+                                    await model.makePlaylist(name: name, in: folder, tracks: tracks)
+                                })
+                                .footRoom(chrome, .insideAStack)
+                                .navigationDestination(for: OpenList.self) { open in
+                                    page(open, back: { lists.removeLast() })
+                                        .toolbar(.hidden, for: .navigationBar)
+                                        .footRoom(chrome, .insideAStack)
+                                }
                         }
+                        .task { await model.showPlaylists() }
+
+                    case .albums:
+                        // The stack belongs to the library and not to the app. A record pushed here must
+                        // not still be on screen after the user goes to the account.
+                        NavigationStack(path: $opened) {
+                            LibraryPage(
+                                albums: model.albums, standing: model.wallStanding, covers: covers,
+                                playing: model.nowPlaying,
+                                inOrder: inOrder, mode: $mode,
+                                lender: model.lender,
+                                onOpen: { opened.append(.album($0.key)) },
+                                onPlay: { track in Task { await model.play(track) } },
+                                onRefresh: { await model.refresh() },
+                                isTrackMarked: { model.isTrackMarked($0) },
+                                isTrackMine: { model.isTrackMine($0) },
+                                onMarkTrack: { track, on in Task { await model.mark(track, on) } },
+                                onFile: { model.filing = $0 },
+                                upNext: .send { model.playNext($0) },
+                                found: LibraryPage.Findable(
+                                    artists: readArtists.artists(model.albums),
+                                    genres: readGenres.genres(model.albums),
+                                    playlists: model.playlists,
+                                    albums: readArtists.albums(model.albums)),
+                                onOpenArtist: { opened.append(.artist($0.name)) },
+                                onOpenGenre: { opened.append(.genre($0.name)) },
+                                onOpenList: { opened.append(.list(.playlist($0.id))) })
+                                .footRoom(chrome, .insideAStack)
+                                .navigationDestination(for: LibraryStep.self) { step in
+                                    page(step, on: $opened).footRoom(chrome, .insideAStack)
+                                }
+                        }
+                        // The search finds playlists as well, so they are read with the records' view too:
+                        // once a session, as the playlists' own view reads them.
+                        .task { await model.showPlaylists() }
+
+                    }
                 }
+                .animation(.easeInOut(duration: Self.libraryFade), value: mode)
 
             case .radio:
                 RadioPage(stations: model.stations, saved: model.savedStations,
@@ -864,38 +891,53 @@ struct RootView: View {
         }
     }
 
+    /// One genre's page, on whichever stack opened it: the genres' own, or the records' search.
+    @ViewBuilder
+    private func genreScreen(_ name: String,
+                             openAlbum: @escaping (CloudAlbum) -> Void,
+                             openArtist: @escaping (ArtistWallItem) -> Void,
+                             openList: @escaping (OpenList) -> Void,
+                             openGenre: @escaping (String) -> Void,
+                             back: @escaping () -> Void) -> some View {
+        let byKey = readArtists.albums(model.albums)
+        if let shelves = readGenres.shelves(of: name, in: model.albums, byKey: byKey,
+                                            artists: readArtists.artists(model.albums)) {
+            let records = shelves.albums.compactMap { byKey[$0] }
+            let heard = HomeSongs.mostPlayed(records, played: model.played, count: 10)
+            let songs = Dictionary(records.flatMap(\.tracks).map { ($0.rpmId, $0) },
+                                   uniquingKeysWith: { first, _ in first })
+            // The mood lists from the computer that are cut for this genre. Lists that are also
+            // cut by a decade are excluded: a list is cut by a genre or by a decade, never both.
+            let moods = model.playlists.filter {
+                $0.origin == .generated && $0.cut?.genre == name && $0.cut?.decade == 0
+            }
+            GenrePage(genre: name, shelves: shelves, albums: byKey,
+                      mostPlayed: heard.compactMap { songs[$0] }, moods: moods,
+                      covers: covers,
+                      onOpen: openAlbum,
+                      onPlay: { tracks in Task { await model.play(tracks, from: 0, tapped: .list) } },
+                      onArtist: openArtist,
+                      onList: { openList(.playlist($0.id)) },
+                      onGenre: openGenre,
+                      onBack: back,
+                      songMenu: songMenu)
+                .toolbar(.hidden, for: .navigationBar)
+        } else {
+            // The genre was removed while the page was open. There is nothing to draw.
+            RPMInk.ground.ignoresSafeArea()
+        }
+    }
+
     /// A genre, or a record opened from one.
     @ViewBuilder
     private func genrePage(_ step: GenreStep) -> some View {
         switch step {
         case .genre(let name):
-            let byKey = readArtists.albums(model.albums)
-            if let shelves = readGenres.shelves(of: name, in: model.albums, byKey: byKey,
-                                                artists: readArtists.artists(model.albums)) {
-                let records = shelves.albums.compactMap { byKey[$0] }
-                let heard = HomeSongs.mostPlayed(records, played: model.played, count: 10)
-                let songs = Dictionary(records.flatMap(\.tracks).map { ($0.rpmId, $0) },
-                                       uniquingKeysWith: { first, _ in first })
-                // The mood lists from the computer that are cut for this genre. Lists that are also
-                // cut by a decade are excluded: a list is cut by a genre or by a decade, never both.
-                let moods = model.playlists.filter {
-                    $0.origin == .generated && $0.cut?.genre == name && $0.cut?.decade == 0
-                }
-                GenrePage(genre: name, shelves: shelves, albums: byKey,
-                          mostPlayed: heard.compactMap { songs[$0] }, moods: moods,
-                          covers: covers,
-                          onOpen: { genrePath.append(.album($0.key)) },
-                          onPlay: { tracks in Task { await model.play(tracks, from: 0, tapped: .list) } },
-                          onArtist: { genrePath.append(.artist($0.name)) },
-                          onList: { genrePath.append(.list(.playlist($0.id))) },
-                          onGenre: { genrePath.append(.genre($0)) },
-                          onBack: { genrePath.removeLast() },
-                          songMenu: songMenu)
-                    .toolbar(.hidden, for: .navigationBar)
-            } else {
-                // The genre was removed while the page was open. There is nothing to draw.
-                RPMInk.ground.ignoresSafeArea()
-            }
+            genreScreen(name, openAlbum: { genrePath.append(.album($0.key)) },
+                        openArtist: { genrePath.append(.artist($0.name)) },
+                        openList: { genrePath.append(.list($0)) },
+                        openGenre: { genrePath.append(.genre($0)) },
+                        back: { genrePath.removeLast() })
 
         case .artist(let name):
             artistPage(named: name, open: { genrePath.append(.album($0.key)) },
@@ -1080,6 +1122,17 @@ struct RootView: View {
                 // nothing to report.
                 RPMInk.ground.ignoresSafeArea()
             }
+
+        case .genre(let name):
+            genreScreen(name, openAlbum: { path.wrappedValue.append(.album($0.key)) },
+                        openArtist: { path.wrappedValue.append(.artist($0.name)) },
+                        openList: { path.wrappedValue.append(.list($0)) },
+                        openGenre: { path.wrappedValue.append(.genre($0)) },
+                        back: { path.wrappedValue.removeLast() })
+
+        case .list(let open):
+            page(open, back: { path.wrappedValue.removeLast() })
+                .toolbar(.hidden, for: .navigationBar)
         }
     }
 

@@ -28,6 +28,11 @@ public struct QueueOverlay: View {
     /// panel fades with the pull, so the frame and the darkness use one number and always agree.
     fileprivate static let height: CGFloat = 520
 
+    /// Where the Auto mixtape switch is kept: on, a record, a playlist or a single that reaches its
+    /// last song goes on as a mixtape of songs like it. The app reads it when a last song starts.
+    /// Off unless the person turns it on, as on the Android phone, whose key it is too.
+    nonisolated public static let mixtapeAfter = "mixtape.after"
+
     public var body: some View {
         // **The `if` is here, directly over the two views that carry a transition.** A
         // transition runs for the view that an `if` inserts or removes. If the `if` is in the
@@ -80,6 +85,7 @@ private struct QueuePanel: View {
     var body: some View {
         VStack(spacing: 0) {
             grip
+            autoMixtape
 
             if player.queue.isEmpty {
                 // A station, or a queue of one: nothing is coming, and a short message is
@@ -196,15 +202,33 @@ private struct QueuePanel: View {
             }
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 10)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
         .frame(maxWidth: .infinity)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(RPMInk.white(0x1A / 255)).frame(height: 1)
-        }
         // Pull it down to put the list away, or tap it: the same
         // ``SwiftUI/View/pullGrip(_:)`` that the player's own grip uses.
         .pullGrip($pull)
     }
+
+    /// The Auto mixtape switch, under the heading and out of the grip's reach, so a tap on it is
+    /// not a tap that puts the list away. See ``QueueOverlay/mixtapeAfter``.
+    private var autoMixtape: some View {
+        Toggle(isOn: $mixtapeAfter) {
+            Text(Loc.get("Rpm_Queue_AutoMixtape"))
+                .font(RPMFont.display(14))
+                .foregroundStyle(.white)
+        }
+        .tint(RPMInk.white(0x88 / 255))
+        .onChange(of: mixtapeAfter) { _, _ in Haptics.pick() }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 8)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(RPMInk.white(0x1A / 255)).frame(height: 1)
+        }
+    }
+
+    /// Whether a list that ends goes on as a mixtape. See ``QueueOverlay/mixtapeAfter``.
+    @AppStorage(QueueOverlay.mixtapeAfter) private var mixtapeAfter = false
 
     private var count: String {
         let left = max(0, player.queue.count - ((player.index ?? -1) + 1))
@@ -214,16 +238,26 @@ private struct QueuePanel: View {
     // ── the list ──
 
     private var rows: some View {
-        List {
+        let shown = self.shown
+        let heads: [String: Head] = rearranging ? [:] : Self.heads(of: shown, in: player)
+
+        return List {
             // **Identity, position and place on the screen are three different things**, and
             // ``QueueRows`` keeps them apart. The row carries an id that survives a drag, and
             // `at`, its position in the player's own queue, which is what every action here
             // receives.
             ForEach(shown) { row in
-                Button { Task { await player.jump(to: row.at) } } label: {
-                    self.row(row)
+                // A part's heading is drawn in the row it begins at and not as a row of its own:
+                // a dragged row is placed by its position among the rows, and a heading among them
+                // would put it one row off. While rearranging there are none.
+                VStack(alignment: .leading, spacing: 0) {
+                    if let head = heads[row.id] { heading(head) }
+
+                    Button { Task { await player.jump(to: row.at) } } label: {
+                        self.row(row)
+                    }
+                    .buttonStyle(RowPress())
                 }
-                .buttonStyle(RowPress())
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
@@ -266,6 +300,51 @@ private struct QueuePanel: View {
         .scrollContentBackground(.hidden)
         .scrollIndicators(.hidden)
         .environment(\.defaultMinListRowHeight, 54)
+    }
+
+    /// Where each part of the queue begins, by the id of its first row, and the heading it gets:
+    /// the songs the person added, a mixtape's, and what was played where it carries on after one
+    /// of those, named by its record. The first row gets one only when it is an added part.
+    private static func heads(of rows: [QueueRow], in player: Player) -> [String: Head] {
+        var heads: [String: Head] = [:]
+        var last: QueuePart = .list
+        for (index, row) in rows.enumerated() {
+            let part = player.part(of: row.track)
+            if index == 0 ? part != .list : part != last {
+                switch part {
+                case .yours: heads[row.id] = .yours
+                case .mixtape: heads[row.id] = .mixtape
+                case .list:
+                    if let record = row.track.album, !record.isEmpty { heads[row.id] = .record(record) }
+                }
+            }
+            last = part
+        }
+        return heads
+    }
+
+    /// A heading over a part of the queue.
+    private enum Head {
+        case yours
+        case mixtape
+        case record(String)
+    }
+
+    private func heading(_ head: Head) -> some View {
+        let said = switch head {
+        case .yours: Loc.get("Rpm_Queue_YourQueue")
+        case .mixtape: Loc.get("Rpm_Queue_Mixtape")
+        case .record(let record): record
+        }
+
+        return Text(said)
+            .rpmKicker()
+            .textCase(.uppercase)
+            .lineLimit(1)
+            .padding(.leading, 22)
+            .padding(.trailing, 18)
+            .padding(.top, 14)
+            .padding(.bottom, 4)
     }
 
     private func row(_ row: QueueRow) -> some View {
