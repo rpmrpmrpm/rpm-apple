@@ -6892,6 +6892,9 @@
 /* Import from another app: summary line. {0} is a number. */
 "Migration_SummarySkipped" = "%1$@ Elemente werden nicht importiert (Streams, Videos, Podcasts oder Dateien, die nicht auf diesem Computer liegen)";
 
+/* Import from another app, summary: other libraries were imported into rpm before ({0} is their names, joined by commas). Each library's plays are added, so plays that two libraries share (for example a MusicBee library built from an iTunes import) count twice. */
+"Migration_SummaryOtherImports" = "Sie haben %1$@ bereits importiert. Wiedergaben, die beide Mediatheken enthalten, werden doppelt gezählt.";
+
 /* Import from another app, summary: an import of the same library did not finish. {0} tracks are through, of {1}. The person chooses Continue import or Start over. */
 "Migration_UnfinishedNote" = "Ein früherer Import dieser Mediathek wurde bei %1$@ von %2$@ Titeln angehalten.";
 
