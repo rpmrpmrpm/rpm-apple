@@ -7092,3 +7092,75 @@
 
 /* Import from another app: report line for one playlist. */
 "Migration_ReportPlaylistsOne" = "1 playlist added";
+
+/* Setup and Library settings: a NAS offered as the place for the library. {0} is the NAS name. */
+"Nas_Location" = "%1$@ (NAS)";
+
+/* Setup: second line of a NAS row. {0} is the NAS name. */
+"Nas_LocationHint" = "Your music is kept on %1$@. It plays at home even when this computer is off.";
+
+/* Setup: button on a NAS row. */
+"Nas_Choose" = "Choose";
+
+/* Setup: a NAS whose rpm package speaks an older or newer protocol. {0} is the NAS name. */
+"Nas_NeedsUpdate" = "%1$@ needs a newer rpm package.";
+
+/* Title of the NAS sign-in window. {0} is the NAS name. */
+"Nas_LoginTitle" = "Sign in to %1$@";
+
+/* NAS sign-in window: line under the title. */
+"Nas_LoginBody" = "Use the user name and password of your account on the NAS. rpm keeps them on this computer.";
+
+/* NAS sign-in window: label of the list of libraries on the NAS. */
+"Nas_Library" = "Library";
+
+/* NAS sign-in window: the choice that makes a new library. {0} is the folder name it gets. */
+"Nas_NewLibrary" = "New library (%1$@)";
+
+/* NAS sign-in window: the NAS refused the login. */
+"Nas_LoginWrong" = "The user name or password is not correct.";
+
+/* NAS sign-in window and Library settings: the NAS did not answer. {0} is the NAS name. */
+"Nas_Unreachable" = "%1$@ is not available. Check that it is on and on the same network.";
+
+/* NAS sign-in window: mounting worked but the library did not open. {0} is the NAS name. */
+"Nas_OpenFailed" = "The library on %1$@ could not be opened.";
+
+/* NAS sign-in window and Library settings: status while rpm mounts the NAS. {0} is the NAS name. */
+"Nas_Connecting" = "Connecting to %1$@";
+
+/* Library settings: button that copies the collection to a NAS. {0} is the NAS name. */
+"Nas_Move" = "Move collection to %1$@";
+
+/* Library settings: button for a library that is already on the NAS, which claims it without copying. {0} is the NAS name. */
+"Nas_Use" = "Use %1$@";
+
+/* Library settings: line under the move button. {0} is the NAS name. */
+"Nas_MoveBody" = "rpm copies every file to %1$@ and checks each copy. Your music on this computer is not changed or deleted.";
+
+/* Library settings: progress of the move to a NAS. */
+"Nas_MoveProgress" = "%1$@ of %2$@ files copied";
+
+/* Library settings: the move finished. {0} is the NAS name, {1} the old folder. */
+"Nas_MoveDone" = "Your collection is on %1$@. The copy on this computer is still in %2$@.";
+
+/* Library settings: the move to a NAS was interrupted. */
+"Nas_MoveStopped" = "The move stopped. Nothing was changed. Try again to continue.";
+
+/* Library settings: the collection does not fit on the NAS. {0} is the NAS name, {1} a size. */
+"Nas_MoveNoRoom" = "%1$@ needs %2$@ more free space.";
+
+/* Library settings: the library is on the NAS but not in the package's folder. {0} is the NAS name. */
+"Nas_UseElsewhere" = "Set the rpm package's folder on %1$@ to the folder that holds this library.";
+
+/* Library settings and import: space used on the NAS. {0} and {1} are sizes. */
+"Nas_Space" = "%1$@ of %2$@ used";
+
+/* Import: the NAS is over 90 percent of its limit. {0} and {1} are sizes. */
+"Nas_SpaceAlmostFull" = "%1$@ of %2$@ used (almost full)";
+
+/* Import: refused because the NAS limit or disk would be passed. {0} is the NAS name, {1} and {2} sizes. */
+"Nas_SpaceFull" = "Not imported: %1$@ is full (%2$@ of %3$@ used).";
+
+/* Problem screen at launch: the library is on a NAS that could not be mounted. {0} is the NAS name. */
+"Nas_NotAvailable" = "%1$@ is not available. Your library is on it.";

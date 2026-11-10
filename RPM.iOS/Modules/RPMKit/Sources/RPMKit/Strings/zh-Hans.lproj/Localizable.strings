@@ -7092,3 +7092,75 @@
 
 /* Import from another app: report line for one playlist. */
 "Migration_ReportPlaylistsOne" = "已添加 1 个播放列表";
+
+/* Setup and Library settings: a NAS offered as the place for the library. {0} is the NAS name. */
+"Nas_Location" = "%1$@（NAS）";
+
+/* Setup: second line of a NAS row. {0} is the NAS name. */
+"Nas_LocationHint" = "你的音乐保存在 %1$@ 上。即使这台电脑关机，在家里也能播放。";
+
+/* Setup: button on a NAS row. */
+"Nas_Choose" = "选择";
+
+/* Setup: a NAS whose rpm package speaks an older or newer protocol. {0} is the NAS name. */
+"Nas_NeedsUpdate" = "%1$@ 需要更新版本的 rpm 套件。";
+
+/* Title of the NAS sign-in window. {0} is the NAS name. */
+"Nas_LoginTitle" = "登录 %1$@";
+
+/* NAS sign-in window: line under the title. */
+"Nas_LoginBody" = "请使用你在 NAS 上的账户的用户名和密码。rpm 会将它们保存在这台电脑上。";
+
+/* NAS sign-in window: label of the list of libraries on the NAS. */
+"Nas_Library" = "音乐库";
+
+/* NAS sign-in window: the choice that makes a new library. {0} is the folder name it gets. */
+"Nas_NewLibrary" = "新的音乐库（%1$@）";
+
+/* NAS sign-in window: the NAS refused the login. */
+"Nas_LoginWrong" = "用户名或密码不正确。";
+
+/* NAS sign-in window and Library settings: the NAS did not answer. {0} is the NAS name. */
+"Nas_Unreachable" = "%1$@ 无法连接。请检查它是否已开机并连接到同一网络。";
+
+/* NAS sign-in window: mounting worked but the library did not open. {0} is the NAS name. */
+"Nas_OpenFailed" = "无法打开 %1$@ 上的音乐库。";
+
+/* NAS sign-in window and Library settings: status while rpm mounts the NAS. {0} is the NAS name. */
+"Nas_Connecting" = "正在连接 %1$@";
+
+/* Library settings: button that copies the collection to a NAS. {0} is the NAS name. */
+"Nas_Move" = "将收藏移到 %1$@";
+
+/* Library settings: button for a library that is already on the NAS, which claims it without copying. {0} is the NAS name. */
+"Nas_Use" = "使用 %1$@";
+
+/* Library settings: line under the move button. {0} is the NAS name. */
+"Nas_MoveBody" = "rpm 会把每个文件复制到 %1$@，并检查每一份副本。这台电脑上的音乐不会被更改或删除。";
+
+/* Library settings: progress of the move to a NAS. */
+"Nas_MoveProgress" = "已复制 %1$@ / %2$@ 个文件";
+
+/* Library settings: the move finished. {0} is the NAS name, {1} the old folder. */
+"Nas_MoveDone" = "你的收藏现在在 %1$@ 上。这台电脑上的副本仍在 %2$@。";
+
+/* Library settings: the move to a NAS was interrupted. */
+"Nas_MoveStopped" = "移动已停止，没有任何更改。再试一次即可继续。";
+
+/* Library settings: the collection does not fit on the NAS. {0} is the NAS name, {1} a size. */
+"Nas_MoveNoRoom" = "%1$@ 还需要 %2$@ 的可用空间。";
+
+/* Library settings: the library is on the NAS but not in the package's folder. {0} is the NAS name. */
+"Nas_UseElsewhere" = "请将 %1$@ 上 rpm 套件的文件夹设为包含此音乐库的文件夹。";
+
+/* Library settings and import: space used on the NAS. {0} and {1} are sizes. */
+"Nas_Space" = "已用 %1$@ / %2$@";
+
+/* Import: the NAS is over 90 percent of its limit. {0} and {1} are sizes. */
+"Nas_SpaceAlmostFull" = "已用 %1$@ / %2$@（快满了）";
+
+/* Import: refused because the NAS limit or disk would be passed. {0} is the NAS name, {1} and {2} sizes. */
+"Nas_SpaceFull" = "未导入：%1$@ 已满（已用 %2$@ / %3$@）。";
+
+/* Problem screen at launch: the library is on a NAS that could not be mounted. {0} is the NAS name. */
+"Nas_NotAvailable" = "%1$@ 无法连接。你的音乐库在它上面。";
