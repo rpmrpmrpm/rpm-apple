@@ -7027,6 +7027,9 @@
 /* Import from another app: heading of the items the source listed that are not music files. */
 "Migration_ReportSkipped" = "一开始就未导入";
 
+/* Import from another app, report (web): under a list that shows its first lines, how many more there are. */
+"Migration_ReportMore" = "还有 %1$@ 项。";
+
 /* Import from another app: button that tries the tracks that were not imported again. */
 "Migration_TryAgain" = "重试";
 
