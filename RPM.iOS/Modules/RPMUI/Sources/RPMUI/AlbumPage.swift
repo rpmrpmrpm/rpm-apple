@@ -450,7 +450,8 @@ public struct AlbumPage: View {
     private var yearLead: Text {
         guard let year = album.tracks.compactMap({ $0.tags?.year }).filter({ $0 > 0 }).min()
         else { return Text("") }
-        return Text("\(String(year)) \u{2013} ").foregroundStyle(RPMInk.white(0x8A / 255))
+        // A middle dot, the separator the count lines use. No dashes in text the user reads.
+        return Text("\(String(year)) \u{b7} ").foregroundStyle(RPMInk.white(0x8A / 255))
     }
 
     // ── the disc in its sleeve ──

@@ -171,8 +171,8 @@ struct CentredAboutText: View {
     /// What stands between the last word and the key: four spaces that do not break.
     private static let gap = String(repeating: "\u{00A0}", count: 4)
 
-    /// Between the lead-in words and the text.
-    private static let leadGap = " \u{2013} "
+    /// Between the lead-in words and the text: a colon. No dashes in text the user reads.
+    private static let leadGap = ": "
 
     /// The width the text is laid out in. Zero until the first layout.
     @State private var width: CGFloat = 0
