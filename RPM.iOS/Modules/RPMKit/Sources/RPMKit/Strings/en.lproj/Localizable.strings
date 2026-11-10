@@ -6874,6 +6874,18 @@
 /* Import from another app: summary line. {0} is a number. */
 "Migration_SummarySkipped" = "%1$@ items are not imported (streams, videos, podcasts, or files that are not on this computer)";
 
+/* Import from another app, summary: an import of the same library did not finish. {0} tracks are through, of {1}. The person chooses Continue import or Start over. */
+"Migration_UnfinishedNote" = "An earlier import of this library stopped at %1$@ of %2$@ tracks.";
+
+/* Import from another app, summary: button that continues an earlier import of the same library where it stopped. */
+"Migration_ContinueStopped" = "Continue import";
+
+/* Import from another app, summary: button that checks every track of the library again instead of continuing. */
+"Migration_StartOver" = "Start over";
+
+/* Import from another app, summary: tooltip of the Start over button. */
+"Migration_StartOverHint" = "Checks every track again. Tracks that are already in rpm are not imported twice.";
+
 /* Import from another app: shown on the summary and while importing from a library file. {0} is MusicBee or iTunes. */
 "Migration_KeepsOriginalsFile" = "rpm copies your music and leaves the originals where they are. Nothing in your %1$@ library is changed or removed.";
 
@@ -6943,6 +6955,9 @@
 /* Import from another app: estimate. {0} is a duration such as 2 h 10 min. */
 "Migration_ProgressTimeLeft" = "About %1$@ left";
 
+/* Import from another app, progress: the estimated time left is under one minute. */
+"Migration_ProgressUnderAMinute" = "Less than a minute left";
+
 /* Import from another app: button. */
 "Migration_Pause" = "Pause";
 
@@ -6999,6 +7014,9 @@
 
 /* Import from another app: report line for one playlist. {0} is its name, {1} a number. */
 "Migration_ReportPlaylistUnmatched" = "%1$@: %2$@ entries not found";
+
+/* Import from another app, report: a playlist ({0} is its name) with one entry that matched no track. */
+"Migration_ReportPlaylistUnmatchedOne" = "%1$@: 1 entry not found";
 
 /* Import from another app: report line. {0} is a playlist name. */
 "Migration_ReportSmart" = "%1$@ (a smart playlist, now a plain list)";

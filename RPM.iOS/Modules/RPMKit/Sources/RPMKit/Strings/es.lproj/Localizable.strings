@@ -6874,6 +6874,18 @@
 /* Import from another app: summary line. {0} is a number. */
 "Migration_SummarySkipped" = "%1$@ elementos no se importan (streams, vídeos, podcasts o archivos que no están en este ordenador)";
 
+/* Import from another app, summary: an import of the same library did not finish. {0} tracks are through, of {1}. The person chooses Continue import or Start over. */
+"Migration_UnfinishedNote" = "Una importación anterior de esta biblioteca se detuvo en %1$@ de %2$@ pistas.";
+
+/* Import from another app, summary: button that continues an earlier import of the same library where it stopped. */
+"Migration_ContinueStopped" = "Continuar importación";
+
+/* Import from another app, summary: button that checks every track of the library again instead of continuing. */
+"Migration_StartOver" = "Empezar de nuevo";
+
+/* Import from another app, summary: tooltip of the Start over button. */
+"Migration_StartOverHint" = "Vuelve a comprobar cada pista. Las pistas que ya están en rpm no se importan dos veces.";
+
 /* Import from another app: shown on the summary and while importing from a library file. {0} is MusicBee or iTunes. */
 "Migration_KeepsOriginalsFile" = "rpm copia tu música y deja los originales donde están. No se cambia ni se elimina nada de tu biblioteca de %1$@.";
 
@@ -6943,6 +6955,9 @@
 /* Import from another app: estimate. {0} is a duration such as 2 h 10 min. */
 "Migration_ProgressTimeLeft" = "Quedan unos %1$@";
 
+/* Import from another app, progress: the estimated time left is under one minute. */
+"Migration_ProgressUnderAMinute" = "Queda menos de un minuto";
+
 /* Import from another app: button. */
 "Migration_Pause" = "Pausar";
 
@@ -6999,6 +7014,9 @@
 
 /* Import from another app: report line for one playlist. {0} is its name, {1} a number. */
 "Migration_ReportPlaylistUnmatched" = "%1$@: %2$@ elementos no encontrados";
+
+/* Import from another app, report: a playlist ({0} is its name) with one entry that matched no track. */
+"Migration_ReportPlaylistUnmatchedOne" = "%1$@: 1 elemento no encontrado";
 
 /* Import from another app: report line. {0} is a playlist name. */
 "Migration_ReportSmart" = "%1$@ (lista inteligente, ahora una lista normal)";
