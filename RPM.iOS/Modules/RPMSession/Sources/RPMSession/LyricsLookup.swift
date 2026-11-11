@@ -32,6 +32,21 @@ public final class LyricsLookup {
         self.cloud = cloud
     }
 
+    /// Whether the player shows the lyrics in place of the cover.
+    ///
+    /// `asked` is the user's choice, from the lyrics key. The lyrics are shown while the user
+    /// asked for them and this record has timed lyrics, or the lookup for it is still running.
+    /// A record with none shows the cover, and the next record with lyrics shows them again.
+    ///
+    /// **Worked out from the values, not switched by a change.** A new record sets the sheet to
+    /// `.empty` while it is looked up, and a record with no lyrics ends the lookup with
+    /// `.empty` again. The sheet does not change at the end, so a rule that waits for a change
+    /// would leave the empty lyrics screen up, with the lyrics key greyed out and no way to
+    /// close it.
+    nonisolated public static func shows(asked: Bool, sheet: LyricSheet, looking: Bool) -> Bool {
+        asked && (sheet.isSynced || looking)
+    }
+
     /// Reads the words for `track`, once. `shelf` is the collection the track is on: the cloud
     /// keeps a chosen sheet under the account that owns the track.
     public func read(_ track: CloudTrack?, on shelf: CloudShelf = .own) async {

@@ -7,6 +7,7 @@ import RPMRadio
 import RPMArt
 import RPMDesign
 import RPMStages
+import RPMSession
 
 /// The player, shown over whatever the phone was already showing.
 ///
@@ -84,12 +85,18 @@ public struct NowPlayingSheet: View {
     /// kind of value as the one that holds the player itself, one level further in.
     @State private var queue = ScreenPull()
 
-    /// Whether the lyrics are shown in place of the cover.
+    /// Whether the user asked for the lyrics in place of the cover. What is shown is
+    /// ``lyricsUp``, which also asks whether this record has lyrics.
     ///
     /// In debug builds a script can open it through `Harness`, as it can open the player itself.
     /// The simulator cannot receive synthetic taps, so otherwise a screen behind a key can only
     /// be reached by hand. See `RootView.openWhereTheScriptAsked`.
     @State private var showingLyrics = Harness.opensLyrics
+
+    /// Whether the lyrics are shown in place of the cover. See ``LyricsLookup/shows(asked:sheet:looking:)``.
+    private var lyricsUp: Bool {
+        LyricsLookup.shows(asked: showingLyrics, sheet: lyrics, looking: lookingUpLyrics)
+    }
     @State private var showingSpeakers = false
 
     /// Whether the user asked for the sleep timer drawer. It is shown only while a timer is
@@ -138,7 +145,7 @@ public struct NowPlayingSheet: View {
             // them stays, because its colours come from the record and the lyrics are read
             // against it.
             ZStack {
-                if showingLyrics {
+                if lyricsUp {
                     // **No part of the cover is shown during the intro.** A fade that depends
                     // on the playback position (which changes four times a second) would show the
                     // artwork on the lyrics screen and then remove it in steps. A user who opens
@@ -154,16 +161,11 @@ public struct NowPlayingSheet: View {
 
             chrome
         }
-        .animation(.easeOut(duration: 0.25), value: showingLyrics)
+        .animation(.easeOut(duration: 0.25), value: lyricsUp)
         // Requested when the player is shown and again when the record changes. **Only while it
         // is shown**: normal listening sends no record name to any service.
         .task(id: player.current?.rpmId) {
             await onNeedLyrics()
-        }
-        // The lyrics were shown for a record that turns out to have none. Go back to the cover
-        // and do not leave the user on an empty screen.
-        .onChange(of: lyrics) { _, now in
-            if showingLyrics && !now.isSynced && !lookingUpLyrics { showingLyrics = false }
         }
         // **The background and overlays are modifiers and not siblings in a stack**, which is the
         // same rule as on the album page and for the same reason. The background ignores the
@@ -508,9 +510,9 @@ public struct NowPlayingSheet: View {
             // are shown, the lyrics are the content, and two sets of text over one room would
             // force the user to choose which to read.
             words
-                .opacity(showingLyrics ? 0 : 1)
-                .allowsHitTesting(!showingLyrics)
-                .animation(.easeOut(duration: 0.25), value: showingLyrics)
+                .opacity(lyricsUp ? 0 : 1)
+                .allowsHitTesting(!lyricsUp)
+                .animation(.easeOut(duration: 0.25), value: lyricsUp)
 
             // The bar, the clocks and the bit rate are in a separate view. The position changes
             // four times a second, and every view that reads it is rebuilt that often. See
@@ -729,7 +731,7 @@ public struct NowPlayingSheet: View {
                 showingLyrics.toggle()
             }
             .accessibilityLabel(Loc.get("Details_Lyrics"))
-            .foregroundStyle(showingLyrics ? .white : RPMInk.white(0x99 / 255))
+            .foregroundStyle(lyricsUp ? .white : RPMInk.white(0x99 / 255))
             // Greyed out when there are no lyrics for this record, and lit while the lookup is
             // still running. A key that turns grey as soon as a record starts and lights up a
             // second later would look unreliable.
