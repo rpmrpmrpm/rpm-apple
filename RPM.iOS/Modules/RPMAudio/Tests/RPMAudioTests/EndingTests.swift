@@ -86,7 +86,7 @@ struct EndingTests {
         let source = try fed(bytes)
         let landing = try #require(source.byteToHear(1.5))
 
-        source.expectAJump(landingAt: landing.second)
+        source.expectAJump(to: landing)
         try source.take(bytes[Int(landing.byte)...])
         source.finish(.theFileRanOut)
         while try source.read() != nil {}

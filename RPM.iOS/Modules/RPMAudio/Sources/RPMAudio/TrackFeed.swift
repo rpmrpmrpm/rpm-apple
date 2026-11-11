@@ -81,14 +81,15 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
     /// from, because they do not exist yet. For that a jump is a second, and the encoder,
     /// which holds the whole record, starts again from there.
     ///
-    /// **The byte case carries its landing second**, because both describe the same
-    /// position. The byte is what the store is asked for. The second is what everything
-    /// after it measures against: where a join lands, and whether a stream that stopped had
-    /// reached the end of the record. If the landing second were missing, every seek would
-    /// make the record look as if it ended half way through.
+    /// **The byte case carries the whole landing**: the byte, its second, and whether the
+    /// byte is known or estimated. The byte is what the store is asked for. The second is what
+    /// everything after it measures against: where a join lands, and whether a stream that
+    /// stopped had reached the end of the record. If the landing second were missing, every
+    /// seek would make the record look as if it ended half way through. Whether it is known
+    /// decides whether the decoder can go on mapping packets after the jump.
     enum Resume: Equatable {
         case theTop
-        case theByte(Int, landingAt: Double)
+        case theByte(StreamedPcm.Landing)
         case theSecond(Double)
 
         /// The address to request. For a range it is the same address. For a live seek it is
@@ -111,17 +112,18 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
 
         /// The range header value. Only the byte case has one.
         var range: String? {
-            guard case .theByte(let offset, _) = self, offset > 0 else { return nil }
-            return "bytes=\(offset)-"
+            guard case .theByte(let landing) = self, landing.byte > 0 else { return nil }
+            return "bytes=\(landing.byte)-"
         }
 
-        /// The second in the record where the next byte to arrive belongs. Nil for the top,
-        /// where the decoder needs no information.
-        var landsAt: Double? {
+        /// Tells the decoder where the next byte to arrive belongs in the record. The top
+        /// needs nothing. A byte of the file and a second of a live encode are different
+        /// jumps: after a byte, the decoder can go on mapping the file's packets.
+        func announce(to pcm: StreamedPcm) {
             switch self {
-            case .theTop: nil
-            case .theByte(let offset, let second): offset > 0 ? second : nil
-            case .theSecond(let second): max(0, second)
+            case .theTop: break
+            case .theByte(let landing): if landing.byte > 0 { pcm.expectAJump(to: landing) }
+            case .theSecond(let second): pcm.expectAJump(landingAt: max(0, second))
             }
         }
 
@@ -129,8 +131,8 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
         /// that is not a byte range: the bytes of a live encode are counted from the first
         /// byte it produced.
         var began: Int {
-            guard case .theByte(let offset, _) = self else { return 0 }
-            return max(0, offset)
+            guard case .theByte(let landing) = self else { return 0 }
+            return max(0, Int(landing.byte))
         }
     }
 
@@ -198,7 +200,7 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
         // request stopped counting and before the first byte of the new one. If it were told
         // earlier, the last bytes of the old request would be read as the first bytes of the
         // new one, and they decode to nothing.
-        if let landsAt = resume.landsAt { pcm.expectAJump(landingAt: landsAt) }
+        resume.announce(to: pcm)
 
         task.resume()
     }
@@ -215,17 +217,18 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
     /// land on, which is the start of a packet and not exactly the requested number. Returns
     /// nil for a stream that cannot be seeked.
     ///
-    /// **An estimate is good enough here.** A seek that lands a fifth of a second from the
-    /// requested position cannot be heard. For FLAC, `AudioFileStreamSeek` only gives an
-    /// estimate: the same second gives byte 47420, 46620 and 46541 as more of the file
-    /// arrives. An estimate is not exact enough to join two streams without a gap.
+    /// **The second returned is what the position bar and the lyrics show**, so the byte must
+    /// begin at that second. For a packet the decoder has already parsed it does; see
+    /// ``StreamedPcm/byteToHear(_:)``. Past the parsed part of a FLAC, or of an MP3 with no
+    /// table of contents, the byte is the parser's estimate, and the music can start some
+    /// seconds away from the second returned.
     public func moveTo(_ seconds: Double) -> Double? {
         let (url, file, kind) = gate.withLock { (self.url, self.file, self.kind) }
 
         // A copy on the phone is byte-addressable, the same as an object in the store.
         if let file {
             guard let landing = pcm.byteToHear(seconds) else { return nil }
-            read(file, .theByte(Int(landing.byte), landingAt: landing.second))
+            read(file, .theByte(landing))
             return landing.second
         }
 
@@ -245,7 +248,7 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
         case .stored:
             guard let landing = pcm.byteToHear(seconds) else { return nil }
 
-            open(url, .theByte(Int(landing.byte), landingAt: landing.second))
+            open(url, .theByte(landing))
 
             return landing.second
         }
@@ -322,7 +325,7 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
 
         was?.putDown()
 
-        if let landsAt = resume.landsAt { pcm.expectAJump(landingAt: landsAt) }
+        resume.announce(to: pcm)
         pouring.unlock()
 
         let from = UInt64(resume.began)

@@ -29,7 +29,7 @@ struct LiveSeekTests {
     }
 
     @Test func aByteIsARangeRequestAgainstTheSameAddress() {
-        let resume = TrackFeed.Resume.theByte(4096, landingAt: 12.5)
+        let resume = TrackFeed.Resume.theByte(.near(byte: 4096, second: 12.5))
 
         #expect(resume.address(of: stored) == stored)
         #expect(resume.range == "bytes=4096-")

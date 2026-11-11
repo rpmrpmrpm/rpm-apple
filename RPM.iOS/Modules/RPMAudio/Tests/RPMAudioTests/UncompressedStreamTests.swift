@@ -138,7 +138,7 @@ struct UncompressedStreamTests {
         try source.take(all.prefix(8192))
         let landing = try #require(source.byteToHear(2.75))
 
-        source.expectAJump(landingAt: landing.second)
+        source.expectAJump(to: landing)
         try source.take(all[Int(landing.byte)...])
         source.finish(.theFileRanOut)
 

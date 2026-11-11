@@ -202,7 +202,7 @@ struct SeekTests {
 
         let landing = try #require(source.byteToHear(1.5))
 
-        source.expectAJump(landingAt: landing.second)
+        source.expectAJump(to: landing)
         try source.take(bytes[Int(landing.byte)...])
         source.finish(.theFileRanOut)
 
@@ -235,7 +235,7 @@ struct SeekTests {
 
         let after = StreamedPcm()
         try after.take(bytes.prefix(Int(landing.byte)))
-        after.expectAJump(landingAt: landing.second)
+        after.expectAJump(to: landing)
         try after.take(bytes[Int(landing.byte)...])
         after.finish(.theFileRanOut)
 

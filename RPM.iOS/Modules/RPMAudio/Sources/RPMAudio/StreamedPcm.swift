@@ -117,6 +117,54 @@ public final class StreamedPcm: @unchecked Sendable {
     /// The next bytes come from another place in the file. See ``expectAJump(landingAt:)``.
     private var jumped = false
 
+    // ── where each packet begins in the file ──
+
+    /// The byte in the file where each packet begins, by packet number, for the packets that
+    /// this stream has parsed. ``byteToHear(_:)`` uses it before the parser's estimate.
+    ///
+    /// **This is why a seek in a FLAC lands on the second it reports.** `AudioFileStreamSeek`
+    /// only estimates the byte of a FLAC packet, and of an MP3 with no table of contents. It
+    /// uses the average packet size. A record that starts quietly has small packets at the
+    /// start, so the estimate can land half a minute after the second asked for. The position
+    /// bar and the lyrics then show one second and the music plays another. The download is
+    /// not paced, so a few seconds after a record starts, every packet in it is here.
+    ///
+    /// The table is kept across jumps: it describes the file, not one request.
+    private var packetStarts: [Int64] = []
+
+    /// The most packets ``packetStarts`` holds: 4 MB, which is more than three hours of MP3 or
+    /// AAC. **A station is also a `StreamedPcm`, and it does not end.** Without a limit the
+    /// table would grow for as long as the station plays. A seek past the limit uses the
+    /// parser's estimate.
+    private static let mostPacketsMapped = 1 << 19
+
+    /// Where the next bytes given to ``take(_:)`` are in the file. Every stream starts at the
+    /// top of its file. Nil when the place is not known: after a jump to a byte that was
+    /// estimated, or to a second of a live encode. Nothing is added to ``packetStarts`` while
+    /// it is nil.
+    private var mapping: Mapping? = Mapping(byte: 0, packet: 0, lastEnd: nil)
+
+    private struct Mapping {
+        /// The file byte of the next byte given to `take`.
+        var byte: Int64
+
+        /// The number of the next packet the parser gives.
+        var packet: Int
+
+        /// The file byte where the last packet that was mapped ends. A packet that is split
+        /// across two chunks comes from the parser's own buffer, so its place in the file is
+        /// taken from the end of the packet before it.
+        var lastEnd: Int64?
+    }
+
+    /// The chunk that ``take(_:)`` is parsing now. ``parsed(count:bytes:descriptions:)`` uses
+    /// it to work out where a packet begins in the file. `jumps` is the jump count when the
+    /// chunk was taken: a chunk taken before a jump is not mapped after it.
+    private var chunk: (base: UnsafeRawPointer, count: Int, jumps: Int)?
+
+    /// How many jumps this stream has had.
+    private var jumps = 0
+
     /// The format of the source, known once enough of the header has arrived. This is the
     /// **source's** format, which a sample-rate display shows. What ``read(upTo:)``
     /// returns is always ``engineFormat``.
@@ -237,9 +285,24 @@ public final class StreamedPcm: @unchecked Sendable {
             return .discontinuity
         }
 
+        let taken = gate.withLock { jumps }
+
         let failed = data.withUnsafeBytes { bytes in
-            AudioFileStreamParseBytes(parser, UInt32(data.count), bytes.baseAddress, flags)
+            // The parser calls `parsed` from inside this call, on this thread. The chunk is
+            // only valid until the call returns, so it is cleared before the closure ends.
+            if let base = bytes.baseAddress {
+                gate.withLock { chunk = (base, data.count, taken) }
+            }
+            defer { gate.withLock { chunk = nil } }
+
+            return AudioFileStreamParseBytes(parser, UInt32(data.count), bytes.baseAddress, flags)
         }
+
+        // A jump during the parse set a new place in the file. Do not move it.
+        gate.withLock {
+            if jumps == taken { mapping?.byte += Int64(data.count) }
+        }
+
         guard failed == noErr else { throw Trouble.unreadable }
     }
 
@@ -665,6 +728,11 @@ public final class StreamedPcm: @unchecked Sendable {
     /// requested second, because a packet is 1024 frames and the seek goes to the start of
     /// a packet.
     ///
+    /// **The answer comes from three places, in this order.** The parser, when it knows the
+    /// byte (an MP4 has a table of every packet). Then ``packetStarts``, the bytes this stream
+    /// has seen for itself. Then the parser's estimate, which for a FLAC can be half a minute
+    /// wrong.
+    ///
     /// Nil before the header has been read, and for a stream whose packets cannot be found
     /// by time.
     public func byteToHear(_ seconds: Double) -> Landing? {
@@ -675,19 +743,7 @@ public final class StreamedPcm: @unchecked Sendable {
             let perPacket = Double(max(1, asbd.mFramesPerPacket))
             let packet = Int64((max(0, seconds) * asbd.mSampleRate / perPacket).rounded(.down))
 
-            var byte: Int64 = 0
-            var flags = AudioFileStreamSeekFlags()
-
-            guard AudioFileStreamSeek(parser, packet, &byte, &flags) == noErr, byte >= 0 else {
-                return nil
-            }
-
-            // **The parser's byte is relative to the audio, not to the file.** The header
-            // comes before the audio, so `dataBegins` is added. Without it the request would
-            // start in the middle of an MP4's own metadata, and the track would not seek.
             howMuchIsPadding()
-
-            let at = byte + dataBegins
 
             // **Music time, not container time.** Packet zero holds the priming, so a packet
             // index counts the frames that the decoder produces, not the frames that are
@@ -696,29 +752,37 @@ public final class StreamedPcm: @unchecked Sendable {
             // too far into the record by the length of the priming.
             let second = max(0, (Double(packet) * perPacket - Double(priming)) / asbd.mSampleRate)
 
-            return flags.contains(.offsetIsEstimated)
-                ? .near(byte: at, second: second)
-                : .exactly(byte: at, second: second)
+            var byte: Int64 = 0
+            var flags = AudioFileStreamSeekFlags()
+            let answered = AudioFileStreamSeek(parser, packet, &byte, &flags) == noErr && byte >= 0
+
+            // **The parser's byte is relative to the audio, not to the file.** The header
+            // comes before the audio, so `dataBegins` is added. Without it the request would
+            // start in the middle of an MP4's own metadata, and the track would not seek.
+            // The bytes in `packetStarts` are file bytes already.
+            if answered, !flags.contains(.offsetIsEstimated) {
+                return .exactly(byte: byte + dataBegins, second: second)
+            }
+            if packet < Int64(packetStarts.count) {
+                return .exactly(byte: packetStarts[Int(packet)], second: second)
+            }
+            return answered ? .near(byte: byte + dataBegins, second: second) : nil
         }
     }
 
-    /// Where to request data from the store, and **whether the parser knows the position or
-    /// is estimating it**.
+    /// Where to request data from the store, and **whether the position is known or
+    /// estimated**.
     ///
     /// These are one value, because the byte alone can be wrong without any sign.
     /// `AudioFileStreamSeek` returns a byte in both cases. It sets
     /// `kAudioFileStreamSeekFlag_OffsetIsEstimated` when it calculated the byte from an
     /// average and not from a table. For FLAC this is always the case: the same second gives
-    /// byte 47420, 46620 and 46541 as more of the file arrives. **An estimate is good enough
-    /// for a seek**, because a position a fifth of a second away cannot be heard. It is not
-    /// good enough for joining two streams, where the number is the position at which the
-    /// second stream will be joined. If the stream does not start at the second where it is
-    /// joined, the audio jumps.
-    ///
-    /// So there are two cases, and a caller that joins streams must name the case it can
-    /// use.
+    /// byte 47420, 46620 and 46541 as more of the file arrives, and on a record that starts
+    /// quietly the byte can be half a minute after the second. **The position bar and the
+    /// lyrics show `second`**, so an estimate makes them show a different place from the one
+    /// that is heard. That is why ``byteToHear(_:)`` uses ``packetStarts`` where it can.
     public enum Landing: Sendable, Equatable {
-        /// The parser found the packet. This byte begins exactly at `second`.
+        /// The packet is known. This byte begins exactly at `second`.
         case exactly(byte: Int64, second: Double)
 
         /// The parser calculated it from an average. This byte is near `second`, and how near
@@ -744,31 +808,71 @@ public final class StreamedPcm: @unchecked Sendable {
     /// The parser must be told. Otherwise it reads the first packet of the new range as the
     /// continuation of the last packet it saw, and produces a click or no output.
     ///
+    /// This is for a jump to a second of a live encode, whose bytes are a new encode and not a
+    /// place in a file. A jump to a byte of the file is ``expectAJump(to:)``.
+    ///
     /// - Parameter seconds: where in the record the next bytes begin. **No default**: it is
     ///   used to decide whether a stream that stopped had reached the end of the record.
     ///   Without it, every seek would look like a record that ended half way through. See
     ///   ``reachedTheEnd``.
     public func expectAJump(landingAt seconds: Double) {
         gate.withLock {
-            pending.removeAll()
-            ended = false
-            stated = nil
-            jumped = true
-            begins = max(0, seconds)
-            made = 0
-
-            // A decode that starts in the middle of a file has no priming before it. The
-            // encoder wrote the priming once, at the start.
-            primingLeft = 0
-
-            // **The decoder must be reset as well as the parser.** A converter keeps state from
-            // the earlier packets. If it is given a packet from another place in the file, it
-            // answers `bada` and stops. The parser flag alone is not enough. The failure looks
-            // like a seek that ends the track silently: audio that was already scheduled
-            // plays out, so the position keeps moving for a second afterwards.
-            if let decoder { AudioConverterReset(decoder) }
-            resampler?.reset()
+            jump(landingAt: seconds)
+            mapping = nil
         }
+    }
+
+    /// Prepares for bytes from **another place in the same file**, starting at the byte that
+    /// ``byteToHear(_:)`` gave.
+    ///
+    /// When the landing is a packet in ``packetStarts``, the packets that follow are still
+    /// mapped, so the table grows past the place where the first request stopped.
+    public func expectAJump(to landing: Landing) {
+        gate.withLock {
+            jump(landingAt: landing.second)
+
+            guard case .exactly(let byte, _) = landing, let packet = packet(at: byte) else {
+                mapping = nil
+                return
+            }
+            mapping = Mapping(byte: byte, packet: packet, lastEnd: nil)
+        }
+    }
+
+    /// The number of the packet that begins at `byte` in the file, if the table has it.
+    /// **Called under the lock.**
+    private func packet(at byte: Int64) -> Int? {
+        var low = 0
+        var high = packetStarts.count
+
+        while low < high {
+            let middle = (low + high) / 2
+            if packetStarts[middle] < byte { low = middle + 1 } else { high = middle }
+        }
+        return low < packetStarts.count && packetStarts[low] == byte ? low : nil
+    }
+
+    /// What every jump does. **Called under the lock.**
+    private func jump(landingAt seconds: Double) {
+        jumps += 1
+        pending.removeAll()
+        ended = false
+        stated = nil
+        jumped = true
+        begins = max(0, seconds)
+        made = 0
+
+        // A decode that starts in the middle of a file has no priming before it. The
+        // encoder wrote the priming once, at the start.
+        primingLeft = 0
+
+        // **The decoder must be reset as well as the parser.** A converter keeps state from
+        // the earlier packets. If it is given a packet from another place in the file, it
+        // answers `bada` and stops. The parser flag alone is not enough. The failure looks
+        // like a seek that ends the track silently: audio that was already scheduled
+        // plays out, so the position keeps moving for a second afterwards.
+        if let decoder { AudioConverterReset(decoder) }
+        resampler?.reset()
     }
 
     /// Where the channels of a multichannel record are meant to go.
@@ -1054,7 +1158,13 @@ public final class StreamedPcm: @unchecked Sendable {
             guard whole > 0 else { return }
 
             let block = Data(bytes: bytes, count: whole)
-            gate.withLock { pending.append(.run(block, size: size)) }
+
+            // Not mapped: the parser knows the exact byte of every packet of this kind, so
+            // ``byteToHear(_:)`` never needs the table for it.
+            gate.withLock {
+                pending.append(.run(block, size: size))
+                mapping = nil
+            }
             return
         }
 
@@ -1068,6 +1178,60 @@ public final class StreamedPcm: @unchecked Sendable {
                                       description))
         }
 
-        gate.withLock { pending.append(contentsOf: arrived) }
+        gate.withLock {
+            pending.append(contentsOf: arrived)
+            map(count: Int(count), bytes: bytes, descriptions: descriptions)
+        }
+    }
+
+    /// Writes down where each of these packets begins in the file. See ``packetStarts``.
+    /// **Called under the lock.**
+    ///
+    /// **A packet that is already in the table is checked, not written again.** After a jump to
+    /// a packet in the table, the packets that arrive are compared with it until they pass its
+    /// end. A difference means the bytes are not the ones expected, for example bytes from a
+    /// request that was replaced. Mapping then stops, so a wrong entry is never added.
+    private func map(count: Int, bytes: UnsafeRawPointer,
+                     descriptions: UnsafeMutablePointer<AudioStreamPacketDescription>) {
+        guard var at = mapping, let chunk, chunk.jumps == jumps else { return }
+
+        // The parser gives the packets from the chunk itself, or from its own buffer when a
+        // packet was split across two chunks.
+        let inChunk = bytes >= chunk.base && bytes < chunk.base.advanced(by: chunk.count)
+
+        for index in 0..<count {
+            let description = descriptions[index]
+
+            // The first packet begins where the parser says the audio begins. It has no packet
+            // before it, and it is often split, because the header fills most of the first chunk.
+            let begins: Int64
+            if inChunk {
+                begins = at.byte + Int64(chunk.base.distance(to: bytes)) + description.mStartOffset
+            } else if let end = at.lastEnd {
+                begins = end
+            } else if at.packet == 0 {
+                begins = dataBegins
+            } else {
+                mapping = nil
+                return
+            }
+
+            if at.packet < packetStarts.count {
+                guard packetStarts[at.packet] == begins else {
+                    mapping = nil
+                    return
+                }
+            } else if packetStarts.count < Self.mostPacketsMapped {
+                packetStarts.append(begins)
+            } else {
+                mapping = nil
+                return
+            }
+
+            at.packet += 1
+            at.lastEnd = begins + Int64(description.mDataByteSize)
+        }
+
+        mapping = at
     }
 }
