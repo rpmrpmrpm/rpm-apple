@@ -440,6 +440,13 @@ public struct ArtistPage: View {
     /// through, the same two layers as the home banner's card.
     private var face: some View {
         ZStack {
+            // **Always as large as the plate, with or without a photograph.** Without this, the
+            // stack is empty until the photograph arrives, and an empty view is zero points wide.
+            // The photograph arrives inside an animation, so its frame would grow from nothing
+            // to the band's width: a narrow strip in the middle that widens. With the size held
+            // here, the photograph only fades in.
+            Color.clear
+
             if let portrait {
                 Color.clear
                     .overlay {
@@ -620,7 +627,11 @@ public struct ArtistPage: View {
                 .transition(.opacity)
 
         default:
-            EmptyView()
+            // **Nothing drawn, but the space is kept.** An `EmptyView` takes no space even inside
+            // a frame, so the fixed height around the title would not apply: the band would be as
+            // short as its keys until the lookup answered, and then grow by a whole plate. The page
+            // would open looking scrolled down and then jump.
+            Color.clear
         }
     }
 
