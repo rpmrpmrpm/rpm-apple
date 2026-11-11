@@ -348,8 +348,15 @@ public final class PcmEngine: @unchecked Sendable {
         gate.withLock {
             guard isCurrent(mine), !coming.isEmpty else { return }
 
-            coming.removeFirst()
+            let gone = coming.removeFirst()
             lastEnding = ending
+
+            // **A source that played nothing keeps its place.** A seek whose request fails at
+            // once (the phone is offline) is taken off before a single block was scheduled. With
+            // nothing scheduled, nothing held and nothing coming, ``position`` would read zero,
+            // and the player tries again from the position: the song would start again from the
+            // top when the network is back.
+            if coming.isEmpty, runs.isEmpty, held == nil { held = gone.origin }
         }
     }
 

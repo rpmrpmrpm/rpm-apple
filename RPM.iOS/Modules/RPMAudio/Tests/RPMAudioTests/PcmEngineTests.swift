@@ -379,4 +379,28 @@ struct GaplessTests {
         #expect(empty.withLock { $0 }, "it never said it had run out")
         engine.stop()
     }
+
+    /// A seek whose request fails at once, as it does while the phone is offline. Nothing is
+    /// played, and the position must stay where the seek sent it. **The player tries again from
+    /// the position**, so a position that falls to zero here starts the song again from the top
+    /// as soon as the network is back.
+    @Test func aSeekThatGetsNoBytesKeepsItsPlace() async throws {
+        let engine = PcmEngine(normalize: NormalizeContext())
+
+        let source = try tone()
+        let landing = try #require(source.byteToHear(2.0))
+        source.expectAJump(to: landing)
+        source.finish(.theBytesStopped)
+
+        let ranOut = OSAllocatedUnfairLock(initialState: false)
+        engine.ranOut = { _ in ranOut.withLock { $0 = true } }
+
+        try engine.play(source, id: 1, from: landing.second, loudness: .unmeasured,
+                        because: .carryOnAsBefore)
+        try await until("the empty source to run out") { ranOut.withLock { $0 } }
+
+        #expect(abs(engine.position - landing.second) < 0.01,
+                "the position fell to \(engine.position) s after a seek to \(landing.second) s")
+        engine.stop()
+    }
 }
