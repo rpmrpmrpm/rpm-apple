@@ -290,11 +290,16 @@ public struct AlbumPage: View {
             caseAndDisc(edge: edge)
 
             VStack(spacing: 4) {
+                // Two lines, and shortened only past them. **Never squeezed**: a `Text` given a
+                // point less height than its lines need drops a whole line and ends in "...". The
+                // list row can be measured a little short while the about text and the page width
+                // settle, and the title is the first thing it would take that from.
                 Text(album.album)
                     .font(RPMFont.displayBold(24))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
-                    .lineLimit(3)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 artistLine
             }
@@ -576,6 +581,16 @@ public struct AlbumPage: View {
         // The newer ask writes its own answer.
         guard !Task.isCancelled else { return }
         similar = (album.key, row)
+
+        // **Their sleeves are read now, not when the row is scrolled to.** The row is at the foot
+        // of the page, and a list builds its tiles only when they come on screen. A tile starts
+        // from the sleeve the store holds in memory (``CoverStore/coverHeld(for:edge:)``), and a
+        // sleeve that is only on disk or on the network would pop in under the reader's eyes.
+        // The row holds nine records at most, so this is a few small reads.
+        for record in row {
+            guard !Task.isCancelled else { return }
+            _ = await covers.cover(for: record, edge: HomeRowView.art)
+        }
     }
 
     // ── the songs ──

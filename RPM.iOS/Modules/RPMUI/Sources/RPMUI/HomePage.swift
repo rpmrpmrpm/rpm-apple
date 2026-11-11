@@ -5,6 +5,7 @@ import RPMLibrary
 import RPMArt
 import RPMDesign
 import RPMRadio
+import RPMAudio
 
 /// The home screen: what was played, what to play next, and what was added last.
 ///
@@ -24,8 +25,8 @@ public struct HomePage: View {
     private let onOpen: (CloudAlbum) -> Void
     private let onOpenList: (String) -> Void
 
-    /// Plays these tracks in this order: one song from the quick selection, or all its songs.
-    private let onPlay: ([CloudTrack]) -> Void
+    /// Plays these tracks from this position: one song from the quick selection, or all its songs.
+    private let onPlay: ([CloudTrack], Int, Tapped) -> Void
 
     /// The stations the screen names, by uuid, and what pressing one does. They are used by the
     /// banner's radio card and the quick selection's stations. See `AppModel.homeStations`.
@@ -66,7 +67,7 @@ public struct HomePage: View {
                 canSwitch: Bool, onSwitch: @escaping () -> Void, lender: String?, onScreen: Bool,
                 onOpen: @escaping (CloudAlbum) -> Void,
                 onOpenList: @escaping (String) -> Void,
-                onPlay: @escaping ([CloudTrack]) -> Void,
+                onPlay: @escaping ([CloudTrack], Int, Tapped) -> Void,
                 onTune: @escaping (RadioStation) -> Void,
                 songMenu: TrackMenu,
                 onReady: @escaping () -> Void) {
@@ -245,7 +246,7 @@ public struct HomePage: View {
                         HomePicksRow(heading: Loc.get("Home_QuickPicks"), picks: quick,
                                      albums: byKey, songs: songs, lists: listsByName,
                                      stations: stations, covers: covers,
-                                     songLine: .artist,
+                                     songLine: .artist, songTap: .thatSong,
                                      onOpen: onOpen, onOpenList: onOpenList, onPlay: onPlay,
                                      onTune: onTune, songMenu: songMenu)
                     }
@@ -435,6 +436,20 @@ struct HomePicksRow: View {
         case record
     }
 
+    /// What a tap on one song's line plays.
+    ///
+    /// **Stated by every page, with no default**, because the desktop does both. Its home page
+    /// plays the one song: the quick selection is a mix of unrelated things. An artist's popular
+    /// songs and a genre's most played songs play the row from the song that was tapped, so the
+    /// row becomes the queue.
+    enum SongTap {
+        /// That song alone.
+        case thatSong
+
+        /// Every song in the row, starting with that one.
+        case theRowFromIt
+    }
+
     let heading: String
     let picks: [QuickPick]
     let albums: [String: CloudAlbum]
@@ -443,9 +458,10 @@ struct HomePicksRow: View {
     let stations: [String: RadioStation]
     let covers: any CoverStore
     let songLine: SongLine
+    let songTap: SongTap
     let onOpen: (CloudAlbum) -> Void
     let onOpenList: (String) -> Void
-    let onPlay: ([CloudTrack]) -> Void
+    let onPlay: ([CloudTrack], Int, Tapped) -> Void
     let onTune: (RadioStation) -> Void
 
     /// The long-press menu on a song's line, the same as every other song row in the app.
@@ -517,7 +533,7 @@ struct HomePicksRow: View {
                 // depends on what the selection holds. The desktop does the same.
                 if !everySong.isEmpty {
                     let songs = everySong
-                    Button { Haptics.pick(); onPlay(songs) } label: {
+                    Button { Haptics.pick(); onPlay(songs, 0, .list) } label: {
                         Text(Glyph.play)
                             .font(RPMFont.icon(12))
                             .foregroundStyle(RPMInk.white(0xB8 / 255))
@@ -574,12 +590,23 @@ struct HomePicksRow: View {
         .frame(height: Double(lines) * Self.lineHeight)
     }
 
+    /// A tap on a song's line. See ``SongTap``.
+    private func play(_ track: CloudTrack) {
+        switch songTap {
+        case .thatSong:
+            onPlay([track], 0, .list)
+        case .theRowFromIt:
+            let songs = everySong
+            onPlay(songs, songs.firstIndex { $0.rpmId == track.rpmId } ?? 0, .song)
+        }
+    }
+
     @ViewBuilder
     private func row(_ pick: QuickPick) -> some View {
         switch pick.kind {
         case .song:
             if let track = songs[pick.key] {
-                Button { onPlay([track]) } label: {
+                Button { play(track) } label: {
                     line(title: track.title ?? "",
                          subtitle: songLine == .record ? track.album : track.artist,
                          glyph: Glyph.song, track: track, list: nil)

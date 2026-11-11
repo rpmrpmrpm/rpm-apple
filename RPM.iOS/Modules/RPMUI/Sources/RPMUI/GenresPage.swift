@@ -4,6 +4,7 @@ import UIKit
 import RPMKit
 import RPMLibrary
 import RPMDesign
+import RPMAudio
 
 // ── the photograph ──
 // The lettering is GenreLettering, in RPMSharedUI.
@@ -261,7 +262,7 @@ public struct GenrePage: View {
 
     private let covers: any CoverStore
     private let onOpen: (CloudAlbum) -> Void
-    private let onPlay: ([CloudTrack]) -> Void
+    private let onPlay: ([CloudTrack], Int, Tapped) -> Void
     private let onArtist: (ArtistWallItem) -> Void
     private let onList: (PlaylistSet) -> Void
     private let onGenre: (String) -> Void
@@ -273,7 +274,7 @@ public struct GenrePage: View {
     public init(genre: String, shelves: GenreShelves, albums: [String: CloudAlbum],
                 mostPlayed: [CloudTrack], moods: [PlaylistSet], covers: any CoverStore,
                 onOpen: @escaping (CloudAlbum) -> Void,
-                onPlay: @escaping ([CloudTrack]) -> Void,
+                onPlay: @escaping ([CloudTrack], Int, Tapped) -> Void,
                 onArtist: @escaping (ArtistWallItem) -> Void,
                 onList: @escaping (PlaylistSet) -> Void,
                 onGenre: @escaping (String) -> Void,
@@ -321,7 +322,7 @@ public struct GenrePage: View {
                                      songs: Dictionary(mostPlayed.map { ($0.rpmId, $0) },
                                                        uniquingKeysWith: { first, _ in first }),
                                      lists: [:], stations: [:], covers: covers,
-                                     songLine: .artist,
+                                     songLine: .artist, songTap: .theRowFromIt,
                                      onOpen: onOpen,
                                      onOpenList: { _ in }, onPlay: onPlay, onTune: { _ in },
                                      songMenu: songMenu)

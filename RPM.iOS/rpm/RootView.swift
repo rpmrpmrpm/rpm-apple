@@ -876,7 +876,9 @@ struct RootView: View {
                              homePath.append(.list(.playlist(set.id)))
                          }
                      },
-                     onPlay: { tracks in Task { await model.play(tracks, from: 0, tapped: .list) } },
+                     onPlay: { tracks, from, tapped in
+                         Task { await model.play(tracks, from: from, tapped: tapped) }
+                     },
                      onTune: { model.tune($0) },
                      songMenu: songMenu,
                      onReady: {
@@ -915,7 +917,9 @@ struct RootView: View {
                       mostPlayed: heard.compactMap { songs[$0] }, moods: moods,
                       covers: covers,
                       onOpen: openAlbum,
-                      onPlay: { tracks in Task { await model.play(tracks, from: 0, tapped: .list) } },
+                      onPlay: { tracks, from, tapped in
+                          Task { await model.play(tracks, from: from, tapped: tapped) }
+                      },
                       onArtist: openArtist,
                       onList: { openList(.playlist($0.id)) },
                       onGenre: openGenre,

@@ -332,15 +332,21 @@ public struct ArtistPage: View {
                 keys
             }
         }
-        // The photograph behind all of it. Its reflection runs under everything below the plate:
-        // the text when there is any, and the keys. The depth is read from the band when it is laid
-        // out, so it is right whether the text is there on the first frame, arrives later, or never
-        // arrives. A background has the size of the band and takes no part in its layout. It stays
+        // The photograph behind all of it. Its reflection runs under what is below the plate (the
+        // text when there is any, and the keys), at most one plate deep. The depth is read from the
+        // band when it is laid out, so it is right whether the text is there on the first frame,
+        // arrives later, or never arrives. A background has the size of the band and takes no part in its layout. It stays
         // inside the band's own list row, because a row that draws past its bottom edge can end up
         // over or under the next row, depending on how the list orders its cells.
+        //
+        // **The reflection is never deeper than the photograph.** The mirror is the photograph
+        // turned over, so it holds one plate of picture. Long unfolded text makes the band deeper
+        // than that, and a fade spread over the whole band would still be half strong where the
+        // mirror runs out, which draws a hard line across the text. Under the reflection is the
+        // page's ground, which is the photograph's own colour.
         .background(alignment: .top) {
             GeometryReader { box in
-                photograph(depth: max(0, box.size.height - plate))
+                photograph(depth: min(plate, max(0, box.size.height - plate)))
             }
         }
         .animation(.easeOut(duration: 0.25), value: portrait != nil)
@@ -871,8 +877,8 @@ public struct ArtistPage: View {
 
     /// The songs of theirs that all users play most, as the first section, in the style of the
     /// home page's quick selection panels. It is shown only if ``ArtistPopular`` finds enough songs
-    /// to say something. A row plays that song and the key beside the heading plays all of them, as
-    /// in the quick selection.
+    /// to say something. A row plays the popular songs from that one, as on the desktop, and the key
+    /// beside the heading plays all of them.
     ///
     /// The songs come from their songs that are still in the library, so a song that leaves the
     /// library while the page is open is not offered.
@@ -887,9 +893,9 @@ public struct ArtistPage: View {
                          songs: Dictionary(songs.map { ($0.id, $0.track) },
                                            uniquingKeysWith: { first, _ in first }),
                          lists: [:], stations: [:], covers: covers,
-                         songLine: .record,
+                         songLine: .record, songTap: .theRowFromIt,
                          onOpen: onOpen, onOpenList: { _ in },
-                         onPlay: { onPlay($0, 0, .song) }, onTune: { _ in },
+                         onPlay: onPlay, onTune: { _ in },
                          songMenu: TrackMenu(isMarked: isTrackMarked, isMine: isTrackMine,
                                              upNext: upNext, onMark: onMarkTrack,
                                              onFile: onFile))
