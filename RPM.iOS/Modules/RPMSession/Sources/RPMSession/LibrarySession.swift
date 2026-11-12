@@ -564,6 +564,50 @@ public final class LibrarySession {
         }
     }
 
+    /// Gives a playlist another name. Answers a sentence when it failed, nil when it is done.
+    public func renamePlaylist(_ set: PlaylistSet, to name: String) async -> String? {
+        let ticket = held.startWrite()
+
+        do {
+            let written = try await writer.rename(set, to: name)
+            held.end(ticket, wrote: written)
+            redraw()
+            return nil
+        } catch let refused as PlaylistWriteError {
+            held.end(ticket, wrote: nil)
+            return refused.userMessage
+        } catch let error as RPMError {
+            held.end(ticket, wrote: nil)
+            return error.userMessage(refused: Loc.get("Rpm_Playlists_RenameFailed"))
+        } catch {
+            held.end(ticket, wrote: nil)
+            return Loc.get("Rpm_Playlists_RenameFailed")
+        }
+    }
+
+    /// Removes a playlist from the cloud. Answers a sentence when it failed, nil when it is done.
+    /// The playlist goes from the screen when the store has dropped it, not before: a removal
+    /// that failed must not look as if it worked.
+    public func deletePlaylist(_ set: PlaylistSet) async -> String? {
+        let ticket = held.startWrite()
+
+        do {
+            try await writer.delete(set)
+            held.end(ticket, removed: set.id)
+            redraw()
+            return nil
+        } catch let refused as PlaylistWriteError {
+            held.end(ticket, wrote: nil)
+            return refused.userMessage
+        } catch let error as RPMError {
+            held.end(ticket, wrote: nil)
+            return error.userMessage(refused: Loc.get("Rpm_Playlists_DeleteFailed"))
+        } catch {
+            held.end(ticket, wrote: nil)
+            return Loc.get("Rpm_Playlists_DeleteFailed")
+        }
+    }
+
     // ── whose collection is on the wall ──
 
     /// The collection on screen, which is not always the account's own. Every read of a collection

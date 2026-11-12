@@ -10,6 +10,9 @@ public protocol PlaylistStore: Sendable {
 
     @discardableResult
     func putPlaylist(_ playlist: CloudPlaylist, ifUnchangedSince: Int64?) async throws -> Int64
+
+    /// Removes a playlist. A playlist that is already gone is not a failure.
+    func deletePlaylist(id: String) async throws
 }
 
 /// Why a playlist could not be written.
@@ -41,6 +44,10 @@ public enum PlaylistWriteError: Error, Sendable, Equatable {
     /// time the user dragged a row.
     case wouldDropUnseenTracks(Int)
 
+    /// A rename to a name with nothing in it. The sheet does not offer Save then. This error
+    /// covers any case that gets past it.
+    case nameless
+
     public var userMessage: String {
         switch self {
         case .notYours:
@@ -53,11 +60,13 @@ public enum PlaylistWriteError: Error, Sendable, Equatable {
             return Loc.get("Rpm_PlaylistWrite_Busy")
         case .wouldDropUnseenTracks:
             return Loc.get("Rpm_PlaylistWrite_Unseen")
+        case .nameless:
+            return Loc.get("Rpm_PlaylistWrite_NoName")
         }
     }
 }
 
-/// Makes a playlist, adds songs to one, and changes the order of one.
+/// Makes a playlist, adds songs to one, changes the order of one, renames one and removes one.
 ///
 /// **The phone never owns a playlist that it did not make.** The computer writes
 /// its copy of each playlist to the cloud from its own tree on every sync run. A
@@ -197,7 +206,7 @@ public struct PlaylistWriter: Sendable {
         let row = try await writeAgainst(
             CloudPlaylist(playlistId: current.playlistId, name: current.name,
                           trackIds: ids, folder: current.folderChain, updatedAt: 0),
-            ancestor: current.trackIds, stamp: current.updatedAt)
+            ancestor: current.trackIds, stamp: current.updatedAt, name: .fromTheStore)
 
         return Added(songs: added, row: row)
     }
@@ -224,17 +233,71 @@ public struct PlaylistWriter: Sendable {
         return try await writeAgainst(
             CloudPlaylist(playlistId: set.id, name: set.name, trackIds: tracks.map(\.rpmId),
                           folder: set.folder, updatedAt: 0),
-            ancestor: set.tracks.map(\.rpmId), stamp: set.stamp)
+            ancestor: set.tracks.map(\.rpmId), stamp: set.stamp, name: .fromTheStore)
+    }
+
+    // ── naming one ──
+
+    /// Gives a playlist another name.
+    ///
+    /// The songs and the folder are taken from the store, read again here, and not from the page.
+    /// A page can stay open for a long time, and a rename must not write an old running order
+    /// back.
+    ///
+    /// - Returns: the row as the store now holds it.
+    @discardableResult
+    public func rename(_ set: PlaylistSet, to name: String) async throws -> CloudPlaylist {
+        guard set.shelf.isOwn else { throw PlaylistWriteError.notYours }
+        guard set.origin == .stored else { throw PlaylistWriteError.notYoursToCut }
+
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw PlaylistWriteError.nameless }
+
+        let stored = try await store.playlists(.own)
+        guard let current = stored.first(where: { $0.playlistId == set.id })
+        else { throw PlaylistWriteError.gone }
+
+        // Nothing to write. A write would only give the row a new stamp, and every other
+        // device would read that as a change.
+        guard current.name != trimmed else { return current }
+
+        return try await writeAgainst(
+            CloudPlaylist(playlistId: current.playlistId, name: trimmed,
+                          trackIds: current.trackIds, folder: current.folderChain, updatedAt: 0),
+            ancestor: current.trackIds, stamp: current.updatedAt, name: .renamedTo(trimmed))
+    }
+
+    // ── removing one ──
+
+    /// Removes a playlist from the cloud. The songs it names stay in the collection: they belong
+    /// to records, and a song can be on other playlists too.
+    public func delete(_ set: PlaylistSet) async throws {
+        guard set.shelf.isOwn else { throw PlaylistWriteError.notYours }
+        guard set.origin == .stored else { throw PlaylistWriteError.notYoursToCut }
+
+        try await store.deletePlaylist(id: set.id)
     }
 
     // ── the conditional write ──
 
+    /// Which name a merged write keeps. See ``writeAgainst(_:ancestor:stamp:name:)``.
+    private enum NameFrom {
+        /// The store's name. Every write but a rename: a different name in the store is a rename
+        /// made on another device, and it is kept.
+        case fromTheStore
+
+        /// The name this write gives the playlist.
+        case renamedTo(String)
+    }
+
     /// Writes a playlist and names the copy it replaces. If another device changed
     /// the playlist first, the two versions are merged and the write is retried once.
     ///
-    /// **The name and the folder always come from the store.** A phone cannot change
-    /// either one. So any difference in them comes from a rename on a computer, and
-    /// this code leaves it alone.
+    /// **The folder always comes from the store, and so does the name, except in a rename.**
+    /// The phone does not move playlists between folders, so a different folder is a change
+    /// made on a computer, and this code leaves it alone. `name` says which name the merge
+    /// keeps. There is no default, because a rename that took the store's name would undo
+    /// itself.
     ///
     /// The retry happens once. If the second write is also refused, another device is
     /// writing in a loop, and this throws `beingChangedElsewhere`.
@@ -245,7 +308,7 @@ public struct PlaylistWriter: Sendable {
     ///   stamp on its next write, the store would accept it, and the other device's songs
     ///   would be lost.
     private func writeAgainst(
-        _ wanted: CloudPlaylist, ancestor: [String], stamp: Int64
+        _ wanted: CloudPlaylist, ancestor: [String], stamp: Int64, name: NameFrom
     ) async throws -> CloudPlaylist {
         var wanted = wanted, ancestor = ancestor, stamp = stamp
 
@@ -272,7 +335,13 @@ public struct PlaylistWriter: Sendable {
                                                  mine: wanted.trackIds,
                                                  theirs: stored.trackIds)
 
-                wanted = CloudPlaylist(playlistId: stored.playlistId, name: stored.name,
+                let kept: String
+                switch name {
+                case .fromTheStore: kept = stored.name
+                case .renamedTo(let given): kept = given
+                }
+
+                wanted = CloudPlaylist(playlistId: stored.playlistId, name: kept,
                                        trackIds: merged, folder: stored.folderChain,
                                        updatedAt: 0)
                 ancestor = stored.trackIds

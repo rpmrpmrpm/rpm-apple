@@ -725,6 +725,9 @@ public enum Glyph {
     /// Keeps the stage's chrome visible instead of letting it hide.
     public static let pin = "\u{f08d}"
     public static let more = "\u{f141}"
+
+    /// Three bars: the menu of a playlist page, at the top right where a record has its heart.
+    public static let menu = "\u{f0c9}"
     public static let search = "\u{f002}"
     public static let sort = "\u{f0dc}"
 

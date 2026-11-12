@@ -15,6 +15,8 @@ import RPMKit
 /// - A row that this device holds and the read does not: kept when this device learned about it
 ///   after the read started (from a later read, or from a write that ended after it started).
 ///   Otherwise the store no longer has it, and it goes.
+/// - A row this device removed: left out of a read that started before the removal ended, and of
+///   a write that ends after it. Both were answered before the store dropped the row.
 /// - The cut: kept when the read failed. A read that answered "no cut" removes it only when it
 ///   started after the cut was learned. A cut with an older stamp does not replace a newer one.
 ///
@@ -53,6 +55,10 @@ public struct HeldPlaylists: Sendable {
     /// earlier write on the same playlist does not remove a later one.
     private var writing: [String: (serial: Int, order: [String])] = [:]
     private var serial = 0
+
+    /// The playlists this device removed, by id, with the ``clock`` value at which each removal
+    /// ended. See ``end(_:removed:)``.
+    private var removed: [String: Int] = [:]
 
     /// Whether a read has answered.
     public private(set) var answered = false
@@ -98,6 +104,9 @@ public struct HeldPlaylists: Sendable {
         var merged: [String: Known] = [:]
 
         for row in read {
+            // Removed here after this read started: its answer is older than the removal.
+            if let gone = removed[row.playlistId], gone > ticket.started { continue }
+
             let held = rows[row.playlistId]
 
             if let held, held.row.updatedAt > row.updatedAt {
@@ -113,6 +122,10 @@ public struct HeldPlaylists: Sendable {
         }
 
         rows = merged
+
+        // A removal older than this read is past: if the read still lists the playlist, the store
+        // holds it again, because another device wrote it after the removal.
+        removed = removed.filter { $0.value > ticket.started }
 
         switch answer {
         case .cut(let sent):
@@ -169,10 +182,30 @@ public struct HeldPlaylists: Sendable {
 
         guard let row, shelf.isOwn else { return true }
 
+        // A write that ends after this device removed the playlist (an add sent just before the
+        // delete) wrote a row the store no longer holds.
+        guard removed[row.playlistId] == nil else { return true }
+
         clock += 1
         if let held = rows[row.playlistId], held.row.updatedAt > row.updatedAt { return true }
         rows[row.playlistId] = Known(row: row, learned: clock)
 
+        return true
+    }
+
+    /// Ends a removal that succeeded. The playlist goes at once, and a read that started before
+    /// now does not bring it back.
+    ///
+    /// - Returns: false when the ticket came from another value. Nothing is changed then.
+    @discardableResult
+    public mutating func end(_ ticket: WriteTicket, removed id: String) -> Bool {
+        guard ticket.era == era else { return false }
+        guard shelf.isOwn else { return true }
+
+        clock += 1
+        rows[id] = nil
+        writing[id] = nil
+        removed[id] = clock
         return true
     }
 

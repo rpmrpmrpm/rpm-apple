@@ -14,6 +14,7 @@ private actor Store: PlaylistStore {
 
     private(set) var writes: [(playlist: CloudPlaylist, ifUnchangedSince: Int64?)] = []
     private(set) var listings = 0
+    private(set) var deletes: [String] = []
 
     init(_ held: [CloudPlaylist] = []) { self.held = held }
 
@@ -31,6 +32,11 @@ private actor Store: PlaylistStore {
         if !refusals.isEmpty, let clash = refusals.removeFirst() { throw clash }
 
         return 12_345
+    }
+
+    func deletePlaylist(id: String) async throws {
+        deletes.append(id)
+        held.removeAll { $0.playlistId == id }
     }
 }
 
@@ -355,4 +361,90 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
     #expect(held.copies(of: track("a")) == 2)
     #expect(held.copies(of: track("b")) == 1)
     #expect(held.copies(of: track("c")) == 0)
+}
+
+// ── renaming ──
+
+@Test func aRenameKeepsTheStoresSongsAndFolderAndSendsTheNewName() async throws {
+    let store = Store([list("p1", "Old", ["a", "b", "c"], folder: ["Mixes"], stamp: 900)])
+
+    // The page still shows an older order, without "c". The rename writes the store's songs.
+    let row = try await writer(store).rename(set("p1", "Old", [track("a"), track("b")]),
+                                             to: "  Sunday  ")
+
+    let writes = await store.writes
+    #expect(writes.count == 1)
+    #expect(writes[0].playlist.name == "Sunday")
+    #expect(writes[0].playlist.trackIds == ["a", "b", "c"])
+    #expect(writes[0].playlist.folderChain == ["Mixes"])
+    #expect(writes[0].ifUnchangedSince == 900)
+    #expect(row.name == "Sunday")
+    #expect(row.updatedAt == 12_345)
+}
+
+/// Another device changed the songs first. The songs are merged, and the new name is kept: a
+/// merge that took the store's name would undo the rename.
+@Test func aRenameThatMeetsAnotherDevicesChangeKeepsItsNewName() async throws {
+    let store = Store([list("p1", "Old", ["a", "b"], stamp: 900)])
+    await store.refuse(with: [PlaylistConflict(
+        stored: list("p1", "Old", ["a", "b", "d"], stamp: 950), name: "Old")])
+
+    let row = try await writer(store).rename(set("p1", "Old", [track("a"), track("b")]),
+                                             to: "New")
+
+    let writes = await store.writes
+    #expect(writes.count == 2)
+    #expect(writes[1].playlist.name == "New")
+    #expect(writes[1].playlist.trackIds == ["a", "b", "d"])
+    #expect(writes[1].ifUnchangedSince == 950)
+    #expect(row.name == "New")
+}
+
+@Test func aRenameToTheSameNameWritesNothing() async throws {
+    let store = Store([list("p1", "Same", ["a"], stamp: 900)])
+    let row = try await writer(store).rename(set("p1", "Same", [track("a")]), to: "Same ")
+
+    #expect(await store.writes.isEmpty)
+    #expect(row.updatedAt == 900)
+}
+
+@Test func aBlankNameIsRefusedBeforeAnythingIsAsked() async {
+    let store = Store([list("p1", "Old", ["a"])])
+    await #expect(throws: PlaylistWriteError.nameless) {
+        try await writer(store).rename(set("p1", "Old", [track("a")]), to: "   ")
+    }
+    #expect(await store.listings == 0)
+}
+
+@Test func aBorrowedOrGeneratedListIsNotRenamed() async {
+    let store = Store([list("p1", "Old", ["a"])])
+    await #expect(throws: PlaylistWriteError.notYours) {
+        try await writer(store).rename(set("p1", "Old", [track("a")], shelf: .of("someone")),
+                                       to: "New")
+    }
+    await #expect(throws: PlaylistWriteError.notYoursToCut) {
+        try await writer(store).rename(set("p1", "Old", [track("a")], origin: .generated),
+                                       to: "New")
+    }
+    #expect(await store.writes.isEmpty)
+}
+
+// ── removing ──
+
+@Test func aRemovalNamesTheList() async throws {
+    let store = Store([list("p1", "Old", ["a"])])
+    try await writer(store).delete(set("p1", "Old", [track("a")]))
+
+    #expect(await store.deletes == ["p1"])
+}
+
+@Test func aBorrowedOrGeneratedListIsNotRemoved() async {
+    let store = Store([list("p1", "Old", ["a"])])
+    await #expect(throws: PlaylistWriteError.notYours) {
+        try await writer(store).delete(set("p1", "Old", [track("a")], shelf: .of("someone")))
+    }
+    await #expect(throws: PlaylistWriteError.notYoursToCut) {
+        try await writer(store).delete(set("p1", "Old", [track("a")], origin: .generated))
+    }
+    #expect(await store.deletes.isEmpty)
 }

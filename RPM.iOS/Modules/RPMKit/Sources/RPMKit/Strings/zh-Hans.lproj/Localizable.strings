@@ -1146,7 +1146,7 @@
 /* Header/tab label for the playlists pane, and the deck pill that opens it. */
 "Playlists_Title" = "播放列表";
 
-/* Tooltip on the button in the automatic playlist header that builds a different selection of songs. */
+/* Tooltip on the button in the automatic playlist header that builds a different selection of songs. Also the item in the menu of an iPhone page for such a list. */
 "Playlists_GenerateNew" = "生成新列表";
 
 /* Shown under the spinner while an automatic playlist is being generated again. */
@@ -4317,7 +4317,7 @@
 /* Key in the drawer behind a track row on the iPhone: opens the playlist picker. */
 "Rpm_Track_AddToPlaylist" = "加入播放列表";
 
-/* Plus button in the header of an open playlist on the iPhone: opens the song picker to add more. */
+/* Item in the menu at the top right of an open playlist on the iPhone: opens the song picker to add songs to the playlist. */
 "Rpm_Playlist_AddSongs" = "添加歌曲";
 
 /* Button in the iPhone playlist picker that files the song in the playlist chosen. */
@@ -4419,6 +4419,27 @@
 /* Error on the iPhone after dragging playlist rows into a new order. */
 "Rpm_Playlists_OrderFailed" = "无法保存该顺序。";
 
+/* iPhone: item in the menu at the top right of a playlist page, and the title of the sheet it opens, where the playlist's name is changed. */
+"Rpm_PlaylistMenu_Edit" = "编辑播放列表";
+
+/* iPhone: item in the menu at the top right of a playlist page, and the key on the confirmation it opens. */
+"Rpm_PlaylistMenu_Delete" = "删除播放列表";
+
+/* iPhone: title of the confirmation before a playlist is deleted. {0} is the playlist's name. */
+"Rpm_PlaylistDelete_Title" = "删除“%1$@”？";
+
+/* iPhone: text of the confirmation before a playlist is deleted. */
+"Rpm_PlaylistDelete_Body" = "播放列表将从云端移除。歌曲仍保留在你的收藏中，已有此播放列表的电脑会保留它的副本。";
+
+/* Error on the iPhone when changing a playlist's name fails and there is no reason to give. */
+"Rpm_Playlists_RenameFailed" = "无法重命名播放列表。";
+
+/* Error on the iPhone when deleting a playlist fails and there is no reason to give. */
+"Rpm_Playlists_DeleteFailed" = "无法删除播放列表。";
+
+/* iPhone: a playlist rename was refused because the name was empty. */
+"Rpm_PlaylistWrite_NoName" = "请输入播放列表名称。";
+
 /* Playlist total length between one and two hours. {0} = minutes. */
 "Rpm_Playlists_LenHourOne" = "1 小时 %1$@ 分钟";
 
@@ -4464,7 +4485,7 @@
 /* Key on the iPhone queue panel, and in the band of the desktop Now playing card, that puts the tracks still to come in another order. */
 "Rpm_Queue_Shuffle" = "随机播放";
 
-/* Key on the iPhone queue panel and Now playing page, and in the band of the desktop Now playing card, that turns row dragging on. */
+/* Key on the iPhone queue panel and Now playing page, item in the menu of an iPhone playlist page, and in the band of the desktop Now playing card, that turns row dragging on. */
 "Rpm_Queue_Rearrange" = "重新排序";
 
 /* Line under the iPhone library search results when the list is capped. {0} is the number shown. */

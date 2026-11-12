@@ -1048,6 +1048,14 @@ final class AppModel {
         await session.reorderPlaylist(set, from: from, to: to)
     }
 
+    func renamePlaylist(_ set: PlaylistSet, to name: String) async -> String? {
+        await session.renamePlaylist(set, to: name)
+    }
+
+    func deletePlaylist(_ set: PlaylistSet) async -> String? {
+        await session.deletePlaylist(set)
+    }
+
     // ── the queue, which is the one list this phone owns ──
 
     func removeFromQueue(_ rows: IndexSet) {

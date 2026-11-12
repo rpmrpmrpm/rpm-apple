@@ -7,15 +7,38 @@ import RPMAudio
 import RPMArt
 import RPMStages
 
+/// What the menu at the top right of a playlist page offers.
+///
+/// **The caller states it, and there is no default.** Which items a list may have depends on whose
+/// list it is and who made it, and a default would put Delete on a list that cannot be deleted.
+public enum PlaylistMenu {
+    /// No menu: the queue, the favourite songs, and another account's playlist, where none of the
+    /// items could be used.
+    case none
+
+    /// A playlist on this account. Add songs and Rearrange follow the page's own `adding` and
+    /// `canReorder`, which can be off for a list that holds songs this phone cannot see.
+    ///
+    /// - onRename: gives the list another name. Answers why it failed, or nil.
+    /// - onDelete: deletes the list. Answers why it failed, or nil.
+    case own(onRename: (String) async -> String?, onDelete: () async -> String?)
+
+    /// A list rpm made from the collection. Its songs and its name are rpm's, so adding,
+    /// rearranging, editing and deleting are shown greyed. `onNewList` shows another selection of
+    /// the same list, and is nil when the computer sent no other selection.
+    case generated(onNewList: (() -> Void)?)
+}
+
 /// One list of songs: a stored playlist, the favourite songs, or the queue.
 ///
 /// The layout is the same as ``AlbumPage``: the list's picture large and centred, the name, how
-/// much is in the list, and the keys. All of these scroll away with the songs, and the back key
-/// floats over the page. The page background is the list's own cover, blurred.
+/// much is in the list, the line about it, and the round keys. All of these scroll away with the
+/// songs. The back key floats over the page at the top left, and the list's menu
+/// (``PlaylistMenu``) at the top right, where a record has its heart.
 ///
-/// A stored playlist has Play and the round keys beside it. **The queue has no Play**, because
-/// what is in it is already playing, or there is nothing to play. Its row has only the round
-/// keys.
+/// A playlist has Play in the middle and Shuffle beside it, as a record does. **The queue has no
+/// Play**, because what is in it is already playing, or there is nothing to play. Its row has
+/// Shuffle and Rearrange.
 public struct PlaylistPage: View {
     private let title: String
     private let tracks: [CloudTrack]
@@ -66,14 +89,14 @@ public struct PlaylistPage: View {
     private let onMove: (Int, Int) -> Void
     private let onBack: () -> Void
 
-    /// Shows another selection of this list's songs, or nil when there is none.
+    /// The menu at the top right. See ``PlaylistMenu``.
     ///
-    /// **Only a list that the computer generated has one**, and only while the run that the
-    /// computer sent has more songs than are on the screen. This code does not cut the list. The
-    /// computer sends enough songs for several lists, and this closure steps to the next slice,
-    /// so the key responds in the same frame and works without a network signal. Nil removes the
-    /// key, so there is no key that does nothing.
-    private let onNewList: (() -> Void)?
+    /// A generated list's new selection is in it. **Only a list that the computer generated has
+    /// one**, and only while the run that the computer sent has more songs than are on the
+    /// screen. This code does not cut the list. The computer sends enough songs for several
+    /// lists, and the closure steps to the next slice, so it answers in the same frame and works
+    /// without a network signal.
+    private let menu: PlaylistMenu
 
     /// Adds songs to the playlist. Returns an error message when it failed, and nil when done.
     private let onAdd: (PlaylistSet, [CloudTrack]) async -> String?
@@ -119,7 +142,7 @@ public struct PlaylistPage: View {
                 onRemove: @escaping (IndexSet) -> Void,
                 onMove: @escaping (Int, Int) -> Void,
                 onBack: @escaping () -> Void,
-                onNewList: (() -> Void)? = nil,
+                menu: PlaylistMenu,
                 onAdd: @escaping (PlaylistSet, [CloudTrack]) async -> String? = { _, _ in nil },
                 picture: ListPicture? = nil,
                 showing: PlaylistSet? = nil,
@@ -143,7 +166,7 @@ public struct PlaylistPage: View {
         self.onRemove = onRemove
         self.onMove = onMove
         self.onBack = onBack
-        self.onNewList = onNewList
+        self.menu = menu
         self.onAdd = onAdd
         self.picture = picture
         self.showing = showing
@@ -165,6 +188,15 @@ public struct PlaylistPage: View {
     /// grips only when the user turns rearranging on. That is acceptable, because the
     /// framework's gesture handling is better than a custom drag inside a scrolling list.
     @State private var rearranging = false
+
+    /// Whether the sheet that changes the list's name is shown.
+    @State private var naming = false
+
+    /// Whether the question before a delete is shown.
+    @State private var askingDelete = false
+
+    /// Why the last change from the menu failed, shown in an alert until it is closed.
+    @State private var trouble: String?
 
     /// The picture used for the whole page background: **this list's own cover and nothing
     /// else.**
@@ -243,6 +275,12 @@ public struct PlaylistPage: View {
         .onPreferenceChange(PageWidth.self) { width = $0 }
         .background { backdrop }
         .rpmFloatingBack(RPMBackKey(label: Loc.get("AddMusic_Back"), action: onBack))
+        // The menu, across from the back key and in the same glass, where a record has its heart.
+        .overlay(alignment: .topTrailing) {
+            corner
+                .frame(height: RPMLayout.backRow)
+                .padding(.trailing, RPMLayout.margin)
+        }
         .environment(\.editMode, .constant(rearranging ? .active : .inactive))
         .overlay {
             if picking, let set = adding {
@@ -251,10 +289,128 @@ public struct PlaylistPage: View {
                     commit: { _, tracks in await onAdd(set, tracks) },
                     onClose: { picking = false })
                     .transition(.opacity)
+            } else if naming, case .own(let onRename, _) = menu {
+                PlaylistNameSheet(name: title, onSave: onRename, onClose: { naming = false })
+                    .transition(.opacity)
             }
         }
         .animation(.easeOut(duration: 0.18), value: picking)
+        .animation(.easeOut(duration: 0.18), value: naming)
+        .confirmationDialog(Loc.get("Rpm_PlaylistDelete_Title", title), isPresented: $askingDelete,
+                            titleVisibility: .visible) {
+            Button(Loc.get("Rpm_PlaylistMenu_Delete"), role: .destructive) { delete() }
+            Button(Loc.get("Common_Cancel"), role: .cancel) {}
+        } message: {
+            Text(Loc.get("Rpm_PlaylistDelete_Body"))
+        }
+        .alert(trouble ?? "", isPresented: Binding(get: { trouble != nil },
+                                                   set: { if !$0 { trouble = nil } })) {
+            Button(Loc.get("Common_OK"), role: .cancel) {}
+        }
         .task(id: title) { await dress() }
+    }
+
+    // ── the menu ──
+
+    /// The key at the top right: Done while the rows are being rearranged, so the way out of
+    /// that mode is where the way in was, and the menu otherwise. Nothing for a list with no menu.
+    @ViewBuilder
+    private var corner: some View {
+        if rearranging && !isQueue {
+            Button {
+                Haptics.pick()
+                withAnimation { rearranging = false }
+            } label: {
+                Text(Glyph.check).font(RPMFont.icon(15)).foregroundStyle(RPMInk.white(0xE6 / 255))
+            }
+            .buttonStyle(RPMGlassKey(edge: 40))
+            .accessibilityLabel(Loc.get("CloudChip_StageDone"))
+        } else if hasMenu {
+            Menu {
+                menuItems
+            } label: {
+                Text(Glyph.menu)
+                    .font(RPMFont.icon(15))
+                    .foregroundStyle(RPMInk.white(0xE6 / 255))
+                    // The glass that ``RPMGlassKey`` draws, on the label: a menu is not a button
+                    // and takes no button style.
+                    .frame(width: 40, height: 40)
+                    .contentShape(Circle())
+                    .rpmGlass(Circle())
+            }
+            .accessibilityLabel(Loc.get("Common_MoreOptions"))
+        }
+    }
+
+    private var hasMenu: Bool {
+        if case .none = menu { return false }
+        return true
+    }
+
+    /// The items. A playlist on this account has the four that change it; a generated list has
+    /// its new selection first, and the four greyed, so the menu has the same shape on every list.
+    @ViewBuilder
+    private var menuItems: some View {
+        switch menu {
+        case .none:
+            EmptyView()
+
+        case .own:
+            changes(open: true)
+
+        case .generated(let onNewList):
+            Button {
+                Haptics.pick()
+                onNewList?()
+            } label: {
+                Label(Loc.get("Playlists_GenerateNew"), systemImage: "arrow.triangle.2.circlepath")
+            }
+            .disabled(onNewList == nil)
+
+            changes(open: false)
+        }
+    }
+
+    /// Add songs, Rearrange, Edit and Delete. `open` is false on a list rpm made, where all four
+    /// are greyed.
+    @ViewBuilder
+    private func changes(open: Bool) -> some View {
+        Button { picking = true } label: {
+            Label(Loc.get("Rpm_Playlist_AddSongs"), systemImage: "plus")
+        }
+        .disabled(!open || adding == nil)
+
+        Button {
+            Haptics.pick()
+            withAnimation { rearranging = true }
+        } label: {
+            Label(Loc.get("Rpm_Queue_Rearrange"), systemImage: "arrow.up.arrow.down")
+        }
+        .disabled(!open || !canReorder || rows.count < 2)
+
+        Button { naming = true } label: {
+            Label(Loc.get("Rpm_PlaylistMenu_Edit"), systemImage: "pencil")
+        }
+        .disabled(!open)
+
+        Button(role: .destructive) { askingDelete = true } label: {
+            Label(Loc.get("Rpm_PlaylistMenu_Delete"), systemImage: "trash")
+        }
+        .disabled(!open)
+    }
+
+    /// Deletes the list, then leaves the page. On a failure the page stays and says why.
+    private func delete() {
+        guard case .own(_, let onDelete) = menu else { return }
+
+        Task {
+            if let failed = await onDelete() {
+                trouble = failed
+            } else {
+                Haptics.commit()
+                onBack()
+            }
+        }
     }
 
     /// The page background: **the list's room, moving**. It fills the whole page, as the album
@@ -378,16 +534,17 @@ public struct PlaylistPage: View {
 
             // What the list is and who is on it: the line under the name in the desktop app. It is
             // placed where the album page puts its description, above the keys, in the same font.
+            // Centred, as the album page centres the text about a record.
             if let about {
                 Text(about)
                     .font(AboutText.font)
                     .foregroundStyle(AboutText.ink)
                     .lineSpacing(AboutText.lineSpacing)
-                    .multilineTextAlignment(.leading)
+                    .multilineTextAlignment(.center)
                     // One more line than the desktop app allows, because the column is narrower: a
                     // mood list's sentence and its names need about three lines on a phone.
                     .lineLimit(blurb == nil ? 2 : 3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 4)
             }
 
@@ -422,69 +579,64 @@ public struct PlaylistPage: View {
                        framed: FramedList.of(showing), roomDrifts: phase == .active)
     }
 
-    /// Play, and the keys that always apply, as in the album page. **The queue has no Play**,
-    /// because what is in it is already playing, or there is nothing to play. Its row has only
-    /// the small keys, centred.
+    /// The round keys, as on the album page: Shuffle, then Play in the middle in a glass circle.
+    /// The place on Play's other side is kept empty, so Play stays in the middle of the page.
+    ///
+    /// **The queue has no Play**, because what is in it is already playing, or there is nothing
+    /// to play. It has Shuffle and Rearrange; a playlist has Rearrange in its menu.
     ///
     /// The desktop app has one more key: it sends the whole set to the DJ and plays it as one run.
     /// It is not here because the mixer is not available in this app, and a key that does nothing
     /// is worse than no key.
     private var keys: some View {
-        HStack(spacing: 10) {
-            if !isQueue {
-                Button { onPlay(rows.first?.at ?? 0, .list) } label: {
-                    HStack(spacing: 10) {
-                        Text(Glyph.play).font(RPMFont.icon(15))
-                        Text(Loc.get("Rpm_Playlist_PlayList")).font(RPMFont.display(17))
+        HStack(spacing: 12) {
+            roundKey(Glyph.shuffle, Loc.get("AlbumMenu_Shuffle"), action: onShuffle)
+                .disabled(empty)
+                .opacity(empty ? 0.4 : 1)
+
+            if isQueue {
+                // Shown only when there is something to rearrange. While rearranging, the key
+                // shows a tick to leave the mode.
+                if canReorder && rows.count > 1 {
+                    roundKey(rearranging ? Glyph.check : Glyph.grip,
+                             rearranging ? Loc.get("CloudChip_StageDone")
+                                         : Loc.get("Rpm_Queue_Rearrange")) {
+                        Haptics.pick()
+                        withAnimation { rearranging.toggle() }
                     }
                 }
-                .buttonStyle(RPMGlassButton(.primary, radius: 14, height: 50))
-                .disabled(empty)
-            }
-
-            // Another selection of the same list, when the computer sent enough songs to make
-            // one. It comes before shuffle, as in the desktop app: first what the list IS, then
-            // what to do with it.
-            if let onNewList {
-                key(Glyph.refresh, Loc.get("Playlists_GenerateNew")) {
-                    Haptics.pick()
-                    onNewList()
+            } else {
+                Button { onPlay(rows.first?.at ?? 0, .list) } label: {
+                    // The triangle's weight is left of its middle, so it is moved right a little
+                    // to look centred in the circle.
+                    Text(Glyph.play)
+                        .font(RPMFont.icon(18))
+                        .foregroundStyle(RPMInk.white(0xF5 / 255))
+                        .offset(x: 2)
                 }
-            }
-
-            key(Glyph.shuffle, Loc.get("AlbumMenu_Shuffle"), action: onShuffle)
+                .buttonStyle(RPMGlassKey(edge: 50))
+                .accessibilityLabel(Loc.get("Rpm_Playlist_PlayList"))
                 .disabled(empty)
+                .opacity(empty ? 0.4 : 1)
 
-            // Add more songs to this list. It opens the same panel as the plus key on the tab,
-            // but the name is already known.
-            if adding != nil {
-                key(Glyph.plus, Loc.get("Rpm_Playlist_AddSongs")) { picking = true }
-            }
-
-            // Shown only when there is something to rearrange, and only where this phone may
-            // write the order. While rearranging, the key shows a tick to leave the mode. It does
-            // not show a play mark, because a play glyph would mean "play this", which this key
-            // does not do.
-            if canReorder && rows.count > 1 {
-                key(rearranging ? "\u{f00c}" : Glyph.grip,
-                    rearranging ? Loc.get("CloudChip_StageDone") : Loc.get("Rpm_Queue_Rearrange")) {
-                    Haptics.pick()
-                    withAnimation { rearranging.toggle() }
-                }
+                Color.clear.frame(width: 56, height: 50)
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(.top, 6)
     }
 
-    /// One of the keys beside Play: a glass key in a rounded rectangle, as the Android phone app
-    /// draws them on a playlist.
-    private func key(_ glyph: String, _ said: String,
-                     action: @escaping () -> Void) -> some View {
+    /// A key beside Play: the glyph alone, as the album page draws Shuffle.
+    private func roundKey(_ glyph: String, _ said: String,
+                          action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(glyph).font(RPMFont.icon(17))
+            Text(glyph)
+                .font(RPMFont.icon(17))
+                .foregroundStyle(RPMInk.white(0xF0 / 255))
+                .frame(width: 56, height: 50)
+                .contentShape(Rectangle())
         }
-        .buttonStyle(RPMGlassButton(.ghost, radius: 14, height: 50))
-        .frame(width: 56)
+        .buttonStyle(.plain)
         .accessibilityLabel(said)
     }
 

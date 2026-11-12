@@ -1035,6 +1035,8 @@ struct RootView: View {
                          onRemove: { model.removeFromQueue($0) },
                          onMove: { from, to in model.player.move(from: from, to: to) },
                          onBack: back,
+                         // The queue is not a playlist: nothing in the menu applies to it.
+                         menu: .none,
                          isTrackMarked: { model.isTrackMarked($0) },
                          isTrackMine: { model.isTrackMine($0) },
                          onMarkTrack: { track, on in Task { await model.mark(track, on) } },
@@ -1045,26 +1047,24 @@ struct RootView: View {
                          upNext: .itIsTheQueue)
 
         case .favorites:
-            list(Loc.get("Playlists_FavoriteTracks"), model.favoriteTracks, missing: 0, back: back)
+            // The marked songs: a list that marking a song changes, so it has no menu.
+            list(Loc.get("Playlists_FavoriteTracks"), model.favoriteTracks, missing: 0,
+                 adding: nil, picture: nil, showing: nil, menu: .none, back: back)
 
         case .playlist(let id):
             if let set = model.playlists.first(where: { $0.id == id }) {
-                // **Nothing can be added to a list that the computer generated.** Its id does not
-                // exist in the store, and the computer replaces the whole list at its next run, so
-                // a song added to it would be lost. Nil here removes the plus button and the
-                // grips. See `PlaylistSet.isWritable`.
+                // **Nothing can be added to a list that the computer generated, or to another
+                // account's playlist.** A generated list's id does not exist in the store, and the
+                // computer replaces the whole list at its next run, so a song added to it would be
+                // lost. A borrowed playlist is written to its owner's account. Nil here greys Add
+                // songs and Rearrange. See `PlaylistSet.isWritable`.
                 list(set.name, set.tracks, missing: set.missing,
-                     adding: set.origin == .stored ? set : nil,
+                     adding: set.isWritable ? set : nil,
                      picture: set.picture,
                      // The list itself, for the frame on the cover of a generated list. It is not
                      // the same as `adding`, which is nil for exactly the lists that have a frame.
                      showing: set,
-                     // Another selection of the same list, only where the computer sent enough
-                     // tracks to make one. A stored playlist has no such selection, because it
-                     // holds exactly the tracks that the user added.
-                     newList: model.hasAnotherList(set)
-                         ? { model.newGeneratedList(set) }
-                         : nil,
+                     menu: menu(for: set),
                      back: back)
             } else {
                 // The playlist was removed while the page was open. There is nothing to draw
@@ -1074,13 +1074,33 @@ struct RootView: View {
         }
     }
 
+    /// What the menu of a playlist page offers. See ``PlaylistMenu``.
+    private func menu(for set: PlaylistSet) -> PlaylistMenu {
+        if set.isWritable {
+            return .own(onRename: { await model.renamePlaylist(set, to: $0) },
+                        onDelete: { await model.deletePlaylist(set) })
+        }
+
+        if set.origin == .generated {
+            // Another selection of the same list, only where the computer sent enough tracks to
+            // make one. A stored playlist has no such selection, because it holds exactly the
+            // tracks that the user added.
+            return .generated(onNewList: model.hasAnotherList(set)
+                ? { model.newGeneratedList(set) }
+                : nil)
+        }
+
+        // Another account's playlist: every item would write to their account.
+        return .none
+    }
+
     /// A list whose order this phone does not control: a stored playlist, or the marked songs.
     /// Songs can still be added to a stored playlist, which is what `adding` is for.
     private func list(_ title: String, _ tracks: [CloudTrack], missing: Int,
-                      adding: PlaylistSet? = nil,
-                      picture: ListPicture? = nil,
-                      showing: PlaylistSet? = nil,
-                      newList: (() -> Void)? = nil,
+                      adding: PlaylistSet?,
+                      picture: ListPicture?,
+                      showing: PlaylistSet?,
+                      menu: PlaylistMenu,
                       back: @escaping () -> Void) -> some View {
         PlaylistPage(title: title, tracks: tracks, missing: missing,
                      covers: covers, isQueue: false, look: .whole,
@@ -1099,7 +1119,7 @@ struct RootView: View {
                          Task { await model.reorderPlaylist(set, from: from, to: to) }
                      },
                      onBack: back,
-                     onNewList: newList,
+                     menu: menu,
                      // A batch chosen from the albums, so tracks that are already in the list
                      // are left as they are. A user who chooses twelve tracks does not want a
                      // second copy of the three that are already there. A second copy is offered

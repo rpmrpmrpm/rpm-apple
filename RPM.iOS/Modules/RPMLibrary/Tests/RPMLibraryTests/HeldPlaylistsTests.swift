@@ -234,4 +234,66 @@ struct HeldPlaylistsTests {
 
         #expect(shown(held).isEmpty)
     }
+
+    // ── a removal ──
+
+    @Test func aRemovedPlaylistGoesAtOnce() {
+        var held = HeldPlaylists(shelf: .own)
+        readNow(&held, rows: [row("p", ["a"], stamp: 100), row("q", ["b"], stamp: 100)], cut: .none)
+
+        let ticket = held.startWrite()
+        let ended = held.end(ticket, removed: "p")
+        #expect(ended)
+
+        #expect(shown(held) == ["q": ["b"]])
+    }
+
+    /// The read was answered before the store dropped the row, so it still lists it. It must not
+    /// bring the playlist back.
+    @Test func aReadStartedBeforeTheRemovalDoesNotBringItBack() {
+        var held = HeldPlaylists(shelf: .own)
+        readNow(&held, rows: [row("p", ["a"], stamp: 100)], cut: .none)
+
+        let read = held.startRead()
+        held.end(held.startWrite(), removed: "p")
+        _ = held.land(read, rows: [row("p", ["a"], stamp: 100)], cut: .none)
+
+        #expect(shown(held).isEmpty)
+    }
+
+    /// A read that started after the removal and still lists the playlist: another device wrote
+    /// it again, and the store's answer stands.
+    @Test func aReadStartedAfterTheRemovalShowsWhatTheStoreHolds() {
+        var held = HeldPlaylists(shelf: .own)
+        readNow(&held, rows: [row("p", ["a"], stamp: 100)], cut: .none)
+
+        held.end(held.startWrite(), removed: "p")
+        readNow(&held, rows: [row("p", ["a", "b"], stamp: 300)], cut: .none)
+
+        #expect(shown(held) == ["p": ["a", "b"]])
+    }
+
+    /// An add sent just before the delete, ending after it, does not bring the playlist back.
+    @Test func aWriteThatEndsAfterTheRemovalDoesNotBringItBack() {
+        var held = HeldPlaylists(shelf: .own)
+        readNow(&held, rows: [row("p", ["a"], stamp: 100)], cut: .none)
+
+        let add = held.startWrite()
+        held.end(held.startWrite(), removed: "p")
+        held.end(add, wrote: row("p", ["a", "b"], stamp: 200))
+
+        #expect(shown(held).isEmpty)
+    }
+
+    @Test func aRemovalFromAnotherValueChangesNothing() {
+        var old = HeldPlaylists(shelf: .own)
+        let ticket = old.startWrite()
+
+        var held = HeldPlaylists(shelf: .own)
+        readNow(&held, rows: [row("p", ["a"], stamp: 100)], cut: .none)
+
+        let ended = held.end(ticket, removed: "p")
+        #expect(!ended)
+        #expect(shown(held) == ["p": ["a"]])
+    }
 }
