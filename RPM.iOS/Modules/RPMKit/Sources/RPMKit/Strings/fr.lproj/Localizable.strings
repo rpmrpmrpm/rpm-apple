@@ -6,10 +6,10 @@
 /* Tooltip on the album wall's sort button. */
 "AlbumSort_Tooltip" = "Trier les albums";
 
-/* Album wall sort order: by album artist, then album name. */
+/* Album wall sort order, and iPhone library list view sort order: by album artist, then album name. */
 "AlbumSort_Artist" = "Par artiste";
 
-/* Album wall sort order: by the record's own name. */
+/* Album wall sort order, and iPhone library list view sort order: by the record's own name. */
 "AlbumSort_Album" = "Par album";
 
 /* Album wall sort order: newest in the library first. */
@@ -20,6 +20,9 @@
 
 /* Album wall sort order: most listened to first. */
 "AlbumSort_Plays" = "Les plus écoutés";
+
+/* iPhone library list view sort order: every song as its own row, by its title. */
+"AlbumSort_Track" = "Par titre de morceau";
 
 /* Tooltip on the play button in an open album band (album grid). */
 "AlbumGrid_PlayAll" = "Lire l'album";
@@ -516,7 +519,7 @@
 /* Status line after a library sync moved several hand-copied files into the inbox folder. {1} is the inbox folder name, which is not translated. */
 "Library_Quarantined" = "%1$@ fichiers ont été copiés dans votre collection. Ils se trouvent maintenant dans « %2$@ », prêts à être importés.";
 
-/* Tooltip on the grid button of the library view switch (wall of album covers). */
+/* Tooltip on the grid button of the library view switch (wall of album covers), and the same choice in the iPhone library's view menu. */
 "Library_ViewGrid" = "Grille d'albums";
 
 /* Shown under the login dialog title when sign-in gates an action (recognize / split). */
@@ -1961,10 +1964,10 @@
 /* Empty state on the iPhone Now playing queue. */
 "Rpm_Queue_Empty" = "La file est vide. Lancez un morceau et il apparaîtra ici.";
 
-/* iPhone library header button: choose the order the album wall is in. */
+/* iPhone library header button: choose the order the album grid or the album list is in. */
 "Rpm_Library_Sort" = "Trier";
 
-/* iPhone library header button: switch between the albums wall and the artists wall. */
+/* iPhone library header button: switch between views, such as the album grid and the album list, or the playlists' covers and rows. */
 "Rpm_Library_View" = "Affichage";
 
 /* iPhone playlist page: the main button that plays the whole playlist from the top. */
@@ -2674,6 +2677,8 @@
 
 /* Cloud failure reason: anything not recognised, usually a network problem. */
 "Cloud_FailUnknown" = "Échec de l'envoi";
+
+/* Library view switch: the records as a list, each with its songs. Also the choice in the iPhone library's view menu. */
 "Library_ViewAlbums" = "Liste d'albums";
 "Library_ViewTable" = "Tableau de données";
 "Library_SongsAndTime" = "%1$@ titres, %2$@ minutes";

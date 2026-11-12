@@ -146,6 +146,18 @@ public struct LibraryPage: View {
     /// not have to choose it again every time the app opens.
     @AppStorage("library.order") private var order: AlbumOrdering = .artist
 
+    /// Whether the records are a grid of covers or a list with their songs, saved between launches.
+    /// See ``LibraryLayout``.
+    @AppStorage("library.layout") private var layout: LibraryLayout = .grid
+
+    /// The order of the list. It is kept apart from the grid's ``order``, because the two offer
+    /// different orders: the list can be ordered by song title, and the grid cannot.
+    @AppStorage("library.listOrder") private var listOrder: ListOrdering = .artist
+
+    /// The list as it was last built, and what it was built from. It is built away from the main
+    /// thread, because the order by song title reads every song in the library. See ``listAsk``.
+    @State private var listing: (ask: ListAsk, built: AlbumListing)?
+
     /// The songs that the search found.
     ///
     /// **They are stored and not computed in `body`.** A search walks every track in the
@@ -377,7 +389,8 @@ public struct LibraryPage: View {
         .padding(.bottom, 10)
     }
 
-    /// The keys: search and sort.
+    /// The keys: search, the view, and the order. The view key is the one the playlists tab has,
+    /// in the same place beside search.
     private var keys: some View {
         HStack(spacing: 0) {
             key(Glyph.search) {
@@ -389,11 +402,33 @@ public struct LibraryPage: View {
             .accessibilityLabel(Loc.get("Lookup_SearchButton"))
 
             Menu {
-                Picker(Loc.get("Rpm_Library_Sort"), selection: $order) {
-                    Text(Loc.get("AlbumSort_Artist")).tag(AlbumOrdering.artist)
-                    Text(Loc.get("AlbumSort_Album")).tag(AlbumOrdering.album)
-                    Text(Loc.get("AlbumSort_Added")).tag(AlbumOrdering.added)
-                    Text(Loc.get("AlbumSort_Year")).tag(AlbumOrdering.year)
+                Picker(Loc.get("Rpm_Library_View"), selection: $layout) {
+                    ForEach(LibraryLayout.allCases, id: \.self) { choice in
+                        Text(choice.label).tag(choice)
+                    }
+                }
+            } label: {
+                glyph(layout.mark)
+            }
+            .accessibilityLabel(Loc.get("Rpm_Library_View"))
+
+            // Each view has its own orders: the list can be ordered by song title, and only the
+            // grid by date added or by year.
+            Menu {
+                switch layout {
+                case .grid:
+                    Picker(Loc.get("Rpm_Library_Sort"), selection: $order) {
+                        Text(Loc.get("AlbumSort_Artist")).tag(AlbumOrdering.artist)
+                        Text(Loc.get("AlbumSort_Album")).tag(AlbumOrdering.album)
+                        Text(Loc.get("AlbumSort_Added")).tag(AlbumOrdering.added)
+                        Text(Loc.get("AlbumSort_Year")).tag(AlbumOrdering.year)
+                    }
+                case .list:
+                    Picker(Loc.get("Rpm_Library_Sort"), selection: $listOrder) {
+                        Text(Loc.get("AlbumSort_Artist")).tag(ListOrdering.artist)
+                        Text(Loc.get("AlbumSort_Album")).tag(ListOrdering.album)
+                        Text(Loc.get("AlbumSort_Track")).tag(ListOrdering.track)
+                    }
                 }
             } label: {
                 glyph(Glyph.sort)
@@ -448,8 +483,58 @@ public struct LibraryPage: View {
         if albums.isEmpty {
             empty
         } else {
-            records(ordered)
-                .refreshable { await onRefresh() }
+            switch layout {
+            case .grid:
+                records(ordered)
+                    .refreshable { await onRefresh() }
+            case .list:
+                list
+                    .refreshable { await onRefresh() }
+            }
+        }
+    }
+
+    // ── the list ──
+
+    /// What the list is built from: the order, and the library as a fingerprint of its records and
+    /// their songs. A library that changes builds the list again.
+    struct ListAsk: Equatable {
+        let order: ListOrdering
+        let library: Int
+    }
+
+    private var listAsk: ListAsk {
+        var library = Hasher()
+        for album in albums {
+            library.combine(album.key)
+            library.combine(album.tracks.count)
+        }
+        return ListAsk(order: listOrder, library: library.finalize())
+    }
+
+    /// The records with their songs. The turning record shows while the first list is built; a
+    /// list built for another order stays up until the new one is ready, so the page does not go
+    /// blank between orders.
+    @ViewBuilder
+    private var list: some View {
+        Group {
+            if let listing {
+                AlbumList(listing: listing.built, covers: covers, playing: playing,
+                          onOpen: onOpen, onPlay: onPlay,
+                          isTrackMarked: isTrackMarked, isTrackMine: isTrackMine,
+                          onMarkTrack: onMarkTrack, onFile: onFile, upNext: upNext)
+            } else {
+                waiting
+            }
+        }
+        .task(id: listAsk) {
+            let ask = listAsk
+            let from = albums
+            let built = await Task.detached(priority: .userInitiated) {
+                AlbumListing.of(from, by: ask.order)
+            }.value
+            guard !Task.isCancelled else { return }
+            listing = (ask, built)
         }
     }
 

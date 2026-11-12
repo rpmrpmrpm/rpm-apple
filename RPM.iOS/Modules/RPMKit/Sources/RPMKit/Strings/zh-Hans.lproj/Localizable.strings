@@ -6,10 +6,10 @@
 /* Tooltip on the album wall's sort button. */
 "AlbumSort_Tooltip" = "专辑排序";
 
-/* Album wall sort order: by album artist, then album name. */
+/* Album wall sort order, and iPhone library list view sort order: by album artist, then album name. */
 "AlbumSort_Artist" = "按艺人";
 
-/* Album wall sort order: by the record's own name. */
+/* Album wall sort order, and iPhone library list view sort order: by the record's own name. */
 "AlbumSort_Album" = "按专辑";
 
 /* Album wall sort order: newest in the library first. */
@@ -20,6 +20,9 @@
 
 /* Album wall sort order: most listened to first. */
 "AlbumSort_Plays" = "播放最多";
+
+/* iPhone library list view sort order: every song as its own row, by its title. */
+"AlbumSort_Track" = "按歌曲名";
 
 /* Tooltip on the play button in an open album band (album grid). */
 "AlbumGrid_PlayAll" = "播放专辑";
@@ -516,7 +519,7 @@
 /* Status line after a library sync moved several hand-copied files into the inbox folder. {1} is the inbox folder name, which is not translated. */
 "Library_Quarantined" = "有 %1$@ 个文件被复制到音乐收藏。它们现在位于“%2$@”，可以导入。";
 
-/* Tooltip on the grid button of the library view switch (wall of album covers). */
+/* Tooltip on the grid button of the library view switch (wall of album covers), and the same choice in the iPhone library's view menu. */
 "Library_ViewGrid" = "专辑网格";
 
 /* Shown under the login dialog title when sign-in gates an action (recognize / split). */
@@ -1961,10 +1964,10 @@
 /* Empty state on the iPhone Now playing queue. */
 "Rpm_Queue_Empty" = "队列为空。播放任意内容后即会显示在这里。";
 
-/* iPhone library header button: choose the order the album wall is in. */
+/* iPhone library header button: choose the order the album grid or the album list is in. */
 "Rpm_Library_Sort" = "排序";
 
-/* iPhone library header button: switch between the albums wall and the artists wall. */
+/* iPhone library header button: switch between views, such as the album grid and the album list, or the playlists' covers and rows. */
 "Rpm_Library_View" = "视图";
 
 /* iPhone playlist page: the main button that plays the whole playlist from the top. */
@@ -2674,6 +2677,8 @@
 
 /* Cloud failure reason: anything not recognised, usually a network problem. */
 "Cloud_FailUnknown" = "上传失败";
+
+/* Library view switch: the records as a list, each with its songs. Also the choice in the iPhone library's view menu. */
 "Library_ViewAlbums" = "专辑列表";
 "Library_ViewTable" = "数据表";
 "Library_SongsAndTime" = "%1$@ 首歌曲，%2$@ 分钟";
