@@ -44,8 +44,12 @@ struct AlbumList: View {
     /// finger is down. Nil otherwise.
     @State private var held: Character?
 
-    /// The width kept free on the right for the rail, so no row runs under it.
-    private static let railRoom: Double = 26
+    /// The space between the rail and the screen's right edge.
+    private static let railEdge: Double = 10
+
+    /// The width kept free on the right for the rail and the space on both sides of it, so no row
+    /// runs under it and the letters do not touch a song's length.
+    private static let railRoom: Double = railEdge + LetterRail.width + 14
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -66,7 +70,7 @@ struct AlbumList: View {
                     guard let id = listing.firstUnder[letter] else { return }
                     proxy.scrollTo(id, anchor: .top)
                 }
-                .padding(.trailing, 2)
+                .padding(.trailing, Self.railEdge)
             }
             .overlay {
                 if let held {
@@ -233,6 +237,9 @@ struct LetterRail: View {
     /// twenty-seven fit.
     private static let tallest: Double = 17
 
+    /// The width of the rail, which is also the width a finger has to land on.
+    static let width: Double = 22
+
     var body: some View {
         GeometryReader { space in
             let letters = ArtistWall.alphabet
@@ -244,7 +251,7 @@ struct LetterRail: View {
                     Text(String(letter))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(ink(letter))
-                        .frame(width: 22, height: step)
+                        .frame(width: Self.width, height: step)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -263,7 +270,7 @@ struct LetterRail: View {
                     }
                     .onEnded { _ in held = nil })
         }
-        .frame(width: 22)
+        .frame(width: Self.width)
         .accessibilityHidden(true)
     }
 
