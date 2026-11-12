@@ -628,6 +628,23 @@ final class AppModel {
         settleTheRate()
 
         #if DEBUG
+        // A collection shared with this account, by its owner's name or id, for looking at somebody
+        // else's records. The picker needs a finger, and the simulator has none. First, so the
+        // switches below read the opened collection. Debug builds only; see `start()`.
+        if let owner = ProcessInfo.processInfo.environment["RPM_OPEN_SHELF"], !owner.isEmpty {
+            await readShares()
+            let log = Logger(subsystem: "com.rpm.player", category: "script")
+            let offered = shelfRows.filter { !$0.isOwn }
+            log.notice("shared collections: \(offered.map { "\($0.name) (\($0.shelf.ownerId))" }.joined(separator: ", "), privacy: .public)")
+
+            if let row = offered.first(where: {
+                $0.shelf.ownerId == owner || $0.name.localizedCaseInsensitiveContains(owner)
+            }) {
+                await open(row.shelf)
+                log.notice("opened \(row.name, privacy: .public): \(self.albums.count) records")
+            }
+        }
+
         // For looking at the screens that exist only while something is playing.
         // Debug builds only; see `start()`.
         if ProcessInfo.processInfo.environment["RPM_PLAY_FIRST"] != nil,

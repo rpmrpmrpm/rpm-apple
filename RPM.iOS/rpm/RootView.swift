@@ -1202,6 +1202,10 @@ struct RootView: View {
             onFile: { model.filing = $0 },
             upNext: .send { model.playNext($0) },
             wall: artistWall(of: artist))
+            // One page per artist. Go to artist in the player replaces the stack, and SwiftUI would
+            // keep the open page and hand it the new artist. The page's photograph and colour are
+            // its own state, and the ground would keep the first artist's under the new name.
+            .id(artist.name)
             // Read when the page opens, as the album page's reviews are. See ``ArtistPosts``.
             .task(id: artist.name) {
                 guard Self.hasWall(artist) else { return }

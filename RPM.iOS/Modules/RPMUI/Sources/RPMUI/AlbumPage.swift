@@ -98,7 +98,19 @@ public struct AlbumPage: View {
     /// the record on this page; see ``similarRow``.
     @State private var similar: (key: String, row: [CloudAlbum])?
 
-    @State private var cover: Cover?
+    /// The sleeve and the disc, and the record they were read for. Used only while that is the
+    /// record on this page (``cover``, ``disc``).
+    ///
+    /// **The key is what keeps the ground right.** A page can be handed another record without
+    /// being built again: Go to album in the player replaces the stack, and SwiftUI keeps the page
+    /// and changes its record. Without the key, the new record's title would stand over the old
+    /// sleeve until the new one is read. The ground changes only when the record's key does
+    /// (``ArtGround``), so it would take the old sleeve and its colour under the new key, and keep
+    /// them after the new sleeve arrived.
+    @State private var pictures: (key: String, cover: Cover?, disc: ScannedDisc?)?
+
+    /// The sleeve of the record on this page, or nil while it is being read.
+    private var cover: Cover? { pictures?.key == album.key ? pictures?.cover : nil }
 
     /// The Wikipedia text, and the record it was read for. Filled from the store's cache when the
     /// page is built, so a record opened before has its text on the first frame.
@@ -110,7 +122,7 @@ public struct AlbumPage: View {
 
     /// The disc the sleeve holds, read when the page opens so it is ready for the first tap. See
     /// ``caseAndDisc(edge:)``.
-    @State private var disc: ScannedDisc?
+    private var disc: ScannedDisc? { pictures?.key == album.key ? pictures?.disc : nil }
 
     /// Whether the disc is out of its sleeve, and whether it is drawn at all: it is drawn from the
     /// tap until it is back in.
@@ -246,8 +258,14 @@ public struct AlbumPage: View {
             .padding(.trailing, RPMLayout.margin)
         }
         .task(id: album.key) {
-            cover = await covers.cover(for: album, edge: coverEdge)
-            disc = await covers.disc(for: album, edge: coverEdge * Self.discShare)
+            let album = album
+            let cover = await covers.cover(for: album, edge: coverEdge)
+            guard !Task.isCancelled else { return }
+            pictures = (album.key, cover, nil)
+
+            let disc = await covers.disc(for: album, edge: coverEdge * Self.discShare)
+            guard !Task.isCancelled else { return }
+            pictures = (album.key, cover, disc)
         }
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
         .task(id: SimilarAsk(album: album.key, shelf: shelf.count)) { await readSimilar() }
