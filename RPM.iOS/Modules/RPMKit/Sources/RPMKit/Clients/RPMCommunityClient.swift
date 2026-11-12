@@ -1,6 +1,7 @@
 import Foundation
 
-/// RPM's shared album wall: the album entries that everybody shares, and what people wrote about them.
+/// RPM's community: the album entries that everybody shares, what people wrote about them, and the walls on
+/// the artists' pages.
 ///
 /// **Reading does not need a token. Writing does.** Every read works while signed out, so an album page can
 /// show its reviews to someone who has never made an account. The writes are the calls that fail when no
@@ -200,12 +201,82 @@ public struct RPMCommunityClient: Sendable {
             "PUT", "profile", body: Body(displayName: displayName), as: RPMProfile.self)
     }
 
-    public func report(albumId: String, kind: String, targetId: String?, reason: String) async throws {
+    /// Files a report. Nothing is hidden by it: a person reads it and decides.
+    ///
+    /// - Parameters:
+    ///   - reason: a short label from a list the app picks, at most 100 characters.
+    ///   - note: what the reporter wrote, at most 2,000 characters.
+    public func report(_ target: RPMReportTarget, reason: String?, note: String?) async throws {
         struct Body: Encodable {
-            let albumId: String; let kind: String; let targetId: String?; let reason: String
+            let targetType: String; let albumId: String?; let artistId: String?
+            let targetId: String; let reason: String?; let note: String?
         }
-        try await transport.sendVoid("POST", "reports", body: Body(
-            albumId: albumId, kind: kind, targetId: targetId, reason: reason))
+
+        let body: Body
+        switch target {
+        case .album(let albumId):
+            body = Body(targetType: "album", albumId: albumId, artistId: nil,
+                        targetId: albumId, reason: reason, note: note)
+        case .review(let albumId, let authorId):
+            body = Body(targetType: "review", albumId: albumId, artistId: nil,
+                        targetId: authorId, reason: reason, note: note)
+        case .comment(let albumId, let commentId):
+            body = Body(targetType: "comment", albumId: albumId, artistId: nil,
+                        targetId: commentId, reason: reason, note: note)
+        case .wallPost(let artistId, let entryId):
+            body = Body(targetType: "wallpost", albumId: nil, artistId: artistId,
+                        targetId: entryId, reason: reason, note: note)
+        }
+
+        try await transport.sendVoid("POST", "reports", body: body)
+    }
+
+    // Artists and their walls
+
+    /// The artist RPM already holds under this name, without creating an entry.
+    ///
+    /// Nil when nobody has written about them. That is the usual answer, and the service says so
+    /// with a 404. Any other failure throws, so a wall that could not be read is not drawn as an
+    /// empty wall.
+    public func lookupArtist(name: String) async throws -> RPMArtist? {
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+
+        do {
+            return try await transport.get("artists/lookup?name=" + escaped(name), as: RPMArtist.self)
+        } catch RPMError.refused(status: 404, _) {
+            return nil
+        }
+    }
+
+    /// The artist's entry, created if RPM has never been asked about them. Creating an entry is a
+    /// write, so it is called before the first post and never before a read.
+    public func resolveArtist(name: String) async throws -> RPMArtist {
+        struct Body: Encodable { let name: String }
+        return try await transport.send(
+            "POST", "artists/resolve", body: Body(name: name), as: RPMArtist.self)
+    }
+
+    /// What is on the artist's wall, newest first.
+    public func wall(artistId: String, limit: Int = 50) async throws -> [RPMWallEntry] {
+        try await transport.get(
+            "artists/\(escaped(artistId))/wall?limit=\(limit)", as: [RPMWallEntry].self)
+    }
+
+    /// The longest post the server takes, in characters.
+    public static let longestWallPost = 2_000
+
+    @discardableResult
+    public func postToWall(artistId: String, body: String) async throws -> RPMWallEntry {
+        struct Body: Encodable { let body: String }
+        return try await transport.send(
+            "POST", "artists/\(escaped(artistId))/wall", body: Body(body: body), as: RPMWallEntry.self)
+    }
+
+    /// Removes the reader's own post. A review line cannot be removed here: it goes when its review
+    /// goes.
+    public func deleteWallEntry(artistId: String, entryId: String) async throws {
+        try await transport.sendVoid(
+            "DELETE", "artists/\(escaped(artistId))/wall/\(escaped(entryId))")
     }
 
     // Helpers

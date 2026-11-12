@@ -90,6 +90,13 @@ struct RootView: View {
     @State private var walls: [String: ReviewWall] = [:]
     @State private var writing: String?
 
+    /// The wall at the foot of each open artist page, by the artist's name, for the same reason
+    /// as ``walls``: two pages of one artist can be on two stacks at once, and each reads its own.
+    @State private var artistWalls: [String: ArtistPosts] = [:]
+
+    /// The line on an artist's wall that the report card is open for.
+    @State private var reporting: WallReport?
+
     /// Whether the list of downloaded albums is up, over the profile tab.
     @State private var showingDownloads = false
 
@@ -1193,7 +1200,55 @@ struct RootView: View {
             isTrackMine: { model.isTrackMine($0) },
             onMarkTrack: { track, on in Task { await model.mark(track, on) } },
             onFile: { model.filing = $0 },
-            upNext: .send { model.playNext($0) })
+            upNext: .send { model.playNext($0) },
+            wall: artistWall(of: artist))
+            // Read when the page opens, as the album page's reviews are. See ``ArtistPosts``.
+            .task(id: artist.name) {
+                guard Self.hasWall(artist) else { return }
+                let made = artistWalls[artist.name] ?? ArtistPosts(community: model.community,
+                                                                   name: artist.name)
+                artistWalls[artist.name] = made
+                await made.read()
+            }
+            .overlay {
+                if let reporting, reporting.artist == artist.name,
+                   let wall = artistWalls[artist.name] {
+                    ReportSheet(prompt: Loc.get("Album_ReportCommentPrompt"),
+                                onSend: { note in await wall.report(reporting.line, note: note) },
+                                onClose: { self.reporting = nil })
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.18), value: reporting)
+    }
+
+    /// Whether an artist has a wall. The compilations name nobody, and RPM refuses to make an
+    /// entry for them.
+    private static func hasWall(_ artist: ArtistWallItem) -> Bool {
+        !ArtistCredit.isVariousArtists(artist.name)
+    }
+
+    /// The artist's wall as the page draws it, or nil for an artist with no wall.
+    private func artistWall(of artist: ArtistWallItem) -> AnyView? {
+        guard Self.hasWall(artist) else { return nil }
+
+        guard let wall = artistWalls[artist.name] else {
+            // Not made yet: the page's task makes it. The box is drawn already, so the page does
+            // not grow under the reader when the wall arrives.
+            return AnyView(ArtistWallSection(lines: [], answered: false, trouble: nil, sending: false,
+                                             draft: .constant(""), onSend: {},
+                                             onDelete: { _ in }, onReport: { _ in }))
+        }
+
+        let me = model.who?.userId
+        return AnyView(
+            ArtistWallSection(
+                lines: wall.lines.map { WallFace(entry: $0, mine: me != nil && $0.userId == me) },
+                answered: wall.answered, trouble: wall.trouble, sending: wall.sending,
+                draft: Binding(get: { wall.draft }, set: { wall.draft = $0 }),
+                onSend: { Task { await wall.post() } },
+                onDelete: { line in Task { await wall.delete(line) } },
+                onReport: { line in reporting = WallReport(artist: artist.name, line: line) }))
     }
 
     /// - Parameters:
@@ -1302,6 +1357,12 @@ struct RootView: View {
                     portraits: model.portraits,
                     shelves: model.shelves, scale: displayScale)
     }
+}
+
+/// A line on an artist's wall that is being reported, and whose wall it is on.
+struct WallReport: Equatable {
+    let artist: String
+    let line: RPMWallEntry
 }
 
 /// The screenshot a Send feedback sheet opens with. A new value for every opening, so the sheet

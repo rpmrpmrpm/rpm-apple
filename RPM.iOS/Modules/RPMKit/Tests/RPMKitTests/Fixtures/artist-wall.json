@@ -1,0 +1,13 @@
+[
+  {"artistId":"ar_7f3c","entryId":"0001790000000003_p1","kind":"post","userId":"u-ada","authorName":"Ada",
+   "hasAvatar":true,"body":"Saw them in 1980.","createdAt":1790000000003,"albumId":null,"albumTitle":null,
+   "rating":0,"hasBody":false,"authorDeleted":false},
+  {"artistId":"ar_7f3c","entryId":"0001790000000002_r1","kind":"review","userId":"u-ben","authorName":"Ben",
+   "hasAvatar":false,"body":"","createdAt":1790000000002,"albumId":"al_1","albumTitle":"Remain in Light",
+   "rating":9,"hasBody":true,"authorDeleted":false},
+  {"artistId":"ar_7f3c","entryId":"0001790000000001_r2","kind":"review","userId":"u-cy","authorName":"",
+   "hasAvatar":false,"body":"","createdAt":1790000000001,"albumId":"al_2","albumTitle":"Fear of Music",
+   "rating":8,"hasBody":false,"authorDeleted":true},
+  {"artistId":"ar_7f3c","entryId":"0001790000000000_x1","kind":"photo","userId":"u-ada","authorName":"Ada",
+   "hasAvatar":true,"body":"","createdAt":1790000000000}
+]

@@ -63,6 +63,10 @@ public struct ArtistPage: View {
     private let onFile: (CloudTrack) -> Void
     private let upNext: TrackActions.UpNext
 
+    /// What listeners wrote about the artist, drawn at the foot of the page. Nil where the artist
+    /// has no wall: the compilations, which name nobody.
+    private let wall: AnyView?
+
     public init(artist: ArtistWallItem, shelves: ArtistShelves, covers: any CoverStore,
                 articles: ArticleStore,
                 worldPlays: WorldPlays,
@@ -78,7 +82,8 @@ public struct ArtistPage: View {
                 isTrackMine: @escaping (CloudTrack) -> Bool,
                 onMarkTrack: @escaping (CloudTrack, Bool) -> Void = { _, _ in },
                 onFile: @escaping (CloudTrack) -> Void = { _ in },
-                upNext: TrackActions.UpNext) {
+                upNext: TrackActions.UpNext,
+                wall: AnyView?) {
         self.artist = artist
         self.shelves = shelves
         self.covers = covers
@@ -116,6 +121,7 @@ public struct ArtistPage: View {
         self.onMarkTrack = onMarkTrack
         self.onFile = onFile
         self.upNext = upNext
+        self.wall = wall
     }
 
     @State private var portrait: Cover?
@@ -201,6 +207,10 @@ public struct ArtistPage: View {
                 }
 
                 relatedSection
+
+                if let wall {
+                    wall.padding(.top, Self.sectionTop)
+                }
 
                 Color.clear.frame(height: 40)
             }
@@ -997,8 +1007,8 @@ public struct ArtistPage: View {
 
     // ── the shelves ──
 
-    /// The space above Popular tracks, above the first shelf and above Related artists: the
-    /// places where a new part of the page starts.
+    /// The space above Popular tracks, above the first shelf, above Related artists and above the
+    /// wall: the places where a new part of the page starts.
     private static let sectionTop: Double = 40
 
     /// The space above every shelf after the first.
