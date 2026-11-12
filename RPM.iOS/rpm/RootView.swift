@@ -147,6 +147,9 @@ struct RootView: View {
     /// each time the app opens.
     @AppStorage("library.mode") private var mode: LibraryMode = .albums
 
+    /// The karaoke switch. It has an effect only for a supporter. See `KaraokeSetting`.
+    @AppStorage(KaraokeSetting.key) private var karaokeWanted = KaraokeSetting.initial
+
     /// What is open on the artists side of the library tab.
     ///
     /// This stack is separate, so that a page pushed under the artists is not still on screen
@@ -249,6 +252,9 @@ struct RootView: View {
                                 lyrics: model.lyrics,
                                 lookingUpLyrics: model.lookingUpLyrics,
                                 onNeedLyrics: { await model.readLyrics() },
+                                karaoke: karaokeWanted && model.isSupporter,
+                                measured: model.measuredLines,
+                                onNeedTiming: { await model.readMeasured() },
                                 onMark: { on in Task { await model.markTrack(on) } },
                                 songMenu: songMenu,
                                 pull: $playing,

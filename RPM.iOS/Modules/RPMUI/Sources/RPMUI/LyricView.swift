@@ -31,6 +31,24 @@ struct LyricView: View {
     let sheet: LyricSheet
     let player: Player
 
+    /// Whether the sung line lights letter by letter as it is sung. See ``SweptLine``.
+    let karaoke: Bool
+
+    /// The words of this song as the cloud measured them from the recording. A line that has
+    /// them is lit by them, and every other line by its time shared between its words. See
+    /// ``KaraokeLines``.
+    let measured: [MeasuredLine]
+
+    /// The last position read from the player, and when it was read. The player reads the engine
+    /// four times a second, which is too coarse for a light moving through a word, so the sung
+    /// line works out the time in between from this. See ``SweptLine``.
+    @State private var reading = Reading(seconds: 0, at: .now)
+
+    struct Reading {
+        let seconds: Double
+        let at: Date
+    }
+
     /// How many lines either side of the sung line are drawn at all. Together with the ramp
     /// in `fade(distance:started:)`, this is the whole fade at the top and bottom of the
     /// sheet.
@@ -52,13 +70,18 @@ struct LyricView: View {
             // sixty lines, and a stored copy would have to be kept in step with the
             // current record.
             let score = LyricScore.of(sheet)
-            let at = score.index(at: player.position.seconds)
+            let heard = karaoke ? KaraokeLines.heard(score, measured: measured) : []
+            let stamped = score.index(at: player.position.seconds)
+            // With karaoke, a line stays up while its last measured word is still sung.
+            let at = karaoke ? KaraokeLines.held(score, piece: stamped,
+                                                 seconds: player.position.seconds, heard: heard)
+                             : stamped
 
             ScrollViewReader { hand in
                 ScrollView {
                     LazyVStack(spacing: size * Self.leading) {
                         ForEach(score.parts) { part in
-                            row(part, of: score, at: at, size: size)
+                            row(part, of: score, at: at, size: size, heard: heard)
                                 .id(part.id)
                         }
                     }
@@ -87,6 +110,10 @@ struct LyricView: View {
                 }
                 .animation(.easeOut(duration: 0.35), value: at == nil)
             }
+        }
+        .onAppear { reading = Reading(seconds: player.position.seconds, at: .now) }
+        .onChange(of: player.position) { _, now in
+            reading = Reading(seconds: now.seconds, at: .now)
         }
     }
 
@@ -133,7 +160,7 @@ struct LyricView: View {
     /// AND at the waits that nobody marked, which are most of them.
     @ViewBuilder
     private func row(_ part: LyricScore.Part, of score: LyricScore,
-                     at: Int?, size: CGFloat) -> some View {
+                     at: Int?, size: CGFloat, heard: [[WordSpan]?]) -> some View {
         let here = at.map { score.parts[$0] }
         let distance = abs(part.id - (at ?? 0))
         let sung = part.id == at
@@ -152,12 +179,20 @@ struct LyricView: View {
                 .animation(.easeOut(duration: 0.35), value: at)
 
         case .words(let line):
-            Text(line.text)
+            Group {
+                if sung && karaoke {
+                    SweptLine(text: line.text,
+                              spans: KaraokeLines.spans(of: part, in: score, heard: heard),
+                              reading: reading, playing: player.isPlaying)
+                } else {
+                    Text(line.text)
+                        .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
+                }
+            }
                 // **The same weight on every line, sung or not.** A heavier weight makes
                 // the text wider, so a bolder sung line would wrap again and move every
                 // line under it. Only the brightness shows which line is sung.
                 .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .opacity(ours && !resting ? fade(distance: distance, started: at != nil) : 0)
@@ -197,6 +232,73 @@ struct LyricView: View {
         guard run.isFinite, run > 0 else { return 0 }
 
         return min(max((player.position.seconds - from) / run, 0), 1)
+    }
+}
+
+/// The sung line for karaoke: a soft edge of light moves through each word as it is sung, letter
+/// by letter, from ``KaraokeLight/rest`` up to white. See ``KaraokeLight``.
+///
+/// Only this line is redrawn every frame. Each frame works out the time from the player's last
+/// reading (``LyricView/Reading``), and no further than ``ahead`` past it, so a reading that is
+/// late does not run the light past the voice.
+private struct SweptLine: View {
+    let text: String
+    let spans: [WordSpan]
+    let reading: LyricView.Reading
+    let playing: Bool
+
+    /// How far past the player's last reading the line may run, in seconds: a little more than
+    /// the time between two readings.
+    private static let ahead = 0.3
+
+    var body: some View {
+        TimelineView(.animation(paused: !playing)) { context in
+            Text(lit(at: now(context.date)))
+        }
+    }
+
+    private func now(_ date: Date) -> Double {
+        guard playing else { return reading.seconds }
+        return reading.seconds + min(max(date.timeIntervalSince(reading.at), 0), Self.ahead)
+    }
+
+    /// The line with each letter at its strength. The space between two words takes the strength
+    /// of the letter before it, so the light does not jump back down between words.
+    private func lit(at now: Double) -> AttributedString {
+        // The sung line does not fade after its last word: it stays lit until the next line takes
+        // over. See ``KaraokeLight/light(_:now:fades:)``.
+        let strengths = KaraokeLight.light(spans, now: now, fades: false)
+        let characters = Array(text)
+
+        var strength = Array(repeating: KaraokeLight.rest, count: characters.count)
+        var letter = 0
+        var last = KaraokeLight.rest
+        var at = 0
+        for span in spans {
+            while at < min(span.start, characters.count) { strength[at] = last; at += 1 }
+            for offset in 0..<span.length where span.start + offset < characters.count {
+                last = strengths[letter]
+                strength[span.start + offset] = last
+                letter += 1
+            }
+            at = min(span.start + span.length, characters.count)
+        }
+        while at < characters.count { strength[at] = last; at += 1 }
+
+        // One run for each stretch of letters at the same strength, rounded to a hundredth, so a
+        // line that is not changing gives the same text every frame.
+        var out = AttributedString()
+        var start = 0
+        while start < characters.count {
+            let level = (strength[start] * 100).rounded() / 100
+            var end = start + 1
+            while end < characters.count, (strength[end] * 100).rounded() / 100 == level { end += 1 }
+            var run = AttributedString(String(characters[start..<end]))
+            run.foregroundColor = Color.white.opacity(level)
+            out.append(run)
+            start = end
+        }
+        return out
     }
 }
 

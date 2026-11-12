@@ -3405,7 +3405,7 @@
 /* Supporters-only window: shown when the gold backdrop is picked by an account that is not a supporter. */
 "Supporters_Backdrop" = "这个背景只给 rpm 支持者使用。喜欢吗？欢迎考虑支持 rpm！";
 
-/* Supporters-only window: shown when word by word lyric timing is switched on by an account that is not a supporter. */
+/* Supporters-only window: shown when word by word lyric timing is switched on by an account that is not a supporter. On the iPhone app, the line under the greyed-out karaoke switch on the Profile page. */
 "Supporters_Karaoke" = "卡拉 OK 模式仅向 rpm 的支持者提供。欢迎支持 rpm。";
 
 /* Button that opens the page where supporting rpm is bought. */
@@ -6285,7 +6285,7 @@
 /* Sort option on the Android TV albums screen and in its settings: albums by release year, oldest first. */
 "AlbumSort_Date" = "按日期";
 
-/* Row in the Android TV app's settings: whether the sung lyric line lights word by word. */
+/* Row in the Android TV app's settings, and a switch on the Profile page of the iPhone app: whether the sung lyric line lights word by word. */
 "Tv_SettingsKaraoke" = "卡拉 OK 歌词";
 
 /* Line under the "Mixtape when a record ends" heading (Tv_SettingsMixtapeAfter) on the desktop Sound settings page, above its on/off switch. */

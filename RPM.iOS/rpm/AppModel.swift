@@ -928,6 +928,59 @@ final class AppModel {
         await words.read(player.current, on: shelves.shelf(of: player.current?.rpmId))
     }
 
+    // ── karaoke ──
+
+    /// Whether the account has the supporter features. False until the quota is read. Karaoke is
+    /// one of them, as on the computer and the TV.
+    var isSupporter: Bool { quota?.supporter == true }
+
+    /// The words of a song as the cloud measured them from the recording, and the song they are
+    /// for. Empty until read, and for a song that has not been measured.
+    private(set) var measured: (rpmId: String, lines: [MeasuredLine]) = ("", [])
+
+    /// The measured words of the song that is playing, or none. A song that has just started
+    /// does not light its words from the last song's moments.
+    var measuredLines: [MeasuredLine] {
+        measured.rpmId == player.current?.rpmId ? measured.lines : []
+    }
+
+    /// Reads the measured words of the song that is playing. If they do not cover its lyric
+    /// sheet, the cloud is asked to measure them from the recording. That takes the transcoder
+    /// about half a minute for a song, so the answer is read again after 20 seconds and then every
+    /// 15 seconds, at most eight times. The TV apps do the same.
+    ///
+    /// The caller runs this while the player is shown and karaoke is on, and cancels it when the
+    /// song changes.
+    func readMeasured() async {
+        let sheet = lyrics
+        guard sheet.isSynced, let track = player.current else { return }
+        let rpmId = track.rpmId
+        let shelf = shelves.shelf(of: rpmId)
+        let cloud = self.cloud
+        func read() async -> [MeasuredLine] {
+            (try? await cloud.lyricTiming(rpmId: rpmId, on: shelf)) ?? []
+        }
+
+        var lines = await read()
+        guard !Task.isCancelled else { return }
+        measured = (rpmId, lines)
+        if MeasuredLyrics.covers(lines, sheet: sheet) { return }
+
+        let ask = sheet.lines.enumerated().map {
+            SheetLine(index: $0.offset, seconds: $0.element.seconds, text: $0.element.text)
+        }
+        guard (try? await cloud.measureLyrics(rpmId: rpmId, on: shelf, lines: ask)) != nil else { return }
+
+        for round in 0..<8 {
+            try? await Task.sleep(for: .seconds(round == 0 ? 20 : 15))
+            guard !Task.isCancelled else { return }
+            lines = await read()
+            guard !Task.isCancelled else { return }
+            measured = (rpmId, lines)
+            if MeasuredLyrics.covers(lines, sheet: sheet) { return }
+        }
+    }
+
     // ── the speaker in another room ──
 
     /// The speakers on the network and the picker's state (`Speakers`, shared with the TV app). The

@@ -40,6 +40,18 @@ public struct NowPlayingSheet: View {
     /// name to any service.
     private let onNeedLyrics: () async -> Void
 
+    /// Whether the sung line lights letter by letter: the setting, for a supporter. See
+    /// ``LyricView``.
+    private let karaoke: Bool
+
+    /// The words of the playing song as the cloud measured them, or none.
+    private let measured: [MeasuredLine]
+
+    /// Reads the measured words of what is playing, and asks for them to be measured where none
+    /// fit. It is called while the player is shown and karaoke is on, and again when the record
+    /// or its lyrics change.
+    private let onNeedTiming: () async -> Void
+
     private let marked: Bool
     private let onMark: (Bool) -> Void
 
@@ -130,6 +142,8 @@ public struct NowPlayingSheet: View {
     public init(player: Player, art: CoverArt?, marked: Bool,
                 lyrics: LyricSheet = .empty, lookingUpLyrics: Bool = false,
                 onNeedLyrics: @escaping () async -> Void = {},
+                karaoke: Bool, measured: [MeasuredLine],
+                onNeedTiming: @escaping () async -> Void,
                 onMark: @escaping (Bool) -> Void, songMenu: TrackMenu,
                 pull: Binding<ScreenPull>,
                 onFile: (() -> Void)? = nil,
@@ -142,6 +156,9 @@ public struct NowPlayingSheet: View {
         self.lyrics = lyrics
         self.lookingUpLyrics = lookingUpLyrics
         self.onNeedLyrics = onNeedLyrics
+        self.karaoke = karaoke
+        self.measured = measured
+        self.onNeedTiming = onNeedTiming
         self.marked = marked
         self.onMark = onMark
         self.songMenu = songMenu
@@ -151,6 +168,14 @@ public struct NowPlayingSheet: View {
         self.onArtist = onArtist
         self.playingOn = playingOn
         self.onSpeakers = onSpeakers
+    }
+
+    /// What the timing read is for: the record, whether karaoke is on, and how many lines its
+    /// lyrics have.
+    private struct TimingAsk: Equatable {
+        let rpmId: String?
+        let karaoke: Bool
+        let lines: Int
     }
 
     public var body: some View {
@@ -167,7 +192,7 @@ public struct NowPlayingSheet: View {
                     // artwork on the lyrics screen and then remove it in steps. A user who opens
                     // the lyrics wants to see lyrics, and the intro shows what the intro IS. See
                     // `LyricView.opening`.
-                    LyricView(sheet: lyrics, player: player)
+                    LyricView(sheet: lyrics, player: player, karaoke: karaoke, measured: measured)
                 } else {
                     cover
                 }
@@ -182,6 +207,12 @@ public struct NowPlayingSheet: View {
         // is shown**: normal listening sends no record name to any service.
         .task(id: player.current?.rpmId) {
             await onNeedLyrics()
+        }
+        // The measured words, once the lyrics are in. Keyed on the sheet too, because the sheet
+        // arrives after the record changes, and the request names its lines.
+        .task(id: TimingAsk(rpmId: player.current?.rpmId, karaoke: karaoke,
+                            lines: lyrics.lines.count)) {
+            if karaoke { await onNeedTiming() }
         }
         // **The background and overlays are modifiers and not siblings in a stack**, which is the
         // same rule as on the album page and for the same reason. The background ignores the

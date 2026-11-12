@@ -364,8 +364,39 @@ public struct ProfilePage: View {
             Text(Loc.get("Rpm_Profile_QualityDetail"))
                 .font(RPMFont.display(11))
                 .foregroundStyle(RPMInk.white(0x66 / 255))
+
+            karaokeSwitch
         }
     }
+
+    /// Karaoke lyrics. Shown to everyone and switchable only by a supporter, with the reason under
+    /// it for everyone else, as the quality menus above are. Hidden until the quota is read, so a
+    /// supporter does not see it greyed out for a moment.
+    @ViewBuilder
+    private var karaokeSwitch: some View {
+        if let quota {
+            // Off for anyone else, whatever is stored: a switch that shows on and does nothing
+            // says the wrong thing.
+            Toggle(isOn: quota.supporter ? $karaoke : .constant(false)) {
+                Text(Loc.get("Tv_SettingsKaraoke"))
+                    .font(RPMFont.display(13))
+                    .foregroundStyle(RPMInk.white(0xB3 / 255))
+            }
+            .tint(RPMInk.white(0x88 / 255))
+            .disabled(!quota.supporter)
+            .onChange(of: karaoke) { _, _ in Haptics.pick() }
+
+            if !quota.supporter {
+                Text(Loc.get("Supporters_Karaoke"))
+                    .font(RPMFont.display(11))
+                    .foregroundStyle(RPMInk.white(0x88 / 255))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// Whether the sung line lights letter by letter. See ``KaraokeSetting``.
+    @AppStorage(KaraokeSetting.key) private var karaoke = KaraokeSetting.initial
 
     private func rate(_ label: String, _ chosen: Binding<Int>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
