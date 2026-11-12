@@ -1089,6 +1089,26 @@ final class AppModel {
         await session.mark(track, on)
     }
 
+    // ── the label and copyright under a record's songs ──
+
+    /// What each record's sidecar said, by the record's first song. Kept for the session: the tags
+    /// change only when a computer edits them, and a page opened again shows them at once. A read
+    /// that failed is not kept, so the page asks again the next time it opens.
+    @ObservationIgnored private var creditsRead: [String: AlbumCredits] = [:]
+
+    /// The copyright line and the label of a record, from its first song's sidecar. Nil on a
+    /// borrowed shelf, because the sidecar route takes no shelf and would answer about this
+    /// account's own files. Nil also when the read fails.
+    func credits(of album: CloudAlbum) async -> AlbumCredits? {
+        guard viewing.isOwn, let first = album.tracks.first else { return nil }
+        if let known = creditsRead[first.rpmId] { return known }
+
+        guard let sidecar = try? await cloud.sidecar(rpmId: first.rpmId) else { return nil }
+        let credits = AlbumCredits(copyright: sidecar.copyright, label: sidecar.publisher)
+        creditsRead[first.rpmId] = credits
+        return credits
+    }
+
     // ── filing a song ──
 
     /// The record that a script asked to open, set when the library has arrived and the

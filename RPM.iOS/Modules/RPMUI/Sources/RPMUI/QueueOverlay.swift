@@ -15,12 +15,17 @@ import RPMDesign
 public struct QueueOverlay: View {
     private let player: Player
 
+    /// The long-press menu on a row. Its play next is not used: on a row of the queue, play next
+    /// moves that row up. See ``TrackActions/UpNext/moveUp(_:)``.
+    private let songMenu: TrackMenu
+
     /// Whether the drawer is up, and how far down it has been pulled. The player itself uses the
     /// same value. See ``ScreenPull``.
     @Binding private var pull: ScreenPull
 
-    public init(player: Player, pull: Binding<ScreenPull>) {
+    public init(player: Player, songMenu: TrackMenu, pull: Binding<ScreenPull>) {
         self.player = player
+        self.songMenu = songMenu
         self._pull = pull
     }
 
@@ -53,7 +58,7 @@ public struct QueueOverlay: View {
                     .onTapGesture { pull.putAway() }
                     .transition(.opacity)
 
-                QueuePanel(player: player, pull: $pull)
+                QueuePanel(player: player, songMenu: songMenu, pull: $pull)
                     .pulledDown(pull)
                     .transition(.belowWindow)
             }
@@ -66,6 +71,7 @@ public struct QueueOverlay: View {
 /// rearranging is off every time the list comes up.
 private struct QueuePanel: View {
     let player: Player
+    let songMenu: TrackMenu
     @Binding var pull: ScreenPull
 
     /// Rearranging. On this platform it is a mode, not a handle on every row: the framework's own
@@ -257,6 +263,14 @@ private struct QueuePanel: View {
                         self.row(row)
                     }
                     .buttonStyle(RowPress())
+                    // The same long-press menu as a song anywhere else. Its swipe actions are
+                    // left off: this list sets its own, below.
+                    .trackActions(row.track, marked: songMenu.isMarked(row.track),
+                                  mine: songMenu.isMine(row.track),
+                                  upNext: moveUp(row),
+                                  swipes: .menuOnly,
+                                  onMark: songMenu.onMark,
+                                  onFile: songMenu.onFile)
                 }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
@@ -273,9 +287,7 @@ private struct QueuePanel: View {
                 // next: a key that promises something and does nothing is wrong, and an empty
                 // `swipeActions` is worse than no key, because the edge is still claimed and the
                 // row pulls open against nothing.
-                .modifier(MoveUpNext(
-                    at: row.at, playing: player.index,
-                    move: { player.move(from: row.at, to: (player.index ?? -1) + 1) }))
+                .modifier(MoveUpNext(deed: moveUp(row)))
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
                         Haptics.commit()
@@ -300,6 +312,17 @@ private struct QueuePanel: View {
         .scrollContentBackground(.hidden)
         .scrollIndicators(.hidden)
         .environment(\.defaultMinListRowHeight, 54)
+    }
+
+    /// Play next on one row: it moves the row to just after the song that is playing. There is
+    /// no action on the song that is playing, on the song that is already next, or while
+    /// rearranging, when the grips move the rows.
+    private func moveUp(_ row: QueueRow) -> TrackActions.UpNext {
+        let playing = player.index
+        guard !rearranging, row.at != playing, row.at != (playing ?? -1) + 1 else {
+            return .itIsTheQueue
+        }
+        return .moveUp { player.move(from: row.at, to: (playing ?? -1) + 1) }
     }
 
     /// Where each part of the queue begins, by the id of its first row, and the heading it gets:
@@ -385,20 +408,17 @@ private struct QueuePanel: View {
     }
 }
 
-/// The leading swipe on a queue row, shown only on the rows it can move.
+/// The leading swipe on a queue row, shown only on the rows it can move. It does the same as play
+/// next in the row's long-press menu.
 ///
 /// ``PlaylistPage`` has the same pair of actions in its `QueueRowKeys`, for the same queue drawn
 /// by the other list.
 private struct MoveUpNext: ViewModifier {
-    let at: Int
-    let playing: Int?
-    let move: () -> Void
-
-    private var canMoveUp: Bool { at != playing && at != (playing ?? -1) + 1 }
+    let deed: TrackActions.UpNext
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if canMoveUp {
+        if case .moveUp(let move) = deed {
             content.swipeActions(edge: .leading) {
                 Button {
                     Haptics.commit()

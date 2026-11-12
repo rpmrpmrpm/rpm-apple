@@ -100,6 +100,11 @@ public struct HomePage: View {
     /// ``BannerDress``.
     @State private var dress: BannerDress?
 
+    /// Whether the radio can be reached and what its logos are stamped with, for the stations'
+    /// logos that ``warm(_:)`` reads early.
+    @Environment(RadioState.self) private var radioState
+    @Environment(\.rpmReach) private var reach
+
     /// The records by key, so a row of keys can be drawn without searching the library for each
     /// card.
     private var byKey: [String: CloudAlbum] {
@@ -164,6 +169,122 @@ public struct HomePage: View {
             }
         }
         .navigationTitle(Loc.get("Home_Heading"))
+        .task(id: WarmAsk(screen: screen, stations: stations.keys.sorted())) {
+            if let screen, screen.gate.open { await warm(screen) }
+        }
+    }
+
+    // ── the pictures, read early ──
+
+    /// What ``warm(_:)`` reads for: the screen, and the stations it names, which can arrive
+    /// after it.
+    private struct WarmAsk: Equatable {
+        let screen: HomeScreen?
+        let stations: [String]
+    }
+
+    /// How many cards of each row ``warm(_:)`` reads: the cards a row shows before it is
+    /// swiped, and one more.
+    private static let firstCards = 4
+
+    /// How many pictures ``warm(_:)`` reads at the same time.
+    nonisolated private static let readsAtOnce = 4
+
+    /// One picture to read early, at the size its square is drawn.
+    private enum Early: Sendable {
+        case sleeve(CloudAlbum, edge: Double)
+        case songSleeve(CloudTrack, edge: Double)
+        case list(ListPicture?, first: CloudTrack?, edge: Double)
+
+        func read(_ covers: any CoverStore) async {
+            switch self {
+            case .sleeve(let album, let edge):
+                _ = await covers.cover(for: album, edge: edge)
+            case .songSleeve(let track, let edge):
+                _ = await covers.cover(for: track, edge: edge)
+            case .list(let list, let first, let edge):
+                // The order ``PlaylistSleeve`` uses: the list's own picture, else the sleeve of
+                // its first record.
+                if let list, await covers.picture(of: list, edge: edge) != nil { return }
+                if let first { _ = await covers.cover(for: first, edge: edge) }
+            }
+        }
+    }
+
+    /// **The pictures on the page are read when the page gets its rows, not when each is scrolled
+    /// to.** The page itself is built at once, but each row is a lazy stack: it builds a card
+    /// only when the card comes on screen, and the card asks for its picture then. A picture that
+    /// is only on disk or on the network would appear under the reader's eyes. A card starts from
+    /// what the store holds in memory (``CoverStore/coverHeld(for:edge:)``, and
+    /// ``StationDress/last(_:edge:)`` for a station), so a picture read here is on the card's
+    /// first frame.
+    ///
+    /// Only what a row shows before it is swiped is read: the quick selection, and the first
+    /// cards of each row. The banner reads its own cards, before the page is shown.
+    private func warm(_ screen: HomeScreen) async {
+        let byKey = self.byKey
+        let listsByName = self.listsByName
+        let songs = songs(of: screen)
+        let quick = HomePicksRow.drawable(screen.quickPicks, albums: byKey, songs: songs,
+                                          stations: stations)
+
+        var early: [Early] = []
+        var logos: [RadioStation] = []
+
+        // The quick selection, in the order its lines are drawn.
+        for pick in quick {
+            switch pick.kind {
+            case .song, .radio:
+                if let track = songs[pick.key] { early.append(.songSleeve(track, edge: HomePicksRow.art)) }
+            case .album:
+                if let first = byKey[pick.key]?.tracks.first {
+                    early.append(.songSleeve(first, edge: HomePicksRow.art))
+                }
+            case .playlist:
+                let set = listsByName[pick.key]
+                early.append(.list(set?.picture, first: set?.tracks.first, edge: HomePicksRow.art))
+            case .station:
+                if let station = stations[pick.key] { logos.append(station) }
+            }
+        }
+
+        for row in screen.rows {
+            for album in row.keys.lazy.compactMap({ byKey[$0] }).prefix(Self.firstCards) {
+                early.append(.sleeve(album, edge: HomeRowView.art))
+            }
+        }
+
+        for name in screen.lists.prefix(Self.firstCards) {
+            let set = listsByName[name]
+            early.append(.list(set?.picture, first: set?.tracks.first, edge: HomeRowView.art))
+        }
+
+        async let sleeves: Void = Self.read(early, from: covers)
+
+        // The logos are read here, on the main actor, where the radio's state is, while the
+        // sleeves are read beside them.
+        for station in logos {
+            guard !Task.isCancelled else { break }
+            _ = await StationDress.dress(station, edge: HomePicksRow.art,
+                                         state: radioState, reach: reach)
+        }
+
+        await sleeves
+    }
+
+    /// Reads the pictures, ``readsAtOnce`` at a time, in order.
+    private nonisolated static func read(_ early: [Early], from covers: any CoverStore) async {
+        await withTaskGroup(of: Void.self) { group in
+            var next = early.makeIterator()
+            for _ in 0..<readsAtOnce {
+                guard let picture = next.next() else { break }
+                group.addTask { await picture.read(covers) }
+            }
+            while await group.next() != nil {
+                guard !Task.isCancelled, let picture = next.next() else { continue }
+                group.addTask { await picture.read(covers) }
+            }
+        }
     }
 
     /// The heading is drawn OVER the scroll and not above it. The banner runs up behind the
@@ -472,8 +593,8 @@ struct HomePicksRow: View {
     @Environment(\.startRadio) private var startRadio
 
     /// The cover size beside a line. The desktop uses 48, and the phone uses 4 points less
-    /// because its lines are narrower.
-    private static let art: Double = 44
+    /// because its lines are narrower. ``HomePage`` reads the pictures at this size early.
+    static let art: Double = 44
 
     /// The height of one line. The panels' height is calculated from it.
     private static let lineHeight: Double = 60
@@ -612,7 +733,11 @@ struct HomePicksRow: View {
                          glyph: Glyph.song, track: track, list: nil)
                 }
                 .buttonStyle(.plain)
-                .trackActions(track, songMenu)
+                // **The menu only.** Every line of the panels is inside one list row on an
+                // artist's page, so swipe actions here would all belong to that row, and a
+                // sideways swipe through the panels would open them. See
+                // ``TrackActions/Swipes``.
+                .trackActions(track, songMenu, swipes: .menuOnly)
             }
 
         case .radio:

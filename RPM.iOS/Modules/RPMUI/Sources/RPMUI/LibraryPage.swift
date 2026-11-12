@@ -573,7 +573,7 @@ public struct LibraryPage: View {
                             .buttonStyle(RowPress())
                             .trackActions(hit.track, marked: isTrackMarked(hit.track),
                                           mine: isTrackMine(hit.track),
-                                          upNext: upNext,
+                                          upNext: upNext, swipes: .onItsRow,
                                           onMark: onMarkTrack, onFile: onFile)
                     }
 

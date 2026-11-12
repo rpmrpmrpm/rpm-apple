@@ -86,6 +86,14 @@ public struct AlbumPage: View {
     private let artists: [ArtistWallItem]
     private let onArtist: (ArtistWallItem) -> Void
 
+    /// Reads the record's copyright line and label. It answers nil where they cannot be read: a
+    /// borrowed shelf, or a failed read. See ``credits``.
+    private let readCredits: (CloudAlbum) async -> AlbumCredits?
+
+    /// The record's copyright line and label, and the record they were read for. A page that moves
+    /// to another record does not show the last one's lines while it reads the new ones.
+    @State private var credits: (key: String, credits: AlbumCredits)?
+
     /// The Similar albums row, and the record it was worked out for. Drawn only while that is
     /// the record on this page; see ``similarRow``.
     @State private var similar: (key: String, row: [CloudAlbum])?
@@ -116,6 +124,7 @@ public struct AlbumPage: View {
                 classical: Bool, download: DownloadKey?, canPlay: @escaping (CloudTrack) -> Bool,
                 shelf: [CloudAlbum], onOpenAlbum: @escaping (CloudAlbum) -> Void,
                 artists: [ArtistWallItem], onArtist: @escaping (ArtistWallItem) -> Void,
+                readCredits: @escaping (CloudAlbum) async -> AlbumCredits?,
                 playing: String? = nil,
                 onPlay: @escaping (Int, Tapped) -> Void, onShuffle: @escaping () -> Void,
                 onMark: @escaping (Bool) -> Void, onBack: @escaping () -> Void,
@@ -134,6 +143,7 @@ public struct AlbumPage: View {
         self.onOpenAlbum = onOpenAlbum
         self.artists = artists
         self.onArtist = onArtist
+        self.readCredits = readCredits
         self.album = album
         self.covers = covers
         self.articles = articles
@@ -184,6 +194,7 @@ public struct AlbumPage: View {
             Group {
                 header(edge: coverEdge).scrollProbe()
                 tracks
+                creditsLines
                 similarRow
                 wall
 
@@ -240,6 +251,11 @@ public struct AlbumPage: View {
         }
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
         .task(id: SimilarAsk(album: album.key, shelf: shelf.count)) { await readSimilar() }
+        .task(id: album.key) {
+            let album = album
+            guard let read = await readCredits(album), !Task.isCancelled else { return }
+            credits = (album.key, read)
+        }
         .onChange(of: album.key) { _, _ in
             trip?.cancel()
             trip = nil
@@ -529,8 +545,9 @@ public struct AlbumPage: View {
     /// The disc against the sleeve: a CD in its case is a little smaller than the case.
     private static let discShare: CGFloat = 0.94
 
-    /// How far the disc comes out at most, as a share of the sleeve.
-    private static let discOut: CGFloat = 0.55
+    /// How far the disc comes out at most, as a share of the sleeve: half, so the disc's centre
+    /// stops on the sleeve's edge and half of the disc stays behind the sleeve.
+    private static let discOut: CGFloat = 0.5
 
     /// The space kept between the moved sleeve or disc and the page's edge.
     private static let caseEdge: CGFloat = 8
@@ -556,6 +573,27 @@ public struct AlbumPage: View {
     private struct SimilarAsk: Hashable {
         let album: String
         let shelf: Int
+    }
+
+    /// The record's copyright line and label, under the songs, as the files' tags give them. Nothing
+    /// where the tags have neither. See ``AlbumCredits/lines``.
+    @ViewBuilder
+    private var creditsLines: some View {
+        if let credits, credits.key == album.key, !credits.credits.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(credits.credits.lines, id: \.self) { line in
+                    Text(line)
+                        .font(RPMFont.display(12))
+                        .foregroundStyle(RPMInk.white(0x99 / 255))
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RPMLayout.margin)
+            .padding(.top, 20)
+            .feathered()
+            .transition(.opacity)
+        }
     }
 
     /// Other records on this collection to play after this one, under the songs: the desktop's
@@ -631,7 +669,8 @@ public struct AlbumPage: View {
                 .disabled(!canPlay(track))
                 .opacity(canPlay(track) ? 1 : 0.35)
                 .trackActions(track, marked: isTrackMarked(track), mine: isTrackMine(track),
-                              upNext: upNext, onMark: onMarkTrack, onFile: onFile)
+                              upNext: upNext, swipes: .onItsRow,
+                              onMark: onMarkTrack, onFile: onFile)
             }
         }
     }

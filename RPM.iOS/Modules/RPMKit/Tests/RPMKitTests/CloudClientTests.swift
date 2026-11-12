@@ -388,6 +388,8 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
     #expect(sidecar.relativePath.hasSuffix("Myrrhman.flac"))
     #expect(sidecar.artMime == "image/jpeg")
     #expect((sidecar.art?.count ?? 0) > 0)
+    #expect(sidecar.copyright == "\u{2117} 1991 Polydor Ltd. (UK)")
+    #expect(sidecar.publisher == "Verve Records")
 }
 
 /// Two hops: the store signs a URL, and the bytes come from S3. The second hop

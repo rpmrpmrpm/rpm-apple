@@ -507,7 +507,7 @@ public struct PlaylistPage: View {
                 .buttonStyle(RowPress())
                 .trackActions(row.track, marked: isTrackMarked(row.track),
                               mine: isTrackMine(row.track), upNext: upNext,
-                              onMark: onMarkTrack, onFile: onFile)
+                              swipes: .onItsRow, onMark: onMarkTrack, onFile: onFile)
                 .plainRow()
                 // A running order is changed only after the current position: songs that were
                 // already played are not rearranged, and neither is the song that is playing. A

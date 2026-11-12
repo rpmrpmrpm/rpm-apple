@@ -250,6 +250,7 @@ struct RootView: View {
                                 lookingUpLyrics: model.lookingUpLyrics,
                                 onNeedLyrics: { await model.readLyrics() },
                                 onMark: { on in Task { await model.markTrack(on) } },
+                                songMenu: songMenu,
                                 pull: $playing,
                                 onFile: model.player.current.map { track in { model.filing = track } },
                                 onAlbum: model.player.current.flatMap { track in
@@ -845,9 +846,9 @@ struct RootView: View {
         }
     }
 
-    /// The long-press menu on a song outside the queue. It is passed to pages that show songs
-    /// among other content: home's quick selection and a genre's most played songs. See
-    /// `TrackMenu`.
+    /// The long-press menu on a song. It is passed to pages that show songs among other content:
+    /// home's quick selection and a genre's most played songs. The queue on the player uses it
+    /// too, with each row's own play next. See `TrackMenu`.
     private var songMenu: TrackMenu {
         TrackMenu(isMarked: { model.isTrackMarked($0) },
                   isMine: { model.isTrackMine($0) },
@@ -1239,6 +1240,7 @@ struct RootView: View {
                   shelf: model.albums, onOpenAlbum: open,
                   artists: readArtists.artists(of: album, in: model.albums),
                   onArtist: openArtist,
+                  readCredits: { await model.credits(of: $0) },
                   playing: model.nowPlaying,
                   onPlay: { at, tapped in Task { await model.play(album, from: at, tapped: tapped) } },
                   onShuffle: { Task { await model.shuffle(album) } },

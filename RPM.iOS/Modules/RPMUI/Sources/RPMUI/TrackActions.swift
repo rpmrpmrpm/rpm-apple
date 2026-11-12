@@ -39,46 +39,79 @@ public struct TrackActions: ViewModifier {
     ///
     /// A row in the library, on an album or in a stored playlist is not in the queue, so
     /// "play next" adds it to the queue. A row in the queue is already queued. Adding it
-    /// again would create a second copy, but the user means *move this song up*. The
-    /// queue handles that itself with its own actions: see ``QueueOverlay``, whose
-    /// leading swipe moves the row to play next.
+    /// again would create a second copy, but the user means *move this song up*. That is
+    /// ``moveUp(_:)``, which ``QueueOverlay`` gives each row it can move.
     ///
     /// Each caller states which case it is, instead of the type working it out from a flag.
     public enum UpNext {
         /// Put the song in the queue after the album that is playing.
         case send((CloudTrack) -> Void)
 
-        /// No action: this row is already in the queue.
+        /// No action: this row is already in the queue, and it is the song that is playing,
+        /// the song already next, or a row of a list that moves its rows with a grip.
         case itIsTheQueue
+
+        /// A row of the queue that can still move up: the action moves this row to just after
+        /// the song that is playing. It holds a closure for this one row and not a function of
+        /// the song, because the same song can be in the queue twice.
+        case moveUp(() -> Void)
+    }
+
+    /// Whether the song is a `List` row of its own, which decides whether it gets swipe actions.
+    /// **Stated by every caller, with no default.**
+    ///
+    /// Swipe actions belong to the list row, not to the view they are written on. Songs drawn
+    /// together inside one row, such as the quick selection's panels, would all give their
+    /// actions to that one row, and a sideways swipe through the panels would open them. A row
+    /// whose list sets its own swipe actions, such as the queue, must not get a second set.
+    public enum Swipes {
+        /// The song is a list row of its own: swipe right to play it next, left for the other
+        /// two actions.
+        case onItsRow
+
+        /// The long-press menu only.
+        case menuOnly
     }
 
     private let upNext: UpNext
+    private let swipes: Swipes
     private let onMark: (CloudTrack, Bool) -> Void
     private let onFile: (CloudTrack) -> Void
 
     /// Start radio, offered on every row where the app has set it. See ``EnvironmentValues/startRadio``.
     @Environment(\.startRadio) private var startRadio
 
-    public init(track: CloudTrack, marked: Bool, mine: Bool, upNext: UpNext,
+    public init(track: CloudTrack, marked: Bool, mine: Bool, upNext: UpNext, swipes: Swipes,
                 onMark: @escaping (CloudTrack, Bool) -> Void,
                 onFile: @escaping (CloudTrack) -> Void) {
         self.track = track
         self.marked = marked
         self.mine = mine
         self.upNext = upNext
+        self.swipes = swipes
         self.onMark = onMark
         self.onFile = onFile
     }
 
-    /// The closure that queues the song, or `nil` on a row that is already in the queue.
-    private var sender: ((CloudTrack) -> Void)? {
-        guard case .send(let put) = upNext else { return nil }
-        return put
+    /// What "play next" does on this row, or `nil` where it would do nothing.
+    private var playNextDeed: (() -> Void)? {
+        switch upNext {
+        case .send(let put): return { [track] in put(track) }
+        case .moveUp(let move): return move
+        case .itIsTheQueue: return nil
+        }
     }
 
     @ViewBuilder
     public func body(content: Content) -> some View {
-        let row = content
+        switch swipes {
+        case .onItsRow: swiped(menu(content))
+        case .menuOnly: menu(content)
+        }
+    }
+
+    private func menu(_ content: some View) -> some View {
+        content
             .contextMenu {
                 playNext
 
@@ -102,6 +135,11 @@ public struct TrackActions: ViewModifier {
                     }
                 }
             }
+    }
+
+    @ViewBuilder
+    private func swiped(_ content: some View) -> some View {
+        let row = content
             // Swiping from the left moves the row right. This is the side the Uno app
             // and the queue list use for "play next". SwiftUI ignores swipe actions
             // where the row is not in a `List`, so the context menu above covers that
@@ -111,7 +149,7 @@ public struct TrackActions: ViewModifier {
             // given an empty group.** An empty `swipeActions` still claims that edge:
             // the row slides open with nothing under it and closes again, which looks
             // like a bug.
-            .modifier(SendUpNext(deed: sender.map { put in { hearItNext(put) } }))
+            .modifier(SendUpNext(deed: playNextDeed.map { deed in { hearItNext(deed) } }))
 
         if mine {
             row.swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -135,17 +173,17 @@ public struct TrackActions: ViewModifier {
     /// The same action as the leading swipe, with the same label.
     @ViewBuilder
     private var playNext: some View {
-        if let sender {
-            Button { hearItNext(sender) } label: {
+        if let playNextDeed {
+            Button { hearItNext(playNextDeed) } label: {
                 Label(Loc.get("AlbumMenu_PlayNext"),
                       systemImage: "text.line.first.and.arrowtriangle.forward")
             }
         }
     }
 
-    private func hearItNext(_ put: (CloudTrack) -> Void) {
+    private func hearItNext(_ deed: () -> Void) {
         Haptics.commit()
-        put(track)
+        deed()
     }
 
     /// The label names what pressing the button will do, not the current state. The
@@ -214,16 +252,18 @@ public struct TrackMenu {
 public extension View {
     /// See ``TrackActions``.
     func trackActions(_ track: CloudTrack, marked: Bool, mine: Bool,
-                      upNext: TrackActions.UpNext,
+                      upNext: TrackActions.UpNext, swipes: TrackActions.Swipes,
                       onMark: @escaping (CloudTrack, Bool) -> Void,
                       onFile: @escaping (CloudTrack) -> Void) -> some View {
         modifier(TrackActions(track: track, marked: marked, mine: mine,
-                              upNext: upNext, onMark: onMark, onFile: onFile))
+                              upNext: upNext, swipes: swipes, onMark: onMark, onFile: onFile))
     }
 
     /// See ``TrackActions`` and ``TrackMenu``.
-    func trackActions(_ track: CloudTrack, _ menu: TrackMenu) -> some View {
+    func trackActions(_ track: CloudTrack, _ menu: TrackMenu,
+                      swipes: TrackActions.Swipes) -> some View {
         trackActions(track, marked: menu.isMarked(track), mine: menu.isMine(track),
-                     upNext: menu.upNext, onMark: menu.onMark, onFile: menu.onFile)
+                     upNext: menu.upNext, swipes: swipes, onMark: menu.onMark,
+                     onFile: menu.onFile)
     }
 }

@@ -30,6 +30,11 @@ public struct TagSidecar: Codable, Sendable {
     public let discNumber: Int
     public let discCount: Int
 
+    /// The copyright line and the record label, as the file's tags have them. The row does not
+    /// carry these, so the sidecar is the only place a phone can read them. Either can be nil.
+    public let copyright: String?
+    public let publisher: String?
+
     /// The picture inside the user's own file. Base64 in the JSON, so a sidecar
     /// is as big as the cover in it: callers cache what they fetch rather than
     /// asking twice.
@@ -50,6 +55,8 @@ public struct TagSidecar: Codable, Sendable {
         case trackCount = "TrackCount"
         case discNumber = "DiscNumber"
         case discCount = "DiscCount"
+        case copyright = "Copyright"
+        case publisher = "Publisher"
         case art = "Art"
         case artMime = "ArtMime"
     }
@@ -69,6 +76,8 @@ public struct TagSidecar: Codable, Sendable {
         trackCount      = try c.decodeIfPresent(Int.self, forKey: .trackCount) ?? 0
         discNumber      = try c.decodeIfPresent(Int.self, forKey: .discNumber) ?? 0
         discCount       = try c.decodeIfPresent(Int.self, forKey: .discCount) ?? 0
+        copyright       = try c.decodeIfPresent(String.self, forKey: .copyright)
+        publisher       = try c.decodeIfPresent(String.self, forKey: .publisher)
         art             = try c.decodeIfPresent(Data.self, forKey: .art)
         artMime         = try c.decodeIfPresent(String.self, forKey: .artMime)
     }

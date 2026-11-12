@@ -43,6 +43,20 @@ public struct NowPlayingSheet: View {
     private let marked: Bool
     private let onMark: (Bool) -> Void
 
+    /// The long-press menu on the queue's rows. Its play next is replaced by each row's own
+    /// move up: see ``QueueOverlay``.
+    private let songMenu: TrackMenu
+
+    /// ``songMenu`` with the player put away before the playlist picker opens. The picker is
+    /// drawn under the player, as for the Add to playlist key on this sheet.
+    private var queueMenu: TrackMenu {
+        let menu = songMenu
+        let pull = $pull
+        return TrackMenu(isMarked: menu.isMarked, isMine: menu.isMine, upNext: menu.upNext,
+                         onMark: menu.onMark,
+                         onFile: { track in pull.wrappedValue.putAway(); menu.onFile(track) })
+    }
+
     /// **Whether the player is shown, and its current position.** One value is used for both
     /// opening and closing the player, and the owner of the sheet holds it. See ``ScreenPull``,
     /// which explains why it is not two values.
@@ -116,7 +130,8 @@ public struct NowPlayingSheet: View {
     public init(player: Player, art: CoverArt?, marked: Bool,
                 lyrics: LyricSheet = .empty, lookingUpLyrics: Bool = false,
                 onNeedLyrics: @escaping () async -> Void = {},
-                onMark: @escaping (Bool) -> Void, pull: Binding<ScreenPull>,
+                onMark: @escaping (Bool) -> Void, songMenu: TrackMenu,
+                pull: Binding<ScreenPull>,
                 onFile: (() -> Void)? = nil,
                 onAlbum: (() -> Void)? = nil,
                 onArtist: (() -> Void)?,
@@ -129,6 +144,7 @@ public struct NowPlayingSheet: View {
         self.onNeedLyrics = onNeedLyrics
         self.marked = marked
         self.onMark = onMark
+        self.songMenu = songMenu
         self._pull = pull
         self.onFile = onFile
         self.onAlbum = onAlbum
@@ -204,7 +220,7 @@ public struct NowPlayingSheet: View {
         .pulledDown(pull)
         // Always present: the drawer has its own `if`, next to its transitions. See
         // ``QueueOverlay``.
-        .overlay { QueueOverlay(player: player, pull: $queue) }
+        .overlay { QueueOverlay(player: player, songMenu: queueMenu, pull: $queue) }
         .overlay {
             if showingSpeakers, let onSpeakers {
                 onSpeakers { showingSpeakers = false }
