@@ -100,6 +100,27 @@ public struct HomePage: View {
     /// ``BannerDress``.
     @State private var dress: BannerDress?
 
+    /// How far the page has scrolled. It is owned here so the ground can follow it. Besides the
+    /// scroller's own mask, only the small modifier ``LeadsOnScroll`` reads it, so a scroll does
+    /// not rebuild the page.
+    @State private var scrolled = ScrollReach()
+
+    /// Where the banner ends, in the page's own points from its top. See ``leadRange``.
+    @State private var bannerFoot: Double = 0
+
+    /// The name of the page's own coordinate space, which does not move with the scroll.
+    private static let page = "home.page"
+
+    /// The scroll over which the ground moves from the front card's picture to the card's colour:
+    /// it starts when the banner is 40% of the way off and ends when the banner's foot reaches the
+    /// title, where the quick selection is read. Nil until the banner and the title are measured,
+    /// and the picture stays the ground until then.
+    private var leadRange: ClosedRange<Double>? {
+        guard bannerFoot > 0, headingHeight > 0 else { return nil }
+        let end = max(1, bannerFoot - (RPMSafeArea.top + headingHeight))
+        return end * 0.4 ... end
+    }
+
     /// Whether the radio can be reached and what its logos are stamped with, for the stations'
     /// logos that ``warm(_:)`` reads early.
     @Environment(RadioState.self) private var radioState
@@ -155,6 +176,18 @@ public struct HomePage: View {
             ArtGround(picture: dress?.picture, accent: dress?.accent,
                       showing: dress?.wearing ?? "", colours: dress?.colours ?? [],
                       dissolve: 0.45)
+                .modifier(LeadsOnScroll(reach: scrolled, range: leadRange,
+                                        layer: dress?.lead == nil ? .alone : .underTheLead))
+
+            // **Lower down the page, the card's colour leads the ground**, with its picture faint
+            // over it, as on the artist page and the album page. The blurred picture is the ground
+            // only while the banner is in view. A card on a room has no lead colour and keeps the
+            // room's colours.
+            if let lead = dress?.lead {
+                ArtGround(picture: dress?.picture, showing: dress?.wearing ?? "",
+                          colours: dress?.colours ?? [], lead: lead, dissolve: 0.45)
+                    .modifier(LeadsOnScroll(reach: scrolled, range: leadRange, layer: .theLead))
+            }
 
             if let screen, screen.gate.open {
                 open(screen)
@@ -323,7 +356,7 @@ public struct HomePage: View {
             // Starts at the top of the screen, under the status bar. Content that scrolls up behind
             // the clock and the title fades into the page's background there once the page is
             // scrolled. At rest nothing is removed: the banner runs up behind both.
-            DissolvingScroll(under: RPMSafeArea.top + headingHeight) {
+            DissolvingScroll(under: RPMSafeArea.top + headingHeight, reach: scrolled) {
                 // **This is not a lazy stack, to prevent the page from jumping.** A lazy stack
                 // does not know the height of children it has not built yet, so the content
                 // height grows as they are created. The scroll indicator then changes length
@@ -350,6 +383,10 @@ public struct HomePage: View {
                                            onTune: onTune,
                                            onReady: onReady,
                                            onDressed: { dress = $0 })
+                                // Where it ends on the page, for the ground. See ``leadRange``.
+                                .onGeometryChange(for: Double.self) {
+                                    $0.frame(in: .named(Self.page)).maxY
+                                } action: { bannerFoot = $0 }
                         } else {
                             // Nothing runs up behind the heading, so this spacer takes the room the
                             // banner would have taken: the heading and the status bar, because the
@@ -388,6 +425,7 @@ public struct HomePage: View {
                 // Space under the last row only. The header above already provides the space over
                 // the first row, as on the library.
                 .padding(.bottom, RPMLayout.foot)
+                .coordinateSpace(.named(Self.page))
             }
             // **Over the scroll, and fixed while the page scrolls**, like every other page's
             // header. The banner runs up behind it at rest. Once the page is scrolled, the blur
@@ -471,6 +509,44 @@ public struct HomePage: View {
         case .taste: return Loc.get("Home_Taste")
         case .played: return Loc.get("Home_Played")
         case .added: return Loc.get("Home_Added")
+        }
+    }
+}
+
+/// The opacity of one layer of home's ground as the page scrolls through ``range``.
+///
+/// **This is the only reader of the scroll on the page**, so a scroll redraws the ground's
+/// opacity and nothing else. See ``DissolvingScroll``.
+private struct LeadsOnScroll: ViewModifier {
+    let reach: ScrollReach
+
+    /// Nil while it is not known: the picture is then the ground.
+    let range: ClosedRange<Double>?
+    let layer: Layer
+
+    enum Layer {
+        /// The ground on the front card's picture, with no colour layer over it.
+        case alone
+
+        /// The ground on the front card's picture, with the colour layer coming in over it. It
+        /// is taken away once it is covered, so its blur is not drawn under an opaque layer.
+        case underTheLead
+
+        /// The ground on the front card's colour, coming in over the scroll.
+        case theLead
+    }
+
+    /// How far through ``range`` the page has scrolled, from 0 to 1.
+    private var share: Double {
+        guard let range, range.upperBound > range.lowerBound else { return 0 }
+        return min(max((reach.by - range.lowerBound) / (range.upperBound - range.lowerBound), 0), 1)
+    }
+
+    func body(content: Content) -> some View {
+        switch layer {
+        case .alone: content
+        case .underTheLead: content.opacity(share >= 1 ? 0 : 1)
+        case .theLead: content.opacity(share)
         }
     }
 }

@@ -38,6 +38,12 @@ public struct BannerDress: Equatable {
     /// looks at directly would run another shader on every frame, in addition to the one the
     /// card already runs.
     public let colours: [Color]
+
+    /// The colour that leads the page's ground once the person scrolls down to the rows: the
+    /// photograph's colour, or the cover's, as the artist page and the album page stand on theirs
+    /// (``GroundLead``). Nil for a card drawn on a room, which keeps the room's colours, and for a
+    /// photograph whose colour is still being read.
+    public let lead: Color?
 }
 
 /// The featured banner: a few cards, shown one at a time, changed by a swipe or the dots.
@@ -494,6 +500,9 @@ struct HomeFeatureCard: View {
     @State private var cover: Cover?
     @State private var picture: CGImage?
 
+    /// The photograph's colour, for the page's ground. See ``BannerDress/lead``.
+    @State private var pictureLead: Color?
+
     /// The card drawn once into a bitmap, for one photograph and one size. It is shown only while
     /// ``bakeAsk`` still describes it; see ``RunOffPlate``.
     @State private var baked: RunOffPlate?
@@ -629,15 +638,17 @@ struct HomeFeatureCard: View {
     private var dressing: BannerDress? {
         if let picture {
             return BannerDress(wearing: wearing, picture: Image(decorative: picture, scale: 1),
-                               accent: nil, colours: [])
+                               accent: nil, colours: [], lead: pictureLead)
         }
 
         if standingOnARoom, case let ink = roomInk, ink.count > 1 {
-            return BannerDress(wearing: wearing, picture: nil, accent: nil, colours: ink)
+            return BannerDress(wearing: wearing, picture: nil, accent: nil, colours: ink, lead: nil)
         }
 
         if let cover {
-            return BannerDress(wearing: wearing, picture: cover.image, accent: cover.accent, colours: [])
+            return BannerDress(wearing: wearing, picture: cover.image, accent: cover.accent, colours: [],
+                               lead: GroundLead.of(glow: cover.colours.highlight,
+                                                   dominant: cover.colours.dominant)?.color)
         }
 
         return nil
@@ -927,8 +938,20 @@ struct HomeFeatureCard: View {
         // BackdropStore.portrait.
         let found = await backdrops.portrait(artist: artist, album: album?.album, cutFor: scene)
 
+        // The photograph's colour, from a 48 pixel copy, off the main actor, as the artist page
+        // reads its own.
+        let lead: Color? = if let found {
+            await Task.detached(priority: .userInitiated) {
+                let read = Thumbnail.colours(of: found)
+                return GroundLead.of(glow: read.highlight, dominant: read.dominant)
+            }.value?.color
+        } else {
+            nil
+        }
+
         withAnimation(.easeOut(duration: 0.35)) {
             picture = found
+            pictureLead = lead
             looked = true
         }
     }

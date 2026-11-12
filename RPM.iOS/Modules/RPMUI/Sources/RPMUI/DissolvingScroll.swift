@@ -29,7 +29,13 @@ public struct DissolvingScroll<Content: View>: View {
     /// content would be rebuilt 60 times a second. Only the mask reads it, so a scroll redraws
     /// the band and nothing else. The needle strip is a separate view for the same reason (see
     /// ``PlayerNeedle``).
-    @State private var reach = ScrollReach()
+    @State private var ownReach = ScrollReach()
+
+    /// The reach the page passed in, for a page that has something of its own to move with the
+    /// scroll (home's ground). Nil when the scroller keeps its own.
+    private let givenReach: ScrollReach?
+
+    private var reach: ScrollReach { givenReach ?? ownReach }
 
     /// The height of the page's own chrome over the scroller's top, for a scroller that starts at
     /// the top of the screen with no header bar over it: the status bar and a floating title or
@@ -39,6 +45,7 @@ public struct DissolvingScroll<Content: View>: View {
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
         self.under = 0
+        self.givenReach = nil
     }
 
     /// A scroller that starts at the top of the screen, under `under` points of the status bar and
@@ -47,6 +54,15 @@ public struct DissolvingScroll<Content: View>: View {
     public init(under: Double, @ViewBuilder content: () -> Content) {
         self.content = content()
         self.under = under
+        self.givenReach = nil
+    }
+
+    /// As ``init(under:content:)``, writing the scroll to `reach`, which the page owns. The page
+    /// must read it only in small views, for the reason given at ``reach``.
+    init(under: Double, reach: ScrollReach, @ViewBuilder content: () -> Content) {
+        self.content = content()
+        self.under = under
+        self.givenReach = reach
     }
 
     public var body: some View {
