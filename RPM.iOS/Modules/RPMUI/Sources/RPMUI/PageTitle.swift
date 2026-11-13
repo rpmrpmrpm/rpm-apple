@@ -62,9 +62,12 @@ struct PageHeading<Keys: View>: View {
         let end = RPMFont.headerDescenderEnd(title)
 
         VStack(alignment: .leading, spacing: PageTitle.subtitleGap) {
+            // The keys are centred on the title's line, not hung from its top. They are taller
+            // than the letters, and hung from the top they reached down into the line under the
+            // title, which on a shared collection is long enough to run under them.
             PageTitle(title, trimsAllDescent: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(alignment: .topTrailing) { keys }
+                .overlay(alignment: .trailing) { keys }
 
             Text(line)
                 .rpmKicker()
