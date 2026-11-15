@@ -6834,6 +6834,9 @@
 /* Import from another app: why a skipped track is not imported; it is in the iBroadcast trash. Shown after the track name and a colon. */
 "Migration_SkipInTrash" = "In the iBroadcast trash";
 
+/* Import from another app: why a playlist is not imported; iBroadcast fills it by itself (such as its most recent uploads). Shown after the playlist name and a colon. */
+"Migration_SkipIBroadcastList" = "A list iBroadcast fills by itself";
+
 /* Import from another app: the name of the playlist folder that holds the iBroadcast tags, one playlist per tag. */
 "Migration_IBroadcastTagsFolder" = "Tags";
 
@@ -6955,7 +6958,7 @@
 "Migration_SummarySkipped" = "%1$@ items are not imported (streams, videos, podcasts, or files that are not on this computer)";
 
 /* Import from another app: summary line for an iBroadcast library, in place of Migration_SummarySkipped. {0} is a number. */
-"Migration_SummarySkippedIBroadcast" = "%1$@ tracks are not imported (in the iBroadcast trash, or not a file rpm can read)";
+"Migration_SummarySkippedIBroadcast" = "%1$@ items are not imported (in the iBroadcast trash, without a file, or lists iBroadcast fills by itself)";
 
 /* Import from another app, summary: other libraries were imported into rpm before ({0} is their names, joined by commas). Each library's plays are added, so plays that two libraries share (for example a MusicBee library built from an iTunes import) count twice. */
 "Migration_SummaryOtherImports" = "You imported %1$@ before. Plays that both libraries hold are counted twice.";
