@@ -6807,6 +6807,36 @@
 /* Import from another app: the Navidrome / Subsonic server choice. */
 "Migration_SourceNavidrome" = "Navidrome 或 Subsonic";
 
+/* Import from another app: the iBroadcast choice. A product name. */
+"Migration_SourceIBroadcast" = "iBroadcast";
+
+/* Import from another app: the line under an online service's choice (iBroadcast). */
+"Migration_HintOnline" = "登录你的账户";
+
+/* Import from another app: the button that starts the iBroadcast sign-in in the browser. */
+"Migration_IBroadcastSignIn" = "登录 iBroadcast";
+
+/* Import from another app: shown while waiting for the iBroadcast sign-in in the browser. {0} is the sign-in code, such as BPJWDQTV. */
+"Migration_IBroadcastWaiting" = "请在浏览器中允许 rpm。如果 iBroadcast 要求输入代码，请输入 %1$@。完成后此窗口会继续。";
+
+/* Import from another app: the sign-in button while a code waits; it opens the iBroadcast page with the code again. */
+"Migration_IBroadcastOpenAgain" = "再次打开 iBroadcast";
+
+/* Import from another app: shown on the summary and while importing from iBroadcast. */
+"Migration_KeepsOriginalsIBroadcast" = "rpm 只读取你的 iBroadcast 音乐库，不会更改或删除其中的任何内容。";
+
+/* Import from another app: shown on the summary when the iBroadcast account is free. */
+"Migration_IBroadcastFree" = "你的 iBroadcast 账户是免费账户，因此 iBroadcast 只提供 128 kbps 的 MP3 副本，而不是你的原始文件。使用 iBroadcast Premium 时，rpm 会导入原始文件。";
+
+/* Import from another app: shown on the summary of an iBroadcast import, listing what does not come along. */
+"Migration_IBroadcastNotCarried" = "不会导入“踩”以及专辑和艺人的评分。iBroadcast 不记录歌曲上次播放的时间。";
+
+/* Import from another app: why a skipped track is not imported; it is in the iBroadcast trash. Shown after the track name and a colon. */
+"Migration_SkipInTrash" = "在 iBroadcast 回收站中";
+
+/* Import from another app: the name of the playlist folder that holds the iBroadcast tags, one playlist per tag. */
+"Migration_IBroadcastTagsFolder" = "标签";
+
 /* Import from another app: the choice for .m3u/.pls playlist files. Also the name shown for this source in the report. */
 "Migration_SourcePlaylistFiles" = "播放列表文件";
 

@@ -6807,6 +6807,36 @@
 /* Import from another app: the Navidrome / Subsonic server choice. */
 "Migration_SourceNavidrome" = "Navidrome or Subsonic";
 
+/* Import from another app: the iBroadcast choice. A product name. */
+"Migration_SourceIBroadcast" = "iBroadcast";
+
+/* Import from another app: the line under an online service's choice (iBroadcast). */
+"Migration_HintOnline" = "Signs in to your account";
+
+/* Import from another app: the button that starts the iBroadcast sign-in in the browser. */
+"Migration_IBroadcastSignIn" = "Sign in to iBroadcast";
+
+/* Import from another app: shown while waiting for the iBroadcast sign-in in the browser. {0} is the sign-in code, such as BPJWDQTV. */
+"Migration_IBroadcastWaiting" = "Approve rpm in your browser. If iBroadcast asks for a code, enter %1$@. This window continues when you are done.";
+
+/* Import from another app: the sign-in button while a code waits; it opens the iBroadcast page with the code again. */
+"Migration_IBroadcastOpenAgain" = "Open iBroadcast again";
+
+/* Import from another app: shown on the summary and while importing from iBroadcast. */
+"Migration_KeepsOriginalsIBroadcast" = "rpm only reads from your iBroadcast library. Nothing in it is changed or removed.";
+
+/* Import from another app: shown on the summary when the iBroadcast account is free. */
+"Migration_IBroadcastFree" = "Your iBroadcast account is free, so iBroadcast gives 128 kbps MP3 copies of your music, not your original files. With iBroadcast Premium, rpm imports the originals.";
+
+/* Import from another app: shown on the summary of an iBroadcast import, listing what does not come along. */
+"Migration_IBroadcastNotCarried" = "Thumbs down and album and artist ratings are not imported. iBroadcast does not keep when a song was last played.";
+
+/* Import from another app: why a skipped track is not imported; it is in the iBroadcast trash. Shown after the track name and a colon. */
+"Migration_SkipInTrash" = "In the iBroadcast trash";
+
+/* Import from another app: the name of the playlist folder that holds the iBroadcast tags, one playlist per tag. */
+"Migration_IBroadcastTagsFolder" = "Tags";
+
 /* Import from another app: the choice for .m3u/.pls playlist files. Also the name shown for this source in the report. */
 "Migration_SourcePlaylistFiles" = "Playlist files";
 
