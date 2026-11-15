@@ -6954,6 +6954,9 @@
 /* Import from another app: summary line. {0} is a number. */
 "Migration_SummarySkipped" = "%1$@ éléments ne sont pas importés (flux, vidéos, podcasts, ou fichiers absents de cet ordinateur)";
 
+/* Import from another app: summary line for an iBroadcast library, in place of Migration_SummarySkipped. {0} is a number. */
+"Migration_SummarySkippedIBroadcast" = "%1$@ morceaux ne sont pas importés (dans la corbeille d'iBroadcast, ou pas un fichier que rpm sait lire)";
+
 /* Import from another app, summary: other libraries were imported into rpm before ({0} is their names, joined by commas). Each library's plays are added, so plays that two libraries share (for example a MusicBee library built from an iTunes import) count twice. */
 "Migration_SummaryOtherImports" = "Vous avez déjà importé %1$@. Les écoutes présentes dans les deux bibliothèques sont comptées deux fois.";
 
