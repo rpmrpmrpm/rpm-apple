@@ -44,12 +44,22 @@ public actor AuthClient: TokenSource {
     /// retry interleave across their awaits.
     private var revocationsWritten: Task<Void, Never>?
 
+    /// One element each time the server refuses the refresh token and the session ends on this device. The refresh
+    /// token has expired or was revoked. The head then forgets the account and shows the sign-in screen. A sign-out
+    /// that the person asked for is not sent here, because the head started it.
+    ///
+    /// One reader, for the app's life. An ending that comes before the reader starts is kept until it reads, so a
+    /// refusal during launch is not lost.
+    public nonisolated let endedByServer: AsyncStream<Void>
+    private nonisolated let tellEndedByServer: AsyncStream<Void>.Continuation
+
     /// - Parameter reach: No default. See the reason given on ``Transport/init(base:tokens:reach:session:)``.
     public init(base: URL, keychain: any SecretStore, reach: NetworkReach,
                 session: URLSession = Wire.session()) {
         self.base = base
         self.keychain = keychain
         self.wire = Gated(reach: reach, session: session)
+        (endedByServer, tellEndedByServer) = AsyncStream.makeStream(of: Void.self)
     }
 
     public var isSignedIn: Bool { stored != nil }
@@ -219,7 +229,7 @@ public actor AuthClient: TokenSource {
     /// Ends the session and revokes its refresh token on the server.
     ///
     /// Deleting the keychain item ends this phone's copy, but not the token. Without revoking it, the token would
-    /// stay valid for up to 30 days on other devices. The token is written to storage before the request is sent,
+    /// stay valid until it expires, for anyone with a copy of it. The token is written to storage before the request is sent,
     /// so a sign-out with no network leaves it to be sent at the next launch or sign-in. The revoke is not awaited.
     /// Signing out does not wait for the network.
     public func signOut() async {
@@ -378,6 +388,7 @@ public actor AuthClient: TokenSource {
                 // The server rejected the refresh token, so the session has ended. Asking again with the same
                 // token would loop. Only a new sign-in ends that loop.
                 await signOut()
+                tellEndedByServer.yield()
                 return nil
             case .unavailable:
                 // The token was not judged. This happens with no network, when the gate refuses, on a 5xx, or when

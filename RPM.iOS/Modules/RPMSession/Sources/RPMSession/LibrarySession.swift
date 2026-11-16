@@ -137,6 +137,11 @@ public final class LibrarySession {
         // up until home's banner has its first pictures. Home does not need the marks or the quota.
         await settleHome()
 
+        // The server can end the session during the reads above, or before this read began. The
+        // head then forgets the account and shows the sign-in screen (see
+        // `AuthClient.endedByServer`), and the wall must not come back over it. Checked with no
+        // await between it and the line that shows the wall.
+        guard await auth.isSignedIn else { return }
         standing = .showing
         whenUp()
 

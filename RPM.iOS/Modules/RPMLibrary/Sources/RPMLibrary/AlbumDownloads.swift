@@ -140,8 +140,25 @@ public final class AlbumDownloads {
     }
 
     /// Picks up the transfers the system carried on with while the app was away, then asks
-    /// for whatever is still missing. Called once, at launch.
-    public func begin() async {
+    /// for whatever is still missing. Called at launch and after each sign-in.
+    ///
+    /// - Parameter account: the user id of the account signed in now. The downloads of any
+    ///   other account are removed first (see ``DownloadBook/belong(to:)``), so this is the only
+    ///   way to start them.
+    public func begin(for account: String) async {
+        if book.belong(to: account) {
+            // The previous account's transfers in this run. Those the system still holds are
+            // cancelled below, because none of their tracks is wanted now.
+            inFlight = []
+            partial = [:]
+            making.forgetAll()
+            wake?.cancel()
+            wake = nil
+        }
+        // A fresh three goes for each track, as after a relaunch. Signing fails while the account
+        // is signed out, and those failures say nothing about the track.
+        goes = [:]
+
         let tasks = await session.allTasks
         for task in tasks {
             guard let said = Relay.read(task.taskDescription) else { task.cancel(); continue }

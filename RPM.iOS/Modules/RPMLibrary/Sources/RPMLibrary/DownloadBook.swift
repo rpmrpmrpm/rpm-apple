@@ -47,6 +47,10 @@ public final class DownloadBook: @unchecked Sendable {
     private struct Manifest: Codable {
         var albums: [String: Album] = [:]
         var copies: [String: Copy] = [:]
+
+        /// The user id of the account whose music this is. Nil when no account has claimed the
+        /// downloads yet. See ``DownloadBook/belong(to:)``.
+        var account: String?
     }
 
     private let lock = NSLock()
@@ -208,16 +212,39 @@ public final class DownloadBook: @unchecked Sendable {
     /// this account's music.
     public func forgetAll() {
         lock.withLock {
-            held = Manifest()
-            owner = [:]
-            try? FileManager.default.removeItem(at: tracksDir)
-            try? FileManager.default.createDirectory(at: tracksDir,
-                                                     withIntermediateDirectories: true)
+            removeEverything()
             save()
         }
     }
 
+    /// Makes the downloads this account's. Downloads that belong to another account are removed
+    /// first, because they are that account's music. This happens when the server ended a session
+    /// (the downloads are kept for that account) and someone else signs in.
+    ///
+    /// Downloads that no account has claimed are taken by this one. They were made by the account
+    /// that is signed in now: before a sign-in, a sign-out removes every download.
+    ///
+    /// - Returns: whether another account's downloads were removed.
+    @discardableResult
+    public func belong(to account: String) -> Bool {
+        lock.withLock {
+            let other = held.account.map { $0 != account } ?? false
+            if other { removeEverything() }
+            held.account = account
+            save()
+            return other
+        }
+    }
+
     // ── inside the lock ──
+
+    /// Every album, every file and the claiming account.
+    private func removeEverything() {
+        held = Manifest()
+        owner = [:]
+        try? FileManager.default.removeItem(at: tracksDir)
+        try? FileManager.default.createDirectory(at: tracksDir, withIntermediateDirectories: true)
+    }
 
     /// Makes the copies agree with the albums and with the disk. A copy nobody wants is
     /// deleted. A copy whose file has gone is forgotten. A file that no copy refers to is

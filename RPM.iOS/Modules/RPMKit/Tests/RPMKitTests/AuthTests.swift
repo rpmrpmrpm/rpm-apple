@@ -152,6 +152,52 @@ private let loginBody = #"""
     #expect(await store.read(AuthClient.sessionKey) == nil)
 }
 
+/// The head is told that the server ended the session, so it can show the sign-in screen. The
+/// ending is kept until the head reads it: the refusal can come during launch, before the reader
+/// starts.
+@Test func aRefusedRefreshTellsTheHead() async throws {
+    let store = MemoryStore()
+    try await stored(store, session(access: "old", expiresIn: -10))
+
+    let client = auth(replying(401, "{}"), store)
+    await client.load()
+    _ = try await client.accessToken()
+
+    #expect(await toldTheHead(client))
+}
+
+/// Only an ending decided by the server is sent. The head starts a sign-out the person asked for
+/// itself, and a refresh that could not be sent ends nothing.
+@Test func aSignOutOrANetworkFailureDoesNotTellTheHead() async throws {
+    let store = MemoryStore()
+    try await stored(store, session(access: "stale", expiresIn: -10))
+
+    let client = auth(failingSession(), store)
+    await client.load()
+    _ = try await client.accessToken()
+    await client.signOut()
+
+    #expect(await toldTheHead(client) == false)
+}
+
+/// Whether the client has sent an ending. One sent before this is called is kept and comes at
+/// once, so a short wait is enough to see that none was sent.
+private func toldTheHead(_ client: AuthClient) async -> Bool {
+    await withTaskGroup(of: Bool.self) { group in
+        group.addTask {
+            var endings = client.endedByServer.makeAsyncIterator()
+            return await endings.next() != nil
+        }
+        group.addTask {
+            try? await Task.sleep(for: .milliseconds(300))
+            return false
+        }
+        let first = await group.next() ?? false
+        group.cancelAll()
+        return first
+    }
+}
+
 /// The one that separates a dead session from a dead network. A refresh that
 /// could not be sent at all is not a rejection: signing out here logs a person
 /// out of their own app every time they open it underground.

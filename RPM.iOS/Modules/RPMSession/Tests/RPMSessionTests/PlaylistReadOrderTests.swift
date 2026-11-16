@@ -22,7 +22,7 @@ struct PlaylistReadOrderTests {
     @Test func playlistsReadBeforeTheLibraryArrivesAreResolvedWhenItDoes() async throws {
         let source = HeldSource(tracks: ids.map(track))
         let cloud = StubCloud()
-        let session = try makeSession(source: source, cloud: cloud)
+        let session = try await makeSession(source: source, cloud: cloud)
 
         // The library read starts and waits for its listing.
         let showing = Task { await session.show(.nextLaunch) {} }
@@ -44,7 +44,7 @@ struct PlaylistReadOrderTests {
     @Test func aReloadResolvesThePlaylistsAgainstTheNewListing() async throws {
         let source = HeldSource(tracks: [track("t0")])
         await source.release()
-        let session = try makeSession(source: source, cloud: StubCloud())
+        let session = try await makeSession(source: source, cloud: StubCloud())
 
         await session.show(.nextLaunch) {}
         try await listsArrived(session)
@@ -68,7 +68,7 @@ struct PlaylistReadOrderTests {
         await source.release()
 
         let home = HomeNetwork()
-        let session = try makeSession(source: source, cloud: StubCloud()) { own in
+        let session = try await makeSession(source: source, cloud: StubCloud()) { own in
             own + AlbumWall.group(home.tracks)
         }
 
@@ -91,7 +91,7 @@ struct PlaylistReadOrderTests {
         let source = HeldSource(tracks: ids.map(track))
         await source.release()
         let cloud = StubCloud()
-        let session = try makeSession(source: source, cloud: cloud)
+        let session = try await makeSession(source: source, cloud: cloud)
 
         await session.show(.nextLaunch) {}
         try await listsArrived(session)
@@ -113,7 +113,7 @@ struct PlaylistReadOrderTests {
         let cloud = StubCloud()
         cloud.playlists = #"[{"playlistId":"p","name":"Evening","trackIds":["t0","t1"],"updatedAt":100}]"#
         cloud.conflict = #"{"playlistId":"p","name":"Evening","trackIds":["t0","t1","t2"],"updatedAt":200}"#
-        let session = try makeSession(source: source, cloud: cloud)
+        let session = try await makeSession(source: source, cloud: cloud)
 
         await session.show(.nextLaunch) {}
         try await listsArrived(session)
@@ -134,7 +134,7 @@ struct PlaylistReadOrderTests {
         let cloud = StubCloud()
         cloud.playlists = #"[{"playlistId":"p","name":"Evening","trackIds":["t0","t1"],"updatedAt":100}]"#
         cloud.putStatus = 403
-        let session = try makeSession(source: source, cloud: cloud)
+        let session = try await makeSession(source: source, cloud: cloud)
 
         await session.show(.nextLaunch) {}
         try await listsArrived(session)
@@ -146,6 +146,26 @@ struct PlaylistReadOrderTests {
         let after = try #require(session.playlists.first { $0.id == "p" })
         #expect(after.tracks.map(\.rpmId) == ["t0", "t1"])
         #expect(after.stamp == 100)
+    }
+
+    // ── a session the server ended ──
+
+    /// The server can end the session while the library is read. The app then shows the sign-in
+    /// screen, and the wall must not come back over it when the read finishes.
+    @Test func theWallIsNotShownForASessionThatEndedDuringTheRead() async throws {
+        let source = HeldSource(tracks: ids.map(track))
+        let session = try await makeSession(source: source, cloud: StubCloud())
+
+        let showing = Task { await session.show(.nextLaunch) {} }
+        await source.entered()
+
+        // The refresh token is refused while the listing is on its way.
+        await session.auth.signOut()
+
+        await source.release()
+        await showing.value
+
+        #expect(session.standing != .showing)
     }
 
     // ── the session and its doubles ──
@@ -166,10 +186,11 @@ struct PlaylistReadOrderTests {
                    artist: "Talk Talk", album: "Spirit of Eden", tags: CloudTrackTags())
     }
 
+    /// A session for an account that is signed in. The wall is shown only while it is.
     private func makeSession(
         source: HeldSource, cloud: StubCloud,
         additions: @escaping LibrarySession.Additions = LibrarySession.nothingAdded
-    ) throws -> LibrarySession {
+    ) async throws -> LibrarySession {
         let base = URL(string: "https://api.example.com")!
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("rpm-session-tests-\(UUID().uuidString)")
@@ -180,9 +201,16 @@ struct PlaylistReadOrderTests {
                                   session: wire)
         let defaults = UserDefaults(suiteName: "rpm.tests.\(UUID().uuidString)")!
 
+        let keychain = MemoryStore()
+        let signedIn = Session(userId: "u1", email: "a@example.com", displayName: "Listener",
+                               accessToken: "token", refreshToken: "refresh",
+                               expiresAt: Date().addingTimeInterval(3600))
+        await keychain.write(AuthClient.sessionKey, try RPMJSON.encoder.encode(signedIn))
+        let auth = AuthClient(base: base, keychain: keychain, reach: NetworkReach(), session: wire)
+        await auth.load()
+
         return LibrarySession(
-            auth: AuthClient(base: base, keychain: MemoryStore(), reach: NetworkReach(),
-                             session: wire),
+            auth: auth,
             cloud: RPMCloudClient(transport: transport),
             community: RPMCommunityClient(transport: transport),
             library: CloudLibrary(source: source, marks: FavoriteMarks(), storeRoot: root),

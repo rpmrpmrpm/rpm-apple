@@ -282,8 +282,8 @@ final class AppModel {
     /// model, delivers what finished and asks for the next tracks.
     func wokenForDownloads() async {
         await auth.load()
-        guard await auth.isSignedIn else { return }
-        await downloads.begin()
+        guard let account = await auth.current?.userId else { return }
+        await downloads.begin(for: account)
     }
 
     /// The covers and the artists' photos kept on this phone.
@@ -478,6 +478,7 @@ final class AppModel {
     func start() async {
         sayWhichBuildThisIs()
         await auth.load()
+        followSessionsEndedByServer()
 
         #if DEBUG
         // A way to open the app already signed in, so that a script can look at screens.
@@ -640,14 +641,61 @@ final class AppModel {
         }
     }
 
+    /// Whether ``followSessionsEndedByServer()`` has started. The stream has one reader.
+    private var followingEndings = false
+
+    /// Reads `AuthClient.endedByServer` for the app's life. The server can end the session at
+    /// any refresh, during launch too; an ending that comes before this starts waits in the stream.
+    private func followSessionsEndedByServer() {
+        guard !followingEndings else { return }
+        followingEndings = true
+        let endings = auth.endedByServer
+        Task { [weak self] in
+            for await _ in endings {
+                guard let self else { return }
+                await self.sessionEndedByServer()
+            }
+        }
+    }
+
+    /// The Sign out key, and the end of deleting the account.
     func signOut() async {
+        await forgetTheAccount(.remove)
+    }
+
+    /// The server ended the session: the refresh token expired or was revoked. The phone forgets
+    /// the account as a sign-out does and shows the sign-in screen, which says why.
+    private func sessionEndedByServer() async {
+        // Checked against the session as it is now, so a sign-in that finished in the meantime
+        // is kept.
+        guard await !auth.isSignedIn else { return }
+        await forgetTheAccount(.keepForTheAccount)
+        notice = Loc.get("Rpm_Error_SessionExpired")
+    }
+
+    /// What forgetting the account does with the albums downloaded to this phone.
+    private enum DownloadsWhenForgotten {
+        /// The person signed out. The files are this account's music, and the next person who
+        /// signs in on this phone must not find them.
+        case remove
+
+        /// The server ended the session, and the person most likely signs in again. The files
+        /// stay, claimed by the account. If a different account signs in next, they are removed
+        /// then (see `AlbumDownloads.begin(for:)`).
+        case keepForTheAccount
+    }
+
+    private func forgetTheAccount(_ downloadsWhen: DownloadsWhenForgotten) async {
         player.forget()
         record.forget()
 
-        // The files are this account's music, and the next person who signs in on this phone
-        // must not find them.
-        downloads.forgetEverything()
+        switch downloadsWhen {
+        case .remove: downloads.forgetEverything()
+        case .keepForTheAccount: break
+        }
 
+        // When the server ended the session, the client has signed out already and this does
+        // nothing.
         await auth.signOut()
         await artwork.forget()
         await listPictures.forget()
@@ -669,8 +717,12 @@ final class AppModel {
             LaunchClock.mark("records on screen")
 
             // Behind the wall: the transfers that the system continued while the app was away,
-            // and any albums that are still to come.
-            Task { await self.downloads.begin() }
+            // and any albums that are still to come. Downloads kept for another account are
+            // removed first.
+            Task {
+                guard let account = await self.auth.current?.userId else { return }
+                await self.downloads.begin(for: account)
+            }
         }
 
         // This is after the quota, because what the account may ask for comes from the quota. It

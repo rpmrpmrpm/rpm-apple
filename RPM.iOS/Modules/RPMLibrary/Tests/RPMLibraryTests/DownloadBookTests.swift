@@ -117,4 +117,56 @@ struct DownloadBookTests {
         #expect(book.held("t1") == nil)
         #expect(DownloadBook(root: root).albums.isEmpty)
     }
+
+    // ── whose music it is ──
+
+    /// The server ended the session and the downloads were kept. The same account signing in
+    /// again finds them.
+    @Test func theSameAccountKeepsItsDownloads() throws {
+        let book = DownloadBook(root: root)
+        #expect(book.belong(to: "u1") == false)
+        book.want(album("a", ["t1"]))
+        book.keep("t1", from: try arrived(), kilobits: 320)
+
+        #expect(DownloadBook(root: root).belong(to: "u1") == false)
+        #expect(DownloadBook(root: root).held("t1") != nil)
+    }
+
+    /// Another account must not find the previous account's music, on the screen or on the disk.
+    @Test func anotherAccountRemovesThePreviousAccountsDownloads() throws {
+        let book = DownloadBook(root: root)
+        book.belong(to: "u1")
+        book.want(album("a", ["t1"]))
+        book.keep("t1", from: try arrived(), kilobits: 320)
+        let file = try #require(book.held("t1")?.file)
+
+        let next = DownloadBook(root: root)
+        #expect(next.belong(to: "u2"))
+
+        #expect(next.albums.isEmpty)
+        #expect(next.held("t1") == nil)
+        #expect(!FileManager.default.fileExists(atPath: file.path))
+        #expect(DownloadBook(root: root).belong(to: "u2") == false, "the new account is remembered")
+    }
+
+    /// Downloads that no account claimed were made by the account signed in now, because a
+    /// sign-out removes every download. They are kept.
+    @Test func unclaimedDownloadsAreTakenByTheAccountSignedIn() throws {
+        let book = DownloadBook(root: root)
+        book.want(album("a", ["t1"]))
+        book.keep("t1", from: try arrived(), kilobits: 320)
+
+        #expect(book.belong(to: "u1") == false)
+        #expect(book.held("t1") != nil)
+    }
+
+    /// After a sign-out nothing is claimed, so the next account starts with an empty book and
+    /// is not told that something was removed.
+    @Test func aSignOutLeavesTheDownloadsUnclaimed() {
+        let book = DownloadBook(root: root)
+        book.belong(to: "u1")
+        book.forgetAll()
+
+        #expect(DownloadBook(root: root).belong(to: "u2") == false)
+    }
 }

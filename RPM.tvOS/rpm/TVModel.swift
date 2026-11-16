@@ -195,6 +195,7 @@ final class TVModel {
         watchTheLine()
         settleTheRate()
         await auth.load()
+        followSessionsEndedByServer()
 
         #if DEBUG
         // Lets a script open the app already signed in, because the simulator's remote cannot be
@@ -250,6 +251,27 @@ final class TVModel {
             let done = await flow.run { [weak self] said in self?.signIn = said }
             guard done, !Task.isCancelled else { return }
             await self.show(.adoptNow)
+        }
+    }
+
+    /// Whether ``followSessionsEndedByServer()`` has started. The stream has one reader.
+    private var followingEndings = false
+
+    /// Reads `AuthClient.endedByServer` for the app's life. When the server ends the session (the
+    /// refresh token expired or was revoked), the TV forgets the account as a sign-out does and
+    /// shows the sign-in codes. An ending that comes before this starts waits in the stream.
+    private func followSessionsEndedByServer() {
+        guard !followingEndings else { return }
+        followingEndings = true
+        let endings = auth.endedByServer
+        Task { [weak self] in
+            for await _ in endings {
+                guard let self else { return }
+                // Checked against the session as it is now, so a sign-in that finished in the
+                // meantime is kept.
+                guard await !self.auth.isSignedIn else { continue }
+                await self.signOut()
+            }
         }
     }
 
