@@ -259,22 +259,26 @@ public struct EditPage: View {
         let hasOwn = edit.banner != nil || own != nil
         let frame = RoundedRectangle(cornerRadius: 12, style: .continuous)
         return card(Loc.get("Rpm_Profile_BannerTitle")) {
-            ZStack {
-                frame.fill(RPMInk.white(0x10 / 255))
-                Text(Glyph.record).font(RPMFont.icon(22)).foregroundStyle(RPMInk.white(0x33 / 255))
-                if edit.follows {
-                    if let playingPhoto {
-                        RemotePicture(playingPhoto) { $0.resizable().scaledToFill() }
+            // The pictures are an overlay on the well, so the well alone sets the size. A filled
+            // picture reports its scaled size, and a wide photo would make the card wider than the
+            // screen.
+            frame.fill(RPMInk.white(0x10 / 255))
+                .frame(height: 96)
+                .overlay {
+                    ZStack {
+                        Text(Glyph.record).font(RPMFont.icon(22)).foregroundStyle(RPMInk.white(0x33 / 255))
+                        if edit.follows {
+                            if let playingPhoto {
+                                RemotePicture(playingPhoto) { $0.resizable().scaledToFill() }
+                            }
+                        } else if let data = edit.banner, let image = UIImage(data: data) {
+                            Image(uiImage: image).resizable().scaledToFill()
+                        } else if let own {
+                            RemotePicture(own) { $0.resizable().scaledToFill() }
+                        }
                     }
-                } else if let data = edit.banner, let image = UIImage(data: data) {
-                    Image(uiImage: image).resizable().scaledToFill()
-                } else if let own {
-                    RemotePicture(own) { $0.resizable().scaledToFill() }
                 }
-            }
-            .frame(height: 96)
-            .frame(maxWidth: .infinity)
-            .clipShape(frame)
+                .clipShape(frame)
             .overlay { frame.strokeBorder(RPMInk.white(0x1A / 255), lineWidth: 1) }
 
             choice(Loc.get("Rpm_Profile_BannerPlaying"), picked: edit.follows) { edit.follows = true }

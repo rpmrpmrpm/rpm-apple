@@ -139,8 +139,11 @@ public struct ProfilePage: View {
             // banner view, and a frame on no view takes no room, which would lift the photo
             // under the status bar.
             ZStack(alignment: .bottom) {
-                bannerPicture
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // The banner is an overlay on an empty view, so it takes the stack's size and gives
+                // none of its own. A filled picture reports its scaled size: a wide photo would be
+                // wider than the screen and make the whole page wider.
+                Color.clear
+                    .overlay { bannerPicture }
                     .clipped()
 
                 // A supporter's photo has a gold ring and a glow that lights up around it.
@@ -226,11 +229,12 @@ public struct ProfilePage: View {
         if let banner {
             RemotePicture(banner) { image in
                 ZStack {
-                    image.resizable().scaledToFill()
+                    filled(image)
 
-                    // The same picture blurred, taking over from the middle down.
-                    image.resizable().scaledToFill()
-                        .blur(radius: 24)
+                    // The same picture blurred, taking over from the middle down. `opaque` keeps
+                    // the blurred edges from going transparent.
+                    filled(image)
+                        .blur(radius: 24, opaque: true)
                         .mask {
                             LinearGradient(stops: [.init(color: .clear, location: 0.3),
                                                    .init(color: .black, location: 0.75)],
@@ -245,6 +249,14 @@ public struct ProfilePage: View {
                 }
             }
         }
+    }
+
+    /// The picture filling the banner and cut to it, so the masks run over the banner's height and
+    /// not over the picture's own height.
+    private func filled(_ image: Image) -> some View {
+        Color.clear
+            .overlay { image.resizable().scaledToFill() }
+            .clipped()
     }
 
     private func counts(_ profile: RPMProfile) -> String? {
