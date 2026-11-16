@@ -209,7 +209,8 @@ private final class Seen: @unchecked Sendable {
 
 /// The page's look and the supporter's gold read from the wire, with defaults when a server leaves them out.
 @Test func theLookAndTheGoldNamesRead() throws {
-    let json = #"{"userId":"u1","bannerSource":"listening","badges":["first-spin"],"badge":"first-spin","badgeColour":"#2563EB"}"#
+    // Two pound signs: the colour's "#2 would close a raw string that has one.
+    let json = ##"{"userId":"u1","bannerSource":"listening","badges":["first-spin"],"badge":"first-spin","badgeColour":"#2563EB"}"##
     let profile = try RPMJSON.decoder.decode(RPMProfile.self, from: Data(json.utf8))
     #expect(profile.bannerFollowsListening)
     #expect(profile.badges == ["first-spin"])
