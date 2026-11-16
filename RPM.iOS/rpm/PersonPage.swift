@@ -284,12 +284,14 @@ final class PersonPage: Identifiable {
 
     /// Sends the badges this phone worked out when the server does not hold them all yet. The server notifies the
     /// reader of each new one. Only on the reader's own page, once it is read: the badge shown and its colour go with
-    /// them.
-    func reportBadges(_ unlocked: [String]) async {
-        guard let shown = profile, isOwn, !isSample, !unlocked.allSatisfy(shown.badges.contains) else { return }
+    /// them. Returns true when the server took new badges, so the caller reads the notification count again.
+    @discardableResult
+    func reportBadges(_ unlocked: [String]) async -> Bool {
+        guard let shown = profile, isOwn, !isSample, !unlocked.allSatisfy(shown.badges.contains) else { return false }
         guard let stored = try? await community.setBadges(unlocked, badge: shown.badge, badgeColour: shown.badgeColour)
-        else { return }
+        else { return false }
         profile = profile?.with(badges: stored.badges)
+        return true
     }
 
     // ── the open thread ──

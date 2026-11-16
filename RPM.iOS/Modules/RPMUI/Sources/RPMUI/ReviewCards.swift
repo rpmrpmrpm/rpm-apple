@@ -144,10 +144,12 @@ struct ReviewHead: View {
     }
 }
 
-/// When something was written, in words a person would use.
+/// When something was written, in words a person would use: "just now" for the last minute.
 func written(_ millis: Int64) -> String {
     guard millis > 0 else { return "" }
-    return Date(timeIntervalSince1970: Double(millis) / 1000).formatted(.relative(presentation: .named))
+    let date = Date(timeIntervalSince1970: Double(millis) / 1000)
+    if Date().timeIntervalSince(date) < 60 { return Loc.get("Rpm_Profile_JustNow") }
+    return date.formatted(.relative(presentation: .named))
 }
 
 /// The record's cover, found by `coverFor`, over the record glyph while it is found or when there is none.

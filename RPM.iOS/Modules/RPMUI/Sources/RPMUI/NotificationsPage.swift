@@ -94,7 +94,7 @@ public struct NotificationsPage: View {
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(note.written.formatted(.relative(presentation: .named)))
+                Text(written(note.createdAt))
                     .font(RPMFont.display(11))
                     .foregroundStyle(RPMInk.white(0x77 / 255))
 

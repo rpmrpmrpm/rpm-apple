@@ -54,14 +54,15 @@ struct PersonScreen: View {
             }
             .task(id: page.userId) {
                 await page.read()
-                await notices?.readUnread()
                 if let post = page.pendingPost {
                     page.pendingPost = nil
                     await page.open(post)
                 }
+                // A badge sent can be a notification, so the count for the dot is read after it.
                 await page.reportBadges(ownBadges)
+                await notices?.readUnread()
             }
-            .task(id: ownBadges) { await page.reportBadges(ownBadges) }
+            .task(id: ownBadges) { if await page.reportBadges(ownBadges) { await notices?.readUnread() } }
             .overlay {
                 if let post = reportingPost {
                     ReportSheet(prompt: Loc.get("Album_ReportCommentPrompt"),

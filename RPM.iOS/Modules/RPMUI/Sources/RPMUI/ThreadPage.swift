@@ -113,7 +113,7 @@ public struct ThreadPage: View {
                     Text(post.authorShown)
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(post.authorSupporter || ownerSupporter ? RPMInk.gold : .white)
-                    Text(post.written.formatted(.relative(presentation: .named)))
+                    Text(written(post.createdAt))
                         .font(RPMFont.display(11))
                         .foregroundStyle(RPMInk.white(0x77 / 255))
                 }
@@ -149,44 +149,48 @@ public struct ThreadPage: View {
         let reply = line.reply
         let mine = reply.userId == readerId
 
-        return HStack(alignment: .top, spacing: 8) {
-            if line.depth > 0 {
-                Rectangle()
-                    .fill(RPMInk.white(0x22 / 255))
-                    .frame(width: 2)
-            }
+        return ZStack(alignment: .topTrailing) {
+            HStack(alignment: .top, spacing: 8) {
+                if line.depth > 0 {
+                    Rectangle()
+                        .fill(RPMInk.white(0x22 / 255))
+                        .frame(width: 2)
+                }
 
-            VStack(alignment: .leading, spacing: 4) {
-                if reply.deleted {
-                    Text(Loc.get("Rpm_Profile_ReplyDeleted"))
-                        .font(RPMFont.display(13))
-                        .italic()
-                        .foregroundStyle(RPMInk.white(0x77 / 255))
-                } else {
-                    HStack(spacing: 8) {
-                        PersonPicture(reply.authorDeleted ? nil : pictureOf(reply.userId, reply.hasAvatar),
-                                      name: reply.authorShown, size: 26)
-                        Byline(name: reply.authorShown, millis: reply.createdAt, gold: reply.authorSupporter)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture { if !reply.authorDeleted { actions.onOpenPerson(reply.userId) } }
-
-                    Text(reply.body)
-                        .font(RPMFont.display(14))
-                        .foregroundStyle(RPMInk.white(0xE6 / 255))
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    HStack(spacing: 0) {
-                        VoteKeys(ups: reply.ups, downs: reply.downs, mine: reply.myVote, enabled: !mine) {
-                            actions.onVote(reply, $0)
+                VStack(alignment: .leading, spacing: 4) {
+                    if reply.deleted {
+                        Text(Loc.get("Rpm_Profile_ReplyDeleted"))
+                            .font(RPMFont.display(13))
+                            .italic()
+                            .foregroundStyle(RPMInk.white(0x77 / 255))
+                    } else {
+                        HStack(spacing: 8) {
+                            PersonPicture(reply.authorDeleted ? nil : pictureOf(reply.userId, reply.hasAvatar),
+                                          name: reply.authorShown, size: 26)
+                            Byline(name: reply.authorShown, millis: reply.createdAt, gold: reply.authorSupporter)
                         }
-                        Spacer(minLength: 0)
-                        ReplyKey(count: 0) { actions.onReplyTo(reply) }
+                        .padding(.trailing, reply.deleted ? 0 : 30)
+                        .contentShape(Rectangle())
+                        .onTapGesture { if !reply.authorDeleted { actions.onOpenPerson(reply.userId) } }
+
+                        Text(reply.body)
+                            .font(RPMFont.display(14))
+                            .foregroundStyle(RPMInk.white(0xE6 / 255))
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: 0) {
+                            VoteKeys(ups: reply.ups, downs: reply.downs, mine: reply.myVote, enabled: !mine) {
+                                actions.onVote(reply, $0)
+                            }
+                            Spacer(minLength: 0)
+                            ReplyKey(count: 0) { actions.onReplyTo(reply) }
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
+            // In the corner, level with the name; the dots end where the replies end, as on a post.
             if !reply.deleted {
                 Menu {
                     if mine || isPageOwner {
@@ -199,6 +203,7 @@ public struct ThreadPage: View {
                     MoreKey()
                 }
                 .accessibilityLabel(Loc.get("Common_MoreOptions"))
+                .offset(x: 10, y: -1)
             }
         }
         .padding(.vertical, 6)
