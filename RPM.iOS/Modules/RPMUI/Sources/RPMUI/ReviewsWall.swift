@@ -36,6 +36,9 @@ public struct ReviewsWall: View {
     private let onRate: (Double) -> Void
     private let onWrite: () -> Void
     private let onVote: (RPMReview, Int) -> Void
+
+    /// Opens the page of the review's author.
+    private let onAuthor: (RPMReview) -> Void
     private let onMore: () -> Void
 
     public init(average: Double, ratingCount: Int, myStars: Double,
@@ -45,6 +48,7 @@ public struct ReviewsWall: View {
                 onRate: @escaping (Double) -> Void,
                 onWrite: @escaping () -> Void,
                 onVote: @escaping (RPMReview, Int) -> Void,
+                onAuthor: @escaping (RPMReview) -> Void = { _ in },
                 onMore: @escaping () -> Void) {
         self.average = average
         self.ratingCount = ratingCount
@@ -58,6 +62,7 @@ public struct ReviewsWall: View {
         self.onRate = onRate
         self.onWrite = onWrite
         self.onVote = onVote
+        self.onAuthor = onAuthor
         self.onMore = onMore
     }
 
@@ -163,10 +168,14 @@ public struct ReviewsWall: View {
                     .background(Circle().fill(RPMInk.white(0x26 / 255)))
 
                 VStack(alignment: .leading, spacing: 3) {
+                    // A supporter's name is in gold.
                     Text(face.review.authorShown)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(face.review.authorSupporter ? RPMInk.gold : .white)
                         .lineLimit(1)
+                        // The name opens the author's page. A deleted account has no page.
+                        .onTapGesture { if !face.review.authorDeleted { onAuthor(face.review) } }
+                        .accessibilityAddTraits(face.review.authorDeleted ? [] : .isButton)
 
                     HStack(spacing: 8) {
                         StarRating(Double(face.review.rating) / 2, size: 11)

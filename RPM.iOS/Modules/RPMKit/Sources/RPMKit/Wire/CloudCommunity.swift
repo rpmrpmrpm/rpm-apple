@@ -74,11 +74,15 @@ public struct RPMReview: Codable, Hashable, Sendable {
     /// "Deleted user". False when the server does not send the field.
     public let authorDeleted: Bool
 
+    /// The author supports rpm: their name is drawn in gold. False when the server does not send the field.
+    public let authorSupporter: Bool
+
     /// The name to draw.
     public var authorShown: String { authorDeleted ? Loc.get("Community_DeletedUser") : authorName }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        authorSupporter = try c.decodeIfPresent(Bool.self, forKey: .authorSupporter) ?? false
         albumId    = try c.decodeIfPresent(String.self, forKey: .albumId) ?? ""
         userId     = try c.decodeIfPresent(String.self, forKey: .userId) ?? ""
         authorName = try c.decodeIfPresent(String.self, forKey: .authorName) ?? ""
@@ -158,6 +162,48 @@ public struct RPMProfile: Codable, Hashable, Sendable {
     /// not fail to parse. The server omits it entirely on a fresh profile.
     public let supporter: Bool
 
+    // The fields below belong to the profile page. Every one is optional on the wire, so a profile
+    // from a server without the page still reads, and shows no banner, no song and no counts.
+
+    public let hasBanner: Bool
+    public let bannerUpdatedAt: Int64
+
+    /// What this person is playing now. Nil when nothing is, when it is older than the server's
+    /// limit, or when they have turned sharing off.
+    public private(set) var listening: RPMListening?
+
+    /// How many albums and tracks are in their collection, as their app last reported.
+    public private(set) var counts: RPMCounts?
+
+    /// Where the caller stands with this person.
+    public let friendship: RPMFriendship
+
+    /// The caller has blocked this person.
+    public let blocked: Bool
+
+    /// Whether the person shares what they are listening to. Only the caller's own profile
+    /// (`GET profile`) carries it; on anyone else's it reads true.
+    public let sharesListening: Bool
+
+    /// What the owner's page is drawn on, as the server stores it. See ``RPMPageGround``.
+    public private(set) var pageGround: String
+
+    /// Where the banner comes from: `photo` (the banner photo, or none) or `listening` (a photo of the artist the
+    /// owner is playing). Empty reads as `photo`.
+    public private(set) var bannerSource: String
+
+    /// The badges unlocked, by id, oldest first. See ``RPMProfileBadges``.
+    public private(set) var badges: [String]
+
+    /// The badge shown under the name, or empty.
+    public private(set) var badge: String
+
+    /// The badge's colour, `#RRGGBB`, or empty for the first of ``RPMProfileBadges/colours``.
+    public private(set) var badgeColour: String
+
+    /// Whether the banner is a photo of the artist the owner is playing.
+    public var bannerFollowsListening: Bool { bannerSource == "listening" }
+
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         userId          = try c.decode(String.self, forKey: .userId)
@@ -166,6 +212,41 @@ public struct RPMProfile: Codable, Hashable, Sendable {
         avatarUpdatedAt = try c.decodeIfPresent(Int64.self, forKey: .avatarUpdatedAt) ?? 0
         createdAt       = try c.decodeIfPresent(Int64.self, forKey: .createdAt) ?? 0
         supporter       = try c.decodeIfPresent(Bool.self, forKey: .supporter) ?? false
+        hasBanner       = try c.decodeIfPresent(Bool.self, forKey: .hasBanner) ?? false
+        bannerUpdatedAt = try c.decodeIfPresent(Int64.self, forKey: .bannerUpdatedAt) ?? 0
+        listening       = try c.decodeIfPresent(RPMListening.self, forKey: .listening)
+        counts          = try c.decodeIfPresent(RPMCounts.self, forKey: .counts)
+        friendship      = try c.decodeIfPresent(RPMFriendship.self, forKey: .friendship) ?? .none
+        blocked         = try c.decodeIfPresent(Bool.self, forKey: .blocked) ?? false
+        sharesListening = try c.decodeIfPresent(Bool.self, forKey: .sharesListening) ?? true
+        pageGround      = try c.decodeIfPresent(String.self, forKey: .pageGround) ?? ""
+        bannerSource    = try c.decodeIfPresent(String.self, forKey: .bannerSource) ?? ""
+        badges          = try c.decodeIfPresent([String].self, forKey: .badges) ?? []
+        badge           = try c.decodeIfPresent(String.self, forKey: .badge) ?? ""
+        badgeColour     = try c.decodeIfPresent(String.self, forKey: .badgeColour) ?? ""
+    }
+
+    /// The same profile with the page's look changed: what the sample page keeps, as the server cannot. A nil
+    /// value keeps what there is.
+    public func with(pageGround: String? = nil, bannerSource: String? = nil, badges: [String]? = nil,
+                     badge: String? = nil, badgeColour: String? = nil) -> RPMProfile {
+        var copy = self
+        if let pageGround { copy.pageGround = pageGround }
+        if let bannerSource { copy.bannerSource = bannerSource }
+        if let badges { copy.badges = badges }
+        if let badge { copy.badge = badge }
+        if let badgeColour { copy.badgeColour = badgeColour }
+        return copy
+    }
+
+    /// The same profile with the sample's counts and song where it has none of its own. See ``RPMProfileSample``.
+    public func filled(from sample: RPMProfileSample) -> RPMProfile {
+        var copy = self
+        if copy.counts == nil { copy.counts = sample.counts }
+        if copy.listening == nil { copy.listening = sample.listening }
+        if copy.badge.isEmpty { copy.badge = sample.badge }
+        if copy.badgeColour.isEmpty { copy.badgeColour = sample.badgeColour }
+        return copy
     }
 }
 

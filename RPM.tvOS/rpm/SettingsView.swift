@@ -1,5 +1,6 @@
 import SwiftUI
 import RPMKit
+import RPMArt
 import RPMAudio
 import RPMLibrary
 
@@ -69,6 +70,9 @@ struct SettingsView: View {
                     SettingRow(label: Loc.get("Settings_Background"), value: background(settings.background)) {
                         settings.nextBackground()
                     }
+                    SettingRow(label: Loc.get("Settings_DiscStandIn"), value: discStandIn(settings.discStandIn)) {
+                        settings.nextDiscStandIn()
+                    }
                     SettingRow(label: Loc.get("Tv_SettingsShowStats"), value: settings.showStats ? on : off) {
                         settings.switchStats()
                     }
@@ -127,6 +131,13 @@ struct SettingsView: View {
         case .standard: Loc.get("Tv_PictureStandard")
         case .softer: Loc.get("Tv_PictureSofter")
         case .muted: Loc.get("Tv_PictureMuted")
+        }
+    }
+
+    private func discStandIn(_ choice: DiscStandIn) -> String {
+        switch choice {
+        case .cd: Loc.get("Settings_DiscStandInCd")
+        case .vinyl: Loc.get("Settings_DiscStandInVinyl")
         }
     }
 

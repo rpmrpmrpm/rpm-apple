@@ -3,7 +3,7 @@ import RPMKit
 
 /// What rpm is, and everything on this phone that somebody else made.
 ///
-/// Raised as a sheet from the About card on ``ProfilePage`` rather than living on the tab: it is
+/// Raised as a sheet from the About card on ``SettingsPage`` rather than living on the tab: it is
 /// read once, by somebody who went looking for it, and the tab is where the account and the
 /// playback settings are.
 ///

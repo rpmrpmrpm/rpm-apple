@@ -474,6 +474,23 @@ public struct RPMCloudClient: Sendable {
                               partial: partial)
     }
 
+    /// The cover of a record the reader does not have, by its artist and title: for a review on a profile page or
+    /// the Feed tab. The first picture the cover search (`artwork/search`) finds; nil when it finds none. A record in
+    /// the reader's own collection shows its own cover and never asks here. The search answers a signed-in caller
+    /// only.
+    public func searchCover(artist: String, album: String) async throws -> URL? {
+        struct Found: Decodable {
+            struct Candidate: Decodable { let thumbUrl: String?; let fullUrl: String? }
+            let results: [Candidate]?
+        }
+        guard !artist.trimmingCharacters(in: .whitespaces).isEmpty,
+              !album.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        let path = "artwork/search?artist=\(escaped(artist))&album=\(escaped(album))&limit=1"
+        let first = try await transport.get(path, as: Found.self).results?.first
+        let address = (first?.thumbUrl).flatMap { $0.isEmpty ? nil : $0 } ?? first?.fullUrl ?? ""
+        return URL(string: address)
+    }
+
     /// How many times the world has played each song on one record. See ``RecordPlays``.
     ///
     /// The request and its values are the same as the desktop's popularity sweep makes

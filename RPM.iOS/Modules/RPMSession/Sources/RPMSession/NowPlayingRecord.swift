@@ -69,7 +69,9 @@ public final class NowPlayingRecord {
         // and the disc are always set together.
         guard player.current?.rpmId == track.rpmId else { return }
 
-        playing = PlayingRecord(album: track.album ?? "", art: got, disc: disc)
+        // A record with no disc picture of its own gets the plain CD, unless the listener chose the
+        // vinyl (``BlankDisc``).
+        playing = PlayingRecord(album: track.album ?? "", art: got, disc: disc ?? BlankDisc.standIn())
         remote.show(track, artwork: got?.image)
     }
 

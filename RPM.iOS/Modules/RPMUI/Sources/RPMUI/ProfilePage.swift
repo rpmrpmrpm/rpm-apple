@@ -1,736 +1,631 @@
 import SwiftUI
 import RPMKit
-import RPMArt
-import RPMAudio
 
-/// The account, and all the app settings that are choices and not records.
+/// What a key on someone else's page does to the friendship.
+public enum FriendStep: Sendable {
+    case add, cancel, accept, decline, remove
+}
+
+/// What the profile page asks its owner to do. Every action starts as one that does nothing, and
+/// the caller sets the ones that apply: the own page has no Add friend, another person's page has
+/// no post box.
+public struct ProfileActions {
+    /// Nil when the page has no back key.
+    public var onBack: (() -> Void)?
+    public var onNotifications: () -> Void = {}
+    public var onEditPage: () -> Void = {}
+    public var onFriend: (FriendStep) -> Void = { _ in }
+    public var onBlock: () -> Void = {}
+    public var onUnblock: () -> Void = {}
+    public var onSend: () -> Void = {}
+    public var onVote: (RPMPost, Int) -> Void = { _, _ in }
+    public var onVoteReview: (RPMReview, Int) -> Void = { _, _ in }
+    /// Opens a post with its replies.
+    public var onOpenPost: (RPMPost) -> Void = { _ in }
+    public var onDeletePost: (RPMPost) -> Void = { _ in }
+    public var onReportPost: (RPMPost) -> Void = { _ in }
+    /// Opens a review whole: Read full review.
+    public var onReadReview: (RPMFeedReview) -> Void = { _ in }
+    /// Reads the next page of the feed.
+    public var onMore: () -> Void = {}
+    public var onRefresh: () async -> Void = {}
+
+    public init() {}
+}
+
+/// A person's page: their banner and photo, name, badge, collection counts, what they are playing, and their posts
+/// and reviews, newest first. The same page is the reader's own (``isOwn``) and the page of anyone else, opened from
+/// a name. It is the Android app's `ProfileScreen`.
 ///
-/// Ported from `RPM.Mobile/Presentation/ProfilePage.xaml`. It is a tab and not a gear button in a
-/// corner, because it holds more than settings: how much cloud storage is used, the plan of the
-/// account, and the way to sign out. Users look for these, so they should be easy to find.
-///
-/// Every card has the same shape: a glyph and a kicker, then the current value, then the
-/// actions.
-///
-/// One card of the desktop app is not here: sharing is arranged between two computers on one
-/// network, and a phone cannot be either of them. It will be added together with the feature it
-/// controls.
+/// Every entry in the feed is the page owner's own: only the owner posts on their page, and the
+/// reviews are the ones they wrote. So every row uses the owner's name and photo.
 public struct ProfilePage: View {
-    private let name: String
-    private let email: String
-    private let quota: CloudQuota?
-    private let onWifi: Binding<Int>
-    private let onCellular: Binding<Int>
+    private let profile: RPMProfile?
+    private let isOwn: Bool
+    private let photo: URL?
+    private let banner: URL?
+    private let feed: [RPMFeedItem]
+    private let answered: Bool
+    private let trouble: String?
+    private let hasMore: Bool
+    private let unread: Int
+    private let playing: RPMSong?
+    private let sending: Bool
+    @Binding private var draft: String
+    @Binding private var withSong: Bool
+    private let coverFor: ReviewCoverSource
+    private let actions: ProfileActions
 
-    /// The bit rate that downloads ask for, on any network.
-    private let onDownload: Binding<Int>
+    /// The page shows the sample posts of a test build. See ``RPMProfileSample``.
+    private let isSample: Bool
 
-    /// Whether records are levelled (volume levelling), and by album or by track.
-    private let levelling: Binding<NormalizeMode>
+    /// Whether the owner wears the supporter's mark: the gold name, the heart, the gold ring and the glow. The caller
+    /// decides, because the reader's own profile does not say; their plan does.
+    private let supporter: Bool
 
-    /// Whether records marked as classical are levelled too.
-    private let levelsClassical: Binding<Bool>
+    @State private var confirmingBlock = false
 
-    /// The state of the network connection. This screen reads it for one purpose: to check
-    /// whether the two menu values are the rates that the player will really ask for. **There is
-    /// no default.** A screen that assumed an unrestricted network would show a setting of 320
-    /// to a user whose phone is streaming at 128, without any explanation.
-    private let reach: Reach
-
-    private let cached: Int64
-
-    /// How many albums are downloaded to this phone, and what they take.
-    private let downloaded: (albums: Int, bytes: Int64)
-    private let onDownloads: () -> Void
-
-    private let version: String
-    private let onClearCache: () -> Void
-    private let onSignOut: () -> Void
-
-    /// Deletes the account on the server and signs out. Returns nil when done, and an error
-    /// message when it failed.
-    private let onDeleteAccount: () async -> String?
-    private let onSupport: () -> Void
-
-    /// The Send crash reports switch.
-    private let crashReports: Binding<Bool>
-
-    /// Opens Send feedback. Nil hides the key: only a TestFlight build offers it (`ReportScope`).
-    private let onFeedback: (() -> Void)?
-
-    /// Whether the delete-account panel is shown.
-    @State private var deletingAccount = false
-
-    /// Whether the acknowledgements are shown.
-    @State private var credits = false
-
-    /// The id of the chosen backdrop. The background on every page reads the same key, so writing
-    /// it here changes the whole app and not only this card. See ``VinylGround``.
-    @AppStorage(Backdrop.key) private var backdropId = ""
-
-    public init(name: String, email: String, quota: CloudQuota?,
-                onWifi: Binding<Int>, onCellular: Binding<Int>, onDownload: Binding<Int>,
-                levelling: Binding<NormalizeMode>,
-                levelsClassical: Binding<Bool>,
-                reach: Reach,
-                cached: Int64,
-                downloaded: (albums: Int, bytes: Int64),
-                onDownloads: @escaping () -> Void,
-                version: String,
-                onClearCache: @escaping () -> Void,
-                onSignOut: @escaping () -> Void,
-                onDeleteAccount: @escaping () async -> String?,
-                onSupport: @escaping () -> Void,
-                crashReports: Binding<Bool>,
-                onFeedback: (() -> Void)?) {
-        self.name = name
-        self.email = email
-        self.quota = quota
-        self.onWifi = onWifi
-        self.onCellular = onCellular
-        self.onDownload = onDownload
-        self.levelling = levelling
-        self.levelsClassical = levelsClassical
-        self.reach = reach
-        self.cached = cached
-        self.downloaded = downloaded
-        self.onDownloads = onDownloads
-        self.version = version
-        self.onClearCache = onClearCache
-        self.onSignOut = onSignOut
-        self.onDeleteAccount = onDeleteAccount
-        self.onSupport = onSupport
-        self.crashReports = crashReports
-        self.onFeedback = onFeedback
+    /// - Parameters:
+    ///   - profile: nil while it is being read.
+    ///   - banner: the banner to show: the owner's photo, or the playing artist's when they chose that.
+    ///   - answered: whether the feed has been read. False while it is read and after a failed read,
+    ///     so a feed that could not be read is not shown as an empty one.
+    ///   - playing: the song playing on this phone, for the post box's switch. Nil when nothing is.
+    ///   - coverFor: finds a reviewed record's cover.
+    public init(profile: RPMProfile?, isOwn: Bool, photo: URL?, banner: URL?,
+                feed: [RPMFeedItem], answered: Bool, trouble: String?, hasMore: Bool,
+                unread: Int, playing: RPMSong?, sending: Bool,
+                draft: Binding<String>, withSong: Binding<Bool>,
+                coverFor: @escaping ReviewCoverSource,
+                actions: ProfileActions, isSample: Bool = false, supporter: Bool = false) {
+        self.profile = profile
+        self.isOwn = isOwn
+        self.photo = photo
+        self.banner = banner
+        self.feed = feed
+        self.answered = answered
+        self.trouble = trouble
+        self.hasMore = hasMore
+        self.unread = unread
+        self.playing = playing
+        self.sending = sending
+        self._draft = draft
+        self._withSong = withSong
+        self.coverFor = coverFor
+        self.actions = actions
+        self.isSample = isSample
+        self.supporter = supporter
     }
 
-    /// The bit rates that this account may choose between.
-    ///
-    /// It uses the quota that the storage meter already fetches, because the phone has no
-    /// separate supporter service to ask. A nil quota means it is not known yet, and then the
-    /// whole ladder is offered. Telling a supporter that they are on the free plan because a
-    /// request timed out is the worse of the two possible mistakes.
-    private var offer: AudioLadder.RateOffer {
-        guard let quota else { return .unread }
-        return .of(isSupporter: quota.supporter)
-    }
+    /// The height of the banner, under the status bar too.
+    private static let bannerTall: CGFloat = 190
+    private static let photoSize: CGFloat = 120
+
+    /// How far the photo's centre stands above the banner's foot.
+    private static let photoLift: CGFloat = 14
 
     public var body: some View {
-        // The header stays fixed over the scroll view, as in the desktop app. It is the name of
-        // the page, and the user should not have to scroll back to see it. Every other page
-        // here is built the same way.
-        DissolvingScroll {
-            VStack(alignment: .leading, spacing: 14) {
-                account
-                storage
-                downloads
-                plan
-                backdrop
-                playback
-                loudness
-                device
-                about
+        ScrollView {
+            VStack(spacing: 0) {
+                top
+                    .padding(.bottom, 16)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    if isOwn { box }
+                    if isSample { Text(Loc.get("Rpm_Profile_SampleNote")).rpmKicker() }
+                    rows
+                }
+                .padding(.horizontal, RPMLayout.margin)
+                .padding(.bottom, RPMLayout.foot)
             }
-            .padding(.horizontal, RPMLayout.margin)
-            .padding(.top, 4)
-            .padding(.bottom, RPMLayout.foot)
         }
         .scrollIndicators(.hidden)
-        .scrollsUnder { header }
-        .background { VinylGround() }
-        .overlay {
-            if deletingAccount {
-                DeleteAccountSheet(email: email, commit: onDeleteAccount,
-                                   onClose: { deletingAccount = false })
-                    .transition(.opacity)
+        .ignoresSafeArea(edges: .top)
+        .refreshable { await actions.onRefresh() }
+        .background { PageGroundView(wire: profile?.pageGround ?? "") }
+        .overlay(alignment: .top) { keys }
+        .confirmationDialog(Loc.get("Rpm_Profile_BlockConfirm", profile?.displayName ?? ""),
+                            isPresented: $confirmingBlock, titleVisibility: .visible) {
+            Button(Loc.get("Rpm_Profile_Block"), role: .destructive, action: actions.onBlock)
+            Button(Loc.get("Common_Cancel"), role: .cancel) {}
+        }
+    }
+
+    // ── the top: banner, photo, name and the lines under it ──
+
+    private var top: some View {
+        VStack(spacing: 0) {
+            ZStack(alignment: .bottom) {
+                bannerPicture
+                    .frame(height: Self.bannerTall + Self.photoSize / 2 - Self.photoLift)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+
+                // A supporter's photo has a gold ring and a glow that lights up around it.
+                PersonPicture(photo, name: profile?.displayName ?? "", size: Self.photoSize)
+                    .overlay {
+                        Circle().strokeBorder(supporter ? RPMInk.gold : RPMInk.white(0x33 / 255),
+                                              lineWidth: supporter ? 3 : 2)
+                    }
             }
-        }
-        .animation(.easeOut(duration: 0.18), value: deletingAccount)
-    }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: PageTitle.subtitleGap) {
-            PageTitle(Loc.get("Rpm_Tab_Profile"))
-
-            Text(Loc.get("Rpm_Profile_Subtitle")).rpmKicker()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, RPMLayout.margin)
-        // No top padding: in the Uno phone app, SafeArea.Insets replaces the ten points that
-        // its markup asks for, so its headers start at the safe area. See
-        // `LibraryPage.header`.
-        .padding(.bottom, 8)
-    }
-
-    // ── account ──
-
-    private var account: some View {
-        card(Glyph.profile, Loc.get("Rpm_Profile_Account")) {
-            // No supporter badge here. It is shown in the Supporter card instead.
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name.isEmpty ? email : name)
-                    .font(RPMFont.display(17))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-
-                if !name.isEmpty {
-                    Text(email)
-                        .font(RPMFont.display(13))
-                        .foregroundStyle(RPMInk.white(0x88 / 255))
+            if let profile {
+                HStack(spacing: 8) {
+                    // A supporter's name is in gold, with the supporter's heart beside it.
+                    Text(profile.displayName)
+                        .font(RPMFont.display(22))
+                        .foregroundStyle(supporter ? RPMInk.gold : .white)
                         .lineLimit(1)
-                }
-            }
 
-            Text(Loc.get("Rpm_Profile_SignOutDetail"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x66 / 255))
-
-            // One row: Sign out takes two thirds and Delete takes one third, so the action that
-            // users need most is the larger key, and the destructive one is still on the card.
-            // The app must make account deletion easy to find (App Store guideline 5.1.1(v)), so
-            // it is not hidden. The panel it opens asks for the email address, so a tap on Delete
-            // deletes nothing by itself.
-            GeometryReader { row in
-                let third = (row.size.width - Self.keysApart) / 3
-
-                HStack(spacing: Self.keysApart) {
-                    key(Loc.get("Login_SignOut"), stretches: true, action: onSignOut)
-                        .frame(width: third * 2)
-
-                    Button { deletingAccount = true } label: {
-                        // One word, because a third of the row is too narrow for "Delete account" in
-                        // English or in French. The card says what is deleted.
-                        Text(Loc.get("Rpm_Profile_DeleteAccount"))
-                            .foregroundStyle(RPMInk.red)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                    if supporter {
+                        Text(Glyph.heart)
+                            .font(RPMFont.icon(16))
+                            .foregroundStyle(RPMInk.gold)
+                            .accessibilityLabel(Loc.get("Rpm_Profile_PlanSupporter"))
                     }
-                    .buttonStyle(RPMGlassButton(.ghost, radius: 9, height: Self.keyHeight,
-                                                stretches: true, inset: 12, size: 13))
-                    .frame(width: third)
-                    .accessibilityLabel(Loc.get("Account_Delete"))
                 }
-            }
-            .frame(height: Self.keyHeight)
-        }
-    }
+                .padding(.horizontal, RPMLayout.margin)
+                // The name sits close under the photo.
+                .padding(.top, 8)
 
-    /// The space between two keys on one row.
-    private static let keysApart: Double = 10
-
-    // ── cloud storage ──
-
-    private var storage: some View {
-        card(Glyph.cloud, Loc.get("Cloud_Heading")) {
-            if let quota {
-                Text(said(quota))
-                    .font(RPMFont.display(17))
-                    .foregroundStyle(.white)
-
-                if !quota.unlimited, quota.quotaBytes > 0 {
-                    meter(Double(quota.usedBytes) / Double(quota.quotaBytes))
-                }
-
-                Text(quota.fileCount == 1 ? Loc.get("Rpm_Profile_TracksOne")
-                                              : Loc.get("Rpm_Queue_Count", quota.fileCount))
-                    .font(RPMFont.display(11))
-                    .foregroundStyle(RPMInk.white(0x66 / 255))
-            } else {
-                Text(Loc.get("Rpm_Profile_QuotaUnknown"))
-                    .font(RPMFont.display(13))
-                    .foregroundStyle(RPMInk.white(0x88 / 255))
-            }
-        }
-    }
-
-    /// The usage bar. It uses the same white as the seek knob and the playing mark, on a dark
-    /// track in the card's own tone.
-    private func meter(_ full: Double) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.black.opacity(0x22 / 255))
-                Capsule()
-                    .fill(full > 0.9 ? RPMInk.red : RPMInk.white(0xE6 / 255))
-                    .frame(width: geometry.size.width * min(1, max(0, full)))
-            }
-        }
-        .frame(height: 4)
-        .padding(.vertical, 2)
-    }
-
-    // ── on this phone ──
-
-    /// The albums kept on the phone for listening offline, and the way to the list of them.
-    private var downloads: some View {
-        card(Glyph.download, Loc.get("Rpm_Downloads_Title")) {
-            Text(downloaded.albums == 0
-                 ? Loc.get("Rpm_Downloads_None")
-                 : downloaded.albums == 1
-                    ? Loc.get("Rpm_Downloads_SummaryOne", bytes(downloaded.bytes))
-                    : Loc.get("Rpm_Downloads_Summary", downloaded.albums, bytes(downloaded.bytes)))
-                .font(RPMFont.display(17))
-                .foregroundStyle(.white)
-
-            Text(Loc.get("Rpm_Downloads_Detail"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x66 / 255))
-
-            key(Loc.get("Rpm_Downloads_Manage"), stretches: true, action: onDownloads)
-        }
-    }
-
-    // ── supporter status ──
-
-    /// The string for this account's standing: a closed beta tester, a paying supporter, or free.
-    static func planKey(_ quota: CloudQuota, supporter: String, tester: String, free: String) -> String {
-        quota.tester ? tester : quota.supporter ? supporter : free
-    }
-
-    /// Shows only this account's status. It is hidden until the quota has been read, so a request
-    /// that timed out does not show "Not a supporter" to a supporter.
-    @ViewBuilder
-    private var plan: some View {
-        if let quota {
-            card(Glyph.heart, Loc.get("Rpm_Profile_Plan")) {
-                VStack(alignment: .leading, spacing: 4) {
-                    // A supporter gets the gold badge, which contains the word "Supporter". The free
-                    // plan and a closed beta tester are named in cyan: a tester has the supporter
-                    // features but does not pay, so does not wear the badge.
-                    if quota.wearsMark {
-                        SupporterMark()
-                            .padding(.vertical, 2)
-                    } else {
-                        Text(Loc.get(quota.tester ? "Rpm_Profile_PlanTester" : "Rpm_Profile_PlanFree"))
-                            .font(RPMFont.display(17))
-                            .foregroundStyle(RPMInk.cyan)
-                    }
-
-                    Text(Loc.get(Self.planKey(quota, supporter: "Rpm_Profile_PlanSupporterDetail",
-                                              tester: "Rpm_Profile_PlanTesterDetail",
-                                              free: "Rpm_Profile_PlanFreeDetail")))
-                        .font(RPMFont.display(12))
-                        .foregroundStyle(RPMInk.white(0x88 / 255))
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Text(Loc.get(Self.planKey(quota, supporter: "Rpm_Profile_PlanSupporterThanks",
-                                              tester: "Rpm_Profile_PlanTesterThanks",
-                                              free: "Rpm_Profile_PlanFreeAppeal")))
-                        .font(RPMFont.display(12))
-                        .foregroundStyle(RPMInk.white(0xB3 / 255))
-                        .fixedSize(horizontal: false, vertical: true)
+                if let badge = RPMProfileBadges.byId(profile.badge) {
+                    BadgePill(badge: badge, colour: profile.badgeColour)
                         .padding(.top, 6)
                 }
+
+                // The counts and the date as one block of two lines, close together.
+                VStack(spacing: 0) {
+                    if let counts = counts(profile) {
+                        Text(counts).rpmKicker()
+                    }
+
+                    if profile.createdAt > 0 {
+                        Text(Loc.get("Rpm_Profile_MemberSince", since(profile.createdAt)))
+                            .font(RPMFont.display(12))
+                            .foregroundStyle(RPMInk.white(0x88 / 255))
+                    }
+                }
+                .padding(.top, 6)
+
+                if let listening = profile.listening {
+                    HStack(spacing: 10) {
+                        Text(Glyph.play).font(RPMFont.icon(11))
+                        Text(Loc.get("Rpm_Profile_NowPlaying", listening.title, listening.artist))
+                            .font(RPMFont.display(14))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(RPMInk.white(0xEE / 255))
+                    .padding(.horizontal, RPMLayout.margin)
+                    .padding(.vertical, 4)
+                    .padding(.top, 12)
+                }
+
+                if !isOwn {
+                    friendKey(profile).padding(.top, 12)
+                }
+            }
+        }
+        // The glow is laid over the lines under the photo too, so it can drift over the name.
+        .overlay(alignment: .top) {
+            if supporter {
+                SupporterSparkles(photo: Self.photoSize)
+                    .offset(y: Self.bannerTall - Self.photoLift - Self.photoSize * SupporterSparkles.above)
             }
         }
     }
 
-    // ── how much of a track comes down ──
-
-    /// Two settings for listening, not one. A user often wants the original quality at home and a
-    /// lower quality on a train. A single setting would need to be changed often, and in practice
-    /// it would often be wrong. A third setting is for downloads, which is a choice about space
-    /// on the phone and not about the network.
-    private var playback: some View {
-        card(Glyph.speaker, Loc.get("Rpm_Profile_Playback")) {
-            rate(Loc.get("Rpm_Profile_QualityWifi"), onWifi)
-            rate(Loc.get("Rpm_Profile_QualityCellular"), onCellular)
-
-            // The note is shown next to the settings, and only while it applies. Low Data Mode
-            // overrides both menus. A menu that shows 320 while the stream is 128, with no
-            // reason on the screen, looks like a setting that does nothing.
-            if reach.isConstrained {
-                Text(Loc.get("Rpm_Profile_QualityLowData"))
-                    .font(RPMFont.display(11))
-                    .foregroundStyle(RPMInk.white(0x88 / 255))
-            }
-
-            // Under the two streaming menus and after the Low Data note, which is about
-            // streaming only. A download asks for this rate on any network.
-            rate(Loc.get("Rpm_Profile_QualityDownload"), onDownload)
-
-            Text(Loc.get("Rpm_Profile_QualityDownloadDetail"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x88 / 255))
-
-            // Directly under the menus, because a greyed-out control needs its reason next to it.
-            if offer.capped {
-                Text(Loc.get("Rpm_Profile_QualityCapped"))
-                    .font(RPMFont.display(11))
-                    .foregroundStyle(RPMInk.white(0x88 / 255))
-
-                key(Loc.get("Cloud_BecomeSupporter"), stretches: true, action: onSupport)
-            }
-
-            Text(Loc.get("Rpm_Profile_QualityDetail"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x66 / 255))
-
-            karaokeSwitch
-        }
-    }
-
-    /// Karaoke lyrics. Shown to everyone and switchable only by a supporter, with the reason under
-    /// it for everyone else, as the quality menus above are. Hidden until the quota is read, so a
-    /// supporter does not see it greyed out for a moment.
+    /// The banner, as the artist page's photograph: sharp at the top, blurred towards its foot,
+    /// and faded out into the page's own background, so it has no lower edge. Nothing without a
+    /// banner: the page's background shows.
     @ViewBuilder
-    private var karaokeSwitch: some View {
-        if let quota {
-            // Off for anyone else, whatever is stored: a switch that shows on and does nothing
-            // says the wrong thing.
-            Toggle(isOn: quota.supporter ? $karaoke : .constant(false)) {
-                Text(Loc.get("Tv_SettingsKaraoke"))
-                    .font(RPMFont.display(13))
-                    .foregroundStyle(RPMInk.white(0xB3 / 255))
-            }
-            .tint(RPMInk.white(0x88 / 255))
-            .disabled(!quota.supporter)
-            .onChange(of: karaoke) { _, _ in Haptics.pick() }
+    private var bannerPicture: some View {
+        if let banner {
+            RemotePicture(banner) { image in
+                ZStack {
+                    image.resizable().scaledToFill()
 
-            if !quota.supporter {
-                Text(Loc.get("Supporters_Karaoke"))
-                    .font(RPMFont.display(11))
-                    .foregroundStyle(RPMInk.white(0x88 / 255))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    /// Whether the sung line lights letter by letter. See ``KaraokeSetting``.
-    @AppStorage(KaraokeSetting.key) private var karaoke = KaraokeSetting.initial
-
-    private func rate(_ label: String, _ chosen: Binding<Int>) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(RPMFont.display(13))
-                .foregroundStyle(RPMInk.white(0xB3 / 255))
-
-            // A menu and not a segmented control: six steps across a phone would leave about
-            // four characters for each, and the labels are words.
-            Menu {
-                Picker(label, selection: chosen) {
-                    ForEach(offer.rungs, id: \.self) { rung in
-                        Text(named(rung)).tag(rung)
-                    }
+                    // The same picture blurred, taking over from the middle down.
+                    image.resizable().scaledToFill()
+                        .blur(radius: 24)
+                        .mask {
+                            LinearGradient(stops: [.init(color: .clear, location: 0.3),
+                                                   .init(color: .black, location: 0.75)],
+                                           startPoint: .top, endPoint: .bottom)
+                        }
                 }
-            } label: {
-                closedMenu(named(offer.settles(on: chosen.wrappedValue)), dimmed: offer.capped)
+                .mask {
+                    LinearGradient(stops: [.init(color: .black, location: 0),
+                                           .init(color: .black, location: 0.45),
+                                           .init(color: .clear, location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
             }
-            // Shown but disabled. The one step that a free account has is still useful to see,
-            // and a hidden control would make the user ask where it went.
-            .disabled(offer.capped)
         }
     }
 
-    private func named(_ rung: Int) -> String {
-        rung == AudioLadder.original ? Loc.get("Rpm_Playback_Original")
-                                     : Loc.get("Rpm_Profile_QualityKbps", rung)
+    private func counts(_ profile: RPMProfile) -> String? {
+        guard let counts = profile.counts, counts.albums > 0 else { return nil }
+        // Grouped as the phone's language groups thousands: "1,610".
+        let records = counts.albums == 1 ? Loc.get("Stats_AlbumsOne") : Loc.get("Stats_Albums", counts.albums.formatted())
+        let tracks = counts.tracks == 1 ? Loc.get("Rpm_Profile_TracksOne") : Loc.get("Rpm_Queue_Count", counts.tracks.formatted())
+        return Loc.get("Rpm_Library_CountsJoin", records, tracks)
     }
 
-    /// How a menu on this screen looks while it is closed: the current choice in a dark field,
-    /// with the up-down mark that shows it can be opened.
-    private func closedMenu(_ text: String, dimmed: Bool) -> some View {
+    private func since(_ millis: Int64) -> String {
+        Date(timeIntervalSince1970: Double(millis) / 1000)
+            .formatted(.dateTime.month(.wide).year())
+    }
+
+    /// The friendship key under someone else's name. What it says follows the state; the menu key
+    /// has the other actions.
+    @ViewBuilder
+    private func friendKey(_ profile: RPMProfile) -> some View {
+        switch profile.friendship {
+        case .none:
+            key(Loc.get("Rpm_Profile_AddFriend"), .primary) { actions.onFriend(.add) }
+        case .requested:
+            key(Loc.get("Rpm_Profile_Requested"), .ghost) { actions.onFriend(.cancel) }
+        case .incoming:
+            HStack(spacing: 10) {
+                key(Loc.get("Rpm_Profile_Accept"), .primary) { actions.onFriend(.accept) }
+                key(Loc.get("Rpm_Profile_Decline"), .ghost) { actions.onFriend(.decline) }
+            }
+        case .friends:
+            key(Loc.get("Rpm_Profile_Friends"), .ghost) {}
+                .allowsHitTesting(false)
+        case .own:
+            EmptyView()
+        }
+    }
+
+    private func key(_ title: String, _ weight: RPMGlassButton.Weight,
+                     action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .buttonStyle(RPMGlassButton(weight, radius: 16, height: 34, stretches: false, inset: 18, size: 13))
+    }
+
+    // ── the round keys over the banner ──
+
+    private var keys: some View {
         HStack {
-            Text(text)
-                .font(RPMFont.display(15))
+            if let onBack = actions.onBack {
+                round(Glyph.back, label: Loc.get("Rpm_Profile_Back"), action: onBack)
+            }
             Spacer()
-            Text(Glyph.sort).font(RPMFont.icon(11))
+            menu
         }
-        .foregroundStyle(dimmed ? RPMInk.white(0x59 / 255) : RPMInk.white(0xF0 / 255))
-        .padding(.horizontal, 12)
-        .frame(height: 40)
-        .background {
-            let well = RoundedRectangle(cornerRadius: 8, style: .continuous)
-            well.fill(RPMInk.white(0x14 / 255))
-                .overlay { well.strokeBorder(RPMInk.white(0x1A / 255), lineWidth: 1) }
-        }
+        .padding(.horizontal, RPMLayout.margin)
+        .padding(.top, 4)
     }
 
-    // ── how loud ──
+    private func round(_ glyph: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { roundFace(glyph) }
+            .buttonStyle(.plain)
+            .rpmGlass(Circle())
+            .accessibilityLabel(label)
+    }
 
-    /// Volume levelling, with the three choices of the desktop app in the same order: off, match
-    /// albums, match tracks. It is a card of its own and not a row in Playback, because Playback
-    /// is about how much of a track is downloaded, and this is about how it sounds.
-    ///
-    /// "Level classical recordings too" is the same option as in the desktop app, and it reads
-    /// the classical mark that the desktop app syncs. An album's own Always/Never setting is not
-    /// here: it is kept in the desktop app's local library and never reaches the phone, so it
-    /// would have no effect.
-    private var loudness: some View {
-        card(Glyph.levelling, Loc.get("Settings_Normalize")) {
-            Menu {
-                Picker(Loc.get("Settings_Normalize"), selection: levelling) {
-                    ForEach(NormalizeMode.allCases, id: \.self) { mode in
-                        Text(named(mode)).tag(mode)
-                    }
+    private func roundFace(_ glyph: String) -> some View {
+        Text(glyph)
+            .font(RPMFont.icon(16))
+            .foregroundStyle(RPMInk.white(0xE6 / 255))
+            .frame(width: 40, height: 40)
+            .contentShape(Circle())
+    }
+
+    /// The round menu key: on the reader's own page the notifications and the edit page; on anyone else's the
+    /// friendship and the block.
+    private var menu: some View {
+        Menu {
+            if isOwn {
+                Button(Loc.get("Rpm_Notify_Title"), action: actions.onNotifications)
+                Button(Loc.get("Rpm_Profile_EditPage"), action: actions.onEditPage)
+            } else if let profile {
+                switch profile.friendship {
+                case .requested:
+                    Button(Loc.get("Rpm_Profile_CancelRequest")) { actions.onFriend(.cancel) }
+                case .friends:
+                    Button(Loc.get("Rpm_Profile_RemoveFriend"), role: .destructive) { actions.onFriend(.remove) }
+                default:
+                    EmptyView()
                 }
-            } label: {
-                closedMenu(named(levelling.wrappedValue), dimmed: false)
-            }
-
-            Text(Loc.get("Rpm_Profile_LevellingDetail"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x88 / 255))
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Hidden while levelling is off, as in the desktop app, because there is nothing to
-            // level.
-            if levelling.wrappedValue != .off {
-                Toggle(isOn: levelsClassical) {
-                    Text(Loc.get("Settings_NormalizeClassical"))
-                        .font(RPMFont.display(13))
-                        .foregroundStyle(RPMInk.white(0xB3 / 255))
+                if profile.blocked {
+                    Button(Loc.get("Rpm_Profile_Unblock"), action: actions.onUnblock)
+                } else {
+                    Button(Loc.get("Rpm_Profile_Block"), role: .destructive) { confirmingBlock = true }
                 }
-                .tint(RPMInk.white(0x88 / 255))
-
-                Text(Loc.get("Settings_NormalizeClassicalHint"))
-                    .font(RPMFont.display(11))
-                    .foregroundStyle(RPMInk.white(0x88 / 255))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
-    private func named(_ mode: NormalizeMode) -> String {
-        switch mode {
-        case .off: Loc.get("Settings_NormalizeOff")
-        case .album: Loc.get("Settings_NormalizeAlbum")
-        case .track: Loc.get("Settings_NormalizeTrack")
-        }
-    }
-
-    // ── what is on the phone itself ──
-
-    private var device: some View {
-        card(Glyph.phone, Loc.get("Rpm_Playback_FromPhone")) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(Loc.get("Rpm_Profile_ArtCache"))
-                        .font(RPMFont.display(13))
-                        .foregroundStyle(RPMInk.white(0xB3 / 255))
-
-                    Text(bytes(cached))
-                        .font(RPMFont.display(17))
-                        .foregroundStyle(.white)
-                }
-
-                Spacer()
-
-                key(Loc.get("Catalog_FanartClear"), stretches: false, action: onClearCache)
-            }
-
-            Text(Loc.get("Rpm_Profile_ArtCacheDetail"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x66 / 255))
-        }
-    }
-
-    // ── about ──
-
-    private var about: some View {
-        card(Glyph.about, Loc.get("Rpm_Profile_About")) {
-            Text(Loc.get("Rpm_Profile_Tagline"))
-                .font(RPMFont.display(13))
-                .foregroundStyle(RPMInk.white(0xB3 / 255))
-
-            Text(Loc.get("Rpm_Profile_Version", version))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x66 / 255))
-
-            // A sheet and not a push: this tab is not inside a `NavigationStack`, because a stack
-            // paints its own opaque background over the app's background.
-            key(Loc.get("About_Acknowledgements"), stretches: true) { credits = true }
-
-            if let onFeedback {
-                key(Loc.get("Shell_Feedback"), stretches: true, action: onFeedback)
-            }
-
-            Toggle(isOn: crashReports) {
-                Text(Loc.get("Settings_CrashReports"))
-                    .font(RPMFont.display(13))
-                    .foregroundStyle(RPMInk.white(0xB3 / 255))
-            }
-            .tint(RPMInk.white(0x88 / 255))
-
-            Text(Loc.get("Settings_CrashReportsDesc"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x66 / 255))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .sheet(isPresented: $credits) {
-            AboutPage(version: version) { credits = false }
-        }
-    }
-
-    // ── the app background ──
-
-    /// The five built-in backdrops, as tiles.
-    ///
-    /// **A row of the real pictures**, as in the desktop app's settings. The supporter backdrop
-    /// is shown to everybody and is not greyed out, so that users can see what it looks like.
-    /// A tap on it without support opens the page that explains it.
-    private var backdrop: some View {
-        card(Glyph.picture, Loc.get("Settings_Background")) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 10) {
-                    ForEach(Backdrop.Choice.allCases, id: \.self) { choice in
-                        tile(choice)
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-            .scrollClipDisabled()
-
-            // Under the backdrops: it changes the other kind of background, the photograph a
-            // page stands on. See ``NightMode``.
-            Toggle(isOn: $night) {
-                Text(Loc.get("Settings_NightMode"))
-                    .font(RPMFont.display(13))
-                    .foregroundStyle(RPMInk.white(0xB3 / 255))
-            }
-            .tint(RPMInk.white(0x88 / 255))
-
-            Text(Loc.get("Settings_NightModeHint"))
-                .font(RPMFont.display(11))
-                .foregroundStyle(RPMInk.white(0x88 / 255))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    /// Whether the pages that stand on a photograph are drawn darker. See ``NightMode``.
-    @AppStorage(NightMode.key) private var night = false
-
-    /// The tile that is selected. It shows what is actually in use and not what is stored, so the
-    /// gold tile cannot be selected while the app's own background is on the screen. See
-    /// ``Backdrop/standing(stored:gold:)``.
-    private var standing: Backdrop.Choice {
-        Backdrop.standing(stored: backdropId, gold: SupporterGround.isGold)
-    }
-
-    /// A tile has the shape of the phone screen. It is small enough that five tiles and part of a
-    /// sixth fit on a narrow screen, so the row shows that there is more to the right.
-    private static let tileWide: Double = 62
-    private static let tileTall: Double = 116
-
-    private func tile(_ choice: Backdrop.Choice) -> some View {
-        let picked = choice == standing
-        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
-
-        return Button {
-            Haptics.pick()
-
-            // The check uses the same value that the background reads (`SupporterGround.isGold`),
-            // not the quota that this screen shows. The two are known at different times. A tile
-            // that was selected for a picture that the background would not show would be wrong.
-            if choice.isSupporters && !SupporterGround.isGold {
-                onSupport()
-            } else {
-                backdropId = choice.rawValue
             }
         } label: {
-            VStack(spacing: 6) {
-                ZStack {
-                    shape.fill(Color.black.opacity(0x22 / 255))
-
-                    BackdropTile(choice: choice, width: Self.tileWide, height: Self.tileTall)
-                        .clipShape(shape)
-
-                    if picked {
-                        // On the picture and not beside the name: the tile is the thing that was
-                        // chosen, and a mark under it would look like a caption.
-                        shape.fill(Color.black.opacity(0.45))
-
-                        Text(Glyph.check)
-                            .font(RPMFont.icon(14))
+            roundFace(isOwn ? Glyph.menu : Glyph.more)
+                .rpmGlass(Circle())
+                .overlay(alignment: .topTrailing) {
+                    if isOwn && unread > 0 {
+                        Text(unread > 99 ? "99+" : "\(unread)")
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
-                    } else if choice.isSupporters && !SupporterGround.isGold {
-                        Text(Glyph.heart)
-                            .font(RPMFont.icon(11))
-                            .foregroundStyle(RPMInk.white(0xCC / 255))
-                            .padding(4)
-                            .background(Color.black.opacity(0.55), in: Circle())
-                            .frame(maxWidth: .infinity, maxHeight: .infinity,
-                                   alignment: .bottomTrailing)
-                            .padding(5)
+                            .padding(.horizontal, 5)
+                            .frame(minWidth: 18, minHeight: 18)
+                            .background(Capsule().fill(RPMInk.red))
+                            .offset(x: 4, y: -4)
                     }
                 }
-                .frame(width: Self.tileWide, height: Self.tileTall)
-                .overlay {
-                    // The selected tile has a white edge, and the others have the card's own border,
-                    // which is a gradient. These are two separate shapes and not one with a
-                    // ternary, because the two strokes use different kinds of paint.
-                    if picked {
-                        shape.strokeBorder(RPMInk.white(0xDD / 255), lineWidth: 1.5)
-                    } else {
-                        shape.strokeBorder(RPMInk.cardBorder, lineWidth: 1)
-                    }
-                }
+        }
+        .accessibilityLabel(Loc.get("Rpm_Profile_Menu"))
+        .accessibilityValue(isOwn && unread > 0 ? Loc.get("Rpm_Profile_UnreadCount", unread) : "")
+    }
 
-                Text(Loc.get(choice.nameKey))
-                    .font(.system(size: 11, weight: picked ? .semibold : .regular))
-                    .foregroundStyle(picked ? .white : Color.white.opacity(0.7))
-                    .lineLimit(1)
+    // ── the post box, on the own page ──
+
+    private var canSend: Bool {
+        !sending && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var box: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("", text: $draft,
+                          prompt: Text(Loc.get("Rpm_Profile_PostPrompt"))
+                              .foregroundStyle(RPMInk.white(0x66 / 255)),
+                          axis: .vertical)
+                    .lineLimit(1...6)
+                    .font(RPMFont.display(15))
+                    .foregroundStyle(.white)
+                    .tint(.white)
+                    .padding(.vertical, 6)
+                    // The server takes no more than this, so a long post is not refused after it
+                    // was typed.
+                    .onChange(of: draft) { _, typed in
+                        if typed.count > RPMCommunityClient.longestWallPost {
+                            draft = String(typed.prefix(RPMCommunityClient.longestWallPost))
+                        }
+                    }
+
+                Button(action: actions.onSend) {
+                    if sending {
+                        ProgressView().tint(.white).scaleEffect(0.7)
+                    } else {
+                        Text(Loc.get("Rpm_Profile_Post"))
+                    }
+                }
+                .buttonStyle(RPMGlassButton(.primary, radius: 15, height: 32,
+                                            stretches: false, inset: 14, size: 13))
+                .disabled(!canSend)
             }
-            .frame(width: Self.tileWide)
+
+            // Only while something plays: there is nothing to add otherwise.
+            if let playing {
+                Toggle(isOn: $withSong) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Loc.get("Rpm_Profile_WithSong"))
+                            .font(RPMFont.display(12))
+                            .foregroundStyle(RPMInk.white(0xB3 / 255))
+                        Text(songLine(playing))
+                            .font(RPMFont.display(11))
+                            .foregroundStyle(RPMInk.white(0x77 / 255))
+                            .lineLimit(1)
+                    }
+                }
+                .tint(RPMInk.white(0x88 / 255))
+            }
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 8)
+        .padding(.vertical, 8)
+        .background {
+            let card = RoundedRectangle(cornerRadius: 14, style: .continuous)
+            card.fill(RPMInk.white(0x14 / 255))
+                .overlay { card.strokeBorder(RPMInk.glassEdge, lineWidth: 1) }
+        }
+    }
+
+    // ── the feed ──
+
+    @ViewBuilder
+    private var rows: some View {
+        if profile?.blocked == true {
+            VStack(alignment: .leading, spacing: 10) {
+                quiet(Loc.get("Rpm_Profile_Blocked"))
+                key(Loc.get("Rpm_Profile_Unblock"), .ghost, action: actions.onUnblock)
+            }
+        } else if let trouble {
+            quiet(trouble)
+        } else if answered && feed.isEmpty {
+            quiet(Loc.get(isOwn ? "Rpm_Profile_FeedEmptyOwn" : "Rpm_Profile_FeedEmpty"))
+        } else {
+            // Rows and not a list: the page is what scrolls.
+            ForEach(feed) { item in
+                switch item {
+                case .post(let post):
+                    PostCard(post: post, photo: photo, isOwn: isOwn,
+                             gold: post.authorSupporter || supporter,
+                             onVote: { actions.onVote(post, $0) },
+                             onOpen: { actions.onOpenPost(post) },
+                             onDelete: isOwn ? { actions.onDeletePost(post) } : nil,
+                             onReport: isOwn ? nil : { actions.onReportPost(post) })
+                case .review(let shown):
+                    ReviewCard(shown: shown, isOwn: isOwn, coverFor: coverFor,
+                               onVote: { actions.onVoteReview(shown.review, $0) },
+                               onRead: { actions.onReadReview(shown) })
+                }
+            }
+
+            if hasMore {
+                ProgressView()
+                    .tint(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .onAppear(perform: actions.onMore)
+            }
+        }
+    }
+
+    private func quiet(_ text: String) -> some View {
+        Text(text)
+            .font(RPMFont.display(13))
+            .foregroundStyle(RPMInk.white(0x88 / 255))
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// A post as a card, on a profile page and on the Feed tab. It is the Android app's `PostRow`.
+///
+/// The thumbs start where the text starts and the replies end at the card's inner edge, where the corner key's dots
+/// end too. The corner key stands level with the name.
+struct PostCard: View {
+    let post: RPMPost
+    let photo: URL?
+
+    /// The reader's own post: its votes are shown and cannot be pressed.
+    let isOwn: Bool
+
+    /// The author's name in gold: a supporter.
+    let gold: Bool
+    let onVote: (Int) -> Void
+    let onOpen: () -> Void
+    var onPerson: (() -> Void)?
+
+    /// What the corner menu offers; with neither, the card has no corner key, as on the Feed tab.
+    var onDelete: (() -> Void)?
+    var onReport: (() -> Void)?
+
+    var body: some View {
+        let hasMenu = onDelete != nil || onReport != nil
+
+        ZStack(alignment: .topTrailing) {
+            HStack(alignment: .top, spacing: 10) {
+                PersonPicture(photo, name: post.authorShown, size: 40)
+                    .onTapGesture { (onPerson ?? onOpen)() }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Byline(name: post.authorShown, millis: post.createdAt, gold: gold)
+                        .padding(.trailing, hasMenu ? 24 : 0)
+                        .contentShape(Rectangle())
+                        .onTapGesture { (onPerson ?? onOpen)() }
+
+                    Text(post.body)
+                        .font(RPMFont.display(14))
+                        .foregroundStyle(RPMInk.white(0xE6 / 255))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let song = post.song {
+                        HStack(spacing: 6) {
+                            Text(Glyph.play).font(RPMFont.icon(9))
+                            Text(songLine(song)).font(RPMFont.display(12)).lineLimit(1)
+                        }
+                        .foregroundStyle(RPMInk.white(0xAA / 255))
+                    }
+
+                    HStack(spacing: 0) {
+                        VoteKeys(ups: post.ups, downs: post.downs, mine: post.myVote, enabled: !isOwn, onVote: onVote)
+                        Spacer(minLength: 0)
+                        ReplyKey(count: post.replyCount, action: onOpen)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            // The vote keys are 32 points tall with their marks in the middle, so the foot needs little room of its own.
+            .padding(.leading, 14)
+            .padding(.trailing, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 2)
+
+            if hasMenu {
+                Menu {
+                    if let onDelete {
+                        Button(Loc.get("Rpm_Profile_DeletePost"), role: .destructive, action: onDelete)
+                    }
+                    if let onReport {
+                        Button(Loc.get("Artists_WallReport"), action: onReport)
+                    }
+                } label: {
+                    MoreKey()
+                }
+                .accessibilityLabel(Loc.get("Common_MoreOptions"))
+                .padding(.top, 8)
+                .padding(.trailing, 3)
+            }
+        }
+        .background { RoundedRectangle(cornerRadius: 12, style: .continuous).fill(RPMInk.white(0x12 / 255)) }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onOpen)
+    }
+}
+
+/// "Title by Artist", for a post's song and the post box's switch, as the line under the name says it.
+func songLine(_ song: RPMSong) -> String {
+    song.artist.isEmpty ? song.title : Loc.get("Rpm_Profile_NowPlaying", song.title, song.artist)
+}
+
+/// Thumbs up with the likes beside it, thumbs down with the dislikes: on a post, a review and a
+/// reply. The reader's own vote is lit, and a tap on it takes the vote back. On the reader's own
+/// post or reply the counts are shown and cannot be pressed: nobody votes on their own. The first
+/// thumb starts at the row's own start, where the text above it starts.
+struct VoteKeys: View {
+    let ups: Int
+    let downs: Int
+    let mine: Int
+    let enabled: Bool
+    let onVote: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            key(Glyph.like, ups, 1, Loc.get("Rpm_Profile_Likes", ups), first: true)
+            key(Glyph.dislike, downs, -1, Loc.get("Rpm_Profile_Dislikes", downs), first: false)
+        }
+    }
+
+    private func key(_ glyph: String, _ count: Int, _ value: Int, _ label: String, first: Bool) -> some View {
+        let lit = mine == value
+        return Button { onVote(lit ? 0 : value) } label: {
+            HStack(spacing: 6) {
+                Text(glyph).font(RPMFont.icon(13))
+                Text("\(count)").font(RPMFont.display(12))
+            }
+            .foregroundStyle(RPMInk.white(lit ? 0xEE / 255 : 0x99 / 255))
+            .padding(.leading, first ? 0 : 8)
+            .padding(.trailing, 8)
+            .frame(height: 32)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Loc.get(choice.nameKey))
+        .disabled(!enabled)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(lit ? .isSelected : [])
     }
+}
 
-    // ── the shape of every card ──
+/// The speech bubble with how many replies there are, or the word Reply when there are none. Its own end is the
+/// row's end.
+struct ReplyKey: View {
+    let count: Int
+    let action: () -> Void
 
-    private func card<Content: View>(
-        _ glyph: String, _ kicker: String, @ViewBuilder _ content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                // The glyph has the same faint white as the kicker beside it and a small size, so
-                // it works as a quiet mark and does not draw attention as an icon would.
-                Text(glyph)
-                    .font(RPMFont.icon(12))
-                    .foregroundStyle(RPMInk.white(0x66 / 255))
-
-                Text(kicker).rpmKicker()
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(Glyph.comment).font(RPMFont.icon(13)).foregroundStyle(RPMInk.white(0x99 / 255))
+                Text(count == 0 ? Loc.get("Rpm_Profile_Reply") : "\(count)")
+                    .font(RPMFont.display(12))
+                    .foregroundStyle(RPMInk.white(0xCC / 255))
             }
-
-            content()
+            .padding(.leading, 8)
+            .frame(height: 32)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .rpmSection()
+        .buttonStyle(.plain)
+        .accessibilityLabel(count == 0 ? Loc.get("Rpm_Profile_Reply")
+                            : count == 1 ? Loc.get("Rpm_Profile_RepliesOne")
+                            : Loc.get("Rpm_Profile_Replies", count))
     }
+}
 
-    /// The keys on this screen are smaller than the app's standard glass button. None of them is
-    /// the main action of a screen, as "Play album" is. They are inside cards, next to the text
-    /// they belong to, and a full-height key there would be too prominent.
-    private func key(_ title: String, stretches: Bool,
-                     action: @escaping () -> Void) -> some View {
-        Button(title, action: action)
-            .buttonStyle(RPMGlassButton(.ghost, radius: 9, height: Self.keyHeight,
-                                        stretches: stretches, inset: 16, size: 13))
-    }
-
-    /// The height of a key on this screen.
-    private static let keyHeight: Double = 34
-
-    // ── the words ──
-
-    private func said(_ quota: CloudQuota) -> String {
-        guard !quota.unlimited, quota.quotaBytes > 0 else {
-            return Loc.get("Cloud_UsageUnlimited", bytes(quota.usedBytes))
-        }
-
-        let full = Double(quota.usedBytes) / Double(quota.quotaBytes)
-        let key = full > 0.95 ? "Cloud_UsageFull" : full > 0.8 ? "Cloud_UsageAlmostFull" : "Cloud_Usage"
-
-        return Loc.get(key, bytes(quota.usedBytes), bytes(quota.quotaBytes))
-    }
-
-    private func bytes(_ count: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = count < 1_000_000 ? [.useKB] : [.useGB, .useMB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: count)
+/// The three dots in a row's corner.
+struct MoreKey: View {
+    var body: some View {
+        Text(Glyph.more)
+            .font(RPMFont.icon(13))
+            .foregroundStyle(RPMInk.white(0xAA / 255))
+            .frame(width: 34, height: 28)
+            .contentShape(Rectangle())
     }
 }

@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "kind": "post",
+      "createdAt": 1790000300000,
+      "post": {
+        "ownerId": "u-ana",
+        "postId": "1790000300000-0a1b2c3d",
+        "authorName": "ana",
+        "hasAvatar": true,
+        "body": "New speakers today.",
+        "song": {
+          "artist": "Talking Heads",
+          "title": "Once in a Lifetime",
+          "album": "Remain in Light",
+          "albumId": "a-remain"
+        },
+        "createdAt": 1790000300000,
+        "ups": 3,
+        "downs": 1,
+        "score": 2,
+        "myVote": 1,
+        "replyCount": 4,
+        "authorDeleted": false
+      }
+    },
+    {
+      "kind": "review",
+      "createdAt": 1790000200000,
+      "review": {
+        "albumId": "a-remain",
+        "userId": "u-ana",
+        "authorName": "ana",
+        "hasAvatar": true,
+        "rating": 9,
+        "body": "Still sounds new.",
+        "createdAt": 1790000200000,
+        "updatedAt": 1790000200000,
+        "ups": 5,
+        "downs": 0,
+        "score": 5,
+        "myVote": 0,
+        "authorDeleted": false,
+        "albumArtist": "Talking Heads",
+        "albumTitle": "Remain in Light",
+        "albumYear": 1980
+      }
+    },
+    {
+      "kind": "poll",
+      "createdAt": 1790000100000
+    }
+  ],
+  "next": 1790000100000
+}

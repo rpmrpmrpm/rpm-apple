@@ -35,6 +35,9 @@ public struct ArtistWallSection: View {
     private let onDelete: (RPMWallEntry) -> Void
     private let onReport: (RPMWallEntry) -> Void
 
+    /// Opens the page of the person with this user id.
+    private let onAuthor: (String) -> Void
+
     /// - Parameters:
     ///   - answered: whether the wall has been read. False while it is being read, and after a
     ///     read that failed.
@@ -45,7 +48,8 @@ public struct ArtistWallSection: View {
                 draft: Binding<String>,
                 onSend: @escaping () -> Void,
                 onDelete: @escaping (RPMWallEntry) -> Void,
-                onReport: @escaping (RPMWallEntry) -> Void) {
+                onReport: @escaping (RPMWallEntry) -> Void,
+                onAuthor: @escaping (String) -> Void = { _ in }) {
         self.lines = lines
         self.answered = answered
         self.trouble = trouble
@@ -54,6 +58,7 @@ public struct ArtistWallSection: View {
         self.onSend = onSend
         self.onDelete = onDelete
         self.onReport = onReport
+        self.onAuthor = onAuthor
     }
 
     public var body: some View {
@@ -144,10 +149,13 @@ public struct ArtistWallSection: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    // A supporter's name is in gold.
                     Text(entry.authorShown)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(entry.authorSupporter ? RPMInk.gold : .white)
                         .lineLimit(1)
+                        // The name opens the author's page. A deleted account has no page.
+                        .onTapGesture { if !entry.authorDeleted { onAuthor(entry.userId) } }
 
                     Text(when(entry))
                         .font(RPMFont.display(11))

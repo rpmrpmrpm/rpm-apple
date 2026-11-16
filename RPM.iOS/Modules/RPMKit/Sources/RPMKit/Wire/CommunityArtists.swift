@@ -66,6 +66,9 @@ public struct RPMWallEntry: Codable, Hashable, Sendable, Identifiable {
     /// The name to draw.
     public var authorShown: String { authorDeleted ? Loc.get("Community_DeletedUser") : authorName }
 
+    /// As on ``RPMReview/authorSupporter``: the name is drawn in gold.
+    public let authorSupporter: Bool
+
     /// The rating in stars, halves included. Zero on a post.
     public var stars: Double { Double(rating) / 2 }
 
@@ -100,6 +103,7 @@ public struct RPMWallEntry: Codable, Hashable, Sendable, Identifiable {
         rating        = try c.decodeIfPresent(Int.self, forKey: .rating) ?? 0
         hasBody       = try c.decodeIfPresent(Bool.self, forKey: .hasBody) ?? false
         authorDeleted = try c.decodeIfPresent(Bool.self, forKey: .authorDeleted) ?? false
+        authorSupporter = try c.decodeIfPresent(Bool.self, forKey: .authorSupporter) ?? false
     }
 }
 
@@ -111,4 +115,10 @@ public enum RPMReportTarget: Sendable, Equatable {
     case review(albumId: String, authorId: String)
     case comment(albumId: String, commentId: String)
     case wallPost(artistId: String, entryId: String)
+
+    /// A post on a person's page.
+    case post(ownerId: String, postId: String)
+
+    /// A reply under a post on a person's page.
+    case reply(ownerId: String, postId: String, replyId: String)
 }

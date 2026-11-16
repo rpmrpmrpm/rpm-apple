@@ -82,15 +82,23 @@ public struct ArtistsPage: View {
 
     @State private var pinching: Double?
 
+    /// The earlier searches, shown under the box while it is empty. See ``SearchHistory``.
+    @AppStorage(SearchHistory.key) private var history = ""
+
     public var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                switch standing {
-                case .reading: waiting
-                case .trouble(let said): failed(said)
-                case .showing: wall
+                if searching && asked.isEmpty && !SearchHistory.entries(history).isEmpty {
+                    SearchHistoryList { asked = $0 }
+                } else {
+                    switch standing {
+                    case .reading: waiting
+                    case .trouble(let said): failed(said)
+                    case .showing: wall
+                    }
                 }
             }
+            .remembersSearch(asked, searching: searching)
             .frame(maxHeight: .infinity)
             .scrollsUnder {
                 VStack(spacing: 0) {
@@ -172,8 +180,7 @@ public struct ArtistsPage: View {
     /// The field, the records wall's own, with the artists' placeholder in it.
     private var field: some View {
         HStack(spacing: 6) {
-            RPMSearchBox(text: $asked, prompt: Loc.get("Artists_SearchPlaceholder"),
-                         clearLabel: Loc.get("Artists_SearchClear"), typing: $typing)
+            RPMSearchBox(text: $asked, prompt: Loc.get("Artists_SearchPlaceholder"), typing: $typing)
 
             Button {
                 Haptics.pick()

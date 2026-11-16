@@ -198,6 +198,9 @@ public struct LibraryPage: View {
 
     @FocusState private var typing: Bool
 
+    /// The earlier searches, shown under the box while it is empty. See ``SearchHistory``.
+    @AppStorage(SearchHistory.key) private var history = ""
+
     public var body: some View {
         VStack(spacing: 0) {
             // **The header has `zIndex(1)` so it is drawn in front of the field.** A stack
@@ -206,6 +209,8 @@ public struct LibraryPage: View {
             VStack(spacing: 0) {
                 if searching && !asked.isEmpty {
                     results
+                } else if searching && !SearchHistory.entries(history).isEmpty {
+                    SearchHistoryList { asked = $0 }
                 } else {
                     switch standing {
                     case .reading: waiting
@@ -226,6 +231,7 @@ public struct LibraryPage: View {
             }
         }
         .background { VinylGround() }
+        .remembersSearch(asked, searching: searching)
         // **A keystroke does not start a search.** Searching the whole library on every
         // letter would make the interface stutter while the user types. This waits for
         // the typing to pause, and then searches off the main thread, so that even a
@@ -339,8 +345,7 @@ public struct LibraryPage: View {
     /// it looks like.
     private var field: some View {
         HStack(spacing: 6) {
-            RPMSearchBox(text: $asked, prompt: Loc.get("Lookup_SearchButton"),
-                         clearLabel: Loc.get("Lookup_ClearTooltip"), typing: $typing)
+            RPMSearchBox(text: $asked, prompt: Loc.get("Lookup_SearchButton"), typing: $typing)
 
             // Outside the box, this closes the search. The magnifier key that opened the
             // search does the same thing, and both call `closeSearch`.

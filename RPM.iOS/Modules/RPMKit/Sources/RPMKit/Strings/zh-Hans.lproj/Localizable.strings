@@ -742,6 +742,18 @@
 /* Settings > Display: hint under the artist photo toggle. */
 "Settings_HeaderArtistPhotoHint" = "在封面展示背后显示艺人照片。关闭后，rpm 不下载任何照片，改用专辑的颜色。";
 
+/* Settings > Display: label for the choice of what the record looks like when an album has no picture of its own disc. */
+"Settings_DiscStandIn" = "没有唱片图的专辑";
+
+/* Settings > Display: hint under the 'Albums without disc art' choice. */
+"Settings_DiscStandInHint" = "专辑还没有唱片图时，选择转动的是什么：印着封面的黑胶唱片，或一张素面 CD。";
+
+/* Settings > Display: 'Albums without disc art' option. The app's own drawn vinyl, with the album cover on its label. The default. */
+"Settings_DiscStandInVinyl" = "黑胶唱片";
+
+/* Settings > Display: 'Albums without disc art' option. A plain silver CD with the rpm hub. */
+"Settings_DiscStandInCd" = "CD";
+
 /* Settings > Collection: title of the card choosing how multi-disc releases are handled. */
 "Settings_MultiDisc" = "多碟专辑";
 
@@ -2068,6 +2080,372 @@
 
 /* Phone tab bar label for the home screen. The page itself uses Home_Heading, in lower case. */
 "Rpm_Tab_Home" = "主页";
+
+/* Phone settings page: tab with the app version, crash reports and the cover cache. */
+"Rpm_Settings_General" = "通用";
+
+/* Phone settings page: tab with the background, night mode and the disc stand-in. */
+"Rpm_Settings_Appearance" = "外观";
+
+/* Phone settings page: tab with the account, cloud storage and the plan. */
+"Rpm_Settings_Account" = "我的账户";
+
+/* Phone profile page: line under the name. {0} the person, {1} the song, {2} the artist. */
+"Rpm_Profile_ListeningTo" = "%1$@ 正在听 %3$@ 的《%2$@》";
+
+/* Phone profile page: when the account was made. {0} is a month and year. */
+"Rpm_Profile_MemberSince" = "%1$@ 加入";
+
+/* Phone profile page: placeholder in the box for a new post on your own page. */
+"Rpm_Profile_PostPrompt" = "在想什么？";
+
+/* Phone profile page: switch under the post box that adds the current song to the post. */
+"Rpm_Profile_WithSong" = "附上正在播放的歌曲";
+
+/* Phone profile page: key under a post or reply. */
+"Rpm_Profile_Reply" = "回复";
+
+/* Phone profile page: count of replies under a post, one. */
+"Rpm_Profile_RepliesOne" = "1 条回复";
+
+/* Phone profile page: count of replies under a post. */
+"Rpm_Profile_Replies" = "%1$@ 条回复";
+
+/* Phone profile page: placeholder in the reply box. */
+"Rpm_Profile_ReplyPrompt" = "写回复";
+
+/* Phone profile page: shown in place of a deleted reply that still has replies under it. */
+"Rpm_Profile_ReplyDeleted" = "回复已删除";
+
+/* Phone profile page: your own page with no posts or reviews. */
+"Rpm_Profile_FeedEmptyOwn" = "这里还什么都没有。在上方写下你的第一条动态。";
+
+/* Phone profile page: someone else's page with no posts or reviews. */
+"Rpm_Profile_FeedEmpty" = "还没有动态或评论。";
+
+/* Phone profile page: key on a review in the feed, shown when the album is in your collection. */
+"Rpm_Profile_OpenAlbum" = "打开专辑";
+
+/* Phone profile page: the page could not be read. */
+"Rpm_Profile_Offline" = "无法加载此个人主页。请检查网络连接后重试。";
+
+/* Phone profile page: accessibility label of the round menu key at the top right. */
+"Rpm_Profile_Menu" = "菜单";
+
+/* Phone profile page: accessibility label of the round back key at the top left of someone else's page. */
+"Rpm_Profile_Back" = "返回";
+
+/* Phone profile page: menu item that opens the name editor. */
+"Rpm_Profile_EditPage" = "编辑主页";
+
+/* Phone profile page: label of the name field on the edit page. */
+"Rpm_Profile_Name" = "显示名称";
+
+/* Phone profile page: key that saves the edit page. */
+"Rpm_Profile_Save" = "保存";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_ChangePhoto" = "更换头像";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_RemovePhoto" = "移除头像";
+
+/* Phone profile page: menu item that picks the wide picture at the top of the page. */
+"Rpm_Profile_ChooseBanner" = "选择横幅";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_RemoveBanner" = "移除横幅";
+
+/* Phone profile page: a photo or banner upload failed. */
+"Rpm_Profile_PictureFailed" = "无法上传图片，请换一张试试。";
+
+/* Phone profile page: key under someone else's name. */
+"Rpm_Profile_AddFriend" = "加为好友";
+
+/* Phone profile page: key under someone else's name after you asked to be friends. */
+"Rpm_Profile_Requested" = "已发送请求";
+
+/* Phone profile page: menu item while your friend request waits. */
+"Rpm_Profile_CancelRequest" = "取消请求";
+
+/* Phone profile page: key that accepts a friend request. */
+"Rpm_Profile_Accept" = "接受";
+
+/* Phone profile page: key that declines a friend request. */
+"Rpm_Profile_Decline" = "拒绝";
+
+/* Phone profile page: key under the name of someone who is your friend. */
+"Rpm_Profile_Friends" = "好友";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_RemoveFriend" = "删除好友";
+
+/* Phone profile page: menu item and confirm key. */
+"Rpm_Profile_Block" = "屏蔽";
+
+/* Phone profile page: menu item and key on the page of someone you blocked. */
+"Rpm_Profile_Unblock" = "取消屏蔽";
+
+/* Phone profile page: question before blocking. {0} is the person's name. */
+"Rpm_Profile_BlockConfirm" = "屏蔽 %1$@？你们将看不到对方的动态和回复，好友关系也会解除。";
+
+/* Phone profile page: shown in place of the feed on the page of someone you blocked. */
+"Rpm_Profile_Blocked" = "你已屏蔽此人。";
+
+/* Phone profile page: menu item on your own post. */
+"Rpm_Profile_DeletePost" = "删除动态";
+
+/* Phone profile page: menu item on a reply you can delete. */
+"Rpm_Profile_DeleteReply" = "删除回复";
+
+/* Phone profile page: menu item on someone else's reply. */
+"Rpm_Profile_ReportReply" = "举报此回复";
+
+/* Phone profile page: accessibility text for the badge on the menu key. */
+"Rpm_Profile_UnreadCount" = "%1$@ 条未读通知";
+
+/* Phone notifications page: title, and the menu item on your own page that opens it. */
+"Rpm_Notify_Title" = "通知";
+
+/* Phone notifications page: empty list. */
+"Rpm_Notify_Empty" = "还没有通知。回复、投票和好友请求会显示在这里。";
+
+/* Phone notifications page: someone replied to your post or reply. */
+"Rpm_Notify_Reply" = "%1$@ 回复了你";
+
+/* Phone notifications page: one vote on your post or reply. */
+"Rpm_Notify_Vote" = "%1$@ 给你的动态投了票";
+
+/* Phone notifications page: several votes on one post or reply. {0} is the number. */
+"Rpm_Notify_Votes" = "你的动态有 %1$@ 个新投票";
+
+/* Phone notifications page: a friend request, with Accept and Decline keys. */
+"Rpm_Notify_FriendRequest" = "%1$@ 想加你为好友";
+
+/* Phone notifications page: a request you sent was accepted. */
+"Rpm_Notify_FriendAccepted" = "%1$@ 接受了你的好友请求";
+
+/* Phone notifications page: a friend wrote a review. {1} is the album title. */
+"Rpm_Notify_FriendReview" = "%1$@ 评论了《%2$@》";
+
+/* Phone settings, My account: switch. */
+"Rpm_Settings_ShareListening" = "显示我正在听的歌";
+
+/* Phone settings, My account: hint under the switch. */
+"Rpm_Settings_ShareListeningHint" = "任何打开你主页的人都能看到你正在播放的歌曲。";
+
+/* Phone profile page: menu item that picks what the page is drawn on, a colour or one of the app's backgrounds. */
+"Rpm_Profile_ChooseBackground" = "选择背景";
+
+/* Phone profile page: heading over the solid colours in the background picker. */
+"Rpm_Profile_Colours" = "颜色";
+
+/* Phone profile page: line above the feed in a test build when the server has no profile pages yet, so sample posts are shown. */
+"Rpm_Profile_SampleNote" = "示例动态。个人主页尚未上线。";
+
+/* Phone collection search: heading over the earlier searches, shown while the search box is empty. */
+"Rpm_Search_Recent" = "最近搜索";
+
+/* Phone collection search: key beside 'Recent searches' that removes them all. */
+"Rpm_Search_ClearRecent" = "清除";
+
+/* Phone collection search: accessibility label of the cross on one earlier search. */
+"Rpm_Search_Forget" = "从最近搜索中移除";
+
+/* Phone profile page: key beside the box for a new post. */
+"Rpm_Profile_Post" = "发布";
+
+/* Phone profile page: the bar under the name with what the person is playing. {0} the song, {1} the artist. */
+"Rpm_Profile_NowPlaying" = "%2$@ 的《%1$@》";
+
+/* Phone profile page: accessibility text of the thumbs-up count on a post or reply. */
+"Rpm_Profile_Likes" = "%1$@ 个赞";
+
+/* Phone profile page: accessibility text of the thumbs-down count on a post or reply. */
+"Rpm_Profile_Dislikes" = "%1$@ 个踩";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_FirstSpin" = "初次转动";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_FirstSpin_Need" = "添加第一张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_CrateDigger" = "淘碟达人";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_CrateDigger_Need" = "拥有 50 张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_RecordCollector" = "唱片收藏家";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_RecordCollector_Need" = "拥有 250 张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Connoisseur" = "音乐鉴赏家";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Connoisseur_Need" = "拥有 1,000 张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_LivingArchive" = "活体档案馆";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_LivingArchive_Need" = "拥有 2,500 张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_MuseumCurator" = "博物馆馆长";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_MuseumCurator_Need" = "拥有 5,000 张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_TenThousand" = "万首歌曲";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_TenThousand_Need" = "拥有 10,000 首曲目";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Rock" = "摇滚铁粉";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Rock_Need" = "五分之一的专辑是摇滚，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Jazz" = "爵士猫";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Jazz_Need" = "五分之一的专辑是爵士，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Classical" = "大师";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Classical_Need" = "五分之一的专辑是古典，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_HipHop" = "节拍控";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_HipHop_Need" = "五分之一的专辑是嘻哈，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Electronic" = "合成器巫师";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Electronic_Need" = "五分之一的专辑是电子，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Metal" = "甩头族";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Metal_Need" = "五分之一的专辑是金属，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Pop" = "流行之星";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Pop_Need" = "五分之一的专辑是流行，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Soul" = "灵魂探索者";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Soul_Need" = "五分之一的专辑是灵魂乐、R&B 或放克，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Folk" = "民谣英雄";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Folk_Need" = "五分之一的专辑是民谣或乡村，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Blues" = "蓝调音符";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Blues_Need" = "五分之一的专辑是蓝调，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Reggae" = "海岛时光";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Reggae_Need" = "五分之一的专辑是雷鬼，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Latin" = "拉丁热浪";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Latin_Need" = "五分之一的专辑是拉丁，至少 25 张";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_GenreHopper" = "流派漫游者";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_GenreHopper_Need" = "在 10 个流派中各有 5 张专辑";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Omnivore" = "杂食者";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Omnivore_Need" = "在 20 个流派中各有 5 张专辑";
+
+/* Phone profile page: menu item and title of the page where the person picks the badge under their name. */
+"Rpm_Badges_Title" = "徽章";
+
+/* Phone badges page: heading over the colours of the badge. */
+"Rpm_Badges_Colour" = "颜色";
+
+/* Phone badges page: heading over the badges the person has. */
+"Rpm_Badges_Unlocked" = "已解锁";
+
+/* Phone badges page: heading over the badges the person does not have yet. */
+"Rpm_Badges_Locked" = "待解锁";
+
+/* Phone badges page: choice that shows no badge under the name. */
+"Rpm_Badges_NoBadge" = "不显示徽章";
+
+/* Phone notifications page: a badge was unlocked. {0} is the badge's name. */
+"Rpm_Notify_Badge" = "你解锁了徽章「%1$@」";
+
+/* Phone profile page: choice under Choose banner that picks a photo from the phone. */
+"Rpm_Profile_BannerPhoto" = "选择照片";
+
+/* Phone profile page: choice under Choose banner. The banner then shows a photo of the artist the person is playing. */
+"Rpm_Profile_BannerPlaying" = "正在播放的艺人图片";
+
+/* Phone tab bar label for everyone's posts, in place of Profile. */
+"Rpm_Tab_Feed" = "动态";
+
+/* Phone Feed tab: no posts yet. */
+"Rpm_Feed_Empty" = "这里还什么都没有。所有人的动态会显示在这里。";
+
+/* Phone Feed tab: accessibility label of the key at the top right that opens the reader's own profile page. */
+"Rpm_Feed_MyProfile" = "我的主页";
+
+/* Phone profile edit page: asked when the page is closed with changes not yet saved. The two answers are Rpm_Profile_ApplyChanges and Rpm_Profile_Discard. */
+"Rpm_Profile_UnsavedTitle" = "应用你的更改？";
+
+/* Phone profile edit page: answer that saves the changes and closes the page. */
+"Rpm_Profile_ApplyChanges" = "应用更改";
+
+/* Phone profile edit page: answer that closes the page without saving the changes. */
+"Rpm_Profile_Discard" = "放弃";
+
+/* Phone profile edit page: heading of the card with the profile photo. */
+"Rpm_Profile_PhotoTitle" = "头像";
+
+/* Phone profile edit page: heading of the card with the picture across the top of the page. */
+"Rpm_Profile_BannerTitle" = "横幅";
+
+/* Phone profile edit page: choice in the Banner card for a photo the person picks, beside Rpm_Profile_BannerPlaying. */
+"Rpm_Profile_BannerOwn" = "你自己的照片";
+
+/* Phone profile page and Feed tab: link under a review card that opens the whole review. */
+"Rpm_Profile_ReadReview" = "阅读完整评论";
+
+/* Phone profile page and Feed tab: a review's text in quotation marks. {0} is the text. Use the language's own quotation marks. */
+"Rpm_Profile_Quoted" = "“%1$@”";
 "Rpm_Profile_Subtitle" = "你的账户、存储空间，以及应用的行为方式。";
 "Rpm_Profile_Account" = "账户";
 "Rpm_Profile_SignOut" = "退出登录";

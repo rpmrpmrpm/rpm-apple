@@ -45,6 +45,33 @@ struct RootView: View {
     /// this listener and not about the way the collection is organised.
     @State private var tab: RPMTab = .home
 
+    /// The reader's own page. Made when the Feed tab is first shown; it rises over the app from the tab's profile key.
+    @State private var me: PersonPage?
+
+    /// Whether the reader's own page is open over the app.
+    @State private var showingMe = false
+
+    /// Other people's pages, opened from a name, newest last. They rise over the app, over the reader's own page
+    /// too; the back key goes to the page before.
+    @State private var people: [PersonPage] = []
+
+    /// The reader's notifications, for the dot on the Feed tab's profile key and the list on their own page.
+    @State private var notices: Notices?
+
+    /// Everyone's posts and reviews, for the Feed tab.
+    @State private var feed: FeedBook?
+
+    /// The photos the sample people borrow: an artist's each, found once a sample is shown. Empty in a listener's
+    /// build.
+    @State private var sampleFaces: [String: URL] = [:]
+
+    /// The covers the cover search found for reviewed records the reader does not have, by artist and title. A record
+    /// with none found is kept as nil, so it is asked once.
+    @State private var foundCovers: [String: URL?] = [:]
+
+    /// The review on the Feed tab read in full, by its feed id.
+    @State private var feedReview: String?
+
     /// What is open on top of the home screen: records and lists that were tapped there. This is
     /// home's own stack, so a record opened from home slides in over it and slides back out to
     /// it, and the library's stacks are not changed.
@@ -97,7 +124,7 @@ struct RootView: View {
     /// The line on an artist's wall that the report card is open for.
     @State private var reporting: WallReport?
 
-    /// Whether the list of downloaded albums is up, over the profile tab.
+    /// Whether the list of downloaded albums is up, over the settings tab.
     @State private var showingDownloads = false
 
     /// The open Send feedback sheet, with the screenshot taken just before it opened.
@@ -403,6 +430,43 @@ struct RootView: View {
         .task { await model.diagnostics.start() }
         // A shake of the phone opens Send feedback over whatever is on screen.
         .onReceive(NotificationCenter.default.publisher(for: .rpmShake)) { _ in openFeedback() }
+        // The reader's own page and other people's pages rise over the app in one cover: someone else's page over
+        // the reader's own, newest on top, as the Android app lays them over each other.
+        .fullScreenCover(isPresented: Binding(get: { showingMe || !people.isEmpty },
+                                              set: { if !$0 { showingMe = false; people = [] } })) {
+            ZStack {
+                if showingMe, let me {
+                    PersonScreen(page: me, model: model, notices: notices,
+                                 onBack: { showingMe = false },
+                                 onOpenPerson: { openPerson($0) },
+                                 onOpenAlbum: { album in showingMe = false; people = []; openAlbum(album) },
+                                 ownBadges: ownBadges, faces: sampleFaces, coverFor: reviewCover)
+                }
+                if let page = people.last {
+                    PersonScreen(page: page, model: model, notices: nil,
+                                 onBack: { people.removeLast() },
+                                 onOpenPerson: { openPerson($0) },
+                                 onOpenAlbum: { album in showingMe = false; people = []; openAlbum(album) },
+                                 faces: sampleFaces, coverFor: reviewCover)
+                        .id(page.userId)
+                        .transition(.move(edge: .bottom))
+                }
+            }
+            .animation(.easeOut(duration: 0.3), value: people.count)
+        }
+        // The photos the sample people borrow, found once.
+        .task(id: profileSample != nil) { await findSampleFaces() }
+        // The size of the collection, for the counts on the reader's page. Sent again only when
+        // it changes.
+        .task(id: model.albums.count) { await model.reportCounts() }
+        // Another account signed in: its pages are not the last account's.
+        .onChange(of: model.who?.userId) { _, _ in
+            me = nil
+            showingMe = false
+            notices = nil
+            feed = nil
+            people = []
+        }
         .sheet(item: $feedback) { shot in
             FeedbackSheet(screenshot: shot.png, email: model.who?.email,
                           send: { await model.diagnostics.sendFeedback($0) },
@@ -757,8 +821,25 @@ struct RootView: View {
                         await model.readSharedStations()
                     }
 
-            case .profile:
-                ProfilePage(name: model.who?.displayName ?? "",
+            case .feed:
+                if let feed {
+                    FeedPage(items: feed.items, answered: feed.answered, trouble: feed.trouble,
+                             hasMore: feed.next != nil, isSample: feed.isSample,
+                             readerId: model.who?.userId ?? "", unread: notices?.unread ?? 0,
+                             pictureOf: { model.community.avatar(userId: $0, hasAvatar: $1) ?? sampleFaces[$0] },
+                             coverFor: reviewCover, actions: feedActions(feed))
+                        .footRoom(chrome, .underTheChrome)
+                        .task { await feed.read() }
+                        .task { await notices?.readUnread() }
+                        .sheet(isPresented: Binding(get: { feedReview != nil }, set: { if !$0 { feedReview = nil } })) {
+                            feedReviewPage(feed)
+                        }
+                } else {
+                    Color.clear.onAppear(perform: makeOwnPage)
+                }
+
+            case .settings:
+                SettingsPage(name: model.who?.displayName ?? "",
                             email: model.who?.email ?? "",
                             quota: model.quota,
                             onWifi: Binding(get: { model.prefs.rateOnWifi },
@@ -787,8 +868,11 @@ struct RootView: View {
                             onSupport: { openUrl(AppModel.becomeSupporter) },
                             crashReports: Binding(get: { model.diagnostics.sendsCrashReports },
                                                   set: { model.diagnostics.sendsCrashReports = $0 }),
-                            onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil)
+                            onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil,
+                            sharesListening: Binding(get: { model.sharesListening },
+                                                     set: { on in Task { await model.setSharesListening(on) } }))
                     .task { await model.readCacheSize() }
+                    .task { await model.readSharing() }
                     .footRoom(chrome, .underTheChrome)
                     .sheet(isPresented: $showingDownloads) {
                         DownloadsPage(
@@ -1272,7 +1356,8 @@ struct RootView: View {
                 draft: Binding(get: { wall.draft }, set: { wall.draft = $0 }),
                 onSend: { Task { await wall.post() } },
                 onDelete: { line in Task { await wall.delete(line) } },
-                onReport: { line in reporting = WallReport(artist: artist.name, line: line) }))
+                onReport: { line in reporting = WallReport(artist: artist.name, line: line) },
+                onAuthor: { openPerson($0) }))
     }
 
     /// - Parameters:
@@ -1340,6 +1425,150 @@ struct RootView: View {
                   rating: walls[album.key].map { (average: $0.average, count: $0.ratingCount) })
     }
 
+    // ── profiles and the Feed tab ──
+
+    /// Makes the reader's own page, their notifications and the Feed tab's model, once for each account.
+    private func makeOwnPage() {
+        guard let who = model.who else { return }
+        if me == nil { me = PersonPage(community: model.community, userId: who.userId, isOwn: true, sample: profileSample) }
+        if notices == nil { notices = Notices(community: model.community, sample: profileSample) }
+        if feed == nil {
+            let community = model.community
+            let wearsMark = model.quota?.wearsMark == true
+            feed = FeedBook(community: community, sample: profileSample) {
+                guard let own = try? await community.profile() else { return nil }
+                return FeedBook.Me(name: own.displayName, userId: own.userId, hasAvatar: own.hasAvatar,
+                                   supporter: own.supporter || wearsMark)
+            }
+        }
+    }
+
+    private func feedActions(_ feed: FeedBook) -> FeedActions {
+        var actions = FeedActions()
+        actions.onMyProfile = {
+            makeOwnPage()
+            people = []
+            showingMe = true
+        }
+        actions.onOpenPerson = { openPerson($0) }
+        actions.onOpenPost = { post in openPerson(post.ownerId, post: post) }
+        actions.onVote = { post, value in Task { await feed.vote(post, value) } }
+        actions.onVoteReview = { shown, value in Task { await feed.voteReview(shown, value) } }
+        actions.onReadReview = { feedReview = RPMFeedItem.review($0).id }
+        actions.onMore = { Task { await feed.more() } }
+        actions.onRefresh = { await feed.read() }
+        return actions
+    }
+
+    /// A review on the Feed tab read in full. It is looked up in the feed each time, so a vote on it shows at once.
+    @ViewBuilder
+    private func feedReviewPage(_ feed: FeedBook) -> some View {
+        let found = feed.items.lazy.compactMap { item -> RPMFeedReview? in
+            if case .review(let shown) = item, item.id == feedReview { return shown }
+            return nil
+        }.first
+        if let shown = found {
+            let review = shown.review
+            let album = model.album(for: shown)
+            ReviewPage(shown: shown, isOwn: review.userId == model.who?.userId,
+                       author: (photo: model.community.avatar(userId: review.userId, hasAvatar: review.hasAvatar)
+                                    ?? sampleFaces[review.userId],
+                                onPerson: {
+                                    feedReview = nil
+                                    Task { @MainActor in
+                                        try? await Task.sleep(for: .milliseconds(400))
+                                        openPerson(review.userId)
+                                    }
+                                }),
+                       coverFor: reviewCover, ground: "",
+                       onVote: { value in Task { await feed.voteReview(shown, value) } },
+                       onOpenAlbum: album.map { found in { feedReview = nil; openAlbum(found) } },
+                       onClose: { feedReview = nil })
+        }
+    }
+
+    /// The badges the reader's own collection unlocks, worked out here and sent once their page is read; the server
+    /// notifies the reader of each new one. None while someone else's collection is open.
+    private var ownBadges: [String] {
+        guard model.viewing.isOwn, !model.albums.isEmpty else { return [] }
+        let shelves = Dictionary(readGenres.genres(model.albums).map { ($0.name, $0.albums.count) }, uniquingKeysWith: +)
+        return RPMProfileBadges.unlocked(albums: model.albums.count,
+                                         tracks: model.albums.reduce(0) { $0 + $1.tracks.count },
+                                         genreAlbums: shelves)
+    }
+
+    /// A reviewed record's cover: the reader's own copy's, else the one the cover search finds.
+    private func reviewCover(_ shown: RPMFeedReview, _ edge: CGFloat) async -> Image? {
+        if let album = model.album(for: shown) {
+            return await covers.cover(for: album, edge: edge)?.image
+        }
+        let key = shown.albumArtist.lowercased() + "\u{1F}" + shown.albumTitle.lowercased()
+        let address: URL?
+        if let known = foundCovers[key] {
+            address = known
+        } else {
+            do {
+                address = try await model.cloud.searchCover(artist: shown.albumArtist, album: shown.albumTitle)
+                foundCovers[key] = .some(address)
+            } catch {
+                // Not kept: asked again the next time the card is drawn.
+                return nil
+            }
+        }
+        guard let address else { return nil }
+        return await RemotePictures.image(address)
+    }
+
+    /// Finds the photo each sample person borrows: a picture of an artist, as the artist page finds one.
+    private func findSampleFaces() async {
+        guard sampleFaces.isEmpty, let shown = profileSample?() else { return }
+        var found: [String: URL] = [:]
+        for (userId, artist) in shown.faces {
+            guard let pictures = try? await model.cloud.artistPictures(artist: artist, album: nil),
+                  let picture = pictures.squares.first ?? pictures.backdrops.first else { continue }
+            found[userId] = picture
+        }
+        sampleFaces = found
+    }
+
+    /// The sample page the reader's own profile shows while the server has no profile pages yet.
+    /// Only in a test build (a debug build, or a TestFlight build that offers Send feedback): a
+    /// listener's build never shows made-up posts.
+    private var profileSample: (() -> RPMProfileSample?)? {
+        #if DEBUG
+        let testBuild = true
+        #else
+        let testBuild = model.diagnostics.offersFeedback
+        #endif
+        return testBuild ? { RPMProfileSample.load() } : nil
+    }
+
+    /// Opens a person's page over the app, and `post` on it with its replies when one is given. The reader's own name
+    /// opens their own page.
+    private func openPerson(_ userId: String, post: RPMPost? = nil) {
+        guard !userId.isEmpty else { return }
+        if userId == model.who?.userId {
+            makeOwnPage()
+            people = []
+            // A page that is already open is not read again, so the post opens at once; otherwise once it is read.
+            if let post {
+                if showingMe { Task { await me?.open(post) } } else { me?.pendingPost = post }
+            }
+            showingMe = true
+            return
+        }
+        let page = PersonPage(community: model.community, userId: userId, isOwn: false, sample: profileSample)
+        page.pendingPost = post
+        people.append(page)
+    }
+
+    /// Opens a record in the library tab, as Home's keys do.
+    private func openAlbum(_ album: CloudAlbum) {
+        tab = .library
+        mode = .albums
+        opened = [.album(album.key)]
+    }
+
     /// The record's wall as the page draws it, or `nil` while its community entry is still being
     /// resolved.
     private func reviews(of album: CloudAlbum) -> AnyView? {
@@ -1359,6 +1588,7 @@ struct RootView: View {
                         },
                         onWrite: { writing = album.key },
                         onVote: { review, value in Task { await wall.vote(review, value) } },
+                        onAuthor: { review in openPerson(review.userId) },
                         onMore: { Task { await wall.more() } }))
     }
 

@@ -157,12 +157,39 @@ public actor Transport {
         return data
     }
 
+    /// Bytes as the body, for the routes that take an image and not JSON (`profile/avatar`,
+    /// `profile/banner`). The server reads the type from the bytes; the header is sent so that a
+    /// proxy or a log shows the right one.
+    public func upload<T: Decodable>(
+        _ method: String, _ path: String, bytes: Data, contentType: String, as type: T.Type
+    ) async throws -> T {
+        let data = try await performResponding(method, path, payload: .bytes(bytes, contentType)).data
+        if let empty = EmptyResponse() as? T, data.isEmpty { return empty }
+
+        do {
+            return try RPMJSON.decoder.decode(T.self, from: data)
+        } catch {
+            throw RPMError.decoding(error)
+        }
+    }
+
+    /// What goes in a request's body.
+    private enum Payload {
+        case json(any Encodable)
+        case bytes(Data, String)
+    }
+
     private func perform(_ method: String, _ path: String, body: (any Encodable)?) async throws -> Data {
         try await performResponding(method, path, body: body).data
     }
 
     private func performResponding(_ method: String, _ path: String,
                                    body: (any Encodable)?) async throws -> (data: Data, http: HTTPURLResponse) {
+        try await performResponding(method, path, payload: body.map(Payload.json))
+    }
+
+    private func performResponding(_ method: String, _ path: String,
+                                   payload: Payload?) async throws -> (data: Data, http: HTTPURLResponse) {
         guard let url = URL(string: path, relativeTo: base) else {
             throw RPMError.badAddress
         }
@@ -178,10 +205,16 @@ public actor Transport {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        if let body {
+        switch payload {
+        case .json(let body):
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             do { request.httpBody = try RPMJSON.encoder.encode(body) }
             catch { throw RPMError.decoding(error) }
+        case .bytes(let bytes, let type):
+            request.setValue(type, forHTTPHeaderField: "Content-Type")
+            request.httpBody = bytes
+        case nil:
+            break
         }
 
         let (data, http) = try await wire.fetch(request, method: method)

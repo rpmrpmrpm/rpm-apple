@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import RPMArt
 import RPMAudio
 import RPMKit
 
@@ -79,6 +80,10 @@ final class TVSettings {
     /// Whether the sung lyric line lights word by word. Off by default, and for supporters only
     /// (``TVModel/karaokeOn``). The setting is stored for anyone else, but has no effect.
     private(set) var karaoke: Bool
+    /// What the record looks like for an album with no disc picture. The plain CD by default. It is kept
+    /// under ``BlankDisc/key``, where the screens that draw a record read it, and it applies from the
+    /// next record that is put on or opened.
+    private(set) var discStandIn: DiscStandIn
     /// Album is the default, as on the phone and the desktop.
     var levelling: NormalizeMode {
         didSet { store.set(levelling.rawValue, forKey: "tv.levelling") }
@@ -106,6 +111,7 @@ final class TVSettings {
         background = store.string(forKey: "tv.background").flatMap(PageBackground.init(rawValue:)) ?? .still
         albumCarousel = store.bool(forKey: "tv.albums.carousel")
         karaoke = store.bool(forKey: "tv.karaoke")
+        discStandIn = BlankDisc.chosen(in: store)
         levelling = store.string(forKey: "tv.levelling").flatMap(NormalizeMode.init(rawValue:)) ?? .album
         levelsClassical = store.bool(forKey: "tv.levelling.classical")
         kilobits = (store.object(forKey: "tv.kilobits") as? Int) ?? AudioLadder.original
@@ -142,6 +148,12 @@ final class TVSettings {
         let all = PageBackground.allCases
         background = all[(all.firstIndex(of: background)! + 1) % all.count]
         store.set(background.rawValue, forKey: "tv.background")
+    }
+
+    func nextDiscStandIn() {
+        let all = DiscStandIn.allCases
+        discStandIn = all[(all.firstIndex(of: discStandIn)! + 1) % all.count]
+        store.set(discStandIn.rawValue, forKey: BlankDisc.key)
     }
 
     func nextScreensaver() {

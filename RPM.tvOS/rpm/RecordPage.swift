@@ -142,7 +142,7 @@ struct RecordPage: View {
         VStack(spacing: 18) {
             ZStack {
                 RecordDisc(diameter: 400 * 0.96, halo: .cast, spinning: model.player.isPlaying && isPlayingHere,
-                           hue: hue, label: label?.image)
+                           hue: hue, label: label?.image, disc: disc)
                     .offset(x: out ? 400 * 0.312 : 0)
                 // No shadow of its own, as on the desktop: the record casts one, the sleeve none.
                 sleeve
@@ -308,6 +308,13 @@ struct RecordPage: View {
 
     private static let labelEdge = 256
 
+    /// The record's own disc picture, or the plain CD where it has none and the CD is chosen
+    /// (``BlankDisc``). Nil draws the vinyl wearing the sleeve. Only a record has one; a list does not.
+    @State private var disc: ScannedDisc?
+
+    /// The disc's pixels: the record is 384 points across, and the TV draws two pixels to a point.
+    private static let discEdge = 768
+
     private var hue: RGB? { label?.accent?.base ?? VinylPressing.houseHue }
 
     private var isAlbum: Bool { if case .album = of { true } else { false } }
@@ -418,6 +425,14 @@ struct RecordPage: View {
             art = await model.artwork.cover(for: album, on: model.session.shelves.shelf(ofAlbum: album), edge: Self.labelEdge)
             // The artist line opens their page: its photograph and text, ready before it is asked.
             await model.warmArtist(album.artist, scale: scale)
+        }
+        .task(id: albumKey) {
+            disc = nil
+            guard case .album(let album) = of else { return }
+            let found = await model.artwork.disc(for: album, on: model.session.shelves.shelf(ofAlbum: album),
+                                                 edge: Self.discEdge)
+            guard !Task.isCancelled else { return }
+            disc = found ?? BlankDisc.standIn()
         }
         .task(id: albumKey) {
             similar = []

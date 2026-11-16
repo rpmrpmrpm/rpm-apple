@@ -742,6 +742,18 @@
 /* Settings > Display: hint under the artist photo toggle. */
 "Settings_HeaderArtistPhotoHint" = "Muestra una foto del artista detrás de la pantalla de carátulas. Desactívalo y rpm no descarga fotos: usa los colores del álbum en su lugar.";
 
+/* Settings > Display: label for the choice of what the record looks like when an album has no picture of its own disc. */
+"Settings_DiscStandIn" = "Álbumes sin imagen de disco";
+
+/* Settings > Display: hint under the 'Albums without disc art' choice. */
+"Settings_DiscStandInHint" = "Elige qué gira cuando un álbum aún no tiene imagen de su disco: un vinilo con la carátula o un CD sencillo.";
+
+/* Settings > Display: 'Albums without disc art' option. The app's own drawn vinyl, with the album cover on its label. The default. */
+"Settings_DiscStandInVinyl" = "Vinilo";
+
+/* Settings > Display: 'Albums without disc art' option. A plain silver CD with the rpm hub. */
+"Settings_DiscStandInCd" = "CD";
+
 /* Settings > Collection: title of the card choosing how multi-disc releases are handled. */
 "Settings_MultiDisc" = "Álbumes de varios discos";
 
@@ -2068,6 +2080,372 @@
 
 /* Phone tab bar label for the home screen. The page itself uses Home_Heading, in lower case. */
 "Rpm_Tab_Home" = "Inicio";
+
+/* Phone settings page: tab with the app version, crash reports and the cover cache. */
+"Rpm_Settings_General" = "General";
+
+/* Phone settings page: tab with the background, night mode and the disc stand-in. */
+"Rpm_Settings_Appearance" = "Apariencia";
+
+/* Phone settings page: tab with the account, cloud storage and the plan. */
+"Rpm_Settings_Account" = "Mi cuenta";
+
+/* Phone profile page: line under the name. {0} the person, {1} the song, {2} the artist. */
+"Rpm_Profile_ListeningTo" = "%1$@ está escuchando %2$@ de %3$@";
+
+/* Phone profile page: when the account was made. {0} is a month and year. */
+"Rpm_Profile_MemberSince" = "Miembro desde %1$@";
+
+/* Phone profile page: placeholder in the box for a new post on your own page. */
+"Rpm_Profile_PostPrompt" = "¿Qué estás pensando?";
+
+/* Phone profile page: switch under the post box that adds the current song to the post. */
+"Rpm_Profile_WithSong" = "Añadir la canción que suena";
+
+/* Phone profile page: key under a post or reply. */
+"Rpm_Profile_Reply" = "Responder";
+
+/* Phone profile page: count of replies under a post, one. */
+"Rpm_Profile_RepliesOne" = "1 respuesta";
+
+/* Phone profile page: count of replies under a post. */
+"Rpm_Profile_Replies" = "%1$@ respuestas";
+
+/* Phone profile page: placeholder in the reply box. */
+"Rpm_Profile_ReplyPrompt" = "Escribe una respuesta";
+
+/* Phone profile page: shown in place of a deleted reply that still has replies under it. */
+"Rpm_Profile_ReplyDeleted" = "Respuesta eliminada";
+
+/* Phone profile page: your own page with no posts or reviews. */
+"Rpm_Profile_FeedEmptyOwn" = "Aún no hay nada. Escribe tu primera publicación arriba.";
+
+/* Phone profile page: someone else's page with no posts or reviews. */
+"Rpm_Profile_FeedEmpty" = "Aún no hay publicaciones ni reseñas.";
+
+/* Phone profile page: key on a review in the feed, shown when the album is in your collection. */
+"Rpm_Profile_OpenAlbum" = "Abrir álbum";
+
+/* Phone profile page: the page could not be read. */
+"Rpm_Profile_Offline" = "No se pudo cargar este perfil. Comprueba tu conexión e inténtalo de nuevo.";
+
+/* Phone profile page: accessibility label of the round menu key at the top right. */
+"Rpm_Profile_Menu" = "Menú";
+
+/* Phone profile page: accessibility label of the round back key at the top left of someone else's page. */
+"Rpm_Profile_Back" = "Atrás";
+
+/* Phone profile page: menu item that opens the name editor. */
+"Rpm_Profile_EditPage" = "Editar página";
+
+/* Phone profile page: label of the name field on the edit page. */
+"Rpm_Profile_Name" = "Nombre visible";
+
+/* Phone profile page: key that saves the edit page. */
+"Rpm_Profile_Save" = "Guardar";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_ChangePhoto" = "Cambiar foto de perfil";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_RemovePhoto" = "Quitar foto";
+
+/* Phone profile page: menu item that picks the wide picture at the top of the page. */
+"Rpm_Profile_ChooseBanner" = "Elegir portada";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_RemoveBanner" = "Quitar portada";
+
+/* Phone profile page: a photo or banner upload failed. */
+"Rpm_Profile_PictureFailed" = "No se pudo subir la imagen. Prueba con otra.";
+
+/* Phone profile page: key under someone else's name. */
+"Rpm_Profile_AddFriend" = "Añadir amigo";
+
+/* Phone profile page: key under someone else's name after you asked to be friends. */
+"Rpm_Profile_Requested" = "Solicitud enviada";
+
+/* Phone profile page: menu item while your friend request waits. */
+"Rpm_Profile_CancelRequest" = "Cancelar solicitud";
+
+/* Phone profile page: key that accepts a friend request. */
+"Rpm_Profile_Accept" = "Aceptar";
+
+/* Phone profile page: key that declines a friend request. */
+"Rpm_Profile_Decline" = "Rechazar";
+
+/* Phone profile page: key under the name of someone who is your friend. */
+"Rpm_Profile_Friends" = "Amigos";
+
+/* Phone profile page: menu item. */
+"Rpm_Profile_RemoveFriend" = "Eliminar amigo";
+
+/* Phone profile page: menu item and confirm key. */
+"Rpm_Profile_Block" = "Bloquear";
+
+/* Phone profile page: menu item and key on the page of someone you blocked. */
+"Rpm_Profile_Unblock" = "Desbloquear";
+
+/* Phone profile page: question before blocking. {0} is the person's name. */
+"Rpm_Profile_BlockConfirm" = "¿Bloquear a %1$@? No veréis las publicaciones ni las respuestas del otro, y cualquier amistad entre vosotros termina.";
+
+/* Phone profile page: shown in place of the feed on the page of someone you blocked. */
+"Rpm_Profile_Blocked" = "Has bloqueado a esta persona.";
+
+/* Phone profile page: menu item on your own post. */
+"Rpm_Profile_DeletePost" = "Eliminar publicación";
+
+/* Phone profile page: menu item on a reply you can delete. */
+"Rpm_Profile_DeleteReply" = "Eliminar respuesta";
+
+/* Phone profile page: menu item on someone else's reply. */
+"Rpm_Profile_ReportReply" = "Denunciar esta respuesta";
+
+/* Phone profile page: accessibility text for the badge on the menu key. */
+"Rpm_Profile_UnreadCount" = "%1$@ notificaciones sin leer";
+
+/* Phone notifications page: title, and the menu item on your own page that opens it. */
+"Rpm_Notify_Title" = "Notificaciones";
+
+/* Phone notifications page: empty list. */
+"Rpm_Notify_Empty" = "Aún no hay notificaciones. Aquí aparecen las respuestas, los votos y las solicitudes de amistad.";
+
+/* Phone notifications page: someone replied to your post or reply. */
+"Rpm_Notify_Reply" = "%1$@ te ha respondido";
+
+/* Phone notifications page: one vote on your post or reply. */
+"Rpm_Notify_Vote" = "%1$@ ha votado tu publicación";
+
+/* Phone notifications page: several votes on one post or reply. {0} is the number. */
+"Rpm_Notify_Votes" = "%1$@ votos nuevos en tu publicación";
+
+/* Phone notifications page: a friend request, with Accept and Decline keys. */
+"Rpm_Notify_FriendRequest" = "%1$@ quiere ser tu amigo";
+
+/* Phone notifications page: a request you sent was accepted. */
+"Rpm_Notify_FriendAccepted" = "%1$@ ha aceptado tu solicitud de amistad";
+
+/* Phone notifications page: a friend wrote a review. {1} is the album title. */
+"Rpm_Notify_FriendReview" = "%1$@ ha reseñado %2$@";
+
+/* Phone settings, My account: switch. */
+"Rpm_Settings_ShareListening" = "Mostrar lo que escucho";
+
+/* Phone settings, My account: hint under the switch. */
+"Rpm_Settings_ShareListeningHint" = "Tu perfil muestra la canción que suena a cualquiera que lo abra.";
+
+/* Phone profile page: menu item that picks what the page is drawn on, a colour or one of the app's backgrounds. */
+"Rpm_Profile_ChooseBackground" = "Elegir fondo";
+
+/* Phone profile page: heading over the solid colours in the background picker. */
+"Rpm_Profile_Colours" = "Colores";
+
+/* Phone profile page: line above the feed in a test build when the server has no profile pages yet, so sample posts are shown. */
+"Rpm_Profile_SampleNote" = "Publicaciones de ejemplo. Los perfiles aún no están activos.";
+
+/* Phone collection search: heading over the earlier searches, shown while the search box is empty. */
+"Rpm_Search_Recent" = "Búsquedas recientes";
+
+/* Phone collection search: key beside 'Recent searches' that removes them all. */
+"Rpm_Search_ClearRecent" = "Borrar";
+
+/* Phone collection search: accessibility label of the cross on one earlier search. */
+"Rpm_Search_Forget" = "Quitar de búsquedas recientes";
+
+/* Phone profile page: key beside the box for a new post. */
+"Rpm_Profile_Post" = "Publicar";
+
+/* Phone profile page: the bar under the name with what the person is playing. {0} the song, {1} the artist. */
+"Rpm_Profile_NowPlaying" = "%1$@ de %2$@";
+
+/* Phone profile page: accessibility text of the thumbs-up count on a post or reply. */
+"Rpm_Profile_Likes" = "%1$@ me gusta";
+
+/* Phone profile page: accessibility text of the thumbs-down count on a post or reply. */
+"Rpm_Profile_Dislikes" = "%1$@ no me gusta";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_FirstSpin" = "Primera vuelta";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_FirstSpin_Need" = "Añade tu primer álbum";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_CrateDigger" = "Buscador de vinilos";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_CrateDigger_Need" = "Tener 50 álbumes";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_RecordCollector" = "Coleccionista";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_RecordCollector_Need" = "Tener 250 álbumes";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Connoisseur" = "Melómano experto";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Connoisseur_Need" = "Tener 1000 álbumes";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_LivingArchive" = "Archivo viviente";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_LivingArchive_Need" = "Tener 2500 álbumes";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_MuseumCurator" = "Curador de museo";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_MuseumCurator_Need" = "Tener 5000 álbumes";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_TenThousand" = "Diez mil canciones";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_TenThousand_Need" = "Tener 10 000 canciones";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Rock" = "Roca firme";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Rock_Need" = "Que una quinta parte de tus álbumes sea rock, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Jazz" = "Gato de jazz";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Jazz_Need" = "Que una quinta parte de tus álbumes sea jazz, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Classical" = "Maestro";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Classical_Need" = "Que una quinta parte de tus álbumes sea clásica, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_HipHop" = "Cabeza de ritmo";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_HipHop_Need" = "Que una quinta parte de tus álbumes sea hip-hop, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Electronic" = "Mago del sintetizador";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Electronic_Need" = "Que una quinta parte de tus álbumes sea electrónica, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Metal" = "Headbanger";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Metal_Need" = "Que una quinta parte de tus álbumes sea metal, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Pop" = "Estrella del pop";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Pop_Need" = "Que una quinta parte de tus álbumes sea pop, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Soul" = "Buscador de soul";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Soul_Need" = "Que una quinta parte de tus álbumes sea soul, R&B o funk, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Folk" = "Héroe folk";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Folk_Need" = "Que una quinta parte de tus álbumes sea folk o country, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Blues" = "Nota azul";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Blues_Need" = "Que una quinta parte de tus álbumes sea blues, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Reggae" = "Ritmo isleño";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Reggae_Need" = "Que una quinta parte de tus álbumes sea reggae, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Latin" = "Calor latino";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Latin_Need" = "Que una quinta parte de tus álbumes sea latina, al menos 25";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_GenreHopper" = "Saltagéneros";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_GenreHopper_Need" = "Tener 5 álbumes en 10 géneros";
+
+/* Phone profile badge name, shown in a coloured pill under the person's name. Short and playful. */
+"Rpm_Badge_Omnivore" = "Omnívoro";
+
+/* Phone badges page: what unlocks this badge, under a badge not yet unlocked. */
+"Rpm_Badge_Omnivore_Need" = "Tener 5 álbumes en 20 géneros";
+
+/* Phone profile page: menu item and title of the page where the person picks the badge under their name. */
+"Rpm_Badges_Title" = "Insignias";
+
+/* Phone badges page: heading over the colours of the badge. */
+"Rpm_Badges_Colour" = "Color";
+
+/* Phone badges page: heading over the badges the person has. */
+"Rpm_Badges_Unlocked" = "Desbloqueadas";
+
+/* Phone badges page: heading over the badges the person does not have yet. */
+"Rpm_Badges_Locked" = "Por desbloquear";
+
+/* Phone badges page: choice that shows no badge under the name. */
+"Rpm_Badges_NoBadge" = "Sin insignia";
+
+/* Phone notifications page: a badge was unlocked. {0} is the badge's name. */
+"Rpm_Notify_Badge" = "Has desbloqueado la insignia %1$@";
+
+/* Phone profile page: choice under Choose banner that picks a photo from the phone. */
+"Rpm_Profile_BannerPhoto" = "Elegir una foto";
+
+/* Phone profile page: choice under Choose banner. The banner then shows a photo of the artist the person is playing. */
+"Rpm_Profile_BannerPlaying" = "Imagen del artista que suena";
+
+/* Phone tab bar label for everyone's posts, in place of Profile. */
+"Rpm_Tab_Feed" = "Novedades";
+
+/* Phone Feed tab: no posts yet. */
+"Rpm_Feed_Empty" = "Aún no hay nada. Aquí aparecen las publicaciones de todos.";
+
+/* Phone Feed tab: accessibility label of the key at the top right that opens the reader's own profile page. */
+"Rpm_Feed_MyProfile" = "Mi perfil";
+
+/* Phone profile edit page: asked when the page is closed with changes not yet saved. The two answers are Rpm_Profile_ApplyChanges and Rpm_Profile_Discard. */
+"Rpm_Profile_UnsavedTitle" = "¿Aplicar tus cambios?";
+
+/* Phone profile edit page: answer that saves the changes and closes the page. */
+"Rpm_Profile_ApplyChanges" = "Aplicar cambios";
+
+/* Phone profile edit page: answer that closes the page without saving the changes. */
+"Rpm_Profile_Discard" = "Descartar";
+
+/* Phone profile edit page: heading of the card with the profile photo. */
+"Rpm_Profile_PhotoTitle" = "Foto de perfil";
+
+/* Phone profile edit page: heading of the card with the picture across the top of the page. */
+"Rpm_Profile_BannerTitle" = "Banner";
+
+/* Phone profile edit page: choice in the Banner card for a photo the person picks, beside Rpm_Profile_BannerPlaying. */
+"Rpm_Profile_BannerOwn" = "Tu propia foto";
+
+/* Phone profile page and Feed tab: link under a review card that opens the whole review. */
+"Rpm_Profile_ReadReview" = "Leer la reseña completa";
+
+/* Phone profile page and Feed tab: a review's text in quotation marks. {0} is the text. Use the language's own quotation marks. */
+"Rpm_Profile_Quoted" = "«%1$@»";
 "Rpm_Profile_Subtitle" = "Tu cuenta, tu almacenamiento y cómo se comporta la app.";
 "Rpm_Profile_Account" = "Cuenta";
 "Rpm_Profile_SignOut" = "Cerrar sesión";

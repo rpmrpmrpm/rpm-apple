@@ -60,7 +60,20 @@ public struct VinylGround: View {
     /// screen redraws when it changes.
     @AppStorage(Backdrop.key) private var chosen = ""
 
-    public init() { gold = SupporterGround.isGold }
+    /// A picture given by the caller in place of the reader's choice: a profile page is drawn on
+    /// its owner's choice, the same for everyone who opens it.
+    private let fixed: Backdrop.Choice?
+
+    public init() {
+        gold = SupporterGround.isGold
+        fixed = nil
+    }
+
+    /// A ground that always shows `choice`, whatever the reader chose for the app.
+    public init(showing choice: Backdrop.Choice) {
+        gold = choice == .gold
+        fixed = choice
+    }
 
     public var body: some View {
         ZStack {
@@ -68,7 +81,7 @@ public struct VinylGround: View {
             // app's colour.
             RPMInk.ground
 
-            Plate(picture: Backdrop.standing(stored: chosen, gold: gold))
+            Plate(picture: fixed ?? Backdrop.standing(stored: chosen, gold: gold))
 
             Rectangle().fill(Color.black.opacity(0x33 / 255))
         }

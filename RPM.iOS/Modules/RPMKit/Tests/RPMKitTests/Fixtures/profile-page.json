@@ -1,0 +1,24 @@
+{
+  "userId": "u-ana",
+  "displayName": "ana",
+  "hasAvatar": true,
+  "avatarUpdatedAt": 1790000000123,
+  "createdAt": 1787870345843,
+  "supporter": true,
+  "hasBanner": true,
+  "bannerUpdatedAt": 1790000000456,
+  "listening": {
+    "artist": "Talking Heads",
+    "title": "Once in a Lifetime",
+    "album": "Remain in Light",
+    "albumId": "a-remain",
+    "at": 1790000100000
+  },
+  "counts": {
+    "albums": 1610,
+    "tracks": 23329,
+    "updatedAt": 1790000000000
+  },
+  "friendship": "incoming",
+  "blocked": false
+}

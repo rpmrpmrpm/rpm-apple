@@ -10,7 +10,8 @@ import Foundation
 /// The routes are not under a `community/` prefix. They sit at the root of the same host as the cloud routes,
 /// for example `albums/resolve` and `profile`.
 public struct RPMCommunityClient: Sendable {
-    private let transport: Transport
+    /// Internal and not private: the profile calls live in `RPMCommunityClient+Profiles.swift`.
+    let transport: Transport
 
     public init(transport: Transport) { self.transport = transport }
 
@@ -210,6 +211,7 @@ public struct RPMCommunityClient: Sendable {
         struct Body: Encodable {
             let targetType: String; let albumId: String?; let artistId: String?
             let targetId: String; let reason: String?; let note: String?
+            var ownerId: String? = nil; var postId: String? = nil
         }
 
         let body: Body
@@ -226,6 +228,14 @@ public struct RPMCommunityClient: Sendable {
         case .wallPost(let artistId, let entryId):
             body = Body(targetType: "wallpost", albumId: nil, artistId: artistId,
                         targetId: entryId, reason: reason, note: note)
+        case .post(let ownerId, let postId):
+            body = Body(targetType: "post", albumId: nil, artistId: nil,
+                        targetId: postId, reason: reason, note: note,
+                        ownerId: ownerId, postId: postId)
+        case .reply(let ownerId, let postId, let replyId):
+            body = Body(targetType: "reply", albumId: nil, artistId: nil,
+                        targetId: replyId, reason: reason, note: note,
+                        ownerId: ownerId, postId: postId)
         }
 
         try await transport.sendVoid("POST", "reports", body: body)
@@ -281,7 +291,7 @@ public struct RPMCommunityClient: Sendable {
 
     // Helpers
 
-    private func escaped(_ text: String) -> String {
+    func escaped(_ text: String) -> String {
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._~")
         return text.addingPercentEncoding(withAllowedCharacters: allowed) ?? text

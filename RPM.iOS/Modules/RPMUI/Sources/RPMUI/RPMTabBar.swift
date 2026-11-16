@@ -3,20 +3,23 @@ import RPMKit
 
 /// Which screen the app is on.
 ///
-/// Home, the records, the radio and the account: four tabs. The playlists are not a tab. They are
+/// Home, the records, everyone's posts and reviews, the radio and the settings: five tabs. The playlists are not a tab. They are
 /// a way of reading the library, beside the records and the artists. See ``LibraryMode``.
 public enum RPMTab: String, CaseIterable, Sendable {
     case home
     case library
+    /// Everyone's posts and reviews. The reader's own profile page opens from its header.
+    case feed
     case radio
-    case profile
+    case settings
 
     var glyph: String {
         switch self {
         case .home: return Glyph.home
         case .library: return Glyph.library
+        case .feed: return Glyph.feed
         case .radio: return Glyph.radio
-        case .profile: return Glyph.profile
+        case .settings: return Glyph.settings
         }
     }
 
@@ -24,13 +27,14 @@ public enum RPMTab: String, CaseIterable, Sendable {
         switch self {
         case .home: return Loc.get("Rpm_Tab_Home")
         case .library: return Loc.get("Settings_Library")
+        case .feed: return Loc.get("Rpm_Tab_Feed")
         case .radio: return Loc.get("Rpm_Tab_Radio")
-        case .profile: return Loc.get("Rpm_Tab_Profile")
+        case .settings: return Loc.get("Settings_Title")
         }
     }
 }
 
-/// Where to go: four tabs in a floating glass capsule, laid out by `RPMChrome`.
+/// Where to go: five tabs in a floating glass capsule, laid out by `RPMChrome`.
 ///
 /// This is not a `TabView`: the mini player floats directly above the capsule, and the system tab
 /// bar owns the bottom of the screen and leaves no room for it.

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import RPMSharedUI
 import RPMKit
 import CoreText
@@ -19,6 +20,9 @@ public enum RPMInk {
 
     /// `#FF6B6B`. It is the only colour in the app that carries a meaning.
     public static let red = Color(red: 1, green: 0x6B / 255, blue: 0x6B / 255)
+
+    /// The supporter's gold: a supporter's name on their page, beside the gold badge (``SupporterMark``).
+    public static let gold = Color(red: 0xEB / 255, green: 0xC6 / 255, blue: 0x5A / 255)
 
     /// The one accent colour that the app has of its own. It is used rarely: for the supporter's
     /// metal and nothing else. All other colour comes from the record that is playing.
@@ -412,25 +416,21 @@ public struct RPMFieldStyle: ViewModifier {
     }
 }
 
-/// The search box with a clear key inside it, shared by the records wall and the artists page.
+/// The search box shared by the records wall and the artists page.
 ///
-/// **One height, empty or typed in.** The clear key shows only while there is text. If the key
-/// were taller than the line of text, the box would grow on the first letter typed. The height is
-/// set here and the key is drawn inside it, so a field never grows.
+/// It has no clear key: the pages put their close key right beside the box, and a second cross
+/// there is one too many. Its height is set here, so it matches that key.
 public struct RPMSearchBox: View {
     /// The box's height, the same as the glass close key that the pages put beside it.
     public static let height: CGFloat = 38
 
     @Binding private var text: String
     private let prompt: String
-    private let clearLabel: String
     private let typing: FocusState<Bool>.Binding
 
-    public init(text: Binding<String>, prompt: String, clearLabel: String,
-                typing: FocusState<Bool>.Binding) {
+    public init(text: Binding<String>, prompt: String, typing: FocusState<Bool>.Binding) {
         _text = text
         self.prompt = prompt
-        self.clearLabel = clearLabel
         self.typing = typing
     }
 
@@ -447,26 +447,8 @@ public struct RPMSearchBox: View {
                 // The words are searched as they are typed, so Return has nothing left to
                 // submit: it hides the keyboard and leaves the results visible.
                 .onSubmit { typing.wrappedValue = false }
-
-            // Only with something in it, as the system's own search field does: a cross on an
-            // empty box is a key that cannot do anything.
-            if !text.isEmpty {
-                Button {
-                    text = ""
-                    typing.wrappedValue = true
-                } label: {
-                    Text("\u{f057}")
-                        .font(RPMFont.icon(13))
-                        .foregroundStyle(RPMInk.white(0x77 / 255))
-                        .frame(width: 28, height: Self.height)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(clearLabel)
-            }
         }
-        .padding(.leading, 12)
-        .padding(.trailing, 2)
+        .padding(.horizontal, 12)
         .frame(height: Self.height)
         .rpmFieldFace(radius: 8)
     }
@@ -569,6 +551,14 @@ public enum RPMFont {
     /// The registered name of the body face that ``display(_:)`` draws, for text that is measured
     /// before it is drawn: see ``CentredAboutText``. Nil where the face did not load.
     static var mediumFace: String? { name(of: .cabinMedium) }
+
+    /// The body face as a UIKit font, for text that UIKit lays out (``WrappedText``).
+    static func displayFace(_ size: CGFloat) -> UIFont {
+        guard let name = name(of: .cabinMedium), let font = UIFont(name: name, size: size) else {
+            return .systemFont(ofSize: size, weight: .medium)
+        }
+        return font
+    }
 
     private static func face(_ which: Face, _ size: CGFloat) -> Font {
         guard let name = name(of: which) else { return .system(size: size) }
@@ -796,6 +786,29 @@ public enum Glyph {
     /// A cassette tape: a mixtape of songs like one song, kept apart from the internet radio's mark.
     public static let mixtape = "\u{f8ab}"
     public static let profile = "\u{f007}"
+
+    /// A cog, for the settings tab.
+    public static let settings = "\u{f013}"
+
+    /// Sliders, for the general section of the settings page. The cog is the tab's own mark.
+    public static let general = "\u{f1de}"
+
+    /// A speech bubble, for Send feedback.
+    public static let feedback = "\u{f075}"
+
+    /// Thumbs up and down, for likes and dislikes on a post or a reply, and the arrow of Reply.
+    public static let like = "\u{f164}"
+    public static let dislike = "\u{f165}"
+    public static let reply = "\u{f3e5}"
+
+    /// A speech bubble, for the replies under a post.
+    public static let comment = "\u{f075}"
+
+    /// A newspaper, for the Feed tab.
+    public static let feed = "\u{f1ea}"
+
+    /// A cross, for a key that closes a sheet or cancels a choice.
+    public static let close = "\u{f00d}"
 }
 
 

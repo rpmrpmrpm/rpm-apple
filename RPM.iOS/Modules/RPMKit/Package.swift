@@ -20,7 +20,7 @@ let package = Package(
             // `Licenses` is copied, not processed. `.process` would flatten the folder into the
             // bundle root and remove the subfolder that `Credits.text(of:copyright:)` reads from.
             // `.txt` files need no processing anyway.
-            resources: [.process("Strings"), .copy("Licenses")],
+            resources: [.process("Strings"), .copy("Licenses"), .copy("Samples")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(

@@ -1,0 +1,73 @@
+{
+  "items": [
+    {
+      "id": "1790000500000-aa",
+      "kind": "vote",
+      "fromUserId": "u-bo",
+      "fromName": "bo",
+      "fromHasAvatar": false,
+      "ownerId": "u-ana",
+      "postId": "p1",
+      "count": 3,
+      "createdAt": 1790000500000,
+      "read": false
+    },
+    {
+      "id": "1790000400000-bb",
+      "kind": "reply",
+      "fromUserId": "u-bo",
+      "fromName": "bo",
+      "fromHasAvatar": false,
+      "ownerId": "u-ana",
+      "postId": "p1",
+      "replyId": "r1",
+      "count": 1,
+      "createdAt": 1790000400000,
+      "read": false
+    },
+    {
+      "id": "1790000300000-cc",
+      "kind": "friendReview",
+      "fromUserId": "u-cy",
+      "fromName": "cy",
+      "fromHasAvatar": true,
+      "albumId": "a-remain",
+      "albumTitle": "Remain in Light",
+      "count": 1,
+      "createdAt": 1790000300000,
+      "read": true
+    },
+    {
+      "id": "1790000200000-dd",
+      "kind": "friendRequest",
+      "fromUserId": "u-di",
+      "fromName": "di",
+      "fromHasAvatar": false,
+      "count": 1,
+      "createdAt": 1790000200000,
+      "read": true
+    },
+    {
+      "id": "1790000100000-ee",
+      "kind": "friendAccepted",
+      "fromUserId": "u-ed",
+      "fromName": "ed",
+      "fromHasAvatar": false,
+      "count": 1,
+      "createdAt": 1790000100000,
+      "read": true
+    },
+    {
+      "id": "1790000000000-ff",
+      "kind": "mention",
+      "fromUserId": "u-ed",
+      "fromName": "ed",
+      "fromHasAvatar": false,
+      "count": 1,
+      "createdAt": 1790000000000,
+      "read": true
+    }
+  ],
+  "unread": 2,
+  "next": null
+}

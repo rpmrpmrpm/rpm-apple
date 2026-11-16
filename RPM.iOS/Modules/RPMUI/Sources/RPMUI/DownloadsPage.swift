@@ -4,7 +4,7 @@ import RPMLibrary
 
 /// The albums downloaded to this phone, and the way to remove them.
 ///
-/// It is shown as a sheet from the Downloads card on ``ProfilePage``, like ``AboutPage``. The
+/// It is shown as a sheet from the Downloads card on ``SettingsPage``, like ``AboutPage``. The
 /// profile tab is not inside a `NavigationStack`, because a stack paints its own opaque
 /// background over the app's ground.
 ///

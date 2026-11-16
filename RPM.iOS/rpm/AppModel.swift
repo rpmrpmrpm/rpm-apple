@@ -26,10 +26,15 @@ final class AppModel {
     let auth: AuthClient
     let cloud: RPMCloudClient
 
-    /// Who other people are. This is the only part of the community side that the phone uses:
-    /// a shared collection belongs to somebody, and a row that cannot name them says
-    /// "Shared library".
+    /// The community: other people's names, reviews, walls, and the profile pages.
     let community: RPMCommunityClient
+
+    /// Sends what is playing to the reader's profile. See ``ListeningShare``.
+    let listening: ListeningShare
+
+    /// Whether the reader's profile shows what they are playing. Read from their profile by
+    /// ``readSharing()``; true until then, as the server's own default.
+    private(set) var sharesListening = true
     /// Send feedback and the crash reports: the scope, the outbox and the consent prompt.
     let diagnostics: Diagnostics
 
@@ -292,6 +297,7 @@ final class AppModel {
         let transport = Transport(base: Self.api, tokens: auth, reach: reach)
         cloud = RPMCloudClient(transport: transport)
         community = RPMCommunityClient(transport: transport)
+        listening = ListeningShare(community: community)
         diagnostics = Diagnostics(transport: transport)
         articles = ArticleStore(
             client: PapersClient(transport: transport, reach: reach),
@@ -397,6 +403,7 @@ final class AppModel {
             Task { @MainActor in
                 self.carryOnAsAMixtape()
                 self.songRadio?.topUp(self.player)
+                self.listening.note(track)
             }
         }
 
@@ -587,6 +594,40 @@ final class AppModel {
             return Loc.get("Account_DeleteEmailRefused")
         case .failed:
             return Loc.get("Account_DeleteFailed")
+        }
+    }
+
+    // ── the profile page ──
+
+    /// Sends the size of the collection for the counts on the reader's page, when it changed
+    /// since the last send. A borrowed collection is someone else's and is not sent.
+    func reportCounts() async {
+        guard who != nil, viewing.isOwn else { return }
+        let albums = self.albums.count
+        guard albums > 0 else { return }
+        let tracks = self.albums.reduce(0) { $0 + $1.tracks.count }
+        let said = "\(albums)/\(tracks)"
+        let key = "profile.countsSent." + (who?.userId ?? "")
+        guard UserDefaults.standard.string(forKey: key) != said else { return }
+        do {
+            try await community.setCounts(albums: albums, tracks: tracks)
+            UserDefaults.standard.set(said, forKey: key)
+        } catch {
+            // Sent again the next time the collection is read.
+        }
+    }
+
+    func readSharing() async {
+        if let mine = try? await community.profile() { sharesListening = mine.sharesListening }
+    }
+
+    func setSharesListening(_ on: Bool) async {
+        let before = sharesListening
+        sharesListening = on
+        do {
+            try await community.setSharesListening(on)
+        } catch {
+            sharesListening = before
         }
     }
 

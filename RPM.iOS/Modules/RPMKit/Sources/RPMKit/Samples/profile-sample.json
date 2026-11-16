@@ -1,0 +1,515 @@
+{
+  "now": 1794000000000,
+  "profile": {
+    "counts": {
+      "albums": 1610,
+      "tracks": 23329,
+      "updatedAt": 1794000000000
+    },
+    "listening": {
+      "artist": "Talking Heads",
+      "title": "Once in a Lifetime",
+      "album": "Remain in Light",
+      "at": 1793999760000
+    },
+    "badge": "music-connoisseur",
+    "badgeColour": "#7A1FD1"
+  },
+  "feed": {
+    "items": [
+      {
+        "kind": "post",
+        "createdAt": 1793992800000,
+        "post": {
+          "ownerId": "sample",
+          "postId": "s-1",
+          "authorName": "",
+          "hasAvatar": false,
+          "body": "Finally set up the turntable in the living room. Spent the whole evening going through records I forgot I had.",
+          "createdAt": 1793992800000,
+          "ups": 14,
+          "downs": 1,
+          "score": 13,
+          "myVote": 0,
+          "replyCount": 4,
+          "authorDeleted": false,
+          "song": {
+            "artist": "Talking Heads",
+            "title": "Once in a Lifetime",
+            "album": "Remain in Light"
+          }
+        }
+      },
+      {
+        "kind": "review",
+        "createdAt": 1793967600000,
+        "review": {
+          "albumId": "s-a1",
+          "userId": "sample",
+          "authorName": "",
+          "hasAvatar": false,
+          "rating": 9,
+          "body": "Every song could be a single. The production still sounds clean and warm after all these years.",
+          "createdAt": 1793967600000,
+          "updatedAt": 1793967600000,
+          "ups": 22,
+          "downs": 0,
+          "score": 22,
+          "myVote": 0,
+          "authorDeleted": false,
+          "albumArtist": "Fleetwood Mac",
+          "albumTitle": "Rumours",
+          "albumYear": 1977
+        }
+      },
+      {
+        "kind": "post",
+        "createdAt": 1793902800000,
+        "post": {
+          "ownerId": "sample",
+          "postId": "s-2",
+          "authorName": "",
+          "hasAvatar": false,
+          "body": "Which album do you always come back to on a rainy Sunday? Mine is Pink Moon.",
+          "createdAt": 1793902800000,
+          "ups": 8,
+          "downs": 0,
+          "score": 8,
+          "myVote": 0,
+          "replyCount": 0,
+          "authorDeleted": false
+        }
+      },
+      {
+        "kind": "review",
+        "createdAt": 1793740800000,
+        "review": {
+          "albumId": "s-a2",
+          "userId": "sample",
+          "authorName": "",
+          "hasAvatar": false,
+          "rating": 10,
+          "body": "Their warmest record. Nude and Reckoner alone are worth it.",
+          "createdAt": 1793740800000,
+          "updatedAt": 1793740800000,
+          "ups": 31,
+          "downs": 0,
+          "score": 31,
+          "myVote": 0,
+          "authorDeleted": false,
+          "albumArtist": "Radiohead",
+          "albumTitle": "In Rainbows",
+          "albumYear": 2007
+        }
+      },
+      {
+        "kind": "post",
+        "createdAt": 1793568000000,
+        "post": {
+          "ownerId": "sample",
+          "postId": "s-3",
+          "authorName": "",
+          "hasAvatar": false,
+          "body": "Found a first pressing of Kind of Blue at the flea market for five euros.",
+          "createdAt": 1793568000000,
+          "ups": 41,
+          "downs": 2,
+          "score": 39,
+          "myVote": 0,
+          "replyCount": 0,
+          "authorDeleted": false,
+          "song": {
+            "artist": "Miles Davis",
+            "title": "So What",
+            "album": "Kind of Blue"
+          }
+        }
+      },
+      {
+        "kind": "review",
+        "createdAt": 1793308800000,
+        "review": {
+          "albumId": "s-a3",
+          "userId": "sample",
+          "authorName": "",
+          "hasAvatar": false,
+          "rating": 8,
+          "body": "Pure fun from start to finish.",
+          "createdAt": 1793308800000,
+          "updatedAt": 1793308800000,
+          "ups": 12,
+          "downs": 0,
+          "score": 12,
+          "myVote": 0,
+          "authorDeleted": false,
+          "albumArtist": "Daft Punk",
+          "albumTitle": "Discovery",
+          "albumYear": 2001
+        }
+      }
+    ],
+    "next": null
+  },
+  "replies": {
+    "s-1": [
+      {
+        "postId": "s-1",
+        "replyId": "r1",
+        "parentId": "s-1",
+        "userId": "u-mara",
+        "authorName": "Mara",
+        "hasAvatar": false,
+        "body": "Which turntable did you get?",
+        "createdAt": 1793994000000,
+        "ups": 3,
+        "downs": 0,
+        "score": 3,
+        "myVote": 0,
+        "authorDeleted": false,
+        "deleted": false,
+        "authorSupporter": true
+      },
+      {
+        "postId": "s-1",
+        "replyId": "r2",
+        "parentId": "r1",
+        "userId": "u-jonas",
+        "authorName": "Jonas",
+        "hasAvatar": false,
+        "body": "Asking the same, I am looking for one.",
+        "createdAt": 1793995200000,
+        "ups": 1,
+        "downs": 0,
+        "score": 1,
+        "myVote": 0,
+        "authorDeleted": false,
+        "deleted": false,
+        "authorSupporter": false
+      },
+      {
+        "postId": "s-1",
+        "replyId": "r3",
+        "parentId": "r2",
+        "userId": "u-mara",
+        "authorName": "Mara",
+        "hasAvatar": false,
+        "body": "Let us know!",
+        "createdAt": 1793996400000,
+        "ups": 0,
+        "downs": 0,
+        "score": 0,
+        "myVote": 0,
+        "authorDeleted": false,
+        "deleted": false,
+        "authorSupporter": true
+      },
+      {
+        "postId": "s-1",
+        "replyId": "r4",
+        "parentId": "s-1",
+        "userId": "u-ines",
+        "authorName": "Ines",
+        "hasAvatar": false,
+        "body": "Living room vinyl is the best kind of evening.",
+        "createdAt": 1793998200000,
+        "ups": 5,
+        "downs": 0,
+        "score": 5,
+        "myVote": 0,
+        "authorDeleted": false,
+        "deleted": false,
+        "authorSupporter": true
+      }
+    ]
+  },
+  "notifications": {
+    "items": [
+      {
+        "id": "n1",
+        "kind": "reply",
+        "fromUserId": "u-ines",
+        "fromName": "Ines",
+        "fromHasAvatar": false,
+        "ownerId": "sample",
+        "postId": "s-1",
+        "replyId": "r4",
+        "count": 1,
+        "createdAt": 1793998200000,
+        "read": false
+      },
+      {
+        "id": "n2",
+        "kind": "vote",
+        "fromUserId": "u-mara",
+        "fromName": "Mara",
+        "fromHasAvatar": false,
+        "ownerId": "sample",
+        "postId": "s-1",
+        "count": 6,
+        "createdAt": 1793996400000,
+        "read": false
+      },
+      {
+        "id": "n3",
+        "kind": "friendRequest",
+        "fromUserId": "u-jonas",
+        "fromName": "Jonas",
+        "fromHasAvatar": false,
+        "count": 1,
+        "createdAt": 1793982000000,
+        "read": true
+      },
+      {
+        "id": "n4",
+        "kind": "friendReview",
+        "fromUserId": "u-mara",
+        "fromName": "Mara",
+        "fromHasAvatar": false,
+        "albumId": "s-a4",
+        "albumTitle": "Blue",
+        "count": 1,
+        "createdAt": 1793827200000,
+        "read": true
+      },
+      {
+        "id": "n5",
+        "kind": "friendAccepted",
+        "fromUserId": "u-ines",
+        "fromName": "Ines",
+        "fromHasAvatar": false,
+        "count": 1,
+        "createdAt": 1793654400000,
+        "read": true
+      }
+    ],
+    "unread": 2,
+    "next": null
+  },
+  "people": {
+    "u-mara": {
+      "userId": "u-mara",
+      "displayName": "Mara",
+      "hasAvatar": false,
+      "createdAt": 1759440000000,
+      "supporter": true,
+      "counts": {
+        "albums": 842,
+        "tracks": 9311,
+        "updatedAt": 1794000000000
+      },
+      "badge": "record-collector",
+      "badgeColour": "#0E9F95",
+      "badges": [
+        "record-collector"
+      ],
+      "friendship": "none",
+      "listening": {
+        "artist": "Fleetwood Mac",
+        "title": "Dreams",
+        "album": "Rumours",
+        "at": 1793999700000
+      }
+    },
+    "u-jonas": {
+      "userId": "u-jonas",
+      "displayName": "Jonas",
+      "hasAvatar": false,
+      "createdAt": 1783632000000,
+      "supporter": false,
+      "counts": {
+        "albums": 312,
+        "tracks": 3870,
+        "updatedAt": 1794000000000
+      },
+      "badge": "rock",
+      "badgeColour": "#D12A4E",
+      "badges": [
+        "rock"
+      ],
+      "friendship": "none",
+      "listening": null
+    },
+    "u-ines": {
+      "userId": "u-ines",
+      "displayName": "Ines",
+      "hasAvatar": false,
+      "createdAt": 1788816000000,
+      "supporter": true,
+      "counts": {
+        "albums": 1504,
+        "tracks": 17020,
+        "updatedAt": 1794000000000
+      },
+      "badge": "electronic",
+      "badgeColour": "#2563EB",
+      "badges": [
+        "electronic"
+      ],
+      "friendship": "none",
+      "listening": {
+        "artist": "Daft Punk",
+        "title": "Digital Love",
+        "album": "Discovery",
+        "at": 1793999280000
+      }
+    }
+  },
+  "faces": {
+    "u-mara": "Fleetwood Mac",
+    "u-jonas": "Radiohead",
+    "u-ines": "Daft Punk"
+  },
+  "everyone": [
+    {
+      "kind": "post",
+      "createdAt": 1793998500000,
+      "post": {
+        "ownerId": "u-ines",
+        "postId": "e-1",
+        "authorName": "Ines",
+        "hasAvatar": false,
+        "body": "Anyone else think Discovery sounds better on a rainy night?",
+        "createdAt": 1793998500000,
+        "ups": 9,
+        "downs": 0,
+        "score": 9,
+        "myVote": 0,
+        "replyCount": 0,
+        "authorDeleted": false,
+        "authorSupporter": true,
+        "song": {
+          "artist": "Daft Punk",
+          "title": "Digital Love",
+          "album": "Discovery"
+        }
+      }
+    },
+    {
+      "kind": "post",
+      "createdAt": 1793989200000,
+      "post": {
+        "ownerId": "u-mara",
+        "postId": "e-2",
+        "authorName": "Mara",
+        "hasAvatar": false,
+        "body": "Just hit 800 albums. The shelf is officially full.",
+        "createdAt": 1793989200000,
+        "ups": 31,
+        "downs": 0,
+        "score": 31,
+        "myVote": 0,
+        "replyCount": 0,
+        "authorDeleted": false,
+        "authorSupporter": true
+      }
+    },
+    {
+      "kind": "review",
+      "createdAt": 1793982000000,
+      "review": {
+        "albumId": "s-e1",
+        "userId": "u-jonas",
+        "authorName": "Jonas",
+        "hasAvatar": false,
+        "rating": 10,
+        "body": "The first time I heard this I did not know what to make of it. The guitars are mostly gone, the vocals are cut up and buried, and the opening track sounds like a broken keyboard. Twenty years later it is the record I come back to most. Everything in Its Right Place still sounds like the future. How to Disappear Completely is the saddest thing they ever made, and Idioteque is the closest a rock band has come to a dance floor in a panic. Play it loud, at night, from start to finish. The silence before Motion Picture Soundtrack ends the record better than any song could. If you only know OK Computer, start here next.",
+        "createdAt": 1793982000000,
+        "updatedAt": 1793982000000,
+        "ups": 27,
+        "downs": 2,
+        "score": 25,
+        "myVote": 0,
+        "authorDeleted": false,
+        "albumArtist": "Radiohead",
+        "albumTitle": "Kid A",
+        "albumYear": 2000,
+        "authorSupporter": false
+      }
+    },
+    {
+      "kind": "post",
+      "createdAt": 1793974800000,
+      "post": {
+        "ownerId": "u-jonas",
+        "postId": "e-3",
+        "authorName": "Jonas",
+        "hasAvatar": false,
+        "body": "Kid A front to back with headphones. Still the best way to hear it.",
+        "createdAt": 1793974800000,
+        "ups": 12,
+        "downs": 1,
+        "score": 11,
+        "myVote": 0,
+        "replyCount": 0,
+        "authorDeleted": false,
+        "authorSupporter": false,
+        "song": {
+          "artist": "Radiohead",
+          "title": "Everything in Its Right Place",
+          "album": "Kid A"
+        }
+      }
+    },
+    {
+      "kind": "post",
+      "createdAt": 1793906400000,
+      "post": {
+        "ownerId": "u-mara",
+        "postId": "e-4",
+        "authorName": "Mara",
+        "hasAvatar": false,
+        "body": "Looking for jazz records to start with. Where would you begin?",
+        "createdAt": 1793906400000,
+        "ups": 18,
+        "downs": 0,
+        "score": 18,
+        "myVote": 0,
+        "replyCount": 0,
+        "authorDeleted": false,
+        "authorSupporter": true
+      }
+    },
+    {
+      "kind": "review",
+      "createdAt": 1793900000000,
+      "review": {
+        "albumId": "s-e2",
+        "userId": "u-ines",
+        "authorName": "Ines",
+        "hasAvatar": false,
+        "rating": 9,
+        "body": "Pure joy from start to finish. One More Time still fills every room it plays in.",
+        "createdAt": 1793900000000,
+        "updatedAt": 1793900000000,
+        "ups": 15,
+        "downs": 0,
+        "score": 15,
+        "myVote": 0,
+        "authorDeleted": false,
+        "albumArtist": "Daft Punk",
+        "albumTitle": "Discovery",
+        "albumYear": 2001,
+        "authorSupporter": true
+      }
+    },
+    {
+      "kind": "post",
+      "createdAt": 1793827200000,
+      "post": {
+        "ownerId": "u-ines",
+        "postId": "e-5",
+        "authorName": "Ines",
+        "hasAvatar": false,
+        "body": "New speakers arrived. My neighbours will hear about it.",
+        "createdAt": 1793827200000,
+        "ups": 22,
+        "downs": 2,
+        "score": 20,
+        "myVote": 0,
+        "replyCount": 0,
+        "authorDeleted": false,
+        "authorSupporter": true
+      }
+    }
+  ]
+}
