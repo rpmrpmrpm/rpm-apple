@@ -750,10 +750,12 @@ public struct SettingsPage: View {
                     }
                 }
 
+                // A name a little wider than the tile ("Sheet music") is made smaller rather than cut.
                 Text(Loc.get(choice.nameKey))
                     .font(.system(size: 11, weight: picked ? .semibold : .regular))
                     .foregroundStyle(picked ? .white : Color.white.opacity(0.7))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .frame(width: Self.tileWide)
             .contentShape(Rectangle())
@@ -812,10 +814,5 @@ public struct SettingsPage: View {
         return Loc.get(key, bytes(quota.usedBytes), bytes(quota.quotaBytes))
     }
 
-    private func bytes(_ count: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = count < 1_000_000 ? [.useKB] : [.useGB, .useMB]
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: count)
-    }
+    private func bytes(_ count: Int64) -> String { DownloadsPage.size(count) }
 }

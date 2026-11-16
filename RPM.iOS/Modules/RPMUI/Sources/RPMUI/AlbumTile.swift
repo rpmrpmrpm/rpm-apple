@@ -77,6 +77,10 @@ public protocol CoverStore: Sendable {
     /// because most artists in most libraries have no photograph anywhere.
     func portrait(of artist: String, edge: Double) async -> Cover?
 
+    /// An artist's photograph this phone already has, in memory or on its disk, without asking the
+    /// catalogue. For loading ahead of the wall (``ReadAhead``).
+    func portraitKept(of artist: String, edge: Double) async -> Cover?
+
     /// The disc the record page takes out of its sleeve, `edge` points across: the record's own
     /// photographed disc where the desktop uploaded one, and otherwise a CD printed with its sleeve.
     /// Nil where there is neither.
@@ -101,6 +105,8 @@ extension CoverStore {
     /// Nothing, for a store that has no pictures of artists (the stand-ins a preview
     /// and a test hand over).
     public func portrait(of artist: String, edge: Double) async -> Cover? { nil }
+
+    public func portraitKept(of artist: String, edge: Double) async -> Cover? { nil }
 
     /// Nothing, for a store that has no pictures of playlists (the stand-ins a preview
     /// and a test hand over).

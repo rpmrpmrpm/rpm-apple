@@ -245,7 +245,12 @@ struct SeekTests {
         #expect(engine.position >= landing.second)
         #expect(engine.position < landing.second + 0.5)
 
-        try await Task.sleep(for: .milliseconds(400))
+        // Waited for, not slept for: on a busy machine the engine's first render can come later
+        // than any fixed wait, and the test is about whether it moves, not how soon.
+        let deadline = ContinuousClock.now + .seconds(5)
+        while engine.position <= landing.second, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
         #expect(engine.position > landing.second, "it did not carry on after the jump")
 
         engine.stop()

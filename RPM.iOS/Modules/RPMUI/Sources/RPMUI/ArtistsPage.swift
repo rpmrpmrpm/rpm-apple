@@ -82,6 +82,9 @@ public struct ArtistsPage: View {
 
     @State private var pinching: Double?
 
+    /// The photos of the next rows of boxes, loaded before they scroll in.
+    @State private var readAhead = ReadAhead()
+
     /// The earlier searches, shown under the box while it is empty. See ``SearchHistory``.
     @AppStorage(SearchHistory.key) private var history = ""
 
@@ -243,17 +246,22 @@ public struct ArtistsPage: View {
                 maxColumns: Self.maxColumns,
                 minColumns: 1)
 
+            // Read once for the grid and the read-ahead: it sorts and filters the wall.
+            let list = shown
+
             DissolvingScroll {
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: Self.gutter),
                                    count: columns),
                     spacing: Self.gutter
                 ) {
-                    ForEach(shown) { artist in
+                    ForEach(list) { artist in
                         ArtistBox(artist: artist, width: width,
                                   first: albums[artist.own.first ?? ""],
                                   covers: covers)
                             .onTapGesture { onOpen(artist) }
+                            .onAppear { appeared(artist, in: list, columns: columns, width: width) }
+                            .onDisappear { disappeared(artist, in: list) }
                     }
                 }
                 .padding(.horizontal, AlbumWall.edge)
@@ -273,6 +281,22 @@ public struct ArtistsPage: View {
                         pinching = nil
                     })
         }
+    }
+
+    /// Loads the photos of the boxes in the next rows before they scroll in, at the size the boxes
+    /// ask for. Only photos this phone already has: an artist never shown here is asked about when
+    /// their box appears, as on the Android app.
+    private func appeared(_ artist: ArtistWallItem, in list: [ArtistWallItem], columns: Int, width: Double) {
+        guard let index = list.firstIndex(where: { $0.id == artist.id }) else { return }
+        let covers = covers
+        readAhead.appeared(index, count: list.count, ahead: columns * 4) { at in
+            _ = await covers.portraitKept(of: list[at].name, edge: width)
+        }
+    }
+
+    private func disappeared(_ artist: ArtistWallItem, in list: [ArtistWallItem]) {
+        guard let index = list.firstIndex(where: { $0.id == artist.id }) else { return }
+        readAhead.disappeared(index)
     }
 
     /// The gap between boxes, and how many go across. The gap is wider and there are fewer

@@ -59,7 +59,8 @@ struct PlayerPresenter: UIViewControllerRepresentable {
                 .environment(screens)
                 .environment(saver)
                 .environment(model.stations.radioState)
-                .environment(\.rpmReach, reach))
+                .environment(\.rpmReach, reach)
+                .environment(\.songCovers, model.songCovers))
         }
         anchor.back = { screens.backInPlayer() }
         anchor.close = { screens.playerShown = false }

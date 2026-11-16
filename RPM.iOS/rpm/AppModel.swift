@@ -26,6 +26,10 @@ final class AppModel {
     let auth: AuthClient
     let cloud: RPMCloudClient
 
+    /// The covers of the songs stations announce: for the mini player, the player and the lock
+    /// screen.
+    let songCovers: SongCovers
+
     /// The community: other people's names, reviews, walls, and the profile pages.
     let community: RPMCommunityClient
 
@@ -282,12 +286,16 @@ final class AppModel {
         await downloads.begin()
     }
 
+    /// The covers and the artists' photos kept on this phone.
     func readCacheSize() async {
-        cachedBytes = await artwork.bytesOnDisk()
+        let covers = await artwork.bytesOnDisk()
+        let photos = await portraits.bytesOnDisk()
+        cachedBytes = covers + photos
     }
 
     func clearCache() async {
         await artwork.emptyTheDisk()
+        await portraits.emptyTheDisk()
         cachedBytes = 0
     }
 
@@ -296,6 +304,7 @@ final class AppModel {
 
         let transport = Transport(base: Self.api, tokens: auth, reach: reach)
         cloud = RPMCloudClient(transport: transport)
+        songCovers = SongCovers(cloud: cloud)
         community = RPMCommunityClient(transport: transport)
         listening = ListeningShare(community: community)
         diagnostics = Diagnostics(transport: transport)
@@ -309,7 +318,7 @@ final class AppModel {
         artwork = ArtworkStore(source: cloud)
         listPictures = PlaylistPictures(source: cloud)
         backdrops = BackdropStore(source: cloud)
-        portraits = ArtistPortraits(source: cloud)
+        portraits = ArtistPortraits(source: cloud, disk: ArtistPortraits.diskInCaches())
 
         words = LyricsLookup(lrclib: LrcLibClient(reach: reach), cloud: cloud)
         radio = StationSearch(directory: RadioBrowserClient(reach: reach),
@@ -362,7 +371,7 @@ final class AppModel {
                         classical: { classical.isClassical($0, on: whoseShelf.shelf(of: $0.rpmId)) },
                         cover: { await RoomCoverArt.jpeg(of: $0, from: covers, on: whoseShelf,
                                                          fitting: CastCover.limit) })
-        remote = RemoteControl(player: player, reach: reach)
+        remote = RemoteControl(player: player, reach: reach, songCovers: songCovers)
         speakerChoice = Speakers(player: player)
         record = NowPlayingRecord(session: session, artwork: artwork, player: player,
                                   remote: remote, edge: 600)

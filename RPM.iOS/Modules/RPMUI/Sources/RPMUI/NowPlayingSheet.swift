@@ -467,11 +467,13 @@ public struct NowPlayingSheet: View {
 
         return ZStack {
 
-            // No cover and no card: show the record disc, not spinning. **Nothing playing at all
-            // also comes here**, so an idle screen shows a waiting record and not an empty frame
-            // with a glyph in it.
+            // No cover and no card: show the record disc, not spinning. A record without a cover
+            // wears the plain CD, unless the listener chose the vinyl (``BlankDisc``). **Nothing
+            // playing at all also comes here**, so an idle screen shows a waiting vinyl and not an
+            // empty frame with a glyph in it.
             if art == nil && player.station == nil {
-                RecordDisc(diameter: edge, halo: .round, spinning: false)
+                RecordDisc(diameter: edge, halo: .round, spinning: false,
+                           disc: player.current != nil ? BlankDisc.standIn() : nil)
             } else {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.black.opacity(0x22 / 255))
@@ -505,6 +507,10 @@ public struct NowPlayingSheet: View {
                             .tracking(4)
                             .foregroundStyle(RPMInk.cyan.opacity(0.85))
                     }
+                }
+                // The cover of the song the station plays, over its logo, as on the desktop.
+                .overlay {
+                    SongCoverPicture(player.reconnecting ? nil : announcement?.coverAsk, edge: edge)
                 }
                 // The background behind a transparent logo fills the card, so it is clipped to the
                 // card and the edge is drawn again over it.
@@ -616,20 +622,25 @@ public struct NowPlayingSheet: View {
         }
     }
 
-    /// A station reports what it is playing in the same two fields: the song that it announced,
-    /// and below it the station's own name.
-    private var title: String {
-        guard let station = player.station else { return player.current?.title ?? Loc.get("Rpm_NowPlaying_Nothing") }
-
-        let (_, said) = IcyTitle.split(player.announced)
-        return said ?? station.display
+    /// What the station playing announces (``StationSaid``), or nil for a record.
+    private var announcement: StationSaid? {
+        guard let station = player.station else { return nil }
+        return StationSaid.of(player.announced, station: station.display)
     }
 
+    /// A station reports what it is playing in the same two fields: the song that it announced,
+    /// otherwise its own name.
+    private var title: String {
+        guard let station = player.station else { return player.current?.title ?? Loc.get("Rpm_NowPlaying_Nothing") }
+        return announcement?.title ?? station.display
+    }
+
+    /// The artist a station announced; nothing for a song announced without one. Only while it
+    /// announces no song, its country and quality, never its name: that is the title then.
     private var said: String {
         guard let station = player.station else { return player.current?.artist ?? "" }
-
-        let (artist, _) = IcyTitle.split(player.announced)
-        return artist ?? station.display
+        if let song = announcement, song.title != nil { return song.artist ?? "" }
+        return station.detail
     }
 
     /// How long the play key must be held before letting go stops playback instead of pausing.

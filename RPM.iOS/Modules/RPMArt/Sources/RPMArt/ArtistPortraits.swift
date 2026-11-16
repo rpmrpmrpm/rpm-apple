@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import CoreGraphics
 import RPMKit
 
@@ -23,8 +24,25 @@ import RPMKit
 /// ``BackdropStore/portrait(artist:album:cutFor:)``.
 ///
 /// Every failure becomes "no picture". The box is then drawn on its plain background.
+///
+/// **The thumbnails are also kept on this phone's disk** (``CoverDisk``), so a wall opened after a
+/// launch draws its photos without asking the catalogue again. A thumbnail younger than
+/// ``freshFor`` is used as it is. An older one is still drawn at once, and the artist is asked
+/// again in the background, so a new photo is found. The Android app keeps its answers for the
+/// same time.
 public actor ArtistPortraits {
     private let source: any ArtSource
+
+    /// Where the thumbnails are kept between launches; nil keeps them in memory only, as the
+    /// tests do.
+    private let disk: CoverDisk?
+
+    /// How long a thumbnail on the disk is used without asking again.
+    public static let freshFor: TimeInterval = 14 * 24 * 60 * 60
+
+    /// The artists being asked again in the background, by disk key, so one stale box does not
+    /// start a second ask while the first runs.
+    private var refreshing: Set<String> = []
 
     /// Which pictures an artist has, best first. An empty answer is cached, and a failure is not.
     /// An artist with no photograph is common, so remembering that saves lookups. A failed lookup,
@@ -53,10 +71,17 @@ public actor ArtistPortraits {
 
     /// - Parameter mostBytes: how many bytes of decoded portraits to hold. The default,
     ///   ``mostBytesHeld``, suits a phone. The TV draws more portraits at once, so it passes a larger value.
-    public init(source: any ArtSource, mostBytes: Int = ArtistPortraits.mostBytesHeld) {
+    /// - Parameter disk: where the thumbnails are kept between launches, or nil for memory only. **No
+    ///   default**: each caller states whether the pictures stay on the phone.
+    public init(source: any ArtSource, mostBytes: Int = ArtistPortraits.mostBytesHeld, disk: CoverDisk?) {
         self.source = source
+        self.disk = disk
         held.totalCostLimit = mostBytes
     }
+
+    /// The usual disk: its own folder in the caches, apart from the sleeves, so clearing one does
+    /// not count against the other's limits.
+    public static func diskInCaches() -> CoverDisk { .inCaches(named: "portraits") }
 
     /// A picture of this artist, or nil where there is none.
     ///
@@ -69,15 +94,88 @@ public actor ArtistPortraits {
 
         if let entry = held.object(forKey: key) { return entry.picture }
 
+        let rung = Self.bucket(holding: edge)
+        let named = Self.diskKey(artist, rung)
+        let now = Self.period(Date())
+
+        // Kept on the disk in this period: used as it is.
+        if let disk, let data = await disk.picture(albumKey: named, stamp: now),
+           let picture = Thumbnail.of(data, edge: rung) {
+            hold(picture, key)
+            return picture
+        }
+
+        // Kept from an earlier period: drawn now, and asked again in the background.
+        if let disk, let data = await disk.picture(albumKey: named),
+           let picture = Thumbnail.of(data, edge: rung) {
+            hold(picture, key)
+            refresh(artist, rung: rung, named: named)
+            return picture
+        }
+
+        guard let picture = await fetch(artist, rung: rung, named: named) else { return nil }
+        hold(picture, key)
+        return picture
+    }
+
+    /// The picture of this artist kept in memory or on the disk, at any age, without asking the
+    /// catalogue. For reading ahead of a wall: an artist whose photo this phone has never had is
+    /// asked about when their box appears, not before.
+    public func portraitKept(of artist: String?, edge: Int) async -> CGImage? {
+        guard let artist, !artist.isEmpty else { return nil }
+        let key = Self.key(artist, edge)
+        if let entry = held.object(forKey: key) { return entry.picture }
+
+        let rung = Self.bucket(holding: edge)
+        guard let disk, let data = await disk.picture(albumKey: Self.diskKey(artist, rung)),
+              let picture = Thumbnail.of(data, edge: rung)
+        else { return nil }
+        hold(picture, key)
+        return picture
+    }
+
+    /// Asks the catalogue for the artist's first backdrop, decodes it at this rung, and keeps it on
+    /// the disk under the current period.
+    private func fetch(_ artist: String, rung: Int, named: String) async -> CGImage? {
         let urls = await pictures(of: artist)
         guard let first = urls.first,
               let data = try? await source.artwork(at: first),
-              let picture = Thumbnail.of(data, edge: Self.bucket(holding: edge))
+              let picture = Thumbnail.of(data, edge: rung)
         else { return nil }
 
-        held.setObject(Entry(picture), forKey: key,
-                       cost: picture.width * picture.height * 4)
+        if let disk, let keeping = Thumbnail.encoded(picture, .cover) {
+            await disk.hold(albumKey: named, stamp: Self.period(Date()), keeping)
+        }
         return picture
+    }
+
+    /// Asks again for an artist whose kept thumbnail is old. The memory is updated only when a
+    /// picture arrives: a failed ask keeps the old photo.
+    private func refresh(_ artist: String, rung: Int, named: String) {
+        guard !refreshing.contains(named) else { return }
+        refreshing.insert(named)
+        Task {
+            let fresh = await fetch(artist, rung: rung, named: named)
+            refreshing.remove(named)
+            if let fresh { hold(fresh, Self.key(artist, rung)) }
+        }
+    }
+
+    private func hold(_ picture: CGImage, _ key: NSString) {
+        held.setObject(Entry(picture), forKey: key, cost: picture.width * picture.height * 4)
+    }
+
+    /// The disk's name for an artist at a rung. ``CoverDisk`` takes a key of hex characters only, so
+    /// no artist's name can make a path of its own.
+    static func diskKey(_ artist: String, _ rung: Int) -> String {
+        let text = "\(artist.lowercased())@\(rung)"
+        return SHA256.hash(data: Data(text.utf8)).prefix(16).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// The period a thumbnail is written in, as its version on the disk: one step every
+    /// ``freshFor``. A thumbnail of an earlier period is old.
+    static func period(_ date: Date) -> Int64 {
+        Int64(date.timeIntervalSince1970 / freshFor)
     }
 
     /// The picture that ``portrait(of:edge:)`` holds for this artist at this size. If there is none,
@@ -108,10 +206,18 @@ public actor ArtistPortraits {
         return found[artist.lowercased()]?.isEmpty ?? false
     }
 
-    /// Clears everything. Used on sign-out, and on sign-in as a different user.
-    public func forget() {
+    /// How much of the phone the kept thumbnails use.
+    public func bytesOnDisk() async -> Int64 { await disk?.bytesHeld() ?? 0 }
+
+    /// Empties the disk. What is held in memory stays until the app quits.
+    public func emptyTheDisk() async { await disk?.empty() }
+
+    /// Clears everything, the disk too. Used on sign-out, and on sign-in as a different user: the
+    /// artists a phone has pictures of say what the last person's collection held.
+    public func forget() async {
         found = [:]
         held.removeAllObjects()
+        await disk?.empty()
     }
 
     /// Which rung a request at this size uses. The widest rung is the ceiling. A request larger than

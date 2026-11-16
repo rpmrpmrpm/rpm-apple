@@ -918,12 +918,16 @@ private struct TunerRow: View {
 enum StationStatus {
     @MainActor
     static func of(_ player: Player) -> String {
-        guard player.station != nil else { return Loc.get("Radio_NothingTuned") }
+        guard let station = player.station else { return Loc.get("Radio_NothingTuned") }
         if player.reconnecting { return Loc.get("Radio_Reconnecting") }
-        if RadioAds.isAdBreak(player.announced) { return Loc.get("Radio_AdBreak") }
-        let said = IcyTitle.split(player.announced)
-        let line = [said.artist, said.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " - ")
-        return line.isEmpty ? Loc.get("Radio_NoTrack") : line
+        switch StationSaid.of(player.announced, station: station.display) {
+        case .adBreak:
+            return Loc.get("Radio_AdBreak")
+        case .song(let artist, let title):
+            return [artist, title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " - ")
+        case nil:
+            return Loc.get("Radio_NoTrack")
+        }
     }
 }
 
@@ -938,8 +942,11 @@ private struct TunerPlayer: View {
     @State private var wearing = Wearing()
 
     var body: some View {
-        let said = IcyTitle.split(model.player.announced)
+        let said = playing.flatMap { StationSaid.of(model.player.announced, station: $0.display) }
         let station = shown ?? playing
+        // The song playing shows over the logo, while the card is of the station playing.
+        let ours = playing != nil && (shown == nil || shown?.uuid == playing?.uuid)
+        let ask = ours && !model.player.reconnecting ? said?.coverAsk : nil
         ZStack {
             // One seed whatever is tuned: a new station changes the room's colours, not its pose.
             StationRoom(colours: station.flatMap { wearing.of($0, edge: 200) }, breathes: true,
@@ -948,15 +955,19 @@ private struct TunerPlayer: View {
             VStack(spacing: 12) {
                 if let station {
                     StationLogo(station: station, edge: 200, corner: 18, onWearing: { wearing.said($0, by: station) })
+                        .overlay {
+                            SongCoverPicture(ask, edge: 200)
+                                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        }
                         .padding(.bottom, 14)
                 }
                 // The song's title where one is announced; otherwise what the station is doing.
-                Text(playing != nil && !RadioAds.isAdBreak(model.player.announced) && !model.player.reconnecting
-                        ? (said.title ?? StationStatus.of(model.player)) : StationStatus.of(model.player))
+                Text(playing != nil && !model.player.reconnecting
+                        ? (said?.title ?? StationStatus.of(model.player)) : StationStatus.of(model.player))
                     .font(.tv(38, .bold))
                     .foregroundStyle(Ink.words)
                     .lineLimit(1)
-                if playing != nil, let artist = said.artist, !artist.isEmpty {
+                if playing != nil, let artist = said?.artist, !artist.isEmpty {
                     Text(artist)
                         .font(.tv(29))
                         .foregroundStyle(Color.white.opacity(0xD9 / 255))

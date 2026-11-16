@@ -58,11 +58,11 @@ struct PersonScreen: View {
                     page.pendingPost = nil
                     await page.open(post)
                 }
-                // A badge sent can be a notification, so the count for the dot is read after it.
-                await page.reportBadges(ownBadges)
+                // The badges are sent from the root once the page is read (`BadgesAsked` in
+                // `RootView`), which reads the count again after them.
                 await notices?.readUnread()
+                openWhereTheScriptAsked()
             }
-            .task(id: ownBadges) { if await page.reportBadges(ownBadges) { await notices?.readUnread() } }
             .overlay {
                 if let post = reportingPost {
                     ReportSheet(prompt: Loc.get("Album_ReportCommentPrompt"),
@@ -88,6 +88,19 @@ struct PersonScreen: View {
             .fullScreenCover(isPresented: Binding(get: { edit != nil }, set: { if !$0 { edit = nil } })) {
                 editPage
             }
+    }
+
+    /// Opens the notifications or the edit page on the reader's own page, so that a script can show them. The
+    /// simulator accepts no taps. Debug only: a release build does not read this.
+    private func openWhereTheScriptAsked() {
+        #if DEBUG
+        guard page.isOwn else { return }
+        switch ProcessInfo.processInfo.environment["RPM_PROFILE_OPEN"] {
+        case "notifications": showingNotices = true
+        case "edit": edit = ProfileEdit(profile: page.profile, isSample: page.isSample)
+        default: break
+        }
+        #endif
     }
 
     /// The owner's photo: their own, or on a sample person's page the photo they borrow.

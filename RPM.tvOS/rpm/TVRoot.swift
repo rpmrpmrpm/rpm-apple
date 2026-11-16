@@ -49,6 +49,15 @@ struct TVRoot: View {
             }
             .environment(screens)
             .environment(saver)
+            #if DEBUG
+            // Raises the player once something plays, so a script can show it. Debug only: a
+            // release build does not read this value.
+            .onChange(of: model.player.station != nil || model.player.current != nil) { _, playing in
+                if playing, ProcessInfo.processInfo.environment["RPM_OPEN_PLAYER"] != nil {
+                    screens.playerShown = true
+                }
+            }
+            #endif
             .opacity(saver.shown ? 0 : 1)
             .animation(.easeInOut(duration: saver.shown ? 1.5 : 0.4), value: saver.shown)
 
@@ -90,6 +99,9 @@ struct TVRoot: View {
         // Passed down to the views that fetch a picture. It decides whether to fetch, and not
         // what to draw.
         .environment(\.rpmReach, model.reading)
+        // The covers of the songs stations announce, for the station's picture on the tuner and in
+        // the room's colours. The player is presented apart and is given it there.
+        .environment(\.songCovers, model.songCovers)
         .animation(.easeInOut(duration: 0.3), value: model.reading.isOnline)
         .background(PressWatcher.app(saver: saver, screens: screens))
         .onPlayPauseCommand { model.togglePlay() }
@@ -252,13 +264,49 @@ struct RoomLayer: View {
     /// The colours of the logo of the playing station, for a room lit by a station.
     @State private var stationColours = Wearing()
 
+    /// The colours of the cover of the song the playing station announces, once it is found, and
+    /// the station they are for. A station's room takes them, as a record's room takes its
+    /// sleeve's. A new song keeps the last song's colours until its own cover is read.
+    @State private var songColours: (station: String, colours: SleeveColours)?
+
     let collection: Bool
     /// Whether the screensaver is shown. It shows the moving room, whatever the pages are drawn on
     /// (as in the Android TV app, so a still background gives way to the moving room).
     let screensaver: Bool
 
     private var wanted: SleeveColours? {
-        screens.pageColours ?? model.record.art?.colours ?? model.player.station.flatMap { stationColours.of($0, edge: 96) }
+        screens.pageColours ?? model.record.art?.colours ?? model.player.station.flatMap { station in
+            songColours.flatMap { $0.station == station.uuid ? $0.colours : nil }
+                ?? stationColours.of(station, edge: 96)
+        }
+    }
+
+    /// The song the playing station announces, to read its cover's colours; nil while it
+    /// reconnects or announces no song.
+    private var songAsked: SongAskOn? {
+        let player = model.player
+        guard let station = player.station, !player.reconnecting,
+              let ask = StationSaid.of(player.announced, station: station.display)?.coverAsk
+        else { return nil }
+        return SongAskOn(station: station.uuid, ask: ask)
+    }
+
+    /// Reads the colours of the cover of the song the station announces. A song with no cover, or
+    /// no song, gives the room back to the logo's colours.
+    private func readSongColours(_ asked: SongAskOn?) async {
+        guard let asked else {
+            songColours = nil
+            return
+        }
+        guard let address = await model.songCovers.cover(asked.ask),
+              let picture = await SmallPictures.of(address, edge: 96, reach: model.reading),
+              let image = picture.cgImage
+        else {
+            if !Task.isCancelled { songColours = nil }
+            return
+        }
+        guard !Task.isCancelled else { return }
+        songColours = (asked.station, Thumbnail.colours(of: image))
     }
 
     var body: some View {
@@ -294,6 +342,7 @@ struct RoomLayer: View {
             paint()
         }
         .onChange(of: wanted) { _, _ in paint() }
+        .task(id: songAsked) { await readSongColours(songAsked) }
     }
 
     private func paint() {
@@ -562,4 +611,10 @@ struct FlashLine: View {
             withAnimation(.easeIn(duration: 0.32)) { shown = false }
         }
     }
+}
+
+/// A song a station announces, and the station, as one value to follow.
+private struct SongAskOn: Hashable {
+    let station: String
+    let ask: SongAsk
 }

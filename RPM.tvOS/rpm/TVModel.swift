@@ -31,6 +31,10 @@ final class TVModel {
     private(set) var reading: Reach = .unknown
     let auth: AuthClient
     let cloud: RPMCloudClient
+
+    /// The covers of the songs stations announce: for the player, the mini player and the TV's
+    /// now playing card.
+    let songCovers: SongCovers
     let community: RPMCommunityClient
     /// Send feedback and the crash reports: the scope, the outbox and the consent prompt.
     let diagnostics: Diagnostics
@@ -70,6 +74,7 @@ final class TVModel {
         auth = AuthClient(base: Self.accounts, keychain: Keychain(), reach: reach)
         let transport = Transport(base: Self.api, tokens: auth, reach: reach)
         cloud = RPMCloudClient(transport: transport)
+        songCovers = SongCovers(cloud: cloud)
         community = RPMCommunityClient(transport: transport)
         diagnostics = Diagnostics(transport: transport)
         worldPlays = WorldPlays(client: cloud)
@@ -88,7 +93,8 @@ final class TVModel {
         // the cache is loaded from the network again, not from the disk.
         artwork = ArtworkStore(source: cloud, mostBytes: 192 * 1024 * 1024)
         listPictures = PlaylistPictures(source: cloud)
-        portraits = ArtistPortraits(source: cloud, mostBytes: 64 * 1024 * 1024)
+        portraits = ArtistPortraits(source: cloud, mostBytes: 64 * 1024 * 1024,
+                                    disk: ArtistPortraits.diskInCaches())
         backdrops = BackdropStore(source: cloud)
 
         words = LyricsLookup(lrclib: LrcLibClient(reach: reach), cloud: cloud)
@@ -122,7 +128,7 @@ final class TVModel {
                         // The cover that a speaker's own screen shows while the TV casts to it.
                         cover: { await RoomCoverArt.jpeg(of: $0, from: covers, on: whoseShelf,
                                                          fitting: CastCover.limit) })
-        remote = RemoteControl(player: player, reach: reach)
+        remote = RemoteControl(player: player, reach: reach, songCovers: songCovers)
         speakers = Speakers(player: player)
         record = NowPlayingRecord(session: session, artwork: artwork, player: player,
                                   remote: remote, edge: 800)
@@ -213,6 +219,16 @@ final class TVModel {
         Task { await self.stations.radioState.refresh() }
 
         await show(.nextLaunch)
+
+        #if DEBUG
+        // Tunes the first station the directory finds by this name, so a script can show a station
+        // on the player and the tuner. The simulator's remote cannot be scripted that far. Debug
+        // only: a release build does not read this value.
+        if let asked = ProcessInfo.processInfo.environment["RPM_TUNE"], !asked.isEmpty,
+           let first = try? await stations.directory.search(RadioQuery(name: asked, limit: 5)).first {
+            tune(first)
+        }
+        #endif
     }
 
     private func show(_ rule: GroundRule) async {

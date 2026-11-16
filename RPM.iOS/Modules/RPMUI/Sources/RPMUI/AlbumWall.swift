@@ -93,6 +93,12 @@ private struct LazyGridWall: View {
     let art: Double
     let onOpen: (CloudAlbum) -> Void
 
+    /// The covers of the next rows, loaded before they scroll in.
+    @State private var readAhead = ReadAhead()
+
+    /// How many rows past the screen are loaded ahead. The Android wall loads the same.
+    private static let rowsAhead = 4
+
     var body: some View {
         // The covers dissolve into the top edge rather than being cut off on the line
         // under the heading: see ``DissolvingScroll``.
@@ -105,6 +111,8 @@ private struct LazyGridWall: View {
                 ForEach(albums) { album in
                     AlbumTile(album: album, art: art, covers: covers)
                         .onTapGesture { onOpen(album) }
+                        .onAppear { appeared(album) }
+                        .onDisappear { disappeared(album) }
                 }
             }
             .padding(.horizontal, AlbumWall.edge)
@@ -115,5 +123,19 @@ private struct LazyGridWall: View {
             // the last row of names and the top of it. See ``RPMLayout/foot``.
             .padding(.bottom, RPMLayout.foot)
         }
+    }
+
+    /// Asks for the covers near this one at the size the tiles ask for (``ReadAhead``).
+    private func appeared(_ album: CloudAlbum) {
+        guard let index = albums.firstIndex(where: { $0.id == album.id }) else { return }
+        let albums = albums, covers = covers, art = art
+        readAhead.appeared(index, count: albums.count, ahead: columns * Self.rowsAhead) { at in
+            _ = await covers.cover(for: albums[at], edge: art)
+        }
+    }
+
+    private func disappeared(_ album: CloudAlbum) {
+        guard let index = albums.firstIndex(where: { $0.id == album.id }) else { return }
+        readAhead.disappeared(index)
     }
 }

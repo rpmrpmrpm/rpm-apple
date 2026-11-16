@@ -517,6 +517,32 @@ public struct RPMCloudClient: Sendable {
         return (plays, partial)
     }
 
+    /// The cover of a song that a station announces (`metadata/song`). The API looks the song up and
+    /// keeps the answer for every listener; a station repeats its songs, so most asks are answered at
+    /// once. The Android app and the desktop ask the same route.
+    ///
+    /// The answer is a value and not a throw: each outcome is kept differently by `SongCovers` in
+    /// RPMRadio. A cover, and "no cover", are kept; a failure is asked again later; "busy" (503, the
+    /// API is still looking) is asked once more after a wait.
+    ///
+    /// - Parameter size: the edge the cover is asked for, in pixels.
+    public func songCover(artist: String, title: String, size: Int) async -> SongCoverAnswer {
+        struct Said: Decodable { let cover: String? }
+
+        let path = "metadata/song?artist=\(escaped(artist.trimmingCharacters(in: .whitespaces)))"
+            + "&title=\(escaped(title.trimmingCharacters(in: .whitespaces)))&size=\(size)"
+        guard let (status, data) = try? await transport.raw("GET", path, cache: .useProtocolCachePolicy)
+        else { return .failed }
+        if status == 503 { return .busy }
+        guard (200..<300).contains(status),
+              let said = try? RPMJSON.decoder.decode(Said.self, from: data)
+        else { return .failed }
+        // Only an https address is drawn. Anything else is read as no cover.
+        guard let cover = said.cover, cover.hasPrefix("https://"), let url = URL(string: cover)
+        else { return .none }
+        return .found(url)
+    }
+
     // ── the account ──
 
     public func quota() async throws -> CloudQuota {

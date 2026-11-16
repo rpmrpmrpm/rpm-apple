@@ -270,6 +270,8 @@ private struct AccountBlock: View {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = count < 1_000_000 ? [.useKB] : [.useGB, .useMB]
         formatter.countStyle = .binary
+        // "0 KB", not the formatter's "Zero KB".
+        formatter.allowsNonnumericFormatting = false
         return formatter.string(fromByteCount: count)
     }
 

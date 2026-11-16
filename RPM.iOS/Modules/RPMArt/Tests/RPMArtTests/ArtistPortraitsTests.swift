@@ -34,7 +34,7 @@ struct ArtistPortraitsTests {
 
     @Test func theWallWearsTheBackdropEvenWhereThereIsASquare() async {
         let shelf = Shelf(has: ArtistPictures(backdrops: [backdrop], squares: [square], logo: nil, partial: false))
-        let portraits = ArtistPortraits(source: shelf)
+        let portraits = ArtistPortraits(source: shelf, disk: nil)
 
         #expect(await portraits.portrait(of: "Enya", edge: 256) != nil)
         #expect(await shelf.fetched == [backdrop])
@@ -44,7 +44,7 @@ struct ArtistPortraitsTests {
     /// same as an artist with no backdrop.
     @Test func aSquareAloneIsNoBoxPicture() async {
         let shelf = Shelf(has: ArtistPictures(backdrops: [], squares: [square], logo: nil, partial: false))
-        let portraits = ArtistPortraits(source: shelf)
+        let portraits = ArtistPortraits(source: shelf, disk: nil)
 
         #expect(await portraits.portrait(of: "Enya", edge: 256) == nil)
         #expect(await portraits.hasNothing(for: "Enya"))
@@ -55,7 +55,7 @@ struct ArtistPortraitsTests {
     /// size, or at the nearest size held, with a larger size preferred.
     @Test func aPortraitHeldIsInMemoryAtItsSizeOrTheNearest() async {
         let shelf = Shelf(has: ArtistPictures(backdrops: [backdrop], squares: [], logo: nil, partial: false))
-        let portraits = ArtistPortraits(source: shelf)
+        let portraits = ArtistPortraits(source: shelf, disk: nil)
 
         #expect(portraits.portraitInMemory(of: "Enya", edge: 256) == nil)
 
@@ -69,5 +69,55 @@ struct ArtistPortraitsTests {
         // A smaller view takes the next larger size held. A larger picture shrinks cleanly.
         #expect(portraits.portraitInMemory(of: "Enya", edge: 256) === small)
         #expect(portraits.portraitInMemory(of: "Kate Bush", edge: 256) == nil)
+    }
+
+    // ── the disk ──
+
+    private func emptyDisk() -> CoverDisk {
+        CoverDisk(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("portraits-\(UUID().uuidString)", isDirectory: true))
+    }
+
+    /// A photo fetched once is on the disk, so the next launch draws it without asking again.
+    @Test func aPortraitFetchedOnceIsReadFromTheDiskAfterALaunch() async {
+        let disk = emptyDisk()
+        let first = Shelf(has: ArtistPictures(backdrops: [backdrop], squares: [], logo: nil, partial: false))
+        _ = await ArtistPortraits(source: first, disk: disk).portrait(of: "Enya", edge: 256)
+        #expect(await first.fetched == [backdrop])
+
+        let next = Shelf(has: ArtistPictures(backdrops: [backdrop], squares: [], logo: nil, partial: false))
+        let again = ArtistPortraits(source: next, disk: disk)
+        #expect(await again.portrait(of: "Enya", edge: 256) != nil)
+        #expect(await next.fetched.isEmpty)
+        #expect(await again.bytesOnDisk() > 0)
+    }
+
+    /// An old photo is drawn at once, and the artist is asked again in the background.
+    @Test func anOldPortraitIsDrawnAndAskedAgain() async throws {
+        let disk = emptyDisk()
+        let old = try #require(Thumbnail.of(Pictures.png(field: RGB(200, 40, 40), edge: 300), edge: 256))
+        let bytes = try #require(Thumbnail.encoded(old, .cover))
+        let lastPeriod = ArtistPortraits.period(Date()) - 1
+        await disk.hold(albumKey: ArtistPortraits.diskKey("Enya", 256), stamp: lastPeriod, bytes)
+
+        let shelf = Shelf(has: ArtistPictures(backdrops: [backdrop], squares: [], logo: nil, partial: false))
+        let portraits = ArtistPortraits(source: shelf, disk: disk)
+        #expect(await portraits.portrait(of: "Enya", edge: 256) != nil)
+
+        // The ask runs in the background; it is given a moment to arrive.
+        for _ in 0..<50 where await shelf.fetched.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(await shelf.fetched == [backdrop])
+    }
+
+    /// Signing out empties the disk: the artists a phone has photos of say what was in the collection.
+    @Test func forgettingEmptiesTheDisk() async {
+        let disk = emptyDisk()
+        let shelf = Shelf(has: ArtistPictures(backdrops: [backdrop], squares: [], logo: nil, partial: false))
+        let portraits = ArtistPortraits(source: shelf, disk: disk)
+        _ = await portraits.portrait(of: "Enya", edge: 256)
+        #expect(await portraits.bytesOnDisk() > 0)
+
+        await portraits.forget()
+        #expect(await portraits.bytesOnDisk() == 0)
     }
 }

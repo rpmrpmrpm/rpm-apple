@@ -840,16 +840,12 @@ public struct StageView: View {
     /// screens must always agree about what is playing.
     private var title: String {
         guard let station = player.station else { return player.current?.title ?? Loc.get("Rpm_NowPlaying_Nothing") }
-
-        let (_, said) = IcyTitle.split(player.announced)
-        return said ?? station.display
+        return StationSaid.of(player.announced, station: station.display)?.title ?? station.display
     }
 
     private var said: String {
         guard let station = player.station else { return player.current?.artist ?? "" }
-
-        let (artist, _) = IcyTitle.split(player.announced)
-        return artist ?? station.display
+        return StationSaid.of(player.announced, station: station.display)?.artist ?? station.display
     }
 
     // MARK: Hiding the chrome

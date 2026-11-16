@@ -417,6 +417,9 @@ struct RootView: View {
         // that come before it, so a value set above the player's overlay does not reach the
         // player's station tile.
         .environment(\.rpmReach, model.reading)
+        // The covers of the songs stations announce, for the station tiles. Set below the
+        // overlays for the same reason.
+        .environment(\.songCovers, model.songCovers)
         // What rpm has decided about stations, for every station logo. It is set below the overlays
         // for the same reason. A `StationFace` without it stops the app.
         .environment(model.radioState)
@@ -457,8 +460,19 @@ struct RootView: View {
         // The photos the sample people borrow, found once.
         .task(id: profileSample != nil) { await findSampleFaces() }
         // The size of the collection, for the counts on the reader's page. Sent again only when
-        // it changes.
-        .task(id: model.albums.count) { await model.reportCounts() }
+        // it changes. The account and the shelf are in the key too: the collection can arrive
+        // before the account is known, and the report is for the reader's own shelf only.
+        .task(id: CountsAsked(albums: model.albums.count, own: model.viewing.isOwn,
+                              userId: model.who?.userId)) { await model.reportCounts() }
+        // The badges the collection unlocks, sent once the reader's own page is read, from here and
+        // not only from the open page. A badge sent can be a notification, so the count for the
+        // Feed tab's dot is read again after it. The badges are worked out in the task, not for its
+        // key: they walk the genre wall.
+        .task(id: BadgesAsked(albums: model.albums.count, own: model.viewing.isOwn,
+                              reader: me?.profile?.userId)) {
+            guard let me, me.profile != nil else { return }
+            if await me.reportBadges(ownBadges) { await notices?.readUnread() }
+        }
         // Another account signed in: its pages are not the last account's.
         .onChange(of: model.who?.userId) { _, _ in
             me = nil
@@ -639,6 +653,15 @@ struct RootView: View {
         if let name = asked["RPM_OPEN_ARTIST"], !name.isEmpty {
             mode = .artists
             browsing = [.artist(name)]
+        }
+
+        // A person's page over the app: "me" for the reader's own, or a user id. It waits for the
+        // sign-in, because the reader's own page is known by the account's id.
+        if let person = asked["RPM_OPEN_PROFILE"], !person.isEmpty {
+            Task {
+                while model.who == nil { try? await Task.sleep(for: .milliseconds(250)) }
+                openPerson(person == "me" ? model.who?.userId ?? "" : person)
+            }
         }
 
         switch asked["RPM_OPEN_LIST"] {
@@ -835,7 +858,9 @@ struct RootView: View {
                             feedReviewPage(feed)
                         }
                 } else {
-                    Color.clear.onAppear(perform: makeOwnPage)
+                    // Keyed on the account: the tab can be shown before the sign-in has finished,
+                    // and the pages are made for the account once it is known.
+                    Color.clear.task(id: model.who?.userId) { makeOwnPage() }
                 }
 
             case .settings:
@@ -1430,15 +1455,20 @@ struct RootView: View {
     /// Makes the reader's own page, their notifications and the Feed tab's model, once for each account.
     private func makeOwnPage() {
         guard let who = model.who else { return }
-        if me == nil { me = PersonPage(community: model.community, userId: who.userId, isOwn: true, sample: profileSample) }
+        let own = me ?? PersonPage(community: model.community, userId: who.userId, isOwn: true, sample: profileSample)
+        if me == nil { me = own }
         if notices == nil { notices = Notices(community: model.community, sample: profileSample) }
         if feed == nil {
-            let community = model.community
             let wearsMark = model.quota?.wearsMark == true
-            feed = FeedBook(community: community, sample: profileSample) {
-                guard let own = try? await community.profile() else { return nil }
-                return FeedBook.Me(name: own.displayName, userId: own.userId, hasAvatar: own.hasAvatar,
-                                   supporter: own.supporter || wearsMark)
+            feed = FeedBook(community: model.community, sample: profileSample) {
+                // The reader's own page is read first, as on the Android app. Their sample posts then
+                // carry their page's name and photo, and once it is read the badges this phone worked
+                // out are sent from the root (``BadgesAsked``), so the Feed tab's dot is right without
+                // opening the page.
+                if own.profile == nil { await own.read() }
+                guard let profile = own.profile else { return nil }
+                return FeedBook.Me(name: profile.displayName, userId: profile.userId, hasAvatar: profile.hasAvatar,
+                                   supporter: profile.supporter || wearsMark || own.isSample)
             }
         }
     }
@@ -1611,6 +1641,22 @@ struct RootView: View {
                     portraits: model.portraits,
                     shelves: model.shelves, scale: displayScale)
     }
+}
+
+/// What the counts on the reader's page depend on. A change in any of them sends the counts again
+/// (`AppModel.reportCounts`, which sends only a changed size).
+private struct CountsAsked: Hashable {
+    let albums: Int
+    let own: Bool
+    let userId: String?
+}
+
+/// What sending the reader's badges depends on: the collection's size, whether it is the reader's
+/// own, and the reader's page once it is read.
+private struct BadgesAsked: Hashable {
+    let albums: Int
+    let own: Bool
+    let reader: String?
 }
 
 /// A line on an artist's wall that is being reported, and whose wall it is on.

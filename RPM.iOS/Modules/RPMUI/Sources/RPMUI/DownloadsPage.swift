@@ -227,11 +227,14 @@ public struct DownloadsPage: View {
         }
     }
 
-    /// Formats a size in the same way as the profile card.
+    /// A size as every page shows one: kilobytes below a million bytes, else megabytes or
+    /// gigabytes, in steps of 1024. The Android app's `bytes` gives the same text.
     public static func size(_ count: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = count < 1_000_000 ? [.useKB] : [.useGB, .useMB]
         formatter.countStyle = .binary
+        // "0 KB", not the formatter's "Zero KB".
+        formatter.allowsNonnumericFormatting = false
         return formatter.string(fromByteCount: count)
     }
 }

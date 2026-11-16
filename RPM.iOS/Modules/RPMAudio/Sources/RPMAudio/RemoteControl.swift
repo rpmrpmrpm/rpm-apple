@@ -32,9 +32,14 @@ public final class RemoteControl {
 
     private var listening: [NSObjectProtocol] = []
 
-    public init(player: Player, reach: NetworkReach) {
+    /// The covers of the songs stations announce, for the lock screen's picture while a station
+    /// plays a song.
+    private let songCovers: SongCovers
+
+    public init(player: Player, reach: NetworkReach, songCovers: SongCovers) {
         self.player = player
         self.wire = Gated(reach: reach)
+        self.songCovers = songCovers
     }
 
     /// Claims the audio session and wires the commands. Call it before anything is
@@ -405,14 +410,21 @@ public final class RemoteControl {
     ///
     /// A station has its own entry and does not reuse a track's. A station is **live**,
     /// so it carries no duration and no elapsed time, because the system draws a
-    /// scrubber for anything that reports one. The current announcement goes in the
-    /// artist field, which the lock screen shows as the second line.
+    /// scrubber for anything that reports one.
+    ///
+    /// **A station reads as the song it plays**, as on the Android app. While it announces a
+    /// song, the title is the song's title, the artist its artist, the album line the
+    /// station's name, and the picture the song's cover once it is found (``SongCovers``).
+    /// While it announces nothing that reads as a song, the title is the station's name, the
+    /// second line says it is the radio, and the picture is its logo.
     public func show(station: RadioStation?) {
         guard let station else {
             // Removed and not emptied, for the reason given in `show(_:artwork:)`.
             hand(nil)
             fetching = nil
             logo = nil
+            song = nil
+            songFetching = nil
             return
         }
 
@@ -421,18 +433,71 @@ public final class RemoteControl {
         // directory are dead; a dead link means a station with no logo, not an error.
         if fetching != station.uuid { fetch(theLogoOf: station) }
 
+        let said = StationSaid.of(player.announced, station: station.display)
+        let sung = said?.title
+
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: station.display,
-            MPMediaItemPropertyArtist: player.announced.isEmpty ? Loc.get("Rpm_NowPlaying_Radio") : player.announced,
+            MPMediaItemPropertyTitle: sung ?? station.display,
+            MPMediaItemPropertyArtist: sung == nil ? Loc.get("Rpm_NowPlaying_Radio") : (said?.artist ?? ""),
+            MPMediaItemPropertyAlbumTitle: sung == nil ? "" : station.display,
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
             MPNowPlayingInfoPropertyIsLiveStream: true,
             MPNowPlayingInfoPropertyPlaybackRate: player.wantsToPlay ? 1.0 : 0.0,
         ]
 
-        if let logo { info[MPMediaItemPropertyArtwork] = logo }
+        // The song's cover is used only while it is the cover of what the station announces
+        // now, on this station. An older song's cover is never shown under a newer title.
+        let ask = player.reconnecting ? nil : said?.coverAsk
+        if let ask, let song, song.station == station.uuid, song.ask == ask {
+            info[MPMediaItemPropertyArtwork] = song.art
+        } else if let logo {
+            info[MPMediaItemPropertyArtwork] = logo
+        }
+        if let ask, song?.ask != ask || song?.station != station.uuid { fetch(theCoverOf: ask, on: station) }
 
         hand(info)
         offer(theQueuesKeys: false)
+    }
+
+    /// The last song cover read for the lock screen: the station and the song it is of.
+    private var song: (station: String, ask: SongAsk, art: MPMediaItemArtwork)?
+
+    /// The song whose cover is being read, so an announcement that arrives again does not
+    /// start a second read.
+    private var songFetching: SongAsk?
+
+    /// Reads the cover of the song a station announces, and posts the station again when it
+    /// lands. A song with no cover keeps the logo.
+    private func fetch(theCoverOf ask: SongAsk, on station: RadioStation) {
+        guard songFetching != ask else { return }
+        songFetching = ask
+
+        Task { [weak self, songCovers, wire] in
+            let found = await songCovers.cover(ask)
+            var picture: UIImage?
+            if let found {
+                var request = URLRequest(url: found)
+                if AppKey.owns(found) { request.setValue(AppKey.value, forHTTPHeaderField: AppKey.header) }
+                // Through the app's own gate, as the logo is.
+                if let (data, http) = try? await wire.fetch(request, method: "GET"),
+                   (200..<300).contains(http.statusCode) {
+                    picture = UIImage(data: data)
+                }
+            }
+
+            guard let self else { return }
+            if self.songFetching == ask { self.songFetching = nil }
+            guard let picture else { return }
+
+            // The station may have moved on to another song, or the user to another station,
+            // while this was read. The picture is kept for its own song either way, and posted
+            // only when it is still the song on the screen.
+            self.song = (station.uuid, ask, MPMediaItemArtwork(boundsSize: picture.size) { @Sendable _ in picture })
+            guard let now = self.player.station, now.uuid == station.uuid,
+                  StationSaid.of(self.player.announced, station: now.display)?.coverAsk == ask
+            else { return }
+            self.show(station: now)
+        }
     }
 
     /// The station whose logo has been requested, and the logo itself once it arrives.

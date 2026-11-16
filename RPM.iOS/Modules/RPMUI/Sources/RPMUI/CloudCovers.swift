@@ -127,4 +127,11 @@ public struct CloudCovers: CoverStore {
         // Decorative: the box shows the artist's name as text across it.
         return Cover(image: Image(decorative: picture, scale: 1), accent: nil)
     }
+
+    public func portraitKept(of artist: String, edge: Double) async -> Cover? {
+        guard let portraits,
+              let picture = await portraits.portraitKept(of: artist, edge: pixels(edge))
+        else { return nil }
+        return Cover(image: Image(decorative: picture, scale: 1), accent: nil)
+    }
 }

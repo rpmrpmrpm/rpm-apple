@@ -405,6 +405,11 @@ private struct Art: View {
         ZStack {
             if let station = model.player.station {
                 StationLogo(station: station, edge: side, corner: max(2, side * 0.012), inset: 34)
+                    // The cover of the song the station plays, over its logo, as on the phone.
+                    .overlay {
+                        SongCoverPicture(songAsk(on: station), edge: side)
+                            .clipShape(RoundedRectangle(cornerRadius: max(2, side * 0.012), style: .continuous))
+                    }
                     .overlay {
                         RoundedRectangle(cornerRadius: max(2, side * 0.012), style: .continuous)
                             .strokeBorder(frame, lineWidth: border)
@@ -434,6 +439,13 @@ private struct Art: View {
             }
         }
         .frame(width: side, height: side)
+    }
+
+    /// The song the station announces, to show its cover; nil while it reconnects.
+    private func songAsk(on station: RadioStation) -> SongAsk? {
+        let player = model.player
+        guard !player.reconnecting else { return nil }
+        return StationSaid.of(player.announced, station: station.display)?.coverAsk
     }
 }
 
@@ -476,10 +488,11 @@ private struct Lines: View {
             return (track?.title ?? "", track?.artist ?? "", track?.album ?? "")
         }
         if player.reconnecting { return (station.display, Loc.get("Radio_Reconnecting"), "") }
-        if RadioAds.isAdBreak(player.announced) { return (station.display, Loc.get("Radio_AdBreak"), "") }
-        let said = IcyTitle.split(player.announced)
-        if let title = said.title, !title.isEmpty { return (title, said.artist ?? "", station.display) }
-        return (station.display, "", "")
+        switch StationSaid.of(player.announced, station: station.display) {
+        case .adBreak: return (station.display, Loc.get("Radio_AdBreak"), "")
+        case .song(let artist, let title): return (title, artist ?? "", station.display)
+        case nil: return (station.display, "", "")
+        }
     }
 }
 

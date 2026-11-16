@@ -135,10 +135,12 @@ public struct ProfilePage: View {
 
     private var top: some View {
         VStack(spacing: 0) {
+            // The height is on the stack and not on the banner: a page without a banner has no
+            // banner view, and a frame on no view takes no room, which would lift the photo
+            // under the status bar.
             ZStack(alignment: .bottom) {
                 bannerPicture
-                    .frame(height: Self.bannerTall + Self.photoSize / 2 - Self.photoLift)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
 
                 // A supporter's photo has a gold ring and a glow that lights up around it.
@@ -148,6 +150,8 @@ public struct ProfilePage: View {
                                               lineWidth: supporter ? 3 : 2)
                     }
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.bannerTall + Self.photoSize / 2 - Self.photoLift, alignment: .bottom)
 
             if let profile {
                 HStack(spacing: 8) {

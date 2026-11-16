@@ -130,29 +130,31 @@ public struct MiniPlayer: View {
         .frame(height: Self.rowHeight)
     }
 
+    /// What the station playing announces (``StationSaid``), or nil for a record.
+    private var announcement: StationSaid? {
+        guard let station = player.station else { return nil }
+        return StationSaid.of(player.announced, station: station.display)
+    }
+
     /// The song title that a station announced, otherwise the station's own name, or the
     /// track's title when a track is playing. A station that has announced nothing shows
     /// its own name, because a blank strip would look as if nothing is playing.
     private var title: String {
         guard let station = player.station else { return player.current?.title ?? "" }
-
-        let (_, said) = IcyTitle.split(player.announced)
-        return said ?? station.display
+        return announcement?.title ?? station.display
     }
 
-    /// The artist that a station announced. If the station has announced nothing, it shows
-    /// the station's country and quality instead. It never repeats the station's name,
-    /// because the same words on both lines would waste a line.
+    /// The artist that a station announced; nothing for a song announced without one. Only
+    /// while it announces no song, the station's country and quality. It never repeats the
+    /// station's name, which is the title then.
     private var said: String {
         guard let station = player.station else { return player.current?.artist ?? "" }
 
-        if let (artist, _) = Optional(IcyTitle.split(player.announced)), let artist {
-            return artist
+        if let song = announcement, song.title != nil {
+            return song.artist ?? ""
         }
 
-        return [RadioCountries.short(station.country, station.countryCode), station.quality]
-            .filter { !$0.isEmpty }
-            .joined(separator: "  \u{b7}  ")
+        return station.detail
     }
 
     /// The same style as the wall and the player's cover tile: a faint background, the art
@@ -178,6 +180,10 @@ public struct MiniPlayer: View {
                         .font(.system(size: 11, weight: .semibold))
                         .tracking(0.5)
                         .foregroundStyle(RPMInk.white(0xAA / 255))
+                }
+                // The cover of the song the station plays, over its logo, as on the desktop.
+                .overlay {
+                    SongCoverPicture(player.reconnecting ? nil : announcement?.coverAsk, edge: edge)
                 }
                 // The background behind a transparent logo fills the sleeve, so it is
                 // clipped to the shape and the edge is drawn again over it.

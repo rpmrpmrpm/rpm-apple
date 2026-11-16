@@ -167,3 +167,13 @@ public struct RadioStation: Codable, Hashable, Sendable, Identifiable {
         return [favicon] + otherLogos
     }
 }
+
+extension RadioStation {
+    /// The station's country and quality on one line, shown under the title while the station
+    /// announces no song. Empty when it files neither.
+    public var detail: String {
+        [RadioCountries.short(country, countryCode), quality]
+            .filter { !$0.isEmpty }
+            .joined(separator: "  \u{b7}  ")
+    }
+}
