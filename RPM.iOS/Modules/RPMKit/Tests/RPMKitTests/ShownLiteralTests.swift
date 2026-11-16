@@ -36,6 +36,8 @@ import Testing
     (#"Text(Loc.get("Rpm_Album_Tracks", 3))"#, false, []),
     (#"Text(verbatim: "A")"#, false, []),
     (#"Text("\u{f5db}")"#, false, []),
+    (#"        return list.joined(separator: "\n")"#, true, []),
+    (#"        return "\tTwo words\n""#, true, [#"\tTwo words\n"#]),
     (#"Text("\(Loc.get("About_Version", v))  ·  © \(year) rpm.")"#, false, []),
     (#"Text(Loc.get(marked ? "Track_UnsetFavorite" : "Track_SetFavorite"))"#, false, []),
     (#"log.error("could not play \(name)")"#, false, []),
@@ -159,11 +161,14 @@ enum ShownLiteral {
         return !matches(idLike, words, whole: true)
     }
 
-    /// What of a literal is written out: no `\u{…}` escapes and no `\(…)` interpolations,
+    /// What of a literal is written out: no `\u{…}` or one-letter escapes and no `\(…)` interpolations,
     /// which may nest parentheses. The literal pattern stops at the first quote, so an
     /// interpolation that holds a string is cut short; an open one runs to the end.
     static func shown(_ literal: String) -> String {
-        let plain = replace(try! NSRegularExpression(pattern: #"\\u\{[0-9A-Fa-f]+\}"#), in: literal, with: "")
+        // A Unicode escape and a one-letter escape (\n, \t, \r, \0, \", \', \\) are not words: "\n" is a line
+        // break, not the letter n.
+        let unicode = replace(try! NSRegularExpression(pattern: #"\\u\{[0-9A-Fa-f]+\}"#), in: literal, with: "")
+        let plain = replace(try! NSRegularExpression(pattern: #"\\[ntr0"'\\]"#), in: unicode, with: "")
         var out = ""
         var depth = 0
         var chars = Array(plain)[...]
