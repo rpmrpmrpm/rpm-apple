@@ -3092,6 +3092,9 @@
 /* Heading of the import queue pane; the folder being imported runs underneath. */
 "Queue_PaneTitle" = "导入";
 
+/* Tooltip and accessible name of the X at the top right of the import pane. It closes the pane and shows what was there before; the queue is kept. */
+"Queue_Close" = "关闭";
+
 /* Label on the import button under the queue. */
 "Queue_ImportAction" = "导入";
 
