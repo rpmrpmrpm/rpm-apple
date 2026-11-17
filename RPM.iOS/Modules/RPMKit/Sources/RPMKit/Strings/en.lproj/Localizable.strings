@@ -2533,7 +2533,39 @@
 "Settings_NamingSaveHint" = "Save to make the template above the default for your collection.";
 "Naming_ApplyTemplate" = "Template: %1$@";
 "CloudChip_Title" = "Cloud";
-"CloudChip_StageWaiting" = "Waiting";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Upload run. */
+"CloudChip_CountUpload" = "%1$@ of %2$@ tracks uploaded";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Upload run of one track ({1} is 1). */
+"CloudChip_CountUploadOne" = "%1$@ of %2$@ track uploaded";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Download run. */
+"CloudChip_CountRestore" = "%1$@ of %2$@ tracks downloaded";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Download of one track ({1} is 1). */
+"CloudChip_CountRestoreOne" = "%1$@ of %2$@ track downloaded";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Removal from the cloud. */
+"CloudChip_CountRemove" = "%1$@ of %2$@ tracks removed from the cloud";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Removal of one track ({1} is 1). */
+"CloudChip_CountRemoveOne" = "%1$@ of %2$@ track removed from the cloud";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Run that mixes uploads and removals. */
+"CloudChip_CountDone" = "%1$@ of %2$@ tracks done";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Mixed run of one track ({1} is 1). */
+"CloudChip_CountDoneOne" = "%1$@ of %2$@ track done";
+
+/* Cloud chip flyout, count line after the user pauses a run. {0} is the count, for example "12 of 200 tracks uploaded". */
+"CloudChip_CountPaused" = "%1$@ (paused)";
+
+/* Cloud chip flyout, red link under the bar, shown only when tracks failed. {0} is how many. Opens the error list in cloud settings. */
+"CloudChip_FailedCount" = "%1$@ failed. Open cloud settings to see why.";
+
+/* Cloud chip flyout, heading above the tracks that are being uploaded or downloaded now. */
+"CloudChip_InProgress" = "In progress";
 "CloudChip_StageTranscoding" = "Transcoding";
 "CloudChip_StageUploading" = "Uploading";
 "CloudChip_StageRemoving" = "Removing";
@@ -2542,15 +2574,9 @@
 "CloudChip_StageFailedUpload" = "Failed to upload";
 "CloudChip_StageFailedRemove" = "Failed to remove";
 "CloudChip_StageFailedRestore" = "Failed to download";
-"CloudChip_SummaryRunning" = "%1$@ of %2$@ tracks done";
-"CloudChip_SummaryDone" = "%1$@ tracks done.";
-"CloudChip_SummaryFailed" = "%1$@ of %2$@ tracks failed.";
 "CloudChip_Pause" = "Pause";
 "CloudChip_PauseTooltip" = "Pause. Nothing is lost, the queue continues where it left off.";
 "CloudChip_Dismiss" = "Dismiss";
-
-/* Cloud chip flyout header after the user pauses an upload run, with the tracks finished and the total expected. */
-"CloudChip_SummaryPaused" = "%1$@ of %2$@ tracks done (paused)";
 
 /* Cloud chip flyout header when an upload run was paused before any track finished, so there are no counts to show. */
 "CloudChip_Paused" = "Paused";
@@ -3442,9 +3468,6 @@
 
 /* Cloud settings: shown when sending the error report was refused. */
 "Cloud_ErrorsReportRefused" = "The report couldn’t be sent. Please try again a little later.";
-
-/* Cloud chip flyout: link to the error list in cloud settings. */
-"CloudChip_ErrorsHint" = "Some tracks could not be synced. Open cloud settings to see why.";
 
 /* Left rail button opening the track info pane. */
 "LeftNav_TrackInfo" = "Track info";

@@ -2533,7 +2533,39 @@
 "Settings_NamingSaveHint" = "Guarda para que la plantilla de arriba sea la predeterminada de tu colección.";
 "Naming_ApplyTemplate" = "Plantilla: %1$@";
 "CloudChip_Title" = "Nube";
-"CloudChip_StageWaiting" = "En espera";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Upload run. */
+"CloudChip_CountUpload" = "%1$@ de %2$@ pistas subidas";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Upload run of one track ({1} is 1). */
+"CloudChip_CountUploadOne" = "%1$@ de %2$@ pista subida";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Download run. */
+"CloudChip_CountRestore" = "%1$@ de %2$@ pistas descargadas";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Download of one track ({1} is 1). */
+"CloudChip_CountRestoreOne" = "%1$@ de %2$@ pista descargada";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Removal from the cloud. */
+"CloudChip_CountRemove" = "%1$@ de %2$@ pistas quitadas de la nube";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Removal of one track ({1} is 1). */
+"CloudChip_CountRemoveOne" = "%1$@ de %2$@ pista quitada de la nube";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Run that mixes uploads and removals. */
+"CloudChip_CountDone" = "%1$@ de %2$@ pistas listas";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Mixed run of one track ({1} is 1). */
+"CloudChip_CountDoneOne" = "%1$@ de %2$@ pista lista";
+
+/* Cloud chip flyout, count line after the user pauses a run. {0} is the count, for example "12 of 200 tracks uploaded". */
+"CloudChip_CountPaused" = "%1$@ (en pausa)";
+
+/* Cloud chip flyout, red link under the bar, shown only when tracks failed. {0} is how many. Opens the error list in cloud settings. */
+"CloudChip_FailedCount" = "Con errores: %1$@. Abre los ajustes de la nube para ver por qué.";
+
+/* Cloud chip flyout, heading above the tracks that are being uploaded or downloaded now. */
+"CloudChip_InProgress" = "En curso";
 "CloudChip_StageTranscoding" = "Transcodificando";
 "CloudChip_StageUploading" = "Subiendo";
 "CloudChip_StageRemoving" = "Eliminando";
@@ -2542,15 +2574,9 @@
 "CloudChip_StageFailedUpload" = "Error al subir";
 "CloudChip_StageFailedRemove" = "Error al eliminar";
 "CloudChip_StageFailedRestore" = "Error al descargar";
-"CloudChip_SummaryRunning" = "%1$@ de %2$@ pistas listas";
-"CloudChip_SummaryDone" = "%1$@ pistas listas.";
-"CloudChip_SummaryFailed" = "%1$@ de %2$@ pistas fallaron.";
 "CloudChip_Pause" = "Pausar";
 "CloudChip_PauseTooltip" = "Pausar. No se pierde nada, la cola continúa donde se quedó.";
 "CloudChip_Dismiss" = "Descartar";
-
-/* Cloud chip flyout header after the user pauses an upload run, with the tracks finished and the total expected. */
-"CloudChip_SummaryPaused" = "%1$@ de %2$@ pistas listas (en pausa)";
 
 /* Cloud chip flyout header when an upload run was paused before any track finished, so there are no counts to show. */
 "CloudChip_Paused" = "En pausa";
@@ -3442,9 +3468,6 @@
 
 /* Cloud settings: shown when sending the error report was refused. */
 "Cloud_ErrorsReportRefused" = "No se pudo enviar el informe. Vuelve a intentarlo un poco más tarde.";
-
-/* Cloud chip flyout: link to the error list in cloud settings. */
-"CloudChip_ErrorsHint" = "Algunas pistas no se pudieron sincronizar. Abre los ajustes de la nube para ver por qué.";
 
 /* Left rail button opening the track info pane. */
 "LeftNav_TrackInfo" = "Info de pista";

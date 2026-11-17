@@ -2533,7 +2533,39 @@
 "Settings_NamingSaveHint" = "保存后，上面的模板就会成为你收藏的默认模板。";
 "Naming_ApplyTemplate" = "模板：%1$@";
 "CloudChip_Title" = "云端";
-"CloudChip_StageWaiting" = "等待中";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Upload run. */
+"CloudChip_CountUpload" = "已上传 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Upload run of one track ({1} is 1). */
+"CloudChip_CountUploadOne" = "已上传 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Download run. */
+"CloudChip_CountRestore" = "已下载 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Download of one track ({1} is 1). */
+"CloudChip_CountRestoreOne" = "已下载 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Removal from the cloud. */
+"CloudChip_CountRemove" = "已从云端移除 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Removal of one track ({1} is 1). */
+"CloudChip_CountRemoveOne" = "已从云端移除 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Run that mixes uploads and removals. */
+"CloudChip_CountDone" = "已完成 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, line above the bar for the whole run: tracks that went through, out of the total. Mixed run of one track ({1} is 1). */
+"CloudChip_CountDoneOne" = "已完成 %1$@ / %2$@ 首";
+
+/* Cloud chip flyout, count line after the user pauses a run. {0} is the count, for example "12 of 200 tracks uploaded". */
+"CloudChip_CountPaused" = "%1$@（已暂停）";
+
+/* Cloud chip flyout, red link under the bar, shown only when tracks failed. {0} is how many. Opens the error list in cloud settings. */
+"CloudChip_FailedCount" = "%1$@ 首失败。打开云端设置查看原因。";
+
+/* Cloud chip flyout, heading above the tracks that are being uploaded or downloaded now. */
+"CloudChip_InProgress" = "进行中";
 "CloudChip_StageTranscoding" = "转码中";
 "CloudChip_StageUploading" = "上传中";
 "CloudChip_StageRemoving" = "移除中";
@@ -2542,15 +2574,9 @@
 "CloudChip_StageFailedUpload" = "上传失败";
 "CloudChip_StageFailedRemove" = "移除失败";
 "CloudChip_StageFailedRestore" = "下载失败";
-"CloudChip_SummaryRunning" = "已完成 %1$@ / %2$@ 首";
-"CloudChip_SummaryDone" = "已完成 %1$@ 首。";
-"CloudChip_SummaryFailed" = "%2$@ 首中有 %1$@ 首失败。";
 "CloudChip_Pause" = "暂停";
 "CloudChip_PauseTooltip" = "暂停。不会丢失任何内容，队列会从中断处继续。";
 "CloudChip_Dismiss" = "关闭";
-
-/* Cloud chip flyout header after the user pauses an upload run, with the tracks finished and the total expected. */
-"CloudChip_SummaryPaused" = "已完成 %1$@ / %2$@ 首（已暂停）";
 
 /* Cloud chip flyout header when an upload run was paused before any track finished, so there are no counts to show. */
 "CloudChip_Paused" = "已暂停";
@@ -3442,9 +3468,6 @@
 
 /* Cloud settings: shown when sending the error report was refused. */
 "Cloud_ErrorsReportRefused" = "报告没能发出。请稍后再试。";
-
-/* Cloud chip flyout: link to the error list in cloud settings. */
-"CloudChip_ErrorsHint" = "部分曲目未能同步。打开云端设置查看原因。";
 
 /* Left rail button opening the track info pane. */
 "LeftNav_TrackInfo" = "曲目信息";
