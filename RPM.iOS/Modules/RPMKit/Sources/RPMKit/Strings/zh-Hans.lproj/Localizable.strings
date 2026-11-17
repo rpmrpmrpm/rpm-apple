@@ -3620,6 +3620,18 @@
 /* Preflight purpose line for the face-detection model. */
 "Preflight_FaceModel" = "避免在艺人背景图中裁切到人脸";
 
+/* Preflight fault: a value this build of rpm was made without, such as its API key. */
+"Preflight_FaultNotSet" = "未设置";
+
+/* Sentence under the preflight heading when only build settings failed (a build from source without its API key). Replaces Preflight_Intro, which talks about the installation. */
+"Preflight_BuildIntro" = "此 rpm 副本在构建时缺少一项必需的设置，因此已停止运行，而不是在缺少该设置的情况下运行。";
+
+/* Preflight purpose line for the rpm API key (RPM_APP_KEY) compiled into the build. */
+"Preflight_AppKey" = "将 rpm 连接到其在线服务：专辑和艺人信息、封面、歌词、电台和崩溃报告";
+
+/* Preflight line under the API key row: how a developer building rpm from source sets the key. RPM_APP_KEY and the address stay as they are. */
+"Preflight_AppKeyFix" = "将 RPM_APP_KEY 设置为你在 rpmrpmrpm.com/developer 获取的开发者密钥，然后重新构建 rpm。";
+
 /* Report line note replacing the layer name once the user has typed the answer in themselves. */
 "Recognize_SourceManual" = "手动编辑";
 
@@ -3913,6 +3925,12 @@
 
 /* Tooltip on the heart toggle in the library header that filters the album wall and list. */
 "Library_FavoritesOnly" = "仅显示收藏的专辑";
+
+/* Tooltip on the heart toggle in the artists wall's header: it narrows the wall to the artists with a hearted record or song. */
+"Artists_FavoritesOnly" = "仅显示收藏的艺人";
+
+/* Tooltip on the size slider in the artists and genres walls' headers. */
+"Library_CardSize" = "卡片大小";
 
 /* Name of the generated playlist listing every song marked as a favorite. */
 "Playlists_FavoriteTracks" = "收藏的歌曲";
@@ -4846,6 +4864,18 @@
 
 /* Explains the artwork cache on the iPhone profile, under its size. */
 "Rpm_Profile_ArtCacheDetail" = "封面保存在这台手机上，因此会立即显示。需要时会重新下载。";
+
+/* Desktop post thread: a key under a reply six levels deep that opens the replies under it. {0} is how many. */
+"Rpm_Profile_ShowMoreReplies" = "显示另外 %1$@ 条回复";
+
+/* Desktop post thread: the same key when one reply is hidden under it. */
+"Rpm_Profile_ShowMoreRepliesOne" = "显示另外 1 条回复";
+
+/* Desktop profile page and post thread: a post or reply could not be sent. */
+"Rpm_Profile_SendFailed" = "无法发送。请检查网络连接后重试。";
+
+/* Desktop profile edit page: Save failed on the server or the connection. */
+"Rpm_Profile_SaveFailed" = "无法保存你的更改。请检查网络连接后重试。";
 
 /* Subtitle of the iPhone queue panel when one track is left after this one. */
 "Rpm_Queue_ToComeOne" = "还有 1 首";

@@ -3620,6 +3620,18 @@
 /* Preflight purpose line for the face-detection model. */
 "Preflight_FaceModel" = "Hält Gesichter aus dem Beschnitt der Künstlerhintergründe";
 
+/* Preflight fault: a value this build of rpm was made without, such as its API key. */
+"Preflight_FaultNotSet" = "nicht gesetzt";
+
+/* Sentence under the preflight heading when only build settings failed (a build from source without its API key). Replaces Preflight_Intro, which talks about the installation. */
+"Preflight_BuildIntro" = "Diese Kopie von rpm wurde ohne eine benötigte Einstellung erstellt. rpm hat deshalb angehalten, statt ohne sie zu laufen.";
+
+/* Preflight purpose line for the rpm API key (RPM_APP_KEY) compiled into the build. */
+"Preflight_AppKey" = "Verbindet rpm mit seinem Onlinedienst: Album- und Künstlerinfos, Cover, Songtexte, Radio und Absturzberichte";
+
+/* Preflight line under the API key row: how a developer building rpm from source sets the key. RPM_APP_KEY and the address stay as they are. */
+"Preflight_AppKeyFix" = "Setzen Sie RPM_APP_KEY auf Ihren Entwicklerschlüssel von rpmrpmrpm.com/developer und erstellen Sie rpm neu.";
+
 /* Report line note replacing the layer name once the user has typed the answer in themselves. */
 "Recognize_SourceManual" = "manuell bearbeitet";
 
@@ -3913,6 +3925,12 @@
 
 /* Tooltip on the heart toggle in the library header that filters the album wall and list. */
 "Library_FavoritesOnly" = "Nur Lieblingsalben";
+
+/* Tooltip on the heart toggle in the artists wall's header: it narrows the wall to the artists with a hearted record or song. */
+"Artists_FavoritesOnly" = "Nur Lieblingskünstler";
+
+/* Tooltip on the size slider in the artists and genres walls' headers. */
+"Library_CardSize" = "Kartengröße";
 
 /* Name of the generated playlist listing every song marked as a favorite. */
 "Playlists_FavoriteTracks" = "Lieblingstitel";
@@ -4846,6 +4864,18 @@
 
 /* Explains the artwork cache on the iPhone profile, under its size. */
 "Rpm_Profile_ArtCacheDetail" = "Cover werden auf diesem Telefon behalten, damit sie sofort erscheinen. Sie werden bei Bedarf erneut geladen.";
+
+/* Desktop post thread: a key under a reply six levels deep that opens the replies under it. {0} is how many. */
+"Rpm_Profile_ShowMoreReplies" = "%1$@ weitere Antworten anzeigen";
+
+/* Desktop post thread: the same key when one reply is hidden under it. */
+"Rpm_Profile_ShowMoreRepliesOne" = "1 weitere Antwort anzeigen";
+
+/* Desktop profile page and post thread: a post or reply could not be sent. */
+"Rpm_Profile_SendFailed" = "Das konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut.";
+
+/* Desktop profile edit page: Save failed on the server or the connection. */
+"Rpm_Profile_SaveFailed" = "Deine Änderungen konnten nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.";
 
 /* Subtitle of the iPhone queue panel when one track is left after this one. */
 "Rpm_Queue_ToComeOne" = "Noch 1 Titel";
