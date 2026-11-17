@@ -2423,6 +2423,9 @@
 /* Phone Feed tab: accessibility label of the key at the top right that opens the reader's own profile page. */
 "Rpm_Feed_MyProfile" = "Mon profil";
 
+/* Desktop Feed pane: the large heading over a person's page and over the edit page, in place of Feed. */
+"Rpm_Profile_Heading" = "Profil";
+
 /* Phone profile edit page: asked when the page is closed with changes not yet saved. The two answers are Rpm_Profile_ApplyChanges and Rpm_Profile_Discard. */
 "Rpm_Profile_UnsavedTitle" = "Appliquer vos modifications ?";
 
