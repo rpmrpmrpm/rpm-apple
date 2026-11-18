@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 @testable import RPMLibrary
+import RPMKit
 
 /// Which kinds of music a mood list names, and the sentence built from them. The cases match the
 /// desktop's `MoodBlurbTests`, so both apps describe a list the same way.
@@ -45,12 +46,28 @@ struct MoodBlurbTests {
     @Test func aMoodListIsDescribedByWhatIsOnIt() {
         let sentence = MoodBlurb.sentence(kind: "Energetic", genres: tags(("Rock", 10), ("Pop", 5)))
 
-        #expect(sentence == "The rock and pop to get you amped up!")
+        #expect(sentence == "Volume up! The loudest, liveliest rock and pop you own, for when you need that extra push.")
     }
 
     /// A sleep list spans every genre, so it names none of them.
     @Test func sleepNamesNoGenres() {
-        #expect(MoodBlurb.sentence(kind: "Sleep", genres: []) == "Perfect music for the small hours.")
+        #expect(MoodBlurb.sentence(kind: "Sleep", genres: [])
+                == "Quiet, gentle and soft, for the end of the day. Put it on, dim the lights and drift off.")
+    }
+
+    /// Zen and New Year's Eve span every genre too, so they name none either, even with tags on them.
+    @Test func zenAndNewYearsEveNameNoGenres() {
+        #expect(MoodBlurb.sentence(kind: "Zen", genres: tags(("Ambient", 10))) == Loc.get("Playlists_BlurbZen"))
+        #expect(MoodBlurb.sentence(kind: "NewYearsEve", genres: tags(("Pop", 10)))
+                == Loc.get("Playlists_BlurbNewYearsEve"))
+    }
+
+    /// The four feelings the sound model hears are cut by genre, like Calm, so they say which.
+    @Test func theFeelingListsNameTheirGenres() {
+        for kind in ["Melancholy", "Happy", "Angry", "Romantic"] {
+            #expect(MoodBlurb.sentence(kind: kind, genres: tags(("Jazz", 10)))
+                    == Loc.get("Playlists_Blurb\(kind)", "jazz"), "\(kind)")
+        }
     }
 
     /// Only mood lists get a sentence. Other lists say what they are in their title.

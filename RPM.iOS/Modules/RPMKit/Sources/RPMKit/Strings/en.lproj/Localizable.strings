@@ -2129,6 +2129,18 @@
 /* Phone profile page: the page could not be read. */
 "Rpm_Profile_Offline" = "This profile could not be loaded. Check your connection and try again.";
 
+/* Desktop post thread: a key under a reply six levels deep that opens the replies under it. {0} is how many. */
+"Rpm_Profile_ShowMoreReplies" = "Show %1$@ more replies";
+
+/* Desktop post thread: the same key when one reply is hidden under it. */
+"Rpm_Profile_ShowMoreRepliesOne" = "Show 1 more reply";
+
+/* Desktop profile page and post thread: a post or reply could not be sent. */
+"Rpm_Profile_SendFailed" = "This could not be sent. Check your connection and try again.";
+
+/* Desktop profile edit page: Save failed on the server or the connection. */
+"Rpm_Profile_SaveFailed" = "Your changes could not be saved. Check your connection and try again.";
+
 /* Phone profile page: accessibility label of the round menu key at the top right. */
 "Rpm_Profile_Menu" = "Menu";
 
@@ -4510,20 +4522,56 @@
 /* Generated playlist holding the collection's classical music, in album and track order. */
 "Playlists_Classical" = "Classical";
 
-/* Description under a mood playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
-"Playlists_BlurbCalm" = "The low end of your %1$@. Take a moment to relax.";
+/* Name of the generated playlist of the saddest, most melancholy songs of each genre. */
+"Playlists_Melancholy" = "Melancholy";
 
-/* Description under a mood playlist name. {0} is a list of genres. */
-"Playlists_BlurbEnergetic" = "The %1$@ to get you amped up!";
+/* Name of the generated playlist of the happiest, most upbeat songs of each genre. */
+"Playlists_Happy" = "Feel Good";
 
-/* Description under a mood playlist name. {0} is a list of genres. */
-"Playlists_BlurbDanceable" = "The %1$@ to keep the party going.";
+/* Name of the generated playlist of the angriest, most aggressive songs of each genre. */
+"Playlists_Angry" = "Rage";
 
-/* Description under a mood playlist name. {0} is a list of genres. */
-"Playlists_BlurbFocus" = "The %1$@ to help you focus when you need it.";
+/* Name of the generated playlist of tender, romantic love songs from each genre. */
+"Playlists_Romantic" = "Date Night";
 
-/* Description under the sleep playlist name. It names no genres because the list is not cut by genre. */
-"Playlists_BlurbSleep" = "Perfect music for the small hours.";
+/* Name of the generated playlist of still ambient and new age music, for meditating or unwinding. */
+"Playlists_Zen" = "Zen";
+
+/* Name of the generated playlist for New Year's Eve: songs about the new year, then party songs. Shown only around 31 December. */
+"Playlists_NewYearsEve" = "New Year's Eve";
+
+/* Description under the Chill playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbCalm" = "Kick back with the softest side of your %1$@. No rush, no noise, just you and the music.";
+
+/* Description under the Adrenaline playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbEnergetic" = "Volume up! The loudest, liveliest %1$@ you own, for when you need that extra push.";
+
+/* Description under the Dancefloor playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbDanceable" = "Steady beats and big grooves from your %1$@. Clear some space, this one's made for moving!";
+
+/* Description under the Focus playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbFocus" = "Even, unhurried %1$@ that stays out of your way, so you can get your head down and get things done.";
+
+/* Description under the Lights out playlist name. It names no genres because the list is not cut by genre. */
+"Playlists_BlurbSleep" = "Quiet, gentle and soft, for the end of the day. Put it on, dim the lights and drift off.";
+
+/* Description under the Melancholy playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbMelancholy" = "The saddest side of your %1$@, for the grey days. When you just want to feel it for a while, these songs get it.";
+
+/* Description under the Feel Good playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbHappy" = "A big dose of sunshine from your %1$@. Press play and try not to smile!";
+
+/* Description under the Rage playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbAngry" = "The angriest %1$@ you own. Turn it up, let it all out, and feel a whole lot better after!";
+
+/* Description under the Date Night playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbRomantic" = "Tender, warm %1$@ for two. Light a candle, pour a glass and let the music set the mood.";
+
+/* Description under the Zen playlist name. It names no genres: the list is ambient and new age records only. */
+"Playlists_BlurbZen" = "Ambient and new age to breathe out to. Slow down, close your eyes and let the calm take over.";
+
+/* Description under the New Year's Eve playlist name. It names no genres: the list is an occasion, not a cut by genre. */
+"Playlists_BlurbNewYearsEve" = "The countdown is on! Songs to see out the old year and party into the new one.";
 
 /* Joins the last two genres in a playlist description: 'rock, pop and jazz'. {0} is what came before, {1} is the last one. */
 "Playlists_GenreAnd" = "%1$@ and %2$@";
@@ -4890,18 +4938,6 @@
 
 /* Explains the artwork cache on the iPhone profile, under its size. */
 "Rpm_Profile_ArtCacheDetail" = "Album covers kept on this phone so they appear instantly. They are downloaded again when needed.";
-
-/* Desktop post thread: a key under a reply six levels deep that opens the replies under it. {0} is how many. */
-"Rpm_Profile_ShowMoreReplies" = "Show %1$@ more replies";
-
-/* Desktop post thread: the same key when one reply is hidden under it. */
-"Rpm_Profile_ShowMoreRepliesOne" = "Show 1 more reply";
-
-/* Desktop profile page and post thread: a post or reply could not be sent. */
-"Rpm_Profile_SendFailed" = "This could not be sent. Check your connection and try again.";
-
-/* Desktop profile edit page: Save failed on the server or the connection. */
-"Rpm_Profile_SaveFailed" = "Your changes could not be saved. Check your connection and try again.";
 
 /* Subtitle of the iPhone queue panel when one track is left after this one. */
 "Rpm_Queue_ToComeOne" = "1 track to come";

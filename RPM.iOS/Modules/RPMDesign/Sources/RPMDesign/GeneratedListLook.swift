@@ -116,6 +116,12 @@ public enum GeneratedListLook {
         case "NeverPlayed": return 5         // Azure
         case "KeepSkipping": return 1        // Rust
         case "RightNow": return 5            // Azure
+        case "Melancholy": return 6          // Indigo
+        case "Happy": return 2               // Gold
+        case "Angry": return 0               // Vermilion
+        case "Romantic": return 8            // Crimson
+        case "Zen": return 4                 // Forest
+        case "NewYearsEve": return 2         // Gold
         default: return nil
         }
     }

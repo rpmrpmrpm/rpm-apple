@@ -196,7 +196,10 @@ public enum SongRadio {
     static let favouriteFit = 0.05
 
     /// The kinds of list that are a mood, as the desktop's `MoodShelf.MoodsByPath` counts them.
-    static let moodKinds: Set<String> = ["Calm", "Energetic", "Danceable", "Focus", "Sleep"]
+    static let moodKinds: Set<String> = [
+        "Calm", "Energetic", "Danceable", "Focus", "Sleep",
+        "Melancholy", "Happy", "Angry", "Romantic", "Zen", "NewYearsEve",
+    ]
 
     /// Styles that sit next to one another. The desktop's `SongRadio.StyleFamilies`; change
     /// both together. Every shelf has its families, because two styles that share none clash,

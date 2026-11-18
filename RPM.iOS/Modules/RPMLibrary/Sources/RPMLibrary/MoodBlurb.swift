@@ -23,16 +23,21 @@ public enum MoodBlurb {
     /// The sentence for a generated list, or nil where its kind has none.
     ///
     /// - Parameters:
-    ///   - kind: the cut's kind, as the computer sends it. Every kind except the five moods
+    ///   - kind: the cut's kind, as the computer sends it. Every kind except the moods
     ///     gives nil.
     ///   - genres: the raw genre tag of each song on the list, in list order. These are counted
     ///     from the songs that the page shows, as the desktop counts from its rows. The page's
     ///     songs are the list. A second reading could disagree with the songs printed under the
     ///     sentence.
     public static func sentence(kind: String, genres: [String?]) -> String? {
-        // Sleep names no genres. It is cut across all of them, so a list of three would describe
-        // the collection, not the list.
-        if kind == "Sleep" { return Loc.get("Playlists_BlurbSleep") }
+        // Sleep, Zen and New Year's Eve name no genres. They are cut across all of them, so a list
+        // of three would describe the collection, not the list.
+        switch kind {
+        case "Sleep": return Loc.get("Playlists_BlurbSleep")
+        case "Zen": return Loc.get("Playlists_BlurbZen")
+        case "NewYearsEve": return Loc.get("Playlists_BlurbNewYearsEve")
+        default: break
+        }
 
         let key: String
         switch kind {
@@ -40,6 +45,10 @@ public enum MoodBlurb {
         case "Energetic": key = "Playlists_BlurbEnergetic"
         case "Danceable": key = "Playlists_BlurbDanceable"
         case "Focus": key = "Playlists_BlurbFocus"
+        case "Melancholy": key = "Playlists_BlurbMelancholy"
+        case "Happy": key = "Playlists_BlurbHappy"
+        case "Angry": key = "Playlists_BlurbAngry"
+        case "Romantic": key = "Playlists_BlurbRomantic"
         default: return nil
         }
 

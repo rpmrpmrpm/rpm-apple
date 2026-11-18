@@ -238,6 +238,12 @@ public enum GeneratedLists {
         case "Danceable": return Loc.get("Playlists_Danceable")
         case "Focus": return Loc.get("Playlists_Focus")
         case "Sleep": return Loc.get("Playlists_Sleep")
+        case "Melancholy": return Loc.get("Playlists_Melancholy")
+        case "Happy": return Loc.get("Playlists_Happy")
+        case "Angry": return Loc.get("Playlists_Angry")
+        case "Romantic": return Loc.get("Playlists_Romantic")
+        case "Zen": return Loc.get("Playlists_Zen")
+        case "NewYearsEve": return Loc.get("Playlists_NewYearsEve")
         case "Classical": return Loc.get("Playlists_Classical")
         case "RightNow": return Loc.get("Playlists_RightNow")
         default: return nil

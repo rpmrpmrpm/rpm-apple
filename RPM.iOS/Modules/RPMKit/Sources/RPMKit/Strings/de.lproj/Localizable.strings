@@ -2129,6 +2129,18 @@
 /* Phone profile page: the page could not be read. */
 "Rpm_Profile_Offline" = "Dieses Profil konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.";
 
+/* Desktop post thread: a key under a reply six levels deep that opens the replies under it. {0} is how many. */
+"Rpm_Profile_ShowMoreReplies" = "%1$@ weitere Antworten anzeigen";
+
+/* Desktop post thread: the same key when one reply is hidden under it. */
+"Rpm_Profile_ShowMoreRepliesOne" = "1 weitere Antwort anzeigen";
+
+/* Desktop profile page and post thread: a post or reply could not be sent. */
+"Rpm_Profile_SendFailed" = "Das konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut.";
+
+/* Desktop profile edit page: Save failed on the server or the connection. */
+"Rpm_Profile_SaveFailed" = "Deine Änderungen konnten nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.";
+
 /* Phone profile page: accessibility label of the round menu key at the top right. */
 "Rpm_Profile_Menu" = "Menü";
 
@@ -4510,20 +4522,56 @@
 /* Generated playlist holding the collection's classical music, in album and track order. */
 "Playlists_Classical" = "Klassik";
 
-/* Description under a mood playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
-"Playlists_BlurbCalm" = "Die ruhige Seite deiner Sammlung: %1$@. Nimm dir einen Moment zum Entspannen.";
+/* Name of the generated playlist of the saddest, most melancholy songs of each genre. */
+"Playlists_Melancholy" = "Melancholie";
 
-/* Description under a mood playlist name. {0} is a list of genres. */
-"Playlists_BlurbEnergetic" = "Dein %1$@, voll aufgedreht!";
+/* Name of the generated playlist of the happiest, most upbeat songs of each genre. */
+"Playlists_Happy" = "Gute Laune";
 
-/* Description under a mood playlist name. {0} is a list of genres. */
-"Playlists_BlurbDanceable" = "Dein %1$@, damit die Party weiterläuft.";
+/* Name of the generated playlist of the angriest, most aggressive songs of each genre. */
+"Playlists_Angry" = "Wut";
 
-/* Description under a mood playlist name. {0} is a list of genres. */
-"Playlists_BlurbFocus" = "Dein %1$@ zum Konzentrieren, wenn du es brauchst.";
+/* Name of the generated playlist of tender, romantic love songs from each genre. */
+"Playlists_Romantic" = "Date Night";
 
-/* Description under the sleep playlist name. It names no genres because the list is not cut by genre. */
-"Playlists_BlurbSleep" = "Die ideale Musik für die frühen Morgenstunden.";
+/* Name of the generated playlist of still ambient and new age music, for meditating or unwinding. */
+"Playlists_Zen" = "Zen";
+
+/* Name of the generated playlist for New Year's Eve: songs about the new year, then party songs. Shown only around 31 December. */
+"Playlists_NewYearsEve" = "Silvester";
+
+/* Description under the Chill playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbCalm" = "Lehn dich zurück mit der sanftesten Seite deiner Sammlung: %1$@. Keine Eile, kein Lärm, nur du und die Musik.";
+
+/* Description under the Adrenaline playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbEnergetic" = "Lauter! Das Lauteste und Wildeste aus deiner Sammlung: %1$@. Für den Moment, in dem du einen Extra-Schub brauchst.";
+
+/* Description under the Dancefloor playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbDanceable" = "Gleichmäßige Beats und dicke Grooves aus deiner Sammlung: %1$@. Mach Platz, hier wird getanzt!";
+
+/* Description under the Focus playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbFocus" = "Ruhige, gleichmäßige Musik aus deiner Sammlung: %1$@. Sie bleibt im Hintergrund, damit du dich reinhängen und Dinge erledigen kannst.";
+
+/* Description under the Lights out playlist name. It names no genres because the list is not cut by genre. */
+"Playlists_BlurbSleep" = "Leise, sanft und ruhig, für das Ende des Tages. Einschalten, Licht dimmen und wegdösen.";
+
+/* Description under the Melancholy playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbMelancholy" = "Die melancholische Seite deiner Sammlung: %1$@. Für die grauen Tage, wenn du einfach mal fühlen willst. Diese Songs verstehen dich.";
+
+/* Description under the Feel Good playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbHappy" = "Eine große Portion Sonnenschein aus deiner Sammlung: %1$@. Drück auf Play und versuch, nicht zu lächeln!";
+
+/* Description under the Rage playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbAngry" = "Das Wütendste aus deiner Sammlung: %1$@. Dreh auf, lass alles raus, und danach geht's dir viel besser!";
+
+/* Description under the Date Night playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
+"Playlists_BlurbRomantic" = "Zärtliche, warme Musik aus deiner Sammlung: %1$@, für zwei. Zünde eine Kerze an, schenk ein Glas ein und lass die Musik die Stimmung machen.";
+
+/* Description under the Zen playlist name. It names no genres: the list is ambient and new age records only. */
+"Playlists_BlurbZen" = "Ambient und New Age zum Durchatmen. Werd langsamer, schließ die Augen und lass die Ruhe übernehmen.";
+
+/* Description under the New Year's Eve playlist name. It names no genres: the list is an occasion, not a cut by genre. */
+"Playlists_BlurbNewYearsEve" = "Der Countdown läuft! Songs, um das alte Jahr zu verabschieden und ins neue reinzufeiern.";
 
 /* Joins the last two genres in a playlist description: 'rock, pop and jazz'. {0} is what came before, {1} is the last one. */
 "Playlists_GenreAnd" = "%1$@ und %2$@";
@@ -4890,18 +4938,6 @@
 
 /* Explains the artwork cache on the iPhone profile, under its size. */
 "Rpm_Profile_ArtCacheDetail" = "Cover werden auf diesem Telefon behalten, damit sie sofort erscheinen. Sie werden bei Bedarf erneut geladen.";
-
-/* Desktop post thread: a key under a reply six levels deep that opens the replies under it. {0} is how many. */
-"Rpm_Profile_ShowMoreReplies" = "%1$@ weitere Antworten anzeigen";
-
-/* Desktop post thread: the same key when one reply is hidden under it. */
-"Rpm_Profile_ShowMoreRepliesOne" = "1 weitere Antwort anzeigen";
-
-/* Desktop profile page and post thread: a post or reply could not be sent. */
-"Rpm_Profile_SendFailed" = "Das konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut.";
-
-/* Desktop profile edit page: Save failed on the server or the connection. */
-"Rpm_Profile_SaveFailed" = "Deine Änderungen konnten nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.";
 
 /* Subtitle of the iPhone queue panel when one track is left after this one. */
 "Rpm_Queue_ToComeOne" = "Noch 1 Titel";
