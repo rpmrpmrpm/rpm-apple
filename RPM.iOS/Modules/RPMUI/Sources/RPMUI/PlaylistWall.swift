@@ -193,7 +193,6 @@ extension PlaylistRow {
         case .playlist: Glyph.record
         case .folder(_, let face):
             switch face {
-            case .smart: Glyph.wand
             case .decades: Glyph.decades
             case .mood(let kind): Glyph.mood(kind) ?? Glyph.folder
             case .moods, .plain: Glyph.folder

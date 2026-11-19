@@ -35,9 +35,9 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
     PlaylistBrowse.of(at: at, playlists: playlists, favorites: favorites)
 }
 
-private var smart: String { Loc.get("Playlists_SmartFolder") }
+private var favourites: String { Loc.get("Playlists_FavoriteTracks") }
 
-// ── no queue, and the marked songs in Smart playlists ──
+// ── no queue, and the listening lists at the top ──
 
 /// The queue has no row. The queue key on the player shows it, and the desktop leaves it out of its tree.
 /// Nothing marked and nothing stored is an empty tab.
@@ -45,21 +45,32 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
     #expect(browse([], []).rows.isEmpty)
 }
 
-/// The marked songs are not loose at the top of the tree. They are in Smart playlists, as on the desktop.
-@Test func theMarkedSongsAreInSmartPlaylistsAndNotAtTheTop() {
-    let top = browse([], [set("Mine")], favorites: [track("f")]).rows
+/// The listening lists stand at the top of the tree, as lists of their own. The computer files them in its
+/// Smart playlists folder, and the phone apps have no such folder.
+@Test func theListeningListsStandAtTheTop() {
+    let lists = [
+        cut("On repeat", kind: "OnRepeat", in: ["Smart playlists"]),
+        cut("Your mix", kind: "RightNow", in: ["Smart playlists"]),
+    ]
 
-    #expect(top.map(\.name) == [smart, "Mine"])
-    #expect(top[0].face == .smart)
+    let top = browse([], lists, favorites: nil).rows
 
-    let inside = browse([smart], [set("Mine")], favorites: [track("f")]).rows
-    #expect(inside.count == 1)
-    #expect(inside[0].kind == .favorites(GeneratedLists.marked([track("f")], among: [])!))
-    #expect(inside[0].name == Loc.get("Playlists_FavoriteTracks"))
+    #expect(top.map(\.name) == ["On repeat", "Your mix"])
+    #expect(top.allSatisfy { !$0.isFolder })
+}
+
+/// The app's lists come above the person's own, as on Android. Each group is by name.
+@Test func theAppsListsComeAboveThePersonsOwn() {
+    let lists = [set("Aardvark"), cut("Your mix", kind: "RightNow", in: ["Smart playlists"]), set("Zebra")]
+
+    let top = browse([], lists, favorites: [track("f")]).rows
+
+    #expect(top.map(\.name) == [favourites, "Your mix", "Aardvark", "Zebra"])
+    #expect(top[0].kind == .favorites(GeneratedLists.marked([track("f")], among: [])!))
 }
 
 /// **The computer's copy and the phone's list are one row.** The phone's marks are newer, so its songs win.
-/// The copy gives the place, which is the folder the computer filed it in, in the computer's language.
+/// The copy gives only its id, for its picture.
 @Test func theMarkedSongsTakeThePlaceOfTheComputersCopy() {
     let lists = [
         cut("Favourite tracks", kind: "FavoriteTracks", in: ["Listes intelligentes"],
@@ -67,28 +78,17 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
         cut("On repeat", kind: "OnRepeat", in: ["Listes intelligentes"]),
     ]
 
-    let inside = browse(["Listes intelligentes"], lists,
-                        favorites: [track("new1"), track("new2")]).rows
+    let top = browse([], lists, favorites: [track("new1"), track("new2")]).rows
 
-    #expect(inside.map(\.name) == [Loc.get("Playlists_FavoriteTracks"), "On repeat"])
-    #expect(inside[0].tracks.map(\.rpmId) == ["new1", "new2"])
-    #expect(inside[0].set?.id == "\u{1}mood/Favourite tracks", "the computer's id, for its picture")
-    #expect(inside[0].id == "\u{1}favorites", "the row is the marked songs, whatever the copy is called")
-}
-
-/// With no copy in the cut, the list goes where the computer's other listening lists are.
-@Test func withNoCopyTheMarkedSongsGoBesideTheOtherListeningLists() {
-    let lists = [cut("On repeat", kind: "OnRepeat", in: ["Listes intelligentes"])]
-
-    let top = browse([], lists, favorites: [track("f")]).rows
-
-    #expect(top.map(\.name) == ["Listes intelligentes"])
-    #expect(top[0].playlists == 2)
+    #expect(top.map(\.name) == [favourites, "On repeat"])
+    #expect(top[0].tracks.map(\.rpmId) == ["new1", "new2"])
+    #expect(top[0].set?.id == "\u{1}mood/Favourite tracks", "the computer's id, for its picture")
+    #expect(top[0].id == "\u{1}favorites", "the row is the marked songs, whatever the copy is called")
 }
 
 /// Nothing marked on this phone is the newer answer, so the computer's older copy is not shown either.
 @Test func nothingMarkedHidesTheComputersCopyToo() {
-    let lists = [cut("Favourite tracks", kind: "FavoriteTracks", in: [smart])]
+    let lists = [cut("Favourite tracks", kind: "FavoriteTracks", in: ["Smart playlists"])]
 
     #expect(browse([], lists, favorites: []).rows.isEmpty)
 }
@@ -104,7 +104,7 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
 
 @Test func theMarkedSongsCarryWhatIsInThem() {
     let marked = [track("a", seconds: 100), track("b", seconds: 200)]
-    let row = browse([smart], [], favorites: marked).rows[0]
+    let row = browse([], [], favorites: marked).rows[0]
 
     #expect(row.tracks.count == 2)
     #expect(row.duration == .seconds(300))
@@ -113,11 +113,10 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
 
 // ── what a folder shows ──
 
-/// The desktop's marks: a wand on Smart playlists, the moods picture on Moods, a clock on Decades, and the
-/// mood's own mark on each mood that has cuts under it. A person's folder is plain.
+/// The desktop's marks: the moods picture on Moods, a clock on Decades, and the mood's own mark on each mood
+/// that has cuts under it. A person's folder is plain.
 @Test func eachOfTheAppsFoldersHasItsOwnFace() {
     let lists = [
-        cut("On repeat", kind: "OnRepeat", in: [smart]),
         cut("Chill", kind: "Calm", in: ["Moods", "Chill"]),
         cut("Slow Burn", kind: "Calm", genre: "Rock", in: ["Moods", "Chill"]),
         cut("Sleep", kind: "Sleep", in: ["Moods"]),
@@ -126,7 +125,7 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
     ]
 
     let top = browse([], lists, favorites: nil).rows
-    #expect(top.map(\.face) == [.smart, .moods, .decades, .plain])
+    #expect(top.map(\.face) == [.moods, .decades, .plain])
 
     let moods = browse(["Moods"], lists, favorites: nil).rows
     #expect(moods.map(\.name) == ["Chill", "Sleep"])
@@ -141,16 +140,9 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
     #expect(browse([], lists, favorites: nil).rows[0].face == .plain)
 }
 
-/// Smart playlists holding only the marked songs is still the Smart playlists folder, not a mood.
-@Test func aFolderOfOneListeningListIsStillSmartPlaylists() {
-    let lists = [cut("Favourite tracks", kind: "FavoriteTracks", in: [smart])]
-
-    #expect(browse([], lists, favorites: nil).rows[0].face == .smart)
-}
-
-/// The app's folders come first, in the desktop's order: Smart playlists, Moods, Decades. A person's own
-/// folders follow by name, even one whose name sorts before them.
-@Test func theAppsFoldersComeFirstInTheDesktopsOrder() {
+/// The app's folders come first: Moods, then Decades. A person's own folders follow by name, even one whose
+/// name sorts before them. The lists come after every folder.
+@Test func theAppsFoldersComeFirst() {
     let lists = [
         cut("1980s", kind: "Decade", decade: 1980, in: ["Decades"]),
         cut("Chill", kind: "Calm", in: ["Moods"]),
@@ -160,7 +152,7 @@ private var smart: String { Loc.get("Playlists_SmartFolder") }
 
     let top = browse([], lists, favorites: [track("f")]).rows
 
-    #expect(top.map(\.name) == [smart, "Moods", "Decades", "Aardvark", "Zebra"])
+    #expect(top.map(\.name) == ["Moods", "Decades", "Aardvark", "Zebra", favourites])
 }
 
 // ── the tree ──

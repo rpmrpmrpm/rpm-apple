@@ -747,10 +747,6 @@ public enum Glyph {
     /// instead of opening something.
     public static let folder = "\u{f07b}"
 
-    /// The folder of the app's listening lists, Smart playlists. The desktop's
-    /// `SmartPlaylistFace.FolderGlyph`.
-    public static let wand = "\u{f72b}"
-
     /// The folder of the decades. The desktop's `SmartPlaylistFace.DecadesFolderGlyph`.
     public static let decades = "\u{f017}"
 

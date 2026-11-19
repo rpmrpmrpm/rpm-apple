@@ -6,8 +6,8 @@ import RPMKit
 public struct PlaylistRow: Sendable, Equatable, Identifiable {
     public enum Kind: Sendable, Equatable {
         /// Every song the listener has marked, in the order they were marked. **The songs are read
-        /// from the catalogue on this phone, not from the cloud.** The set gives the place, the id
-        /// and the frame of the computer's Favourite tracks list. See
+        /// from the catalogue on this phone, not from the cloud.** The set gives the id and the
+        /// frame of the computer's Favourite tracks list. See
         /// ``GeneratedLists/marked(_:among:)``.
         case favorites(PlaylistSet)
 
@@ -90,11 +90,9 @@ public struct PlaylistRow: Sendable, Equatable, Identifiable {
 /// the language of the computer that filed the lists, which can be different from the phone's.
 /// The desktop draws the same marks in its playlist tree (`PlaylistTreeItem.Glyph`).
 public enum FolderFace: Sendable, Equatable {
-    /// A folder somebody made, or a folder that holds at least one list somebody made.
+    /// A folder somebody made, a folder that holds at least one list somebody made, or a folder
+    /// of generated lists of more than one kind.
     case plain
-
-    /// The folder of the app's listening lists, Smart playlists on the computer: the wand.
-    case smart
 
     /// The folder of the moods: the moods picture.
     case moods
@@ -121,9 +119,9 @@ public struct PlaylistBrowse: Sendable, Equatable {
 
     /// The folders inside it, then the lists in it.
     ///
-    /// The app's own folders come first, in the desktop's order: Smart playlists, Moods,
-    /// Decades. Then the other folders by name. Then the lists by name, with a mood's own list
-    /// first in the folder named after it.
+    /// The app's own folders come first: Moods, then Decades. Then the other folders by name.
+    /// Then the lists: a mood's own list first in the folder named after it, then the app's
+    /// lists, then the person's own, each by name. The Android app uses the same order.
     public let rows: [PlaylistRow]
 
     /// - Parameters:
@@ -136,6 +134,10 @@ public struct PlaylistBrowse: Sendable, Equatable {
     ///
     /// There is no row for the queue. The queue key on the player shows it, and the desktop
     /// leaves it out of its tree for the same reason.
+    ///
+    /// **The listening lists stand at the top of the tree** (Your mix, On repeat, Favourite
+    /// tracks and the others, ``GeneratedLists/ownerOnly``). The computer files them in its Smart
+    /// playlists folder. The phone apps have no such folder and show them as lists of their own.
     public static func of(
         at: [String], playlists: [PlaylistSet], favorites: [CloudTrack]?
     ) -> PlaylistBrowse {
@@ -144,6 +146,7 @@ public struct PlaylistBrowse: Sendable, Equatable {
         // together.
         let marked = favorites.flatMap { GeneratedLists.marked($0, among: playlists) }
         let shown = (favorites == nil ? playlists : playlists.filter { !GeneratedLists.isMarkedCopy($0) })
+            .map(atTheTopIfListening)
             + (marked.map { [$0] } ?? [])
 
         let folders = shown.map(\.folder)
@@ -179,6 +182,10 @@ public struct PlaylistBrowse: Sendable, Equatable {
             .sorted { a, b in
                 let (first, second) = (GeneratedLists.isPooled(a), GeneratedLists.isPooled(b))
                 if first != second { return first }
+
+                // The app's lists above the person's own.
+                let (madeA, madeB) = (a.origin == .generated, b.origin == .generated)
+                if madeA != madeB { return madeA }
 
                 return a.name.compare(b.name, options: .caseInsensitive,
                                       range: nil, locale: .current) == .orderedAscending
@@ -216,6 +223,20 @@ public struct PlaylistBrowse: Sendable, Equatable {
     /// that does nothing is worse than no key.
     public var back: [String]? { at.isEmpty ? nil : Array(at.dropLast()) }
 
+    // ── where a list stands ──
+
+    /// A listening list moved to the top of the tree, out of the folder the computer filed it
+    /// in. Every other set is returned as it is. See ``of(at:playlists:favorites:)``.
+    private static func atTheTopIfListening(_ set: PlaylistSet) -> PlaylistSet {
+        guard set.origin == .generated, !set.folder.isEmpty,
+              GeneratedLists.ownerOnly.contains(set.cut?.kind ?? "")
+        else { return set }
+
+        return PlaylistSet(id: set.id, name: set.name, tracks: set.tracks, missing: set.missing,
+                           folder: [], stamp: set.stamp, shelf: set.shelf, origin: set.origin,
+                           cut: set.cut)
+    }
+
     // ── what a folder shows ──
 
     /// The name of the folder the computer filed its moods in: the outermost folder of a
@@ -243,24 +264,21 @@ public struct PlaylistBrowse: Sendable, Equatable {
 
         if inside.allSatisfy({ ($0.cut?.decade ?? 0) > 0 }) { return .decades }
 
-        // One mood and its cuts. A listening list is never a mood: a folder of them is the
-        // Smart playlists folder, even when it holds only one kind.
+        // One mood and its cuts. A listening list is never a mood.
         if let kind = inside.first?.cut?.kind, !GeneratedLists.ownerOnly.contains(kind),
            inside.allSatisfy({ $0.cut?.kind == kind && $0.cut?.decade == 0 }) {
             return .mood(kind)
         }
 
-        return .smart
+        return .plain
     }
 
-    /// The order of folders in one place: the desktop's pinned folders first, in its order
-    /// (`PlaylistModel.BuildRoots`), then every other folder.
+    /// The order of folders in one place: Moods, then Decades, then every other folder.
     private static func rank(_ face: FolderFace) -> Int {
         switch face {
-        case .smart: return 0
-        case .moods: return 1
-        case .decades: return 2
-        case .mood, .plain: return 3
+        case .moods: return 0
+        case .decades: return 1
+        case .mood, .plain: return 2
         }
     }
 }

@@ -5,8 +5,7 @@ import RPMKit
 import RPMLibrary
 
 /// The playlists tab: the playlists that the computer keeps in the cloud, its generated lists,
-/// and the marked songs in the computer's Smart playlists folder. There is no row for the queue:
-/// the queue key on the player shows it.
+/// and the marked songs. There is no row for the queue: the queue key on the player shows it.
 ///
 /// Ported from `RPM.Mobile/Presentation/PlaylistsPage.xaml`. The header uses the same type and
 /// the same insets as the library's header, because this is a second view of the same

@@ -239,18 +239,15 @@ public enum GeneratedLists {
         set.origin == .generated && set.cut?.kind == favoritesKind
     }
 
-    /// The listener's marked songs as a generated list, in the place where the computer files
-    /// its Favourite tracks, or nil when no song is marked.
+    /// The listener's marked songs as a generated list, or nil when no song is marked.
     ///
     /// The computer sends its own copy of this list in its cut. That copy is only as new as the
     /// cut. This phone has the marks as they are now, including a song marked here a moment
-    /// ago. So the songs come from `tracks`, and the copy gives only the id and the folder. The
-    /// caller shows this set in place of the copy, never next to it.
+    /// ago. So the songs come from `tracks`, and the copy gives only its id, for its picture.
+    /// The caller shows this set in place of the copy, never next to it.
     ///
-    /// Where the cut has no copy (nothing was marked when the computer last cut, or the computer
-    /// is an older build), the list goes in the folder of the computer's other listening lists.
-    /// Where there is none of those either, it goes in a folder with the desktop's name for that
-    /// folder, in this app's language.
+    /// It stands at the top of the tree with the other listening lists. See
+    /// ``PlaylistBrowse/of(at:playlists:favorites:)``.
     ///
     /// No marked songs gives nil, not an empty list. The desktop shows Favourite tracks from one
     /// song up (`SmartPlaylists.LeastToShow`).
@@ -259,17 +256,12 @@ public enum GeneratedLists {
     public static func marked(_ tracks: [CloudTrack], among playlists: [PlaylistSet]) -> PlaylistSet? {
         guard !tracks.isEmpty else { return nil }
 
-        let copy = playlists.first(where: isMarkedCopy)
-        let listening = playlists.first {
-            $0.origin == .generated && ownerOnly.contains($0.cut?.kind ?? "") && !$0.folder.isEmpty
-        }
-
         return PlaylistSet(
-            id: copy?.id ?? markedId,
+            id: playlists.first(where: isMarkedCopy)?.id ?? markedId,
             name: Loc.get("Playlists_FavoriteTracks"),
             tracks: tracks,
             missing: 0,
-            folder: copy?.folder ?? listening?.folder ?? [Loc.get("Playlists_SmartFolder")],
+            folder: [],
             stamp: 0,
             shelf: .own,
             origin: .generated,
