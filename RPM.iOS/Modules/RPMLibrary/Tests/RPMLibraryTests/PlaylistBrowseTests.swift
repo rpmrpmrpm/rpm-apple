@@ -113,8 +113,8 @@ private var favourites: String { Loc.get("Playlists_FavoriteTracks") }
 
 // ── what a folder shows ──
 
-/// The desktop's marks: the moods picture on Moods, a clock on Decades, and the mood's own mark on each mood
-/// that has cuts under it. A person's folder is plain.
+/// The desktop's marks: the moods picture on Moods, a clock on Decades (inside Moods, as on Android), and the
+/// mood's own mark on each mood that has cuts under it. A person's folder is plain.
 @Test func eachOfTheAppsFoldersHasItsOwnFace() {
     let lists = [
         cut("Chill", kind: "Calm", in: ["Moods", "Chill"]),
@@ -125,12 +125,11 @@ private var favourites: String { Loc.get("Playlists_FavoriteTracks") }
     ]
 
     let top = browse([], lists, favorites: nil).rows
-    #expect(top.map(\.face) == [.moods, .decades, .plain])
+    #expect(top.map(\.face) == [.moods, .plain])
 
     let moods = browse(["Moods"], lists, favorites: nil).rows
-    #expect(moods.map(\.name) == ["Chill", "Sleep"])
-    #expect(moods[0].face == .mood("Calm"))
-    #expect(moods[1].face == nil, "a mood with no cuts is a list, not a folder")
+    #expect(moods.map(\.name) == ["Decades", "Chill", "Sleep"])
+    #expect(moods.map(\.face) == [.decades, .mood("Calm"), nil], "a mood with no cuts is a list, not a folder")
 }
 
 /// A person's folder never shows the app's marks, even when it holds a generated list beside their own.
@@ -140,8 +139,8 @@ private var favourites: String { Loc.get("Playlists_FavoriteTracks") }
     #expect(browse([], lists, favorites: nil).rows[0].face == .plain)
 }
 
-/// The app's folders come first: Moods, then Decades. A person's own folders follow by name, even one whose
-/// name sorts before them. The lists come after every folder.
+/// The app's folders come first. A person's own folders follow by name, even one whose name sorts before
+/// them. The lists come after every folder.
 @Test func theAppsFoldersComeFirst() {
     let lists = [
         cut("1980s", kind: "Decade", decade: 1980, in: ["Decades"]),
@@ -152,7 +151,17 @@ private var favourites: String { Loc.get("Playlists_FavoriteTracks") }
 
     let top = browse([], lists, favorites: [track("f")]).rows
 
-    #expect(top.map(\.name) == ["Moods", "Decades", "Aardvark", "Zebra", favourites])
+    #expect(top.map(\.name) == ["Moods", "Aardvark", "Zebra", favourites])
+}
+
+/// A shelf with no moods has nowhere to put the decades, so they stay where the computer filed them.
+@Test func withNoMoodsTheDecadesStayWhereTheyWereFiled() {
+    let lists = [cut("1980s", kind: "Decade", decade: 1980, in: ["Decades"])]
+
+    let top = browse([], lists, favorites: nil).rows
+
+    #expect(top.map(\.name) == ["Decades"])
+    #expect(top[0].face == .decades)
 }
 
 // ── the tree ──

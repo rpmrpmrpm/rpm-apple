@@ -378,34 +378,35 @@ struct GeneratedListsTests {
             favorites: nil).rows
     }
 
-    /// Two folders at the top, Moods first, as on the desktop. Each shows how many rows are inside it.
-    @Test func theShelfPutsTwoFoldersAtTheTop() {
+    /// One folder at the top: Moods, with the decades inside it, as on Android.
+    @Test func theShelfPutsOneFolderAtTheTop() {
         let top = rows([])
 
-        #expect(top.map(\.name) == [moods, decades])
-        #expect(top.map(\.face) == [.moods, .decades])
+        #expect(top.map(\.name) == [moods])
+        #expect(top.map(\.face) == [.moods])
 
-        // Six rows: four moods that are places, and two that are plain lists. The count is not the
-        // twenty lists under them, which the user does not see at this level.
-        #expect(top[0].playlists == 6)
-        #expect(top[1].playlists == 6)
+        // Seven rows: the Decades folder, four moods that are places, and two that are plain lists.
+        // The count is not the lists under them, which the user does not see at this level.
+        #expect(top[0].playlists == 7)
     }
 
-    /// A mood with cuts under it is a place. A mood without cuts is a list. Places are listed above lists, as
-    /// this tab shows at every level.
-    @Test func theMoodsFolderHoldsThePlacesAndThePlainMoods() {
+    /// Decades first, then the moods with cuts under them, which are places, then the moods without cuts,
+    /// which are lists. Places are listed above lists, as this tab shows at every level.
+    @Test func theMoodsFolderHoldsTheDecadesThePlacesAndThePlainMoods() {
         let inside = rows([moods])
 
         #expect(inside.map(\.name) == [
-            Loc.get("Playlists_Energetic"), chill,
+            decades, Loc.get("Playlists_Energetic"), chill,
             Loc.get("Playlists_Danceable"), Loc.get("Playlists_Focus"),
             Loc.get("Playlists_Classical"), Loc.get("Playlists_Sleep"),
         ])
-        #expect(inside.prefix(4).allSatisfy { $0.isFolder })
+        #expect(inside.prefix(5).allSatisfy { $0.isFolder })
         #expect(inside.suffix(2).allSatisfy { !$0.isFolder })
+        #expect(inside[0].face == .decades)
+        #expect(inside[1].face == .mood("Energetic"))
 
         // Its own list, and the four cuts of it.
-        #expect(inside[0].playlists == 5)
+        #expect(inside[1].playlists == 5)
     }
 
     /// **The Adrenaline place holds playlists.** Its own list comes first, as the whole list is what someone
@@ -430,8 +431,8 @@ struct GeneratedListsTests {
         #expect(classical.tracks.count == 1)
     }
 
-    @Test func theDecadesStandBesideTheMoodsAndNotUnderThem() {
-        let inside = rows([decades])
+    @Test func theDecadesAreAFolderInsideTheMoods() {
+        let inside = rows([moods, decades])
 
         #expect(inside.map(\.name) == ["1960s", "1970s", "1980s", "1990s", "2000s", "2010s"])
         #expect(inside.allSatisfy { !$0.isFolder })

@@ -119,9 +119,10 @@ public struct PlaylistBrowse: Sendable, Equatable {
 
     /// The folders inside it, then the lists in it.
     ///
-    /// The app's own folders come first: Moods, then Decades. Then the other folders by name.
-    /// Then the lists: a mood's own list first in the folder named after it, then the app's
-    /// lists, then the person's own, each by name. The Android app uses the same order.
+    /// The app's own folders come first: Moods at the top of the tree, with Decades first inside
+    /// it. Then the other folders by name. Then the lists: a mood's own list first in the folder
+    /// named after it, then the app's lists, then the person's own, each by name. The Android app
+    /// uses the same order.
     public let rows: [PlaylistRow]
 
     /// - Parameters:
@@ -138,6 +139,7 @@ public struct PlaylistBrowse: Sendable, Equatable {
     /// **The listening lists stand at the top of the tree** (Your mix, On repeat, Favourite
     /// tracks and the others, ``GeneratedLists/ownerOnly``). The computer files them in its Smart
     /// playlists folder. The phone apps have no such folder and show them as lists of their own.
+    /// **The decades are a folder inside Moods**, not beside it. See `regrouped`.
     public static func of(
         at: [String], playlists: [PlaylistSet], favorites: [CloudTrack]?
     ) -> PlaylistBrowse {
@@ -145,29 +147,28 @@ public struct PlaylistBrowse: Sendable, Equatable {
         // The copy is removed whenever this phone has an answer, so the two are never shown
         // together.
         let marked = favorites.flatMap { GeneratedLists.marked($0, among: playlists) }
-        let shown = (favorites == nil ? playlists : playlists.filter { !GeneratedLists.isMarkedCopy($0) })
-            .map(atTheTopIfListening)
+        let sent = (favorites == nil ? playlists : playlists.filter { !GeneratedLists.isMarkedCopy($0) })
             + (marked.map { [$0] } ?? [])
+        let moods = moodsFolder(sent)
+        let shown = sent.map { regrouped($0, moods: moods) }
 
         let folders = shown.map(\.folder)
         let here = PlaylistFolderTree.stillOpen(at, folders: folders)
-        let moods = moodsFolder(shown)
 
         var rows: [PlaylistRow] = []
 
         let places = PlaylistFolderTree.foldersIn(folders, at: here).map { folder in
-            (folder, face(of: folder, holding: shown.filter {
-                PlaylistFolderTree.isUnder($0.folder, folder.path)
-            }, moods: moods))
+            (folder, shown.filter { PlaylistFolderTree.isUnder($0.folder, folder.path) })
         }
 
         // The index breaks ties, so folders of the same rank keep their order by name. Swift's
         // sort is not stable.
-        for (folder, face) in places.enumerated()
+        for (folder, inside) in places.enumerated()
             .sorted(by: { (rank($0.element.1), $0.offset) < (rank($1.element.1), $1.offset) })
             .map(\.element) {
-            rows.append(PlaylistRow(kind: .folder(folder, face), name: folder.name,
-                                    tracks: [], missing: 0, playlists: folder.playlists))
+            rows.append(PlaylistRow(kind: .folder(folder, face(of: folder, holding: inside, moods: moods)),
+                                    name: folder.name, tracks: [], missing: 0,
+                                    playlists: folder.playlists))
         }
 
         // Sorted here, and not assumed to arrive sorted. The caller resolves these against a
@@ -225,16 +226,29 @@ public struct PlaylistBrowse: Sendable, Equatable {
 
     // ── where a list stands ──
 
-    /// A listening list moved to the top of the tree, out of the folder the computer filed it
-    /// in. Every other set is returned as it is. See ``of(at:playlists:favorites:)``.
-    private static func atTheTopIfListening(_ set: PlaylistSet) -> PlaylistSet {
-        guard set.origin == .generated, !set.folder.isEmpty,
-              GeneratedLists.ownerOnly.contains(set.cut?.kind ?? "")
-        else { return set }
+    /// The two changes to the folders the computer filed its generated lists in. A list
+    /// somebody made is returned as it is. The Android app makes the same two changes.
+    ///
+    /// - A listening list moves to the top of the tree. See ``of(at:playlists:favorites:)``.
+    /// - A decade moves into the moods folder: the folder the computer filed it in, usually
+    ///   Decades, becomes a folder inside Moods. A computer that sent no folders, or a shelf with
+    ///   no moods, is left as it is.
+    ///
+    /// Both are found by what the lists are, not by the folders' names, which are in the
+    /// computer's language.
+    private static func regrouped(_ set: PlaylistSet, moods: String?) -> PlaylistSet {
+        guard set.origin == .generated, let outer = set.folder.first else { return set }
 
-        return PlaylistSet(id: set.id, name: set.name, tracks: set.tracks, missing: set.missing,
-                           folder: [], stamp: set.stamp, shelf: set.shelf, origin: set.origin,
-                           cut: set.cut)
+        if GeneratedLists.ownerOnly.contains(set.cut?.kind ?? "") {
+            return set.filed(in: [])
+        }
+
+        if let moods, (set.cut?.decade ?? 0) > 0,
+           outer.lowercased(with: .current) != moods.lowercased(with: .current) {
+            return set.filed(in: [moods] + set.folder)
+        }
+
+        return set
     }
 
     // ── what a folder shows ──
@@ -273,12 +287,20 @@ public struct PlaylistBrowse: Sendable, Equatable {
         return .plain
     }
 
-    /// The order of folders in one place: Moods, then Decades, then every other folder.
-    private static func rank(_ face: FolderFace) -> Int {
-        switch face {
-        case .moods: return 0
-        case .decades: return 1
-        case .mood, .plain: return 2
-        }
+    /// The order of folders in one place, from what is under each: a folder that holds decades
+    /// first, then a folder that holds other generated lists, then every other folder. At the
+    /// top of the tree this puts Moods first. Inside Moods it puts Decades first.
+    private static func rank(_ inside: [PlaylistSet]) -> Int {
+        if inside.contains(where: { $0.origin == .generated && ($0.cut?.decade ?? 0) > 0 }) { return 0 }
+        if inside.contains(where: { $0.origin == .generated }) { return 1 }
+        return 2
+    }
+}
+
+extension PlaylistSet {
+    /// The same set filed in another folder.
+    fileprivate func filed(in folder: [String]) -> PlaylistSet {
+        PlaylistSet(id: id, name: name, tracks: tracks, missing: missing, folder: folder,
+                    stamp: stamp, shelf: shelf, origin: origin, cut: cut)
     }
 }
