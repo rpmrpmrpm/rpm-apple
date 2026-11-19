@@ -33,19 +33,78 @@ public enum Thumbnail {
     public static func of(_ data: Data, edge: Int) -> CGImage? {
         guard edge > 0,
               let source = CGImageSourceCreateWithData(
-                data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary)
+                data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                // Always. A JPEG's own embedded thumbnail is only about 160 pixels, and it would be returned in
+                // place of the sleeve.
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                // **No `kCGImageSourceCreateThumbnailWithTransform`.** That option rotates the picture as the file
+                // says, and it also scales it by the pixel aspect ratio, which ImageIO takes from the dots per inch.
+                // A photograph saved at 72 dpi across and 300 dpi down then decodes 611 pixels wide instead of 1000,
+                // and every face in it looks too tall. The rotation is applied by ``upright(_:_:)`` instead.
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceThumbnailMaxPixelSize: edge,
+              ] as CFDictionary)
         else { return nil }
 
-        return CGImageSourceCreateThumbnailAtIndex(source, 0, [
-            // Always. A JPEG's own embedded thumbnail is only about 160 pixels, and it would be returned in place of
-            // the sleeve.
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            // Rotated as the file says. A cover with an orientation tag is rare, and a sideways cover on the wall is
-            // easy to notice.
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: edge,
-        ] as CFDictionary)
+        let facts = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+        let tag = (facts?[kCGImagePropertyOrientation] as? NSNumber)?.uint32Value ?? 1
+        return upright(image, CGImagePropertyOrientation(rawValue: tag) ?? .up)
+    }
+
+    /// The picture turned as its orientation tag says. A picture with no tag, or with `.up`, is returned as it is,
+    /// which is nearly every picture. A cover with another tag is rare, but a sideways cover on the wall is easy to
+    /// notice.
+    ///
+    /// The picture is drawn into a new bitmap. This happens after the decode, so the bitmap is the thumbnail's size
+    /// and not the file's.
+    static func upright(_ image: CGImage, _ orientation: CGImagePropertyOrientation) -> CGImage? {
+        if orientation == .up { return image }
+
+        let w = Double(image.width), h = Double(image.height)
+
+        // Tags 5 to 8 turn the picture a quarter turn, so the result is as wide as the source is tall.
+        let quarter: Bool
+        switch orientation {
+        case .left, .leftMirrored, .right, .rightMirrored: quarter = true
+        default: quarter = false
+        }
+        let width = quarter ? h : w, height = quarter ? w : h
+
+        // Core Graphics has its origin at the bottom left and its y axis pointing up. The tag names how the stored
+        // pixels must be turned to be upright, and these are those turns in that space.
+        var turn = CGAffineTransform.identity
+        switch orientation {
+        case .down, .downMirrored:
+            turn = turn.translatedBy(x: width, y: height).rotated(by: .pi)
+        case .left, .leftMirrored:
+            turn = turn.translatedBy(x: width, y: 0).rotated(by: .pi / 2)
+        case .right, .rightMirrored:
+            turn = turn.translatedBy(x: 0, y: height).rotated(by: -.pi / 2)
+        default:
+            break
+        }
+        switch orientation {
+        case .upMirrored, .downMirrored:
+            turn = turn.translatedBy(x: w, y: 0).scaledBy(x: -1, y: 1)
+        case .leftMirrored, .rightMirrored:
+            turn = turn.translatedBy(x: w, y: 0).scaledBy(x: -1, y: 1)
+        default:
+            break
+        }
+
+        // The picture's own colour space where a bitmap can be drawn in it, so a wide-gamut photograph keeps its
+        // colours. Alpha is kept, because a disc label's transparent corners are its shape.
+        let space = image.colorSpace.flatMap { $0.model == .rgb ? $0 : nil }
+            ?? CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(
+            data: nil, width: Int(width), height: Int(height), bitsPerComponent: 8, bytesPerRow: 0,
+            space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+
+        context.concatenate(turn)
+        context.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        return context.makeImage()
     }
 
     /// The 48 pixel square that `CoverColor` reads a sleeve's colour from.

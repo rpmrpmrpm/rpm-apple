@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import CoreGraphics
+import ImageIO
 @testable import RPMArt
 import RPMDesign
 
@@ -29,6 +30,61 @@ import RPMDesign
 
     // Never upscaled by ImageIO, but never smaller than the file either.
     #expect(image.width == 120)
+}
+
+/// A file can say it has more dots per inch down than across. fanart.tv has photographs saved at
+/// 72 dpi across and 300 dpi down. The picture is still as many pixels wide as the file says, and
+/// it is not squeezed to correct for the dots per inch.
+@Test func unequalDotsPerInchDoNotChangeThePicturesShape() throws {
+    let file = Pictures.jpeg(Pictures.quarters(width: 400, height: 200), orientation: 1,
+                             dpi: (across: 72, down: 300))
+
+    // The file really carries the two values. Without them this test would prove nothing.
+    let source = try #require(CGImageSourceCreateWithData(file as CFData, nil))
+    let facts = try #require(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
+    #expect((facts[kCGImagePropertyDPIWidth] as? NSNumber)?.doubleValue == 72)
+    #expect((facts[kCGImagePropertyDPIHeight] as? NSNumber)?.doubleValue == 300)
+
+    let image = try #require(Thumbnail.of(file, edge: 1024))
+    #expect(image.width == 400 && image.height == 200)
+
+    let small = try #require(Thumbnail.of(file, edge: 100))
+    #expect(small.width == 100 && small.height == 50)
+}
+
+/// Each of the eight orientation tags turns the picture the same way ImageIO's own rotation does.
+/// That rotation is the reference here because these files have the same dots per inch both ways,
+/// and then it does nothing else.
+@Test(arguments: 1...8)
+func anOrientationTagTurnsThePictureAsImageIODoes(tag: Int) throws {
+    let file = Pictures.jpeg(Pictures.quarters(width: 120, height: 60), orientation: UInt32(tag),
+                             dpi: (across: 72, down: 72))
+
+    let source = try #require(CGImageSourceCreateWithData(file as CFData, nil))
+    let reference = try #require(CGImageSourceCreateThumbnailAtIndex(source, 0, [
+        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceCreateThumbnailWithTransform: true,
+        kCGImageSourceThumbnailMaxPixelSize: 1024,
+    ] as CFDictionary))
+    let image = try #require(Thumbnail.of(file, edge: 1024))
+
+    #expect(image.width == reference.width && image.height == reference.height)
+
+    // The middle of each quarter, which is far from the JPEG's blur at the colour edges.
+    let w = image.width, h = image.height
+    for (x, y) in [(w / 4, h / 4), (3 * w / 4, h / 4), (w / 4, 3 * h / 4), (3 * w / 4, 3 * h / 4)] {
+        let got = Pictures.rgb(of: image, atX: x, fromTop: y)
+        let want = Pictures.rgb(of: reference, atX: x, fromTop: y)
+        let near = abs(Int(got.r) - Int(want.r)) < 24 && abs(Int(got.g) - Int(want.g)) < 24
+            && abs(Int(got.b) - Int(want.b)) < 24
+        #expect(near, "tag \(tag) at (\(x), \(y)): \(got) and ImageIO \(want)")
+    }
+}
+
+/// A picture with no tag, or tagged upright, is the decoded bitmap itself and is not drawn again.
+@Test func anUprightPictureIsNotDrawnAgain() {
+    let image = Pictures.quarters(width: 40, height: 20)
+    #expect(Thumbnail.upright(image, .up) === image)
 }
 
 @Test func nothingIsNotAPicture() {
