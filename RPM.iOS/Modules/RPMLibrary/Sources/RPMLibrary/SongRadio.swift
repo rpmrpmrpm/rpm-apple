@@ -198,7 +198,7 @@ public enum SongRadio {
     /// The kinds of list that are a mood, as the desktop's `MoodShelf.MoodsByPath` counts them.
     static let moodKinds: Set<String> = [
         "Calm", "Energetic", "Danceable", "Focus", "Sleep",
-        "Melancholy", "Happy", "Angry", "Romantic", "Zen", "NewYearsEve",
+        "Melancholy", "Happy", "Angry", "Romantic", "Zen", "NewYearsEve", "Christmas",
     ]
 
     /// Styles that sit next to one another. The desktop's `SongRadio.StyleFamilies`; change

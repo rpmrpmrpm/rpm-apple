@@ -4540,6 +4540,9 @@
 /* Name of the generated playlist for New Year's Eve: songs about the new year, then party songs. Shown only around 31 December. */
 "Playlists_NewYearsEve" = "跨年夜";
 
+/* Name of the generated playlist of Christmas songs. Shown only from late November to 26 December. */
+"Playlists_Christmas" = "圣诞快乐";
+
 /* Description under the Chill playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
 "Playlists_BlurbCalm" = "放松一下，听听你收藏中最柔和的%1$@。不赶时间，没有喧闹，只有你和音乐。";
 
@@ -4572,6 +4575,9 @@
 
 /* Description under the New Year's Eve playlist name. It names no genres: the list is an occasion, not a cut by genre. */
 "Playlists_BlurbNewYearsEve" = "倒计时开始啦！用这些歌送走旧年，狂欢迎接新年。";
+
+/* Description under the Merry Christmas playlist name. It names no genres: the list is an occasion, not a cut by genre. */
+"Playlists_BlurbChristmas" = "你的圣诞歌曲全在这里。点亮圣诞树，倒杯热饮，一起唱起来吧！";
 
 /* Joins the last two genres in a playlist description: 'rock, pop and jazz'. {0} is what came before, {1} is the last one. */
 "Playlists_GenreAnd" = "%1$@和%2$@";

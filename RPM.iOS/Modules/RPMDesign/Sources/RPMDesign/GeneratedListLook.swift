@@ -122,6 +122,7 @@ public enum GeneratedListLook {
         case "Romantic": return 8            // Crimson
         case "Zen": return 4                 // Forest
         case "NewYearsEve": return 2         // Gold
+        case "Christmas": return 9           // Red
         default: return nil
         }
     }

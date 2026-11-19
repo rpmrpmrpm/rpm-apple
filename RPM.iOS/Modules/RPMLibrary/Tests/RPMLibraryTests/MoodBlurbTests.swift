@@ -60,6 +60,8 @@ struct MoodBlurbTests {
         #expect(MoodBlurb.sentence(kind: "Zen", genres: tags(("Ambient", 10))) == Loc.get("Playlists_BlurbZen"))
         #expect(MoodBlurb.sentence(kind: "NewYearsEve", genres: tags(("Pop", 10)))
                 == Loc.get("Playlists_BlurbNewYearsEve"))
+        #expect(MoodBlurb.sentence(kind: "Christmas", genres: tags(("Pop", 10)))
+                == Loc.get("Playlists_BlurbChristmas"))
     }
 
     /// The four feelings the sound model hears are cut by genre, like Calm, so they say which.

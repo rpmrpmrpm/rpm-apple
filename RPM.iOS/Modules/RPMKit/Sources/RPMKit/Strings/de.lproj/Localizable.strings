@@ -4540,6 +4540,9 @@
 /* Name of the generated playlist for New Year's Eve: songs about the new year, then party songs. Shown only around 31 December. */
 "Playlists_NewYearsEve" = "Silvester";
 
+/* Name of the generated playlist of Christmas songs. Shown only from late November to 26 December. */
+"Playlists_Christmas" = "Frohe Weihnachten";
+
 /* Description under the Chill playlist name. {0} is a list of genres, like 'rock, pop and jazz'. */
 "Playlists_BlurbCalm" = "Lehn dich zurück mit der sanftesten Seite deiner Sammlung: %1$@. Keine Eile, kein Lärm, nur du und die Musik.";
 
@@ -4572,6 +4575,9 @@
 
 /* Description under the New Year's Eve playlist name. It names no genres: the list is an occasion, not a cut by genre. */
 "Playlists_BlurbNewYearsEve" = "Der Countdown läuft! Songs, um das alte Jahr zu verabschieden und ins neue reinzufeiern.";
+
+/* Description under the Merry Christmas playlist name. It names no genres: the list is an occasion, not a cut by genre. */
+"Playlists_BlurbChristmas" = "All deine Weihnachtslieder an einem Ort. Mach den Baum an, gönn dir was Warmes und sing mit!";
 
 /* Joins the last two genres in a playlist description: 'rock, pop and jazz'. {0} is what came before, {1} is the last one. */
 "Playlists_GenreAnd" = "%1$@ und %2$@";

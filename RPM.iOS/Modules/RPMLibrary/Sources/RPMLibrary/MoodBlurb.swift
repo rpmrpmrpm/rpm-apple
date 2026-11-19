@@ -30,12 +30,13 @@ public enum MoodBlurb {
     ///     songs are the list. A second reading could disagree with the songs printed under the
     ///     sentence.
     public static func sentence(kind: String, genres: [String?]) -> String? {
-        // Sleep, Zen and New Year's Eve name no genres. They are cut across all of them, so a list
-        // of three would describe the collection, not the list.
+        // Sleep, Zen, New Year's Eve and Merry Christmas name no genres. They are cut across all of
+        // them, so a list of three would describe the collection, not the list.
         switch kind {
         case "Sleep": return Loc.get("Playlists_BlurbSleep")
         case "Zen": return Loc.get("Playlists_BlurbZen")
         case "NewYearsEve": return Loc.get("Playlists_BlurbNewYearsEve")
+        case "Christmas": return Loc.get("Playlists_BlurbChristmas")
         default: break
         }
 

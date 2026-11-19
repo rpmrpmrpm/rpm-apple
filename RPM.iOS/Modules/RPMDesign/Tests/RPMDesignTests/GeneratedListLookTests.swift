@@ -210,7 +210,7 @@ struct GeneratedListLookTests {
                      "FavoriteTracks", "MostPlayed", "OnRepeat", "RecentlyPlayed", "RecentlyAdded",
                      "FirstListens", "LateNight", "Rediscover", "LovedAndForgotten",
                      "PlayedNotLoved", "NeverPlayed", "KeepSkipping", "RightNow",
-                     "Melancholy", "Happy", "Angry", "Romantic", "Zen", "NewYearsEve"]
+                     "Melancholy", "Happy", "Angry", "Romantic", "Zen", "NewYearsEve", "Christmas"]
 
         for kind in kinds {
             #expect(GeneratedListLook.of(kind: kind, genre: nil, decade: 0) != nil, "\(kind) should draw")

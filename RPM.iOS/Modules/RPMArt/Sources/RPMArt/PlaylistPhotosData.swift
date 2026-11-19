@@ -147,5 +147,6 @@ extension PlaylistPhotos {
         GeneratedCut(kind: "Zen", genre: nil, decade: 0): "zen-all.jpg",
         GeneratedCut(kind: "NewYearsEve", genre: nil, decade: 0): "newyearseve-all.jpg",
         GeneratedCut(kind: "Romantic", genre: "Latin", decade: 0): "romantic-latin.jpg",
+        GeneratedCut(kind: "Christmas", genre: nil, decade: 0): "christmas-all.jpg",
     ]
 }
