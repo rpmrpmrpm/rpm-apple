@@ -5560,6 +5560,9 @@
 /* About screen: what the wav2vec 2.0 model is used for. */
 "Credits_Wav2Vec2_Use" = "Positionne chaque mot des paroles sur la ligne de temps.";
 
+/* About screen: what the CLAP model is used for. */
+"Credits_Clap_Use" = "Écoute l'humeur de chaque titre pour le ranger dans les bonnes listes d'ambiance.";
+
 /* About screen: what the U^2-Net model is used for. */
 "Credits_U2Net_Use" = "Repère le sujet d'une pochette, pour que le recadrage du fond le conserve.";
 

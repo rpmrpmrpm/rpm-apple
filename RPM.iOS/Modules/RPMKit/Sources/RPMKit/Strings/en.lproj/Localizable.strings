@@ -5560,6 +5560,9 @@
 /* About screen: what the wav2vec 2.0 model is used for. */
 "Credits_Wav2Vec2_Use" = "Places each word of a lyric on the timeline.";
 
+/* About screen: what the CLAP model is used for. */
+"Credits_Clap_Use" = "Hears how each record feels, so it lands in the right mood lists.";
+
 /* About screen: what the U^2-Net model is used for. */
 "Credits_U2Net_Use" = "Finds the subject of a cover, so the backdrop crop keeps it.";
 

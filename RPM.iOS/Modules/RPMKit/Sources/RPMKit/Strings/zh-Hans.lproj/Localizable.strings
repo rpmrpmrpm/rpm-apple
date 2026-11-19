@@ -5560,6 +5560,9 @@
 /* About screen: what the wav2vec 2.0 model is used for. */
 "Credits_Wav2Vec2_Use" = "将歌词中的每个词定位到时间轴上。";
 
+/* About screen: what the CLAP model is used for. */
+"Credits_Clap_Use" = "聆听每首歌的情绪，把它放进合适的心情歌单。";
+
 /* About screen: what the U^2-Net model is used for. */
 "Credits_U2Net_Use" = "找出封面的主体，使背景裁切时予以保留。";
 

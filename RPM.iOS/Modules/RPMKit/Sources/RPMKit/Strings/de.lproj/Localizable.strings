@@ -5560,6 +5560,9 @@
 /* About screen: what the wav2vec 2.0 model is used for. */
 "Credits_Wav2Vec2_Use" = "Ordnet jedes Wort des Liedtexts der Zeitleiste zu.";
 
+/* About screen: what the CLAP model is used for. */
+"Credits_Clap_Use" = "Hört, wie sich jeder Titel anfühlt, damit er in den passenden Stimmungslisten landet.";
+
 /* About screen: what the U^2-Net model is used for. */
 "Credits_U2Net_Use" = "Findet das Motiv eines Covers, damit der Hintergrundausschnitt es behält.";
 
