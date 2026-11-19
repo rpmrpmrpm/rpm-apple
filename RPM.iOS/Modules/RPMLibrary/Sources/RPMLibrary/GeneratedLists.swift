@@ -220,9 +220,61 @@ public enum GeneratedLists {
     /// the desktop's `SmartPlaylists.OwnerOnly`: Your mix and the listening lists. They are
     /// cut from the owner's listening. The API takes them out of a borrowed cut as well.
     public static let ownerOnly: Set<String> = [
-        "RightNow", "OnRepeat", "FavoriteTracks", "FirstListens", "Rediscover",
+        "RightNow", "OnRepeat", favoritesKind, "FirstListens", "Rediscover",
         "LovedAndForgotten", "LateNight",
     ]
+
+    // ── the marked songs ──
+
+    /// The kind of the computer's Favourite tracks list, as the desktop's `SmartPlaylistKind`
+    /// spells it.
+    static let favoritesKind = "FavoriteTracks"
+
+    /// The id of the marked songs when the computer sent no copy of them. It starts with the
+    /// same character as the generated ids, so no store id can be the same.
+    static let markedId = "\u{1}favorites"
+
+    /// Whether a set is the computer's copy of Favourite tracks.
+    public static func isMarkedCopy(_ set: PlaylistSet) -> Bool {
+        set.origin == .generated && set.cut?.kind == favoritesKind
+    }
+
+    /// The listener's marked songs as a generated list, in the place where the computer files
+    /// its Favourite tracks, or nil when no song is marked.
+    ///
+    /// The computer sends its own copy of this list in its cut. That copy is only as new as the
+    /// cut. This phone has the marks as they are now, including a song marked here a moment
+    /// ago. So the songs come from `tracks`, and the copy gives only the id and the folder. The
+    /// caller shows this set in place of the copy, never next to it.
+    ///
+    /// Where the cut has no copy (nothing was marked when the computer last cut, or the computer
+    /// is an older build), the list goes in the folder of the computer's other listening lists.
+    /// Where there is none of those either, it goes in a folder with the desktop's name for that
+    /// folder, in this app's language.
+    ///
+    /// No marked songs gives nil, not an empty list. The desktop shows Favourite tracks from one
+    /// song up (`SmartPlaylists.LeastToShow`).
+    ///
+    /// - Parameter playlists: every set of the shelf, as the session resolved them.
+    public static func marked(_ tracks: [CloudTrack], among playlists: [PlaylistSet]) -> PlaylistSet? {
+        guard !tracks.isEmpty else { return nil }
+
+        let copy = playlists.first(where: isMarkedCopy)
+        let listening = playlists.first {
+            $0.origin == .generated && ownerOnly.contains($0.cut?.kind ?? "") && !$0.folder.isEmpty
+        }
+
+        return PlaylistSet(
+            id: copy?.id ?? markedId,
+            name: Loc.get("Playlists_FavoriteTracks"),
+            tracks: tracks,
+            missing: 0,
+            folder: copy?.folder ?? listening?.folder ?? [Loc.get("Playlists_SmartFolder")],
+            stamp: 0,
+            shelf: .own,
+            origin: .generated,
+            cut: GeneratedCut(kind: favoritesKind, genre: nil, decade: 0))
+    }
 
     /// The name this app gives to one of the moods or to "Your mix", or nil for a kind it
     /// has no name for.

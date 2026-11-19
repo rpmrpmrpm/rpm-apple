@@ -767,14 +767,13 @@ struct RootView: View {
                             PlaylistsPage(
                                 playlists: model.playlists,
                                 mode: $mode,
-                                queue: model.player.queue,
                                 // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
                                 // cannot be marked from a phone, so the list would always be empty.
                                 favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
                                 covers: covers, lender: model.lender,
                                 standing: model.playlistStanding,
                                 albums: model.albums,
-                                onOpen: { row in lists.append(named(row)) },
+                                onOpen: { row in if let open = named(row) { lists.append(open) } },
                                 onReread: { await model.rereadPlaylists() },
                                 onMake: { name, folder, tracks in
                                     await model.makePlaylist(name: name, in: folder, tracks: tracks)
@@ -1114,13 +1113,12 @@ struct RootView: View {
 
     @Environment(\.openURL) private var openUrl
 
-    private func named(_ row: PlaylistRow) -> OpenList {
+    private func named(_ row: PlaylistRow) -> OpenList? {
         switch row.kind {
-        case .queue: return .queue
         case .favorites: return .favorites
         case .playlist(let set): return .playlist(set.id)
         // A folder is opened on the tab itself. It never opens a page.
-        case .folder: return .queue
+        case .folder: return nil
         }
     }
 
@@ -1156,9 +1154,14 @@ struct RootView: View {
                          upNext: .itIsTheQueue)
 
         case .favorites:
-            // The marked songs: a list that marking a song changes, so it has no menu.
+            // The marked songs: a list that marking a song changes, so it has no menu. It is
+            // shown as the computer's Favourite tracks list, with that list's frame and room, as
+            // its row on the playlists tab is. The room is drawn instead of a cover, so no
+            // picture is asked for.
             list(Loc.get("Playlists_FavoriteTracks"), model.favoriteTracks, missing: 0,
-                 adding: nil, picture: nil, showing: nil, menu: .none, back: back)
+                 adding: nil, picture: nil,
+                 showing: GeneratedLists.marked(model.favoriteTracks, among: model.playlists),
+                 menu: .none, back: back)
 
         case .playlist(let id):
             if let set = model.playlists.first(where: { $0.id == id }) {

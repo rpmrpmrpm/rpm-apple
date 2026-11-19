@@ -375,20 +375,19 @@ struct GeneratedListsTests {
         PlaylistBrowse.of(
             at: at,
             playlists: GeneratedLists.sets(wholeCut(), against: [track("a")], shelf: .own),
-            queue: [], favorites: nil).rows
+            favorites: nil).rows
     }
 
-    /// Two folders at the top. Each shows how many rows are inside it.
+    /// Two folders at the top, Moods first, as on the desktop. Each shows how many rows are inside it.
     @Test func theShelfPutsTwoFoldersAtTheTop() {
-        // The queue is always the first row at the top of the tree.
-        let top = Array(rows([]).dropFirst())
+        let top = rows([])
 
-        #expect(top.map(\.name) == [decades, moods])
-        #expect(top.allSatisfy { $0.isFolder })
-        #expect(top[0].playlists == 6)
+        #expect(top.map(\.name) == [moods, decades])
+        #expect(top.map(\.face) == [.moods, .decades])
 
         // Six rows: four moods that are places, and two that are plain lists. The count is not the
         // twenty lists under them, which the user does not see at this level.
+        #expect(top[0].playlists == 6)
         #expect(top[1].playlists == 6)
     }
 

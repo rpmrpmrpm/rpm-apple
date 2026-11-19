@@ -144,7 +144,7 @@ struct PlaylistTile: View {
             // same distinction between its cards and its tree.
             PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
                            edge: art, corner: 10, mark: glyphSize, covers: covers,
-                           framed: FramedList.of(row.set))
+                           framed: FramedList.of(row.set), markPicture: row.markPicture)
 
             Spacer().frame(height: AlbumCaption.artGap)
 
@@ -175,24 +175,41 @@ struct PlaylistTile: View {
 // ── what a row is called, and its mark ──
 
 extension PlaylistRow {
-    /// The name shown on screen. The two lists that no user created are named here, because
-    /// they have no name stored anywhere else: the queue is what is playing, and the favourite
-    /// songs are a query over the rows.
+    /// The name shown on screen. The favourite songs are named here, in this app's language,
+    /// because they are a query over the catalogue and the computer's name for its copy may be
+    /// in another language.
     var title: String {
         switch kind {
-        case .queue: Loc.get("AlbumMenu_PlaylistNowPlaying")
         case .favorites: Loc.get("Playlists_FavoriteTracks")
         case .folder, .playlist: name
         }
     }
 
-    /// The mark shown for a row that has no picture of its own.
+    /// The mark shown for a row that has no picture of its own. A folder of the app's lists
+    /// shows the desktop's mark for it. See ``FolderFace``.
     var mark: String {
         switch kind {
-        case .queue: Glyph.queue
         case .favorites: Glyph.heart
-        case .folder: Glyph.folder
         case .playlist: Glyph.record
+        case .folder(_, let face):
+            switch face {
+            case .smart: Glyph.wand
+            case .decades: Glyph.decades
+            case .mood(let kind): Glyph.mood(kind) ?? Glyph.folder
+            case .moods, .plain: Glyph.folder
+            }
         }
     }
+
+    /// The picture shown in place of ``mark``, or nil. Only the moods folder has one: the
+    /// desktop's `moods-folder.png`. It is a picture and not a glyph, because it is shaded and a
+    /// font draws one colour.
+    @MainActor var markPicture: UIImage? {
+        face == .moods ? Self.moodsMark : nil
+    }
+
+    /// Read once. Every moods folder row shows the same picture.
+    @MainActor private static let moodsMark: UIImage? =
+        Bundle.module.url(forResource: "moods-folder", withExtension: "png")
+            .flatMap { UIImage(contentsOfFile: $0.path) }
 }

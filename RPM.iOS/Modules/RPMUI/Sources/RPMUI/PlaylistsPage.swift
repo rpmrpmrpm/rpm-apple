@@ -4,8 +4,9 @@ import RPMSession
 import RPMKit
 import RPMLibrary
 
-/// The playlists tab: the playlists that the computer keeps in the cloud, with the queue at the
-/// top.
+/// The playlists tab: the playlists that the computer keeps in the cloud, its generated lists,
+/// and the marked songs in the computer's Smart playlists folder. There is no row for the queue:
+/// the queue key on the player shows it.
 ///
 /// Ported from `RPM.Mobile/Presentation/PlaylistsPage.xaml`. The header uses the same type and
 /// the same insets as the library's header, because this is a second view of the same
@@ -13,11 +14,9 @@ import RPMLibrary
 ///
 /// An existing playlist is shown here and cannot be edited. The computer owns these playlists:
 /// its own database holds the track order, and each sync run writes the cloud copy again from
-/// it. An edit made on the phone would be overwritten the next time that computer syncs. The
-/// queue is the only list that this phone owns.
+/// it. An edit made on the phone would be overwritten the next time that computer syncs.
 public struct PlaylistsPage: View {
     private let playlists: [PlaylistSet]
-    private let queue: [CloudTrack]
     private let favorites: [CloudTrack]?
     private let covers: any CoverStore
     private let lender: String?
@@ -45,7 +44,7 @@ public struct PlaylistsPage: View {
     /// waits for. Shared with the TV app; see `RPMSession`.
     public typealias Standing = ReadStanding
 
-    public init(playlists: [PlaylistSet], mode: Binding<LibraryMode>, queue: [CloudTrack],
+    public init(playlists: [PlaylistSet], mode: Binding<LibraryMode>,
                 favorites: [CloudTrack]?,
                 covers: any CoverStore, lender: String?, standing: Standing,
                 albums: [CloudAlbum],
@@ -54,7 +53,6 @@ public struct PlaylistsPage: View {
                 onMake: @escaping (String, [String], [CloudTrack]) async -> String?) {
         self.playlists = playlists
         self._mode = mode
-        self.queue = queue
         self.favorites = favorites
         self.covers = covers
         self.lender = lender
@@ -91,7 +89,7 @@ public struct PlaylistsPage: View {
     @State private var pinching: Double?
 
     private var browse: PlaylistBrowse {
-        PlaylistBrowse.of(at: at, playlists: playlists, queue: queue, favorites: favorites)
+        PlaylistBrowse.of(at: at, playlists: playlists, favorites: favorites)
     }
 
     public var body: some View {
@@ -219,7 +217,7 @@ public struct PlaylistsPage: View {
     /// whichever view the press came from. Both views use this one function, so a tile and a
     /// row always agree about what a tap on a list does.
     private func press(_ row: PlaylistRow) {
-        if case .folder(let folder) = row.kind {
+        if case .folder(let folder, _) = row.kind {
             Haptics.pick()
             at = folder.path
         } else {
@@ -321,12 +319,13 @@ public struct PlaylistsPage: View {
 
     /// The cover of the first item in the row, drawn as on the wall. A playlist without its own
     /// cover uses the record it starts with, which is the nearest thing to a cover.
-    /// **A folder shows its glyph and nothing else.** A picture for a folder would describe one
-    /// of the items inside it, not the folder.
+    /// **A folder shows its mark and no record.** A record's cover on a folder would describe one
+    /// of the items inside it, not the folder. The app's own folders show the desktop's mark for
+    /// them (see ``FolderFace``).
     private func sleeve(_ row: PlaylistRow) -> some View {
         PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
                        edge: 44, corner: 6, mark: 16, covers: covers,
-                       framed: FramedList.of(row.set))
+                       framed: FramedList.of(row.set), markPicture: row.markPicture)
     }
 
     private func detail(_ row: PlaylistRow) -> String {
@@ -343,8 +342,7 @@ public struct PlaylistsPage: View {
     private func footer(_ browse: PlaylistBrowse) -> some View {
         if !browse.at.isEmpty && browse.rows.isEmpty {
             // Only inside a folder that the user created. At the top of the tree an empty list
-            // means that the account has no playlists at all, which the line under the queue
-            // already says.
+            // means that the account has no playlists at all, which the line below says.
             Text(Loc.get("Playlists_FolderEmpty"))
                 .font(RPMFont.display(13))
                 .foregroundStyle(RPMInk.white(0x88 / 255))
@@ -352,9 +350,8 @@ public struct PlaylistsPage: View {
                 .frame(maxWidth: .infinity)
                 .padding(40)
         } else if browse.at.isEmpty && playlists.isEmpty && lender == nil {
-            // Under the last row and not over the list. The queue can always be opened, and a
-            // message over the middle of the list would hide it just to say that nothing else
-            // has loaded.
+            // Under the last row and not over the list. The marked songs can be there without
+            // any playlist, and a message over the middle of the list would hide them.
             Text(Loc.get("Rpm_Playlists_EmptyHere"))
                 .font(RPMFont.display(12))
                 .foregroundStyle(RPMInk.white(0x77 / 255))
@@ -399,8 +396,8 @@ public struct PlaylistsPage: View {
 /// around it redraws.
 struct PlaylistSleeve: View {
     /// The list's OWN picture, if it has one: the id it is stored under and the shelf it is on.
-    /// Nil for a row that is not a stored list (the queue, the favourite songs, a folder) and for
-    /// a list that uses the automatic cover.
+    /// Nil for a row that is not a stored list (a folder, the favourite songs without the
+    /// computer's copy) and for a list that uses the automatic cover.
     var list: ListPicture? = nil
 
     let track: CloudTrack?
@@ -422,11 +419,15 @@ struct PlaylistSleeve: View {
     /// squares hold a composed picture of one.
     var roomDrifts: Bool = false
 
+    /// A picture shown in place of ``glyph``, at the glyph's size, or nil. Only the moods folder
+    /// has one. See `PlaylistRow.markPicture`.
+    var markPicture: UIImage? = nil
+
     @State private var cover: Cover?
 
     init(list: ListPicture? = nil, track: CloudTrack?, glyph: String, edge: CGFloat,
          corner: CGFloat, mark: CGFloat, covers: any CoverStore, framed: FramedList? = nil,
-         roomDrifts: Bool = false) {
+         roomDrifts: Bool = false, markPicture: UIImage? = nil) {
         self.list = list
         self.track = track
         self.glyph = glyph
@@ -436,6 +437,7 @@ struct PlaylistSleeve: View {
         self.covers = covers
         self.framed = framed
         self.roomDrifts = roomDrifts
+        self.markPicture = markPicture
         // What the store already holds, so a list shown again has its squares on its first frame.
         _cover = State(initialValue: Self.held(list: list, track: track, edge: edge, covers: covers))
     }
@@ -465,6 +467,13 @@ struct PlaylistSleeve: View {
                 Sleeve(image: cover.image)
                     .clipShape(shape)
                     .transition(.opacity)
+            } else if framed == nil, let markPicture {
+                // Dimmed to about the weight of the glyphs beside it, as the Android app draws it.
+                Image(uiImage: markPicture)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: mark, height: mark)
+                    .opacity(0.4)
             } else if framed == nil {
                 Text(glyph)
                     .font(RPMFont.icon(mark))

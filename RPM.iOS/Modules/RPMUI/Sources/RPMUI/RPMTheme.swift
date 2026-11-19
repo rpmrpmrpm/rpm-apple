@@ -747,6 +747,34 @@ public enum Glyph {
     /// instead of opening something.
     public static let folder = "\u{f07b}"
 
+    /// The folder of the app's listening lists, Smart playlists. The desktop's
+    /// `SmartPlaylistFace.FolderGlyph`.
+    public static let wand = "\u{f72b}"
+
+    /// The folder of the decades. The desktop's `SmartPlaylistFace.DecadesFolderGlyph`.
+    public static let decades = "\u{f017}"
+
+    /// The mark of one mood's folder, by the kind the computer sent, or nil for a kind the
+    /// desktop has no mark for. These are the desktop's `SmartPlaylistFace.Glyph`.
+    public static func mood(_ kind: String) -> String? {
+        switch kind {
+        case "Calm": return "\u{f52d}"           // feather
+        case "Energetic": return "\u{f0e7}"      // bolt
+        case "Danceable": return "\u{f70c}"      // person running
+        case "Focus": return "\u{f140}"          // bullseye
+        case "Sleep": return "\u{f236}"          // bed
+        case "Melancholy": return "\u{f73d}"     // cloud with rain
+        case "Happy": return "\u{f185}"          // sun
+        case "Angry": return "\u{f7e4}"          // curved flame
+        case "Romantic": return "\u{f5ce}"       // wine glass
+        case "Zen": return "\u{f5bb}"            // lotus
+        case "NewYearsEve": return "\u{f79f}"    // two champagne glasses
+        case "Christmas": return "\u{f1bb}"      // tree
+        case "Classical": return song
+        default: return nil
+        }
+    }
+
     /// The chevron on a row that steps into something.
     public static let into = "\u{f054}"
 
