@@ -1215,9 +1215,6 @@
 /* Import pane empty state, under Queue_EmptyTitle. */
 "Queue_EmptyHint" = "Añade una carpeta, extrae un CD o graba una cara: los archivos aparecen aquí para revisarlos antes de entrar en la colección.";
 
-/* Tooltip for the deck's pane pill. */
-"Deck_PaneTip" = "Mostrar u ocultar el panel lateral";
-
 /* The pinned playlist the player always plays. */
 "Playlists_NowPlaying" = "Reproduciendo";
 
@@ -2263,6 +2260,9 @@
 
 /* Phone collection search: accessibility label of the cross on one earlier search. */
 "Rpm_Search_Forget" = "Quitar de búsquedas recientes";
+
+/* Placeholder in the search bar that Cmd+F or Ctrl+F opens over the whole window, and the tooltip of the search key beside Home that opens it, on the desktop and in the web app. */
+"Rpm_Search_Library" = "Buscar en tu biblioteca";
 
 /* Phone profile page: key beside the box for a new post. */
 "Rpm_Profile_Post" = "Publicar";
