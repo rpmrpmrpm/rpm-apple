@@ -7768,3 +7768,99 @@
 
 /* Setup, last step: shown instead of the album count when the library is a folder of music the person already had. */
 "Wizard_DoneAdopted" = "打开资料库时，rpm 会在后台读取你的音乐。大型收藏可能需要几分钟。";
+
+/* Phone backdrop tile: folds of warm copper light on black, with a fine grain. A name, so untranslated. */
+"Settings_BackgroundAero" = "Aero";
+
+/* Phone settings, General: switch for the short sound rpm plays when it opens. */
+"Settings_StartupSound" = "播放开场音效";
+
+/* Phone settings, General: the line under the opening sound switch. */
+"Settings_StartupSoundHint" = "打开 rpm 时播放的简短音效。音乐一开始就会停止。";
+
+/* Long-press menu on a song, record or playlist (phone): puts it in home's Quick selection, after the suggested mixtapes. 'Quick selection' is the Home_QuickPicks heading. */
+"Home_AddToQuick" = "添加到快速选择";
+
+/* Long-press menu on something the user added to home's Quick selection (phone): takes it out again. */
+"Home_RemoveFromQuick" = "从快速选择中移除";
+
+/* Long-press menu and page menu on a playlist (phone): keeps it at the top of the Playlists view, under Recently played. */
+"Playlists_Pin" = "置顶";
+
+/* Long-press menu and page menu on a pinned playlist (phone): it goes back to its own place in the Playlists view. */
+"Playlists_Unpin" = "取消置顶";
+
+/* Phone settings, General: heading over the choice of language for the Wikipedia texts on artist and record pages. */
+"Settings_ArticleLanguage" = "艺人和专辑介绍";
+
+/* Phone settings, General: the line under the description language choice. */
+"Settings_ArticleLanguageHint" = "艺人和专辑介绍所用的语言。如果没有该语言的版本，就显示英文版。";
+
+/* Phone settings: the first choice of description language, the phone's own. {0} is that language's name in itself, e.g. 'Nederlands'. */
+"Settings_ArticleLanguagePhone" = "与手机相同（%1$@）";
+
+/* Phone settings, Appearance: switch for the spectrum bars that move with the music beside the cover in the player. */
+"Settings_PlayerBars" = "播放器中的动态频谱条";
+
+/* Phone settings, Appearance: the line under the moving bars switch. */
+"Settings_PlayerBarsHint" = "封面两侧随音乐跳动的频谱条。";
+
+/* Phone first-run hint pointing at the Home tab. */
+"Coach_Phone_Home" = "这里是主页！最近播放、接下来听什么和最新添加，全都在这里。长按歌曲、专辑或播放列表可查看更多。";
+
+/* Phone first-run hint pointing at the Collection tab. Starts like Coach_Views on the desktop. */
+"Coach_Phone_Collection" = "按你的方式浏览收藏！专辑、艺人、播放列表和流派都在这里，一点即达。";
+
+/* Phone first-run hint pointing at the Radio tab (internet radio). */
+"Coach_Phone_Radio" = "想听点新的？这里有来自世界各地的电台。";
+
+/* Phone first-run hint pointing at the Feed tab (posts and reviews by rpm users). */
+"Coach_Phone_Feed" = "看看其他收藏者在听什么、评什么，也分享你自己的发现。";
+
+/* Phone first-run hint pointing at the Settings tab. Starts like Wizard_LookTitle. */
+"Coach_Phone_Settings" = "让 rpm 成为你的专属！在设置中选择背景和音质，并管理下载。";
+
+/* Phone first-run hint pointing at the mini player above the tabs. */
+"Coach_Phone_MiniPlayer" = "正在播放的内容就在这里。轻点即可打开播放器。";
+
+/* Phone: the card that ends the first-run tour, under Coach_DoneTitle. The phone's Coach_DoneBody, without ripping and recording. */
+"Coach_Phone_DoneBody" = "现在你已经熟悉 rpm 了。尽情播放、探索，打造属于你的收藏。收藏愉快！";
+
+/* Phone settings: the line under the button that shows the first-run hints again. The phone's Settings_HintsHint. */
+"Settings_Phone_HintsHint" = "带你熟悉应用和播放器的小提示。每条只出现一次，之后不再打扰。";
+
+/* Phone first-run hint in the player, pointing at the cover. */
+"Coach_Player_Cover" = "这是你的唱片！左右滑动可切到下一首或返回上一首。";
+
+/* Phone first-run hint in the player, pointing at the heart beside the title. */
+"Coach_Player_Heart" = "喜欢这首？点一下爱心，它就会进入你的收藏曲目。";
+
+/* Phone first-run hint in the player, pointing at the lyrics key. */
+"Coach_Player_Lyrics" = "想跟着唱？点这里，歌词会随演唱同步显示。";
+
+/* Phone first-run hint in the player, pointing at the queue key. */
+"Coach_Player_Queue" = "这里是接下来要播放的内容，随时可以调整顺序。";
+
+/* Phone first-run hint in the player, pointing at the menu key in the row under the transport. */
+"Coach_Player_Menu" = "在这里设置睡眠定时、把歌曲加入播放列表，或跳转到专辑和艺人。";
+
+/* Phone first-run hint in the player, pointing at the speaker key at the top right. */
+"Coach_Player_Speakers" = "直接在这里切换到其他扬声器播放，比如你的电视。";
+
+/* Phone first-run hint in the player, pointing at the grip at the top. The last of the player's hints. */
+"Coach_Player_Grip" = "好了？向下拉这里即可收起播放器。把手机横过来还能看到可视化效果！";
+
+/* Phone welcome, the look step: the line under Wizard_LookTitle, over the backdrop tiles. The phone's Wizard_LookBackgroundHint. */
+"Wizard_Phone_LookHint" = "选择整个应用的背景图片。之后可随时在设置中更改。";
+
+/* Phone welcome, the player step: heading. A pun on a record spinning is welcome where the language has one. */
+"Wizard_Phone_PlayerTitle" = "来试一试吧！";
+
+/* Phone welcome, the player step: the line under the heading, over the chosen song. */
+"Wizard_Phone_PlayerBody" = "这是你收藏中的一首歌。点播放，我们会边放边带你熟悉播放器。";
+
+/* Phone welcome, the player step: the button that plays the song and opens the player with its hints. */
+"Wizard_Phone_PlayerGo" = "播放并带我看看";
+
+/* Phone welcome, the layout step: the line under Wizard_LayoutTitle. The phone's Wizard_LayoutBody, with two choices. */
+"Wizard_Phone_LayoutBody" = "选择专辑在收藏中的显示方式。随时可以在收藏页面顶部切换。";

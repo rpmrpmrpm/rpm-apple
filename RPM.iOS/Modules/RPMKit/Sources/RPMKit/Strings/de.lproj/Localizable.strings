@@ -7768,3 +7768,99 @@
 
 /* Setup, last step: shown instead of the album count when the library is a folder of music the person already had. */
 "Wizard_DoneAdopted" = "rpm liest deine Musik im Hintergrund, wenn die Bibliothek geöffnet wird. Eine große Sammlung kann ein paar Minuten dauern.";
+
+/* Phone backdrop tile: folds of warm copper light on black, with a fine grain. A name, so untranslated. */
+"Settings_BackgroundAero" = "Aero";
+
+/* Phone settings, General: switch for the short sound rpm plays when it opens. */
+"Settings_StartupSound" = "Eröffnungsklang abspielen";
+
+/* Phone settings, General: the line under the opening sound switch. */
+"Settings_StartupSoundHint" = "Ein kurzer Klang, wenn rpm startet. Er verstummt, sobald deine Musik beginnt.";
+
+/* Long-press menu on a song, record or playlist (phone): puts it in home's Quick selection, after the suggested mixtapes. 'Quick selection' is the Home_QuickPicks heading. */
+"Home_AddToQuick" = "Zur Schnellauswahl hinzufügen";
+
+/* Long-press menu on something the user added to home's Quick selection (phone): takes it out again. */
+"Home_RemoveFromQuick" = "Aus der Schnellauswahl entfernen";
+
+/* Long-press menu and page menu on a playlist (phone): keeps it at the top of the Playlists view, under Recently played. */
+"Playlists_Pin" = "Oben anheften";
+
+/* Long-press menu and page menu on a pinned playlist (phone): it goes back to its own place in the Playlists view. */
+"Playlists_Unpin" = "Lösen";
+
+/* Phone settings, General: heading over the choice of language for the Wikipedia texts on artist and record pages. */
+"Settings_ArticleLanguage" = "Beschreibungen von Künstlern und Alben";
+
+/* Phone settings, General: the line under the description language choice. */
+"Settings_ArticleLanguageHint" = "Die Sprache der Texte über deine Künstler und Alben. Gibt es keinen in dieser Sprache, bekommst du den englischen.";
+
+/* Phone settings: the first choice of description language, the phone's own. {0} is that language's name in itself, e.g. 'Nederlands'. */
+"Settings_ArticleLanguagePhone" = "Wie dein Telefon (%1$@)";
+
+/* Phone settings, Appearance: switch for the spectrum bars that move with the music beside the cover in the player. */
+"Settings_PlayerBars" = "Animierte Balken im Player";
+
+/* Phone settings, Appearance: the line under the moving bars switch. */
+"Settings_PlayerBarsHint" = "Die Balken neben dem Cover, die sich mit der Musik bewegen.";
+
+/* Phone first-run hint pointing at the Home tab. */
+"Coach_Phone_Home" = "Das ist dein Start! Was du zuletzt gehört hast, was du als Nächstes hören kannst und was neu dazugekommen ist, alles an einem Ort. Halte einen Song, ein Album oder eine Playlist gedrückt, um mehr zu sehen.";
+
+/* Phone first-run hint pointing at the Collection tab. Starts like Coach_Views on the desktop. */
+"Coach_Phone_Collection" = "Durchstöbere deine Sammlung, wie du willst! Alben, Künstler, Playlists und Genres sind alle hier, nur einen Tipp entfernt.";
+
+/* Phone first-run hint pointing at the Radio tab (internet radio). */
+"Coach_Phone_Radio" = "Lust auf etwas Neues? Hör Radio, mit Sendern aus aller Welt, genau hier.";
+
+/* Phone first-run hint pointing at the Feed tab (posts and reviews by rpm users). */
+"Coach_Phone_Feed" = "Sieh dir an, was andere Sammler hören und bewerten, und teile deine eigenen Funde.";
+
+/* Phone first-run hint pointing at the Settings tab. Starts like Wizard_LookTitle. */
+"Coach_Phone_Settings" = "Mach rpm zu deinem! Wähle einen Hintergrund und die Klangqualität und verwalte deine Downloads in den Einstellungen.";
+
+/* Phone first-run hint pointing at the mini player above the tabs. */
+"Coach_Phone_MiniPlayer" = "Was gerade läuft, findest du genau hier. Tipp darauf, um den Player zu öffnen.";
+
+/* Phone: the card that ends the first-run tour, under Coach_DoneTitle. The phone's Coach_DoneBody, without ripping and recording. */
+"Coach_Phone_DoneBody" = "Jetzt kennst du dich in rpm aus. Hör, entdecke und mach deine Sammlung zu deiner. Viel Spaß beim Sammeln!";
+
+/* Phone settings: the line under the button that shows the first-run hints again. The phone's Settings_HintsHint. */
+"Settings_Phone_HintsHint" = "Die kleinen Hinweise, die dir die App und den Player zeigen. Jeder erscheint einmal und lässt dich dann in Ruhe.";
+
+/* Phone first-run hint in the player, pointing at the cover. */
+"Coach_Player_Cover" = "Das ist deine Platte! Wisch nach links oder rechts, um zum nächsten Song zu springen oder zurückzugehen.";
+
+/* Phone first-run hint in the player, pointing at the heart beside the title. */
+"Coach_Player_Heart" = "Du liebst den Song? Tipp aufs Herz, und er ist bei deinen Lieblingssongs.";
+
+/* Phone first-run hint in the player, pointing at the lyrics key. */
+"Coach_Player_Lyrics" = "Lust mitzusingen? Tipp hier, um den Text mitzulesen, während er gesungen wird.";
+
+/* Phone first-run hint in the player, pointing at the queue key. */
+"Coach_Player_Queue" = "Hier siehst du, was als Nächstes kommt. Ordne es um, wann immer du willst.";
+
+/* Phone first-run hint in the player, pointing at the menu key in the row under the transport. */
+"Coach_Player_Menu" = "Stell einen Sleep-Timer, füge den Song einer Playlist hinzu oder spring von hier zum Album oder zum Künstler.";
+
+/* Phone first-run hint in the player, pointing at the speaker key at the top right. */
+"Coach_Player_Speakers" = "Spiel auf einem anderen Lautsprecher, zum Beispiel deinem Fernseher, direkt von hier.";
+
+/* Phone first-run hint in the player, pointing at the grip at the top. The last of the player's hints. */
+"Coach_Player_Grip" = "Fertig? Zieh das nach unten, um den Player wegzuräumen. Und dreh dein Telefon zur Seite für den Visualizer!";
+
+/* Phone welcome, the look step: the line under Wizard_LookTitle, over the backdrop tiles. The phone's Wizard_LookBackgroundHint. */
+"Wizard_Phone_LookHint" = "Wähle das Bild hinter der ganzen App. Du kannst es jederzeit in den Einstellungen ändern.";
+
+/* Phone welcome, the player step: heading. A pun on a record spinning is welcome where the language has one. */
+"Wizard_Phone_PlayerTitle" = "Lass uns eine Runde drehen!";
+
+/* Phone welcome, the player step: the line under the heading, over the chosen song. */
+"Wizard_Phone_PlayerBody" = "Hier ist ein Song aus deiner Sammlung. Drück auf Play, und wir zeigen dir den Player, während er läuft.";
+
+/* Phone welcome, the player step: the button that plays the song and opens the player with its hints. */
+"Wizard_Phone_PlayerGo" = "Abspielen und herumführen";
+
+/* Phone welcome, the layout step: the line under Wizard_LayoutTitle. The phone's Wizard_LayoutBody, with two choices. */
+"Wizard_Phone_LayoutBody" = "Wähle, wie deine Alben in der Sammlung erscheinen. Du kannst jederzeit oben in der Sammlung umschalten.";
