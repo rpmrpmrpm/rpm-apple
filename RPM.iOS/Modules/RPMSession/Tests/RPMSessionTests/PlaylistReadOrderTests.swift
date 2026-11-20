@@ -215,6 +215,7 @@ struct PlaylistReadOrderTests {
             community: RPMCommunityClient(transport: transport),
             library: CloudLibrary(source: source, marks: FavoriteMarks(), storeRoot: root),
             plays: PlayLog(inMemory: true),
+            listens: ListenLog(inMemory: true),
             radioListens: RadioListens(file: nil),
             playDevice: PlayDevice(store: defaults),
             additions: additions)

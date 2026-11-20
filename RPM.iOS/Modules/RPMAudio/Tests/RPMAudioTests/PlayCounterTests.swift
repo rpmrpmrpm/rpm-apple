@@ -174,3 +174,71 @@ struct PlayCounterTests {
         #expect(counter.settle() == nil)
     }
 }
+
+/// What goes into the listening log: every listen worth writing down, plays and skips, with the hour
+/// and the weekday on this device's clock. The store cuts the lists that read the log from these.
+@MainActor
+struct HeardListenTests {
+    private func track(_ id: String) -> CloudTrack {
+        var made = CloudTrackTags()
+        made.durationSeconds = 300
+        return CloudTrack(rpmId: id, relativePath: "a/\(id).flac", title: id, tags: made)
+    }
+
+    /// Thursday 20 August 2026, 21:30 UTC.
+    private static let instant = Date(timeIntervalSince1970: 1_787_261_400)
+
+    private func counter(zone: String) -> PlayCounter {
+        PlayCounter(now: { Self.instant }, zone: { TimeZone(identifier: zone)! })
+    }
+
+    @Test func aPlayIsAListenThatCounted() {
+        let counter = counter(zone: "UTC")
+
+        _ = counter.readListen(track: track("t1"), session: 1, position: 0, duration: 300)
+        _ = counter.readListen(track: track("t1"), session: 1, position: 200, duration: 300)
+        let heard = counter.readListen(track: track("t2"), session: 1, position: 0, duration: 300)
+
+        #expect(heard?.rpmId == "t1")
+        #expect(heard?.counted == true)
+        #expect(heard?.heardSeconds == 200)
+        #expect(heard?.lengthSeconds == 300)
+        #expect(heard?.at == 1_787_261_400)
+        #expect(heard?.play == PlayCounter.Counted(rpmId: "t1", at: 1_787_261_400))
+    }
+
+    /// A skip is written in the log, which "Keep skipping" and the rankings read, and is not a play.
+    @Test func aSkipIsAListenThatDidNotCount() {
+        let counter = counter(zone: "UTC")
+
+        _ = counter.readListen(track: track("t1"), session: 1, position: 0, duration: 300)
+        _ = counter.readListen(track: track("t1"), session: 1, position: 20, duration: 300)
+        let heard = counter.readListen(track: track("t2"), session: 1, position: 0, duration: 300)
+
+        #expect(heard?.counted == false)
+        #expect(heard?.play == nil)
+    }
+
+    @Test func aFlickPastIsNotWrittenDown() {
+        let counter = counter(zone: "UTC")
+
+        _ = counter.readListen(track: track("t1"), session: 1, position: 0, duration: 300)
+        _ = counter.readListen(track: track("t1"), session: 1, position: 3, duration: 300)
+
+        #expect(counter.readListen(track: track("t2"), session: 1, position: 0, duration: 300) == nil)
+    }
+
+    /// The hour and the weekday are the ones on this device's clock when the listen ended. The store
+    /// cannot work them out later.
+    @Test func theHourAndTheDayAreTheListenersOwn() {
+        let tokyo = counter(zone: "Asia/Tokyo")
+
+        _ = tokyo.readListen(track: track("t1"), session: 1, position: 0, duration: 300)
+        _ = tokyo.readListen(track: track("t1"), session: 1, position: 200, duration: 300)
+        let heard = tokyo.settleListen()
+
+        // 21:30 UTC on a Thursday is 06:30 on Friday in Tokyo.
+        #expect(heard?.localHour == 6)
+        #expect(heard?.localDayOfWeek == 5)
+    }
+}

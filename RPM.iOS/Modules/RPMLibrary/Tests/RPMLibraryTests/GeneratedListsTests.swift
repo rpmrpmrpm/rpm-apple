@@ -82,6 +82,40 @@ struct GeneratedListsTests {
         #expect(next.first?.missing == 0)
     }
 
+    /// A press answered by the store shows the store's new list, not a slice of the run the cut came with.
+    @Test func aNewReadingFromTheStoreReplacesTheSlice() {
+        let run = ids(100)
+        let tracks = (run + ["n1", "n2", "n3"]).map(track)
+        let list = CloudMoodList(kind: "Calm", title: "Chill", folder: ["Moods"],
+                                 listId: "chill", trackIds: run, shows: 50)
+
+        let sets = GeneratedLists.sets(cut([list]), against: tracks, shelf: .own,
+                                       readings: ["chill": 5], fresh: ["chill": ["n1", "n2", "n3"]])
+
+        #expect(sets.first?.tracks.map(\.rpmId) == ["n1", "n2", "n3"])
+    }
+
+    @Test func aReadingIsKeptForThePressItAnswered() {
+        let defaults = UserDefaults(suiteName: "rpm-test-\(UUID().uuidString)")!
+        var readings = GeneratedListReadings(store: defaults)
+
+        let first = readings.step("chill")
+        readings.noteFresh("chill", reading: first, trackIds: ["a"])
+        #expect(readings.fresh == ["chill": ["a"]])
+
+        // The next press has no answer yet: the old answer is for another press, and is not shown.
+        _ = readings.step("chill")
+        #expect(readings.fresh.isEmpty)
+
+        // An answer that arrives late, for a press that is no longer the latest, is not shown either.
+        readings.noteFresh("chill", reading: first, trackIds: ["late"])
+        #expect(readings.fresh.isEmpty)
+
+        // Kept across launches.
+        readings.noteFresh("chill", reading: 2, trackIds: ["b"])
+        #expect(GeneratedListReadings(store: defaults).fresh == ["chill": ["b"]])
+    }
+
     // ── what a list is called ──
 
     /// The name on a cut comes from the computer, which owns the titles. Copying its title table here would

@@ -219,8 +219,10 @@ public struct HeldPlaylists: Sendable {
     /// - Parameters:
     ///   - tracks: the listing of ``shelf``. A borrowed shelf's lists name that owner's tracks.
     ///   - readings: how many times refresh has been pressed on each generated list. See
-    ///     ``GeneratedLists/sets(_:against:shelf:readings:)``.
-    public func sets(against tracks: [CloudTrack], readings: [String: Int]) -> [PlaylistSet] {
+    ///     ``GeneratedLists/sets(_:against:shelf:readings:fresh:)``.
+    ///   - fresh: the store's answers to the current presses (``GeneratedListReadings/fresh``).
+    public func sets(against tracks: [CloudTrack], readings: [String: Int],
+                     fresh: [String: [String]]) -> [PlaylistSet] {
         // In id order before the sort by name, so two lists with the same name keep their
         // places from one redraw to the next.
         let stored = rows.values.map(\.row)
@@ -234,7 +236,7 @@ public struct HeldPlaylists: Sendable {
 
         return PlaylistSet.resolve(stored, against: tracks, shelf: shelf)
             + (cut.map {
-                GeneratedLists.sets($0, against: tracks, shelf: shelf, readings: readings)
+                GeneratedLists.sets($0, against: tracks, shelf: shelf, readings: readings, fresh: fresh)
             } ?? [])
     }
 }

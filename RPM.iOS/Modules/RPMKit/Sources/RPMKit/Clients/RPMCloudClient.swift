@@ -234,13 +234,44 @@ public struct RPMCloudClient: Sendable {
     ///   different question and is answered at play time: over the network only the
     ///   records that the owner put in the cloud resolve, so a borrowed list is
     ///   shorter here than it is on the owner's own network.
-    public func moodLists(_ shelf: CloudShelf = .own) async throws -> CloudMoodLists? {
+    /// - Parameter language: this app's interface language. Lists the store cuts for an account
+    ///   with no computer are named in it.
+    /// - Parameter zone: this device's IANA time zone. The store cuts Your mix on the hour here,
+    ///   and the holiday lists on the date here.
+    public func moodLists(_ shelf: CloudShelf, language: String, zone: String) async throws -> CloudMoodLists? {
+        let path = "cloud/moodlists" + shelf.query(first: true)
+            + (shelf.isOwn ? "?" : "&") + "lang=" + Self.escaped(language) + "&tz=" + Self.escaped(zone)
         do {
-            return try await transport.get(
-                "cloud/moodlists" + shelf.query(first: true), as: CloudMoodLists.self)
+            return try await transport.get(path, as: CloudMoodLists.self)
         } catch RPMError.refused(status: 404, _) {
             return nil
         }
+    }
+
+    /// A new reading of one of this account's generated lists, cut by the store: the list after
+    /// `reading` presses of "Generate new" on this device.
+    ///
+    /// Nil when the store cannot answer yet, which is not a failure: it has not built this
+    /// account's library yet and has started a build (409), or it no longer offers the list
+    /// (404). The caller shows the next of the readings that came with the cut.
+    public func nextReading(of listId: String, reading: Int, language: String, zone: String)
+        async throws -> CloudListReading? {
+        struct Body: Encodable { let id: String; let reading: Int; let lang: String; let tz: String }
+        do {
+            return try await transport.send(
+                "POST", "cloud/moodlists/next",
+                body: Body(id: listId, reading: reading, lang: language, tz: zone),
+                as: CloudListReading.self)
+        } catch RPMError.refused(status: 409, _), RPMError.refused(status: 404, _) {
+            return nil
+        }
+    }
+
+    /// A query value, escaped. A zone has slashes in it and a language may have a hyphen.
+    private static func escaped(_ value: String) -> String {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
     }
 
     /// Where a playlist's own picture can be fetched from, signed, or nil where the
@@ -593,6 +624,21 @@ public struct RPMCloudClient: Sendable {
         return try await transport.send("PUT", "cloud/track-plays",
                                         body: Body(deviceId: deviceId, tracks: rows),
                                         as: Said.self).updatedAt
+    }
+
+    // ── the listening log ──
+    //
+    // One row per finished listen, made on this device and keyed on its own id. See the
+    // server's ListenStore.
+
+    /// Sends a batch of this device's finished listens, at most 500. Returns the stamp the store
+    /// wrote them under.
+    public func sendListens(deviceId: String, listens: [CloudListen]) async throws -> Int64 {
+        struct Body: Encodable { let deviceId: String; let listens: [CloudListen] }
+        struct Said: Decodable { let receivedAt: Int64 }
+        return try await transport.send("PUT", "cloud/listens",
+                                        body: Body(deviceId: deviceId, listens: listens),
+                                        as: Said.self).receivedAt
     }
 
     // ── what this listener has heard on the radio ──

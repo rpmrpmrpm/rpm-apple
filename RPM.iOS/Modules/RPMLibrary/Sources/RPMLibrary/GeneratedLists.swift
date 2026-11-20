@@ -102,9 +102,11 @@ public enum GeneratedLists {
     ///   - readings: how many times refresh has been pressed on each list, by
     ///     ``CloudMoodList/id``. A list nobody has pressed is at zero, which is the first
     ///     slice of the run. That is the best slice, and it is what the computer shows.
+    ///   - fresh: the store's answers to the current press of each list, by id
+    ///     (``GeneratedListReadings/fresh``). A list with one shows it instead of its slice.
     public static func sets(
         _ cut: CloudMoodLists, against tracks: [CloudTrack], shelf: CloudShelf,
-        readings: [String: Int] = [:]
+        readings: [String: Int] = [:], fresh: [String: [String]] = [:]
     ) -> [PlaylistSet] {
         guard !cut.lists.isEmpty else { return [] }
 
@@ -122,9 +124,9 @@ public enum GeneratedLists {
         // An empty list is not a row. The computer does not send one. A list that arrives
         // from a build that did would promise music and open on nothing.
         let sets = drawn.map { list -> PlaylistSet in
-            // The slice this phone is showing, not the whole run the computer sent.
-            let showing = window(list.trackIds, shows: list.shows,
-                                 reading: readings[list.id] ?? 0)
+            // The store's new list for this press, or else the slice of the run the computer sent.
+            let showing = fresh[list.id]
+                ?? window(list.trackIds, shows: list.shows, reading: readings[list.id] ?? 0)
             let found = showing.compactMap { byId[$0] }
 
             return PlaylistSet(

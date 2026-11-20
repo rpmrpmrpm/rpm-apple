@@ -402,6 +402,17 @@ public final class Player {
     /// hold the log, so that a player can be built in a test without one.
     public var onPlayCounted: ((PlayCounter.Counted) -> Void)?
 
+    /// Called when a listen ended that is worth writing in the listening log: a play or a skip. Called
+    /// before ``onPlayCounted`` for the same listen.
+    public var onListened: ((PlayCounter.Heard) -> Void)?
+
+    /// Hands one ended listen to both callbacks.
+    private func ended(_ heard: PlayCounter.Heard?) {
+        guard let heard else { return }
+        onListened?(heard)
+        if let play = heard.play { onPlayCounted?(play) }
+    }
+
     /// Ends the listen in hand, for an app going to the background or being closed with a record
     /// on. Without it the last record of a session is never counted, and that is the one the
     /// listener was actually listening to.
@@ -409,7 +420,7 @@ public final class Player {
     /// **It also hands out the radio heard so far**, without ending that listen: the station plays
     /// on in the background, and iOS may close the app before it changes. See ``StationCounter``.
     public func settlePlay() {
-        if let counted = plays.settle() { onPlayCounted?(counted) }
+        ended(plays.settleListen())
         if let heard = stationsHeard.handOut() { onStationHeard?(heard) }
     }
 
@@ -2737,10 +2748,8 @@ public final class Player {
         // What has been listened to, read off the same tick as everything else. It is synchronous
         // and in order: the tally sums stretches across seeks, and readings that arrived out of
         // order would score the wrong one. What comes out is handed on; writing it down is the caller's job.
-        if let counted = plays.read(track: current, session: playSession,
-                                    position: position.seconds, duration: duration.seconds) {
-            onPlayCounted?(counted)
-        }
+        ended(plays.readListen(track: current, session: playSession,
+                               position: position.seconds, duration: duration.seconds))
 
         // **Buffering is a fact here and not a guess.** Either the node is running
         // and everything handed to it has been played, or it has not been started

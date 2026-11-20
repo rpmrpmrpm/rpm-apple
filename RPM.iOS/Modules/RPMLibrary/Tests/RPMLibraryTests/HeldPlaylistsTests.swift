@@ -24,7 +24,7 @@ struct HeldPlaylistsTests {
 
     /// The stored playlists as a screen would show them, by id, as track ids.
     private func shown(_ held: HeldPlaylists) -> [String: [String]] {
-        let sets = held.sets(against: listing.map(track), readings: [:])
+        let sets = held.sets(against: listing.map(track), readings: [:], fresh: [:])
         return Dictionary(uniqueKeysWithValues: sets.filter { $0.origin == .stored }
             .map { ($0.id, $0.tracks.map(\.rpmId)) })
     }
@@ -37,7 +37,7 @@ struct HeldPlaylistsTests {
     }
 
     private func hasCut(_ held: HeldPlaylists) -> Bool {
-        held.sets(against: listing.map(track), readings: [:]).contains { $0.origin == .generated }
+        held.sets(against: listing.map(track), readings: [:], fresh: [:]).contains { $0.origin == .generated }
     }
 
     // ── two reads ──
@@ -153,7 +153,7 @@ struct HeldPlaylistsTests {
 
         _ = held.startWrite(showing: ["b", "a"], of: "p")
 
-        let moving = try #require(held.sets(against: listing.map(track), readings: [:]).first)
+        let moving = try #require(held.sets(against: listing.map(track), readings: [:], fresh: [:]).first)
         #expect(moving.id == "p")
         #expect(moving.name == "Evening")
         #expect(moving.folder == ["Moods"])

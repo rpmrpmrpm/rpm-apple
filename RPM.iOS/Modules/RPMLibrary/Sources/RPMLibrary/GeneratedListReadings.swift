@@ -26,14 +26,47 @@ public struct GeneratedListReadings {
     /// ever clears them.
     private static let key = "rpm.generatedListReadings"
 
+    /// Where the store's answers are kept. See ``noteFresh(_:reading:trackIds:)``.
+    private static let freshKey = "rpm.generatedListFresh"
+
+    /// The store's answer to one press: the list it cut for that press count.
+    private struct Fresh: Codable {
+        let reading: Int
+        let trackIds: [String]
+    }
+
     private let store: UserDefaults
     private var byList: [String: Int]
+    private var freshByList: [String: Fresh]
 
     /// - Parameter store: where to keep them. The app passes the standard defaults. A test
     ///   passes a suite of its own, so that a test cannot change the slices on a real phone.
     public init(store: UserDefaults = .standard) {
         self.store = store
         self.byList = (store.dictionary(forKey: Self.key) as? [String: Int]) ?? [:]
+        self.freshByList = store.data(forKey: Self.freshKey)
+            .flatMap { try? JSONDecoder().decode([String: Fresh].self, from: $0) } ?? [:]
+    }
+
+    /// The store's answers that are for the press each list is on now, by list id. A list with no
+    /// answer for its current press shows its slice of the run.
+    public var fresh: [String: [String]] {
+        freshByList
+            .filter { reading(of: $0.key) == $0.value.reading }
+            .mapValues(\.trackIds)
+    }
+
+    /// Keeps the list the store cut for press `reading` of one list (`cloud/moodlists/next`).
+    ///
+    /// **Kept with the press it answered.** It is shown only while the list is on that press. An
+    /// answer that arrives after a later press is for a list the listener has already moved past.
+    /// One answer per list is kept, the newest, so the defaults stay small.
+    public mutating func noteFresh(_ list: String, reading: Int, trackIds: [String]) {
+        guard reading == self.reading(of: list) else { return }
+        freshByList[list] = Fresh(reading: reading, trackIds: trackIds)
+        if let data = try? JSONEncoder().encode(freshByList) {
+            store.set(data, forKey: Self.freshKey)
+        }
     }
 
     /// Which slice this list is on. A list nobody has pressed is at zero, which is the
