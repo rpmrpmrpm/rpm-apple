@@ -185,6 +185,7 @@ public struct SettingsPage: View {
                     ArticleLanguageCard()
                 case .appearance:
                     backdrop
+                    PlayerLookCard()
                 case .playback:
                     playback
                     loudness
@@ -768,6 +769,7 @@ public struct SettingsPage: View {
 
     // ── the shape of every card ──
 
+    /// The cards kept in files of their own draw the same shape with `SettingsCardFrame`; change both.
     private func card<Content: View>(
         _ glyph: String, _ kicker: String, @ViewBuilder _ content: () -> Content
     ) -> some View {

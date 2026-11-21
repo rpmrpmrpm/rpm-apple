@@ -485,8 +485,14 @@ public struct NowPlayingSheet: View {
         sleeve
             .coachTarget(.playerCover)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background { spectrum }
+            .background {
+                // The setting can turn the moving bars off. The room behind the sheet stays.
+                if bars { spectrum }
+            }
     }
+
+    /// Whether the bars beside the cover move with the music. See ``PlayerBars``.
+    @AppStorage(PlayerBars.key) private var bars = PlayerBars.initial
 
     /// The cover, square and centred. It has full size while the record is playing and is drawn a
     /// tenth smaller when paused, so a stopped record is a smaller object on the screen and the
