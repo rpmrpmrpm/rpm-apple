@@ -52,6 +52,7 @@ public struct RPMTabBar: View {
                 Button { showing = tab } label: { face(tab) }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
+                    .coachTarget(tab.coachTarget)
                     .accessibilityAddTraits(showing == tab ? .isSelected : [])
             }
         }

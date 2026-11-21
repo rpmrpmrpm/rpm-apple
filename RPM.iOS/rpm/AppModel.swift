@@ -494,6 +494,10 @@ final class AppModel {
         }
         #endif
 
+        // Whether this phone is new to rpm, decided once: somebody already signed in when this build
+        // first runs had the app before the welcome and the hints existed. See `FirstRun`.
+        FirstRun.shared.settle(signedIn: await auth.isSignedIn)
+
         guard await auth.isSignedIn else { session.showSignedOut(); return }
 
         // What has been played, from the disk and then from the account. This happens before the

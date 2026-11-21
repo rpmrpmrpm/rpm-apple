@@ -96,6 +96,10 @@ public struct NowPlayingSheet: View {
     /// keeps drawing behind a hidden sheet only heats the phone.
     @State private var showing = false
 
+    /// Whether the room and the spectrum rest: set by the app while the music is paused. See
+    /// ``RPMSharedUI/PowerSaving`` for the lower rate while the phone saves power.
+    @Environment(\.roomsRest) private var roomsRest
+
     /// The y position of the bottom edge of the cover, in the sheet's own points. The room is
     /// dimmed below this line, because the text is there.
     ///
@@ -313,7 +317,8 @@ public struct NowPlayingSheet: View {
         // so a 120 Hz screen draws 120 frames per second. The clock is paused when the sheet is
         // hidden, like the room behind it, because a clock that keeps running while nobody sees
         // the picture only heats the phone.
-        TimelineView(.animation(paused: !showing)) { _ in
+        TimelineView(.animation(minimumInterval: PowerSaving.shared.frameGap,
+                                paused: !showing || roomsRest)) { _ in
             SpectrumRunView(run: room.ramp.read(CACurrentMediaTime()).run,
                             side: Self.sleeveEdge * (player.isPlaying ? 1 : Self.pausedScale),
                             shift: flick, sides: .both,
@@ -394,7 +399,7 @@ public struct NowPlayingSheet: View {
     private var grip: some View {
         Color.clear
             .frame(height: 44)
-            .overlay { Grabber() }
+            .overlay { Grabber().coachTarget(.playerGrip) }
             // Pull it down to put the player away, or tap it. All of the behaviour is in
             // ``SwiftUI/View/pullGrip(_:)``.
             .pullGrip($pull)
@@ -433,6 +438,7 @@ public struct NowPlayingSheet: View {
             }
             // The same key as in the Uno phone app: 40 by 40 points, 12 points from the edge.
             .buttonStyle(RPMGlassKey(edge: 40))
+            .coachTarget(.playerSpeakers)
             .padding(.trailing, 12)
             .accessibilityLabel(playingOn.map { Loc.get("Rpm_Cast_Playing", $0) }
                                 ?? Loc.get("Rpm_Cast_PlayOn"))
@@ -453,6 +459,7 @@ public struct NowPlayingSheet: View {
     /// the cover's.
     private var cover: some View {
         sleeve
+            .coachTarget(.playerCover)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { spectrum }
     }
@@ -613,6 +620,7 @@ public struct NowPlayingSheet: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .coachTarget(.playerHeart)
             .padding(.trailing, -12)
             // A station is not a song, so it cannot be marked as a favourite. The key is hidden and
             // not greyed out, because a heart that cannot be pressed raises the question of what
@@ -789,6 +797,7 @@ public struct NowPlayingSheet: View {
                 showingLyrics.toggle()
             }
             .accessibilityLabel(Loc.get("Details_Lyrics"))
+            .coachTarget(.playerLyrics)
             .foregroundStyle(lyricsUp ? .white : RPMInk.white(0x99 / 255))
             // Greyed out when there are no lyrics for this record, and lit while the lookup is
             // still running. A key that turns grey as soon as a record starts and lights up a
@@ -801,6 +810,7 @@ public struct NowPlayingSheet: View {
                 queue.raise()
             }
             .accessibilityLabel(Loc.get("Viz_Queue"))
+            .coachTarget(.playerQueue)
             .opacity(player.queue.isEmpty ? 0.35 : 1)
             .disabled(player.queue.isEmpty)
 
@@ -829,6 +839,7 @@ public struct NowPlayingSheet: View {
                     .frame(width: 40, height: 40)
                     .contentShape(Rectangle())
             }
+            .coachTarget(.playerMenu)
             // The sleep timer is in the menu whenever anything is playing, including a station.
             .opacity(player.isOver ? 0.35 : 1)
             .disabled(player.isOver)

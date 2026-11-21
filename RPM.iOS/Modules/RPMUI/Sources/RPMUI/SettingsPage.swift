@@ -179,6 +179,7 @@ public struct SettingsPage: View {
             VStack(alignment: .leading, spacing: 14) {
                 switch section {
                 case .general:
+                    HintsCard()
                     about
                     device
                 case .appearance:

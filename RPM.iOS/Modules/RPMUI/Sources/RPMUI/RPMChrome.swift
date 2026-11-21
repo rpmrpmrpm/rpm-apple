@@ -27,6 +27,7 @@ public struct RPMChrome: View {
             if MiniPlayer.hasSomethingToSay(player) {
                 MiniPlayer(player: player, art: art, onOpen: onOpen)
                     .rpmGlass(Capsule())
+                    .coachTarget(.miniPlayer)
             }
 
             RPMTabBar(showing: $showing)

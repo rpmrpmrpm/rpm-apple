@@ -43,7 +43,35 @@ struct RootView: View {
 
     /// The tab that is shown. The app opens on Home because it is the one screen that is about
     /// this listener and not about the way the collection is organised.
-    @State private var tab: RPMTab = .home
+    ///
+    /// Every change slides the pages (``slide(to:)``), wherever it comes from: the tab bar, the
+    /// player's album and artist lines, the end of playback.
+    private var tab: RPMTab {
+        get { shownTab }
+        nonmutating set { slide(to: newValue) }
+    }
+
+    /// The tab shown. Written only by ``slide(to:)``.
+    @State private var shownTab: RPMTab = .home
+
+    /// The tabs whose pages are still sliding off the screen. They are taken away when the slide
+    /// ends.
+    @State private var leavingTabs: Set<RPMTab> = []
+
+    /// The tab shown before the last change: the side the new page comes in from.
+    @State private var cameFrom: RPMTab = .home
+
+    /// Counts the changes of tab, so a slide that ends after a newer one began leaves the pages of
+    /// the newer one alone.
+    @State private var slides = 0
+
+    /// The width the tabs' pages slide across, measured on the shell.
+    @State private var pageWidth: CGFloat = 0
+
+    /// Whether the music has been paused for a moment. The player's room and spectrum rest then
+    /// (``SwiftUI/EnvironmentValues/roomsRest``): a still picture redrawn on every frame of the
+    /// display only heats the phone.
+    @State private var pausedAWhile = false
 
     /// The reader's own page. Made when the Feed tab is first shown; it rises over the app from the tab's profile key.
     @State private var me: PersonPage?
@@ -335,10 +363,41 @@ struct RootView: View {
                     // top when a tap on the grip put the player away. Only one animation moves
                     // the player, so two animations never take it to different places with
                     // different timing, and no sheet animation has to finish before it closes.
+                    .environment(\.roomsRest, pausedAWhile)
                     .transition(.belowWindow)
             }
         }
         .animation(.spring(duration: 0.35), value: playing.up)
+        // The player's room and spectrum rest once the music has been paused for a moment. Not at
+        // once: a track takes a second to open, and the light fades out after a pause.
+        .task(id: model.player.isPlaying) {
+            guard !model.player.isPlaying else {
+                pausedAWhile = false
+                return
+            }
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            pausedAWhile = true
+        }
+        // The first-run hints, over the app and the player, under the stage. See `CoachLayer`.
+        .overlayPreferenceValue(CoachTargetFrames.self) { frames in
+            CoachLayer(frames: frames, playerUp: playing.up, allowed: coachAllowed)
+        }
+        // The welcome, on the very first launch, over the app it opens on. See `Welcome`.
+        .overlay {
+            if welcomeDue {
+                Welcome(covers: covers,
+                        pick: { welcomeSong() },
+                        onPlay: { album, at in
+                            FirstRun.shared.finishWelcome()
+                            Task { await model.play(album, from: at, tapped: .song) }
+                            playing.raise()
+                        },
+                        onDone: { FirstRun.shared.finishWelcome() })
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.4), value: welcomeDue)
         // Shown over everything, including the tab bar and the mini player. The stage is the whole
         // screen while the phone is turned.
         .overlay {
@@ -607,6 +666,29 @@ struct RootView: View {
         mode = .albums
     }
 
+    /// Whether the welcome shows: on the first launch with an account (``FirstRun``), over the
+    /// reader's own collection, once the opening screen and the wait mark have gone.
+    private var welcomeDue: Bool {
+        !FirstRun.shared.welcomed && model.standing == .showing && model.viewing.isOwn
+            && !covering && !opening
+    }
+
+    /// Whether the first-run hints may show now: after the welcome, over the reader's own
+    /// collection, and not while the wait mark, the opening screen, the stage or a picker is up.
+    private var coachAllowed: Bool {
+        FirstRun.shared.welcomed && model.standing == .showing && model.viewing.isOwn
+            && !covering && !opening && !staged && !model.pickingLibrary && model.filing == nil
+    }
+
+    /// The song the welcome plays: see ``WelcomeSong``. Only what can be played now: offline, a
+    /// record on the phone.
+    private func welcomeSong() -> (album: CloudAlbum, at: Int)? {
+        let playable = PlayableHere(isOnline: model.reading.isOnline, onPhone: model.downloads.onPhone)
+        return WelcomeSong.pick(model.albums, played: model.played,
+                                isMarked: { model.isTrackMarked($0) },
+                                canPlay: { playable.canPlay($0.key) })
+    }
+
     /// Whether the stage should be shown: the phone is turned and a record is loaded. A stage
     /// with nothing loaded is a black screen with a wordmark, so a turned phone with nothing
     /// loaded keeps the tab it was on.
@@ -712,12 +794,23 @@ struct RootView: View {
             // top, on the first card, every row at its start. Kept, it stays where the user left
             // it. While hidden, it receives no touches, is not read by VoiceOver, and its
             // animated rooms stop (`onScreen`), so it costs no frames while another tab is shown.
+            //
+            // Its rooms rest while it is not shown, and under the player.
             home
-                .opacity(tab == .home ? 1 : 0)
+                .environment(\.roomsRest, tab != .home || playing.up)
+                .opacity(tab == .home || leavingTabs.contains(.home) ? 1 : 0)
+                // Shown at once when it slides in, and hidden only once it has slid out: the slide
+                // below is the only thing that moves it.
+                .animation(nil, value: shownTab)
+                .offset(x: TabSlide.place(of: RPMTab.home.place, shown: tab.place) * pageWidth)
                 .allowsHitTesting(tab == .home)
                 .accessibilityHidden(tab != .home)
 
-            switch tab {
+            // The other tabs' pages. Each is built when its tab is shown, slides in, and is taken
+            // away once it has slid off the screen. See ``slide(to:)``.
+            ForEach(pagesOnScreen, id: \.self) { page in
+              Group {
+            switch page {
             case .home:
                 EmptyView()
 
@@ -910,13 +1003,26 @@ struct RootView: View {
                             onClose: { showingDownloads = false })
                     }
             }
+              }
+              .environment(\.roomsRest, page != tab || playing.up)
+              .offset(x: TabSlide.place(of: page.place, shown: tab.place) * pageWidth)
+              .transition(.offset(x: TabSlide.entry(from: cameFrom.place, to: page.place) * pageWidth))
+              .allowsHitTesting(page == tab)
+              .accessibilityHidden(page != tab)
+            }
         }
+        .background {
+            GeometryReader { box in
+                Color.clear.preference(key: ShellWidth.self, value: box.size.width)
+            }
+        }
+        .onPreferenceChange(ShellWidth.self) { pageWidth = $0 }
         // `spacing: 0`, because the default spacing is eight points. With it, the content of the
         // pages that the shell's inset reaches would end eight points above the bar. That shows a
         // band of background over the bar on every screen outside a navigation stack.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             RPMChrome(player: model.player, art: model.playingArt,
-                      showing: $tab) { playing.raise() }
+                      showing: Binding(get: { tab }, set: { tab = $0 })) { playing.raise() }
         }
         .onPreferenceChange(ChromeHeight.self) { chrome = $0 }
         // Which records can be played now, for every tile and row that is greyed. See
@@ -965,6 +1071,35 @@ struct RootView: View {
             // been opened. They are read once, when they are first needed.
             guard model.filing != nil else { return }
             await model.showPlaylists()
+        }
+    }
+
+    /// The tabs other than home whose pages are on the screen: the one shown, and those still
+    /// sliding away. In the tab bar's order.
+    private var pagesOnScreen: [RPMTab] {
+        RPMTab.allCases.filter { $0 != .home && ($0 == shownTab || leavingTabs.contains($0)) }
+    }
+
+    /// Shows `next`, sliding the pages the whole width in the order of the tab bar: to a tab on the
+    /// right, the page shown leaves to the left and the new one comes in from the right; to a tab on
+    /// the left, the reverse (``TabSlide``). The tab bar and the mini player do not move.
+    ///
+    /// The page left behind stays until the slide ends. Then home stays built, as always, and any
+    /// other tab's page is taken away.
+    private func slide(to next: RPMTab) {
+        guard next != shownTab else { return }
+
+        slides += 1
+        let slide = slides
+
+        // All in one animated change, so the page coming in is inserted with its slide.
+        withAnimation(.easeInOut(duration: TabSlide.duration)) {
+            cameFrom = shownTab
+            leavingTabs.insert(shownTab)
+            shownTab = next
+        } completion: {
+            guard slides == slide else { return }
+            leavingTabs = []
         }
     }
 
@@ -1670,4 +1805,17 @@ struct WallReport: Equatable {
 struct FeedbackShot: Identifiable {
     let id = UUID()
     let png: Data?
+}
+
+/// The width of the shell, which the tabs' pages slide across.
+private struct ShellWidth: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private extension RPMTab {
+    /// The tab's place in the tab bar, counted from the left.
+    var place: Int { RPMTab.allCases.firstIndex(of: self) ?? 0 }
 }
