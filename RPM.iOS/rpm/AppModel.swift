@@ -376,7 +376,8 @@ final class AppModel {
                         classical: { classical.isClassical($0, on: whoseShelf.shelf(of: $0.rpmId)) },
                         cover: { await RoomCoverArt.jpeg(of: $0, from: covers, on: whoseShelf,
                                                          fitting: CastCover.limit) })
-        remote = RemoteControl(player: player, reach: reach, songCovers: songCovers)
+        remote = RemoteControl(player: player, reach: reach, songCovers: songCovers,
+                               marksExplicit: true)
         speakerChoice = Speakers(player: player)
         record = NowPlayingRecord(session: session, artwork: artwork, player: player,
                                   remote: remote, edge: 600)

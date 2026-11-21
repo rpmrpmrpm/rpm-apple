@@ -36,10 +36,16 @@ public final class RemoteControl {
     /// plays a song.
     private let songCovers: SongCovers
 
-    public init(player: Player, reach: NetworkReach, songCovers: SongCovers) {
+    /// Whether an explicit song carries the E after its title on the lock screen
+    /// (``LockScreenTitle``). The phone marks; the TV does not, as on Android.
+    private let marksExplicit: Bool
+
+    public init(player: Player, reach: NetworkReach, songCovers: SongCovers,
+                marksExplicit: Bool = false) {
         self.player = player
         self.wire = Gated(reach: reach)
         self.songCovers = songCovers
+        self.marksExplicit = marksExplicit
     }
 
     /// Claims the audio session and wires the commands. Call it before anything is
@@ -379,7 +385,10 @@ public final class RemoteControl {
         }
 
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: track.title ?? "",
+            // An explicit song wears the E after its title here only. See `LockScreenTitle`.
+            MPMediaItemPropertyTitle: LockScreenTitle.of(track.title ?? "",
+                                                         explicit: marksExplicit && track.isExplicit),
+            MPMediaItemPropertyIsExplicit: marksExplicit && track.isExplicit,
             MPMediaItemPropertyArtist: track.artist ?? "",
             MPMediaItemPropertyAlbumTitle: track.album ?? "",
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
