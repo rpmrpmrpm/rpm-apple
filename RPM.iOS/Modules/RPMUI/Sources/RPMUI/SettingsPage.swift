@@ -625,7 +625,7 @@ public struct SettingsPage: View {
 
     // ── the app background ──
 
-    /// The five built-in backdrops, as tiles.
+    /// The built-in backdrops, as tiles.
     ///
     /// **A row of the real pictures**, as in the desktop app's settings. The supporter backdrop
     /// is shown to everybody and is not greyed out, so that users can see what it looks like.

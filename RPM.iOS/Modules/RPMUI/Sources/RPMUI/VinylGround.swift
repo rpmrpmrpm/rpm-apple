@@ -17,7 +17,8 @@ import RPMArt
 ///
 /// Only one dark veil is drawn over the picture, 20 per cent black, the same as the
 /// desktop. Do not add more overlays: stacked scrims make the app look like it is
-/// behind smoked glass.
+/// behind smoked glass. Aero, a much lighter picture than the others, takes a heavier
+/// veil, so it ends about as dark as they do. See ``shade(_:)``.
 ///
 /// **There are two vinyl pressings, each with its own tile, and one is for supporters.**
 /// Vinyl is the blue one, for everybody. Gold is the same picture in a different colour:
@@ -75,15 +76,25 @@ public struct VinylGround: View {
         fixed = choice
     }
 
+    /// How much black is laid over the picture, so white text reads on it.
+    ///
+    /// 20 per cent for every picture but Aero. Aero is about twice as light as the others
+    /// (a mean of 100 of 255, against 20 to 60), so it takes 45 per cent.
+    static func shade(_ picture: Backdrop.Choice) -> Double {
+        picture == .aero ? 0.45 : 0x33 / 255
+    }
+
     public var body: some View {
         ZStack {
             // Under the plate, so any screen area the picture does not cover shows the
             // app's colour.
             RPMInk.ground
 
-            Plate(picture: fixed ?? Backdrop.standing(stored: chosen, gold: gold))
+            let picture = fixed ?? Backdrop.standing(stored: chosen, gold: gold)
 
-            Rectangle().fill(Color.black.opacity(0x33 / 255))
+            Plate(picture: picture)
+
+            Rectangle().fill(Color.black.opacity(Self.shade(picture)))
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
@@ -176,6 +187,7 @@ enum Vinyl {
         case .vinyl: "background-vinyl"
         case .pegasus: "background-pegasus"
         case .sheetMusic: "background-sheet-music"
+        case .aero: "background-aero"
         case .gold: "background-vinyl-gold"
         }
     }

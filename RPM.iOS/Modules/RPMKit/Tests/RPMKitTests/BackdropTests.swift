@@ -73,6 +73,19 @@ struct BackdropTests {
         #expect(stored == "gold")
     }
 
+    /// Aero is stored as the Android app stores it, and it stands for everybody.
+    @Test func aeroIsStoredAsTheOtherAppsStoreIt() {
+        #expect(Backdrop.Choice.aero.rawValue == "aero")
+        #expect(Backdrop.Choice.aero.nameKey == "Settings_BackgroundAero")
+        #expect(Backdrop.standing(stored: "aero", gold: false) == .aero)
+        #expect(!Backdrop.Choice.aero.isSupporters)
+    }
+
+    /// The tiles follow the cases' order: Aero comes before Gold, which stays last.
+    @Test func aeroComesBeforeGold() {
+        #expect(Array(Backdrop.Choice.allCases.suffix(2)) == [.aero, .gold])
+    }
+
     @Test func everyChoiceHasItsOwnId() {
         let ids = Backdrop.Choice.allCases.map(\.rawValue)
 

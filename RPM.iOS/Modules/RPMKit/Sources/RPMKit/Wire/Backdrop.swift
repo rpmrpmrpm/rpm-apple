@@ -36,6 +36,10 @@ public enum Backdrop {
         /// A printed score in warm sepia, sharp along the top. Stored as the desktop stores it.
         case sheetMusic = "sheet-music"
 
+        /// Folds of warm copper light on black, with a fine grain. Much lighter than the others,
+        /// so the ground lays more black over it (`VinylGround`).
+        case aero
+
         /// The same three records pressed in gold. The supporter's. The desktop stores its gold
         /// table under the same id.
         case gold
@@ -51,6 +55,7 @@ public enum Backdrop {
             case .vinyl: "Settings_BackgroundVinyl"
             case .pegasus: "Settings_BackgroundPegasus"
             case .sheetMusic: "Settings_BackgroundSheetMusic"
+            case .aero: "Settings_BackgroundAero"
             case .gold: "Settings_BackgroundGold"
             }
         }
