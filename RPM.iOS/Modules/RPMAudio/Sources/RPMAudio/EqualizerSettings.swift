@@ -1,6 +1,6 @@
 import Foundation
 import Observation
-#if os(iOS) || os(tvOS)
+#if os(iOS)
 import AVFAudio
 #endif
 
@@ -85,7 +85,7 @@ public final class EqualizerSettings {
     /// a speaker in another room is told by ``follow()``, which the owner calls when it starts and
     /// ends.
     public func start() {
-        #if os(iOS) || os(tvOS)
+        #if os(iOS)
         if listening == nil {
             // No queue, and a hop with a task: the session posts from its own thread. See
             // `RemoteControl.watchTheSession`.
@@ -121,7 +121,7 @@ public final class EqualizerSettings {
 
     // ── the route ──
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS)
     /// The first output of the session's route: where the music goes, or would go.
     private static var route: AVAudioSessionPortDescription? {
         AVAudioSession.sharedInstance().currentRoute.outputs.first

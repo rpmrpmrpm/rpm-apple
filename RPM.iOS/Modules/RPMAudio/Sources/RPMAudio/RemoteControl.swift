@@ -388,7 +388,6 @@ public final class RemoteControl {
             // An explicit song wears the E after its title here only. See `LockScreenTitle`.
             MPMediaItemPropertyTitle: LockScreenTitle.of(track.title ?? "",
                                                          explicit: marksExplicit && track.isExplicit),
-            MPMediaItemPropertyIsExplicit: marksExplicit && track.isExplicit,
             MPMediaItemPropertyArtist: track.artist ?? "",
             MPMediaItemPropertyAlbumTitle: track.album ?? "",
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
@@ -399,6 +398,11 @@ public final class RemoteControl {
         if player.duration > .zero {
             info[MPMediaItemPropertyPlaybackDuration] = player.duration.seconds
         }
+
+        // The system's own flag as well, for whatever reads it. Only the phone marks.
+        #if os(iOS)
+        if marksExplicit && track.isExplicit { info[MPMediaItemPropertyIsExplicit] = true }
+        #endif
 
         if let artwork {
             let picture = UIImage(cgImage: artwork)
