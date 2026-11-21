@@ -639,6 +639,16 @@ struct RootView: View {
 
         if let name = asked["RPM_OPEN_TAB"], let want = RPMTab(rawValue: name) { tab = want }
 
+        // RPM_SWITCH_TAB: another tab, opened after RPM_OPEN_AFTER seconds, as a press on the tab key
+        // opens it. For looking at the change from one tab to another.
+        if let name = asked["RPM_SWITCH_TAB"], let want = RPMTab(rawValue: name) {
+            let wait = Double(asked["RPM_OPEN_AFTER"] ?? "") ?? 0
+            Task {
+                try? await Task.sleep(for: .seconds(wait))
+                tab = want
+            }
+        }
+
         if asked["RPM_OPEN_PLAYER"] != nil { playing.raise() }
         if let key = asked["RPM_OPEN_ALBUM"], !key.isEmpty { opened = [.album(key)] }
 
@@ -652,7 +662,16 @@ struct RootView: View {
 
         if let name = asked["RPM_OPEN_ARTIST"], !name.isEmpty {
             mode = .artists
-            browsing = [.artist(name)]
+            // RPM_OPEN_AFTER: the page is pushed after this many seconds and slides in, as after a
+            // tap. See the same switch in `AppModel`.
+            if let wait = Double(asked["RPM_OPEN_AFTER"] ?? "") {
+                Task {
+                    try? await Task.sleep(for: .seconds(wait))
+                    browsing = [.artist(name)]
+                }
+            } else {
+                browsing = [.artist(name)]
+            }
         }
 
         // A person's page over the app: "me" for the reader's own, or a user id. It waits for the
@@ -700,11 +719,18 @@ struct RootView: View {
 
     // MARK: The app once there is something to show
 
-    /// A screen, the player and the tab bar. The player and the tab bar below the screen are one
-    /// stack, because they move together.
     /// How long one view of the library takes to fade into another.
     private static let libraryFade: Double = 0.25
 
+    /// How long one tab's page takes to fade into another's.
+    ///
+    /// A push or a pop slides the page, and its background moves with it. A tab change has no
+    /// movement, so without a fade the whole screen, background included, would change in one frame.
+    /// Shorter than ``libraryFade``, because a tab key is pressed to go somewhere at once.
+    private static let tabFade: Double = 0.2
+
+    /// A screen, the player and the tab bar. The player and the tab bar below the screen are one
+    /// stack, because they move together.
     private var shell: some View {
         ZStack {
             // **Home is built once and kept, under whichever tab is shown.** If it were rebuilt
@@ -910,6 +936,10 @@ struct RootView: View {
                     }
             }
         }
+        // The page of the new tab fades in and the old one fades out (``tabFade``): home by its
+        // opacity, the others by the default transition of what the switch puts in and takes out.
+        // Before the tab bar's inset, so the bar keeps its own animation.
+        .animation(.easeInOut(duration: Self.tabFade), value: tab)
         // `spacing: 0`, because the default spacing is eight points. With it, the content of the
         // pages that the shell's inset reaches would end eight points above the bar. That shows a
         // band of background over the bar on every screen outside a navigation stack.

@@ -788,6 +788,12 @@ final class AppModel {
         }
         if let name = ProcessInfo.processInfo.environment["RPM_OPEN_ALBUM_TITLED"],
            let album = titled(name) {
+            // RPM_OPEN_AFTER waits this many seconds first, so the record is pushed over the wall
+            // that is already on screen and slides in, as it does after a tap. Without it the page
+            // is opened under the wait mark and never slides.
+            if let wait = Double(ProcessInfo.processInfo.environment["RPM_OPEN_AFTER"] ?? "") {
+                try? await Task.sleep(for: .seconds(wait))
+            }
             openedByScript = album.key
         }
 
