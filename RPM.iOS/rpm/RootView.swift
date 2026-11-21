@@ -12,7 +12,18 @@ struct RootView: View {
     /// Created by the app delegate, not here. See `RPMDelegate`.
     @State private var model: AppModel
 
-    init(model: AppModel) { _model = State(initialValue: model) }
+    @MainActor
+    init(model: AppModel) {
+        _model = State(initialValue: model)
+        // Play next on a record puts its songs after the song playing, as on one song.
+        _holds = State(initialValue: Holds(playNext: { [model] album in
+            model.player.insertNext(album.tracks)
+        }))
+    }
+
+    /// Quick selection's own picks, the pinned playlists and the long-press menus on records and
+    /// lists, for every page. See ``Holds``.
+    @State private var holds: Holds
     @Environment(\.displayScale) private var displayScale
 
     /// Whether the app is in the foreground.
@@ -131,6 +142,9 @@ struct RootView: View {
         case queue
         case favorites
         case playlist(String)
+
+        /// The songs played lately, newest first. There is only one such list.
+        case history
     }
 
     /// The reviews of each open record, by album key, and the key of the record whose review
@@ -482,6 +496,9 @@ struct RootView: View {
         // What rpm has decided about stations, for every station logo. It is set below the overlays
         // for the same reason. A `StationFace` without it stops the app.
         .environment(model.radioState)
+        // Quick selection's own picks and the pinned lists, for the long-press menus. Set below the
+        // overlays for the same reason.
+        .environment(holds)
         .task {
             LaunchClock.mark("root appeared")
             MainActorWatch.start()
@@ -880,7 +897,9 @@ struct RootView: View {
                                 onReread: { await model.rereadPlaylists() },
                                 onMake: { name, folder, tracks in
                                     await model.makePlaylist(name: name, in: folder, tracks: tracks)
-                                })
+                                },
+                                history: model.playedLately,
+                                onOpenHistory: { lists.append(.history) })
                                 .footRoom(chrome, .insideAStack)
                                 .navigationDestination(for: OpenList.self) { open in
                                     page(open, back: { lists.removeLast() })
@@ -1302,6 +1321,11 @@ struct RootView: View {
         case .favorites:
             // The marked songs: a list that marking a song changes, so it has no menu.
             list(Loc.get("Playlists_FavoriteTracks"), model.favoriteTracks, missing: 0,
+                 adding: nil, picture: nil, showing: nil, menu: .none, back: back)
+
+        case .history:
+            // The songs played lately: a list that playing changes, so it has no menu either.
+            list(Loc.get("Playlists_RecentlyPlayed"), model.playedLately, missing: 0,
                  adding: nil, picture: nil, showing: nil, menu: .none, back: back)
 
         case .playlist(let id):

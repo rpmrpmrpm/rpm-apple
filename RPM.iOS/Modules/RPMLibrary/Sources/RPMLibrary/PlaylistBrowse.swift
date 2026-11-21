@@ -80,6 +80,13 @@ public struct PlaylistRow: Sendable, Equatable, Identifiable {
     public var duration: Duration {
         .seconds(tracks.reduce(0.0) { $0 + ($1.tags?.durationSeconds ?? 0) })
     }
+
+    /// The row of one stored or generated list, wherever it is drawn outside its folder: a list
+    /// pinned to the top of the tab.
+    public static func of(_ set: PlaylistSet) -> PlaylistRow {
+        PlaylistRow(kind: .playlist(set), name: set.name, tracks: set.tracks,
+                    missing: set.missing, playlists: 0)
+    }
 }
 
 /// The playlists tab as it stands at one place in the tree.

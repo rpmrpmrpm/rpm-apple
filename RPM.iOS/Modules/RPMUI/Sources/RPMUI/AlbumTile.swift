@@ -209,6 +209,9 @@ public struct AlbumTile: View {
         // The whole card answers a tap, not just the sleeve: a finger aimed at the
         // title of a record is aimed at the record.
         .contentShape(Rectangle())
+        // A long press offers the record's menu: play next, and Quick selection. On the tile, so
+        // the wall, the home rows, an artist's and a genre's records all carry it.
+        .albumHold(album)
         .task(id: Wanted(album: album.key, band: covers.band(for: art))) { await load() }
     }
 

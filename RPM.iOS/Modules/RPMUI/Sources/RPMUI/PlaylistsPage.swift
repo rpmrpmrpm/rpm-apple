@@ -11,6 +11,12 @@ import RPMLibrary
 /// the same insets as the library's header, because this is a second view of the same
 /// collection and not a different screen.
 ///
+/// **Above the top of the tree stand the songs played lately and the pinned lists** (``heads``):
+/// the history first, then the lists the person pinned, in the order they were pinned. They are
+/// rows in both layouts, so they read as a shelf of their own and not as more covers. A pinned
+/// list is also still in its own folder. A long press on a list offers to pin it, or to let it
+/// go, and to put it on home's Quick selection (``Holds``).
+///
 /// An existing playlist is shown here and cannot be edited. The computer owns these playlists:
 /// its own database holds the track order, and each sync run writes the cloud copy again from
 /// it. An edit made on the phone would be overwritten the next time that computer syncs. The
@@ -41,6 +47,16 @@ public struct PlaylistsPage: View {
     /// Creates a playlist. Returns an error message when it failed, and nil when it is done.
     private let onMake: (String, [String], [CloudTrack]) async -> String?
 
+    /// The songs played lately, newest first (``PlayedLately``). Empty hides the history's row,
+    /// as on a borrowed collection.
+    private let history: [CloudTrack]
+
+    /// Opens the page of those songs.
+    private let onOpenHistory: () -> Void
+
+    /// The pinned lists and the long-press menus. See ``Holds``.
+    @Environment(Holds.self) private var holds: Holds?
+
     /// What the tab is doing when it is not showing rows: the state of the read that this page
     /// waits for. Shared with the TV app; see `RPMSession`.
     public typealias Standing = ReadStanding
@@ -51,7 +67,9 @@ public struct PlaylistsPage: View {
                 albums: [CloudAlbum],
                 onOpen: @escaping (PlaylistRow) -> Void,
                 onReread: @escaping () async -> Void,
-                onMake: @escaping (String, [String], [CloudTrack]) async -> String?) {
+                onMake: @escaping (String, [String], [CloudTrack]) async -> String?,
+                history: [CloudTrack] = [],
+                onOpenHistory: @escaping () -> Void = {}) {
         self.playlists = playlists
         self._mode = mode
         self.queue = queue
@@ -63,6 +81,8 @@ public struct PlaylistsPage: View {
         self.onOpen = onOpen
         self.onReread = onReread
         self.onMake = onMake
+        self.history = history
+        self.onOpenHistory = onOpenHistory
     }
 
     /// The folder that the panel will create a new playlist in, or nil while the panel is
@@ -236,9 +256,12 @@ public struct PlaylistsPage: View {
         // retry key appears only when the read has failed.
         DissolvingScroll {
             LazyVStack(alignment: .leading, spacing: 0) {
+                heads(browse)
+
                 ForEach(browse.rows) { row in
                     Button { press(row) } label: { line(row) }
                         .buttonStyle(RowPress())
+                        .listHold(row.set)
                 }
 
                 footer(browse)
@@ -274,6 +297,7 @@ public struct PlaylistsPage: View {
                 }
                 pinching = Self.bounded(stride * factor)
             },
+            header: { heads(browse) },
             footer: { footer(browse) })
             // A folder is a new place, and a new place starts at the top, as in the rows
             // layout.
@@ -286,6 +310,94 @@ public struct PlaylistsPage: View {
     /// a hundred tiles wide, and a value saved by another build cannot open the tab on a wall
     /// of one tile.
     private static func bounded(_ art: Double) -> Double { min(max(art, 60), 900) }
+
+    // ── the shelf above the tree ──
+
+    /// The pinned lists that this collection holds, in the order they were pinned. A list pinned
+    /// on another collection, or deleted since, is left out.
+    private var pinnedLists: [PlaylistSet] {
+        guard let holds else { return [] }
+        return holds.pinned.compactMap { id in playlists.first { $0.id == id } }
+    }
+
+    /// The songs played lately, then the pinned lists, as rows, with a thin line under them that
+    /// sets them apart from the tree. Only at the top of the tree, where nothing else is open.
+    @ViewBuilder
+    private func heads(_ browse: PlaylistBrowse) -> some View {
+        let pinned = pinnedLists
+        if browse.at.isEmpty && (!history.isEmpty || !pinned.isEmpty) {
+            VStack(alignment: .leading, spacing: 0) {
+                if !history.isEmpty {
+                    Button { onOpenHistory() } label: {
+                        // The cover of the song played last, so the row shows what was just heard.
+                        headLine(title: Loc.get("Playlists_RecentlyPlayed"),
+                                 detail: PlaylistWords.holding(history.count, Self.length(history),
+                                                               missing: 0),
+                                 end: Glyph.history) {
+                            PlaylistSleeve(track: history.first, glyph: Glyph.history,
+                                           edge: 44, corner: 6, mark: 16, covers: covers)
+                        }
+                    }
+                    .buttonStyle(RowPress())
+                }
+
+                ForEach(pinned) { set in
+                    Button { onOpen(PlaylistRow.of(set)) } label: {
+                        headLine(title: set.name,
+                                 detail: PlaylistWords.holding(set.tracks.count, set.duration,
+                                                               missing: set.missing),
+                                 end: Glyph.pin) {
+                            PlaylistSleeve(list: set.picture, track: set.tracks.first,
+                                           glyph: Glyph.record, edge: 44, corner: 6, mark: 16,
+                                           covers: covers, framed: FramedList.of(set))
+                        }
+                    }
+                    .buttonStyle(RowPress())
+                    .listHold(set)
+                }
+
+                Rectangle()
+                    .fill(RPMInk.white(0x1A / 255))
+                    .frame(height: 1)
+                    .padding(.horizontal, RPMLayout.margin)
+                    .padding(.vertical, 8)
+            }
+        }
+    }
+
+    /// How long a run of songs plays, as a list's line says it.
+    private static func length(_ tracks: [CloudTrack]) -> Duration {
+        .seconds(tracks.reduce(0.0) { $0 + ($1.tags?.durationSeconds ?? 0) })
+    }
+
+    /// One row of ``heads``: a row like the tree's own, with its own picture and a quiet mark at
+    /// its end that says why it stands up here.
+    private func headLine<Picture: View>(title: String, detail: String, end: String,
+                                         @ViewBuilder picture: () -> Picture) -> some View {
+        HStack(spacing: 12) {
+            picture()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(RPMFont.display(15))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                Text(detail)
+                    .font(RPMFont.display(11))
+                    .foregroundStyle(RPMInk.white(0x88 / 255))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(end)
+                .font(RPMFont.icon(12))
+                .foregroundStyle(RPMInk.white(0x55 / 255))
+        }
+        .padding(.horizontal, RPMLayout.margin)
+        .frame(minHeight: 64)
+        .contentShape(Rectangle())
+    }
 
     /// The row from the computer's drawer, on the phone: the square cover, the name, and one
     /// quiet line under it. **There is no chevron except on a folder.** Every other row opens

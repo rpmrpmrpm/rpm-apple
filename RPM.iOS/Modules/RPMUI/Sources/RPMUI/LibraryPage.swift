@@ -656,6 +656,7 @@ public struct LibraryPage: View {
                     group("records", Loc.get("Viz_BrowseAlbums"), records) { album in
                         Button { onOpen(album) } label: { record(album) }
                             .buttonStyle(RowPress())
+                            .albumHold(album)
                     }
 
                     group("songs", Loc.get("Album_Tracks"), found) { hit in
@@ -674,6 +675,7 @@ public struct LibraryPage: View {
                     group("playlists", Loc.get("Playlists_Title"), lists) { list in
                         Button { onOpenList(list) } label: { listRow(list) }
                             .buttonStyle(RowPress())
+                            .listHold(list)
                     }
 
                     group("genres", Loc.get("Genres_Title"), genres) { genre in

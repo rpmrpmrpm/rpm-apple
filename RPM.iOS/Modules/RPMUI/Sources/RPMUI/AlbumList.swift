@@ -113,6 +113,7 @@ struct AlbumList: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .albumHold(album)
             .padding(.bottom, 6)
 
             ForEach(Array(album.tracks.enumerated()), id: \.element.id) { at, track in

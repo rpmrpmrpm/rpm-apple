@@ -136,6 +136,9 @@ final class AppModel {
     let radioListens = RadioListens(file: RadioListens.defaultFile)
 
     var homeStations: [String: RadioStation] { session.homeStations }
+
+    /// The songs played lately, newest first. See ``LibrarySession/playedLately``.
+    var playedLately: [CloudTrack] { session.playedLately }
     var home: HomeScreen? { session.home }
     var played: [String: PlayLog.Played] { session.played }
 
@@ -396,7 +399,11 @@ final class AppModel {
         // does not depend on the order, because a play is an increment and a stamp is a maximum.
         player.onPlayCounted = { [weak self] counted in
             guard let self else { return }
-            Task { await self.plays.note(rpmId: counted.rpmId, at: counted.at) }
+            Task {
+                await self.plays.note(rpmId: counted.rpmId, at: counted.at)
+                // The history at the top of the playlists tab, with this song first.
+                await self.session.readPlayedLately()
+            }
             // What is played at which time of day, for the banner's mood list.
             Task { @MainActor in self.session.noteDayPart(rpmId: counted.rpmId, at: counted.at) }
         }

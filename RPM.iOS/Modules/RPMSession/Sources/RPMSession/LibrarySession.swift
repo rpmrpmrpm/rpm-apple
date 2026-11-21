@@ -105,6 +105,19 @@ public final class LibrarySession {
     /// The stations named on home, keyed by uuid, as the log had them when home was worked out.
     public private(set) var homeStations: [String: RadioStation] = [:]
 
+    /// The songs played lately, newest first, for the history at the top of the playlists tab
+    /// (``PlayedLately``). Empty on a borrowed shelf, which holds none of this listener's plays.
+    /// Worked out with home, and again after every play that counted (``readPlayedLately()``).
+    public private(set) var playedLately: [CloudTrack] = []
+
+    /// Works out ``playedLately`` again from the play log as it is now, so a song heard a moment
+    /// ago is first at once.
+    public func readPlayedLately() async {
+        let played = await plays.everythingPlayed()
+        // Read after the `await`: a switch to another shelf may have happened during it.
+        playedLately = viewing.isOwn ? PlayedLately.of(albums, played: played) : []
+    }
+
     /// The seed for the home draw. It is set once per launch, so home changes between launches
     /// and stays the same during a session.
     private let homeDraw = Int(Date().timeIntervalSince1970)
@@ -284,6 +297,7 @@ public final class LibrarySession {
         playlistStanding = .reading
         home = nil
         moment = nil
+        playedLately = []
         played = [:]
         homeStations = [:]
         who = nil
@@ -345,6 +359,7 @@ public final class LibrarySession {
         if case .reading = wallStanding { return }
 
         let shelf = HomeAlbums.of(albums, played: played)
+        playedLately = viewing.isOwn ? PlayedLately.of(albums, played: played) : []
         // What was played last, newest first (HomeSongs.playedLast).
         // Three selections' worth: each record is offered once, and the songs played last are often
         // several from one record.

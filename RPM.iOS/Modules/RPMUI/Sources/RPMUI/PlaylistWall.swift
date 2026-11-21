@@ -63,7 +63,7 @@ struct PlaylistLayoutKey: View {
 /// **It draws the rows it is given and decides nothing.** ``PlaylistBrowse`` decides which rows
 /// belong to the open folder, and the rows layout is built from the same answer, so the two
 /// layouts always agree about what is in a folder.
-struct PlaylistWall<Footer: View>: View {
+struct PlaylistWall<Header: View, Footer: View>: View {
     let rows: [PlaylistRow]
     let covers: any CoverStore
 
@@ -77,6 +77,11 @@ struct PlaylistWall<Footer: View>: View {
     /// A pinch, given as a factor on the target stride, and nil when the fingers lift. The
     /// records wall reports its pinch the same way. The wall does not own the size it is drawn at.
     let onPinch: (Double?) -> Void
+
+    /// The rows over the covers: the page's shelf of the songs played lately and the pinned lists.
+    /// Drawn as rows in this layout too, across the whole width, so they read as a shelf of their
+    /// own and not as more covers.
+    @ViewBuilder let header: () -> Header
 
     /// The text under the last tile. It belongs to the page and not to the wall: an empty folder
     /// and an account with no playlists at all are two different cases, and only the page knows
@@ -94,6 +99,8 @@ struct PlaylistWall<Footer: View>: View {
                 minColumns: AlbumWall.minColumns)
 
             DissolvingScroll {
+                header()
+
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: AlbumWall.gutter),
                                    count: columns),
@@ -102,6 +109,8 @@ struct PlaylistWall<Footer: View>: View {
                     ForEach(rows) { row in
                         PlaylistTile(row: row, art: art, covers: covers)
                             .onTapGesture { onPress(row) }
+                            // Pin it, or put it on Quick selection. See ``Holds``.
+                            .listHold(row.set)
                     }
                 }
                 .padding(.horizontal, AlbumWall.edge)

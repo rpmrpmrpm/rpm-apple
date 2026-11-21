@@ -126,6 +126,9 @@ public struct HomePage: View {
     @Environment(RadioState.self) private var radioState
     @Environment(\.rpmReach) private var reach
 
+    /// What the person put on Quick selection themselves. See ``Holds``.
+    @Environment(Holds.self) private var holds: Holds?
+
     /// The records by key, so a row of keys can be drawn without searching the library for each
     /// card.
     private var byKey: [String: CloudAlbum] {
@@ -146,11 +149,34 @@ public struct HomePage: View {
         return Loc.get(lent ? "Playlists_Title" : "Home_MadeForYou")
     }
 
+    /// The quick selection as it is drawn: the screen's suggestions with what the person added
+    /// laid in, after the suggested mixtapes (``QuickRefs/merged(_:added:most:resolve:refOf:)``).
+    private func picks(of screen: HomeScreen, byKey: [String: CloudAlbum],
+                       listsByName: [String: PlaylistSet]) -> [QuickPick] {
+        guard let holds, !holds.quickAdded.isEmpty else { return screen.quickPicks }
+
+        let added = holds.quickAdded
+        let found = tracks(Set(added.compactMap(QuickRefs.songId)))
+        let names = Dictionary(lists.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+
+        return QuickRefs.merged(
+            screen.quickPicks, added: added, most: QuickPicks.count,
+            resolve: { ref in
+                QuickRefs.pick(ref, hasSong: { found[$0] != nil }, hasAlbum: { byKey[$0] != nil },
+                               listName: { names[$0] })
+            },
+            refOf: { pick in QuickRefs.ref(of: pick, listId: { listsByName[$0]?.id }) })
+    }
+
     /// Only the songs that the quick selection names. One pass over the listing finds the dozen
     /// or so tracks on screen, so there is no table of every song in the collection.
-    private func songs(of screen: HomeScreen) -> [String: CloudTrack] {
+    private func songs(of picks: [QuickPick]) -> [String: CloudTrack] {
         // A radio entry is keyed by its song too, and drawn from it.
-        let wanted = Set(screen.quickPicks.filter { $0.kind == .song || $0.kind == .radio }.map(\.key))
+        tracks(Set(picks.filter { $0.kind == .song || $0.kind == .radio }.map(\.key)))
+    }
+
+    /// The songs with these cloud ids, found in one pass over the listing.
+    private func tracks(_ wanted: Set<String>) -> [String: CloudTrack] {
         guard !wanted.isEmpty else { return [:] }
 
         var found: [String: CloudTrack] = [:]
@@ -257,9 +283,9 @@ public struct HomePage: View {
     private func warm(_ screen: HomeScreen) async {
         let byKey = self.byKey
         let listsByName = self.listsByName
-        let songs = songs(of: screen)
-        let quick = HomePicksRow.drawable(screen.quickPicks, albums: byKey, songs: songs,
-                                          stations: stations)
+        let picks = picks(of: screen, byKey: byKey, listsByName: listsByName)
+        let songs = songs(of: picks)
+        let quick = HomePicksRow.drawable(picks, albums: byKey, songs: songs, stations: stations)
 
         var early: [Early] = []
         var logos: [RadioStation] = []
@@ -348,9 +374,9 @@ public struct HomePage: View {
         // them inside the rows loop would rebuild them for every key.
         let byKey = self.byKey
         let listsByName = self.listsByName
-        let songs = songs(of: screen)
-        let quick = HomePicksRow.drawable(screen.quickPicks, albums: byKey, songs: songs,
-                                          stations: stations)
+        let picks = picks(of: screen, byKey: byKey, listsByName: listsByName)
+        let songs = songs(of: picks)
+        let quick = HomePicksRow.drawable(picks, albums: byKey, songs: songs, stations: stations)
 
         return Group {
             // Starts at the top of the screen, under the status bar. Content that scrolls up behind
@@ -603,6 +629,8 @@ struct HomeListsRow: View {
                             .frame(width: HomeRowView.art, alignment: .leading)
                         }
                         .buttonStyle(.plain)
+                        // Pin it, or put it on Quick selection. See ``Holds``.
+                        .listHold(lists[name])
                     }
                 }
                 .padding(.horizontal, RPMLayout.margin)
@@ -661,8 +689,9 @@ struct HomePicksRow: View {
     let onPlay: ([CloudTrack], Int, Tapped) -> Void
     let onTune: (RadioStation) -> Void
 
-    /// The long-press menu on a song's line, the same as every other song row in the app.
-    /// Records, playlists and stations have no menu on the phone.
+    /// The long-press menu on a song's line, the same as every other song row in the app. A
+    /// mixtape's line has it too: it is named for its song, and holding it offers that song.
+    /// Records and playlists have their own (``Holds``), and a station has none.
     let songMenu: TrackMenu
 
     /// What a radio entry does. See ``EnvironmentValues/startRadio``.
@@ -827,6 +856,7 @@ struct HomePicksRow: View {
                          glyph: Glyph.mixtape, track: track, list: nil)
                 }
                 .buttonStyle(.plain)
+                .trackActions(track, songMenu, swipes: .menuOnly)
             }
 
         case .album:
@@ -838,6 +868,7 @@ struct HomePicksRow: View {
                          explicit: album.isExplicit)
                 }
                 .buttonStyle(.plain)
+                .albumHold(album)
             }
 
         case .playlist:
@@ -851,6 +882,7 @@ struct HomePicksRow: View {
                      framed: FramedList.of(set))
             }
             .buttonStyle(.plain)
+            .listHold(set)
 
         case .station:
             if let station = stations[pick.key] {

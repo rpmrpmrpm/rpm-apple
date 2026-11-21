@@ -1,5 +1,6 @@
 import SwiftUI
 import RPMKit
+import RPMLibrary
 
 /// The actions available on a song wherever it is listed: play it next, mark it as a
 /// favourite, and add it to a playlist.
@@ -81,6 +82,9 @@ public struct TrackActions: ViewModifier {
     /// Start radio, offered on every row where the app has set it. See ``EnvironmentValues/startRadio``.
     @Environment(\.startRadio) private var startRadio
 
+    /// Quick selection, offered on every row where the app has set it. See ``Holds``.
+    @Environment(Holds.self) private var holds: Holds?
+
     public init(track: CloudTrack, marked: Bool, mine: Bool, upNext: UpNext, swipes: Swipes,
                 onMark: @escaping (CloudTrack, Bool) -> Void,
                 onFile: @escaping (CloudTrack) -> Void) {
@@ -120,6 +124,12 @@ public struct TrackActions: ViewModifier {
                     Button { startRadio(track) } label: {
                         Label(Loc.get("Track_StartMixtape"), systemImage: "recordingtape")
                     }
+                }
+
+                // Add to home's Quick selection, or take it out. On a borrowed row too: it is kept
+                // on this phone and writes nothing to anybody's collection.
+                if let holds {
+                    HoldItems.quick(holds, ref: QuickRefs.of(song: track.rpmId))
                 }
 
                 // A borrowed row gets only the action that works on it. The other
