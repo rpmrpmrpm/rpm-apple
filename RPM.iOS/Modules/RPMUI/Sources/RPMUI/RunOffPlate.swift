@@ -11,7 +11,8 @@ import CoreGraphics
 /// card shows the result.
 ///
 /// The steps are the live view's, in the same order and at the same radii: the face (the
-/// photograph filled, held back by ``HomeFeatureCard/held``, the ``HomeFeatureCard/foot`` wash),
+/// photograph filled, and in night mode held back by ``HomeFeatureCard/held`` under the
+/// ``HomeFeatureCard/foot`` wash),
 /// the two blurs towards the foot, the face turned over under itself, and the blur over the seam.
 /// Blending is done in gamma-encoded sRGB, which is what Core Animation blends in, so the two
 /// agree.
@@ -28,6 +29,10 @@ struct RunOffPlate: Sendable {
         let blurFrom: Double
         let reflection: RunOffReflection
         let scale: Double
+
+        /// Whether the face is drawn for night mode: held back and washed toward its foot. Outside
+        /// night mode the photograph is drawn as it is. See ``HomeFeatureCard``.
+        let night: Bool
     }
 
     let ask: Ask
@@ -58,7 +63,8 @@ struct RunOffPlate: Sendable {
         let total = plate + depth
         guard width > 0, plate > 0 else { return nil }
 
-        guard let face = face(picture, width: Int(width), height: Int(plate)) else { return nil }
+        guard let face = face(picture, width: Int(width), height: Int(plate), night: ask.night)
+        else { return nil }
         let sharp = CIImage(cgImage: face)
 
         // The card as it shows: sharp, then softened towards the foot in two steps.
@@ -111,9 +117,9 @@ struct RunOffPlate: Sendable {
         return context.createCGImage(finished, from: canvas, format: .RGBA8, colorSpace: sRGB)
     }
 
-    /// The photograph filled and centred, held back, and the foot wash over it. This is what the
-    /// live view calls `face`.
-    private static func face(_ picture: CGImage, width: Int, height: Int) -> CGImage? {
+    /// The photograph filled and centred, and in night mode held back with the foot wash over it.
+    /// This is what the live view calls `face`.
+    private static func face(_ picture: CGImage, width: Int, height: Int, night: Bool) -> CGImage? {
         guard let cg = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
                                  bytesPerRow: 0, space: sRGB,
                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
@@ -125,6 +131,10 @@ struct RunOffPlate: Sendable {
         cg.interpolationQuality = .high
         cg.draw(picture, in: CGRect(x: (w - drawn.width) / 2, y: (h - drawn.height) / 2,
                                     width: drawn.width, height: drawn.height))
+
+        // Outside night mode the photograph is drawn as it is. The card lays its own shade over
+        // the words and the mirror (``HomeFeatureCard/dayFoot``).
+        guard night else { return cg.makeImage() }
 
         cg.setFillColor(CGColor(gray: 0, alpha: HomeFeatureCard.held))
         cg.fill(CGRect(x: 0, y: 0, width: w, height: h))

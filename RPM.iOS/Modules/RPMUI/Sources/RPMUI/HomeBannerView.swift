@@ -509,6 +509,12 @@ struct HomeFeatureCard: View {
 
     @Environment(\.displayScale) private var displayScale
 
+    /// Whether the photograph is drawn darker. In night mode it is held back everywhere and washed
+    /// toward its foot (``held``, ``foot``), and the mirror carries the same washes. Outside it the
+    /// photograph is shown as it is, as on the artist page, with a shade only behind the words
+    /// (``dayFoot``) and the mirror held down to the same strength (``dayShade``). See ``NightMode``.
+    @AppStorage(NightMode.key) private var night = false
+
     /// Whether the photograph has been looked for and the result is known.
     ///
     /// **This is different from whether a photograph EXISTS.** A card that has not finished
@@ -549,6 +555,12 @@ struct HomeFeatureCard: View {
                     .growsWithPull(plate: plate,
                                    anchor: UnitPoint(x: 0.5, y: plate / (plate + mirror)),
                                    grows: live)
+
+                // The shade at the top, under the status bar and the page's title, so the clock
+                // and the title read on a light photograph. In both modes.
+                Self.topShade
+                    .frame(width: width, height: min(Self.topFade, plate))
+                    .allowsHitTesting(false)
 
                 ZStack(alignment: .bottomLeading) {
                     Color.clear
@@ -735,6 +747,19 @@ struct HomeFeatureCard: View {
                 }
                 .frame(width: width)
             }
+
+            // Outside night mode, the shade behind the words at the card's foot, over the blur,
+            // and the mirror under the card held down as dark as the foot ends. The two meet at
+            // the same strength, so no line shows where the card ends. Inside the mirror's fade,
+            // so the darkening fades out with the reflection. A card on a room is shaded the same.
+            if !night {
+                VStack(spacing: 0) {
+                    Self.dayFoot.frame(height: plate)
+                    Color.black.opacity(Self.dayShade).frame(height: mirror)
+                }
+                .frame(width: width, height: plate + mirror, alignment: .top)
+                .allowsHitTesting(false)
+            }
         }
         .frame(width: width, height: plate + mirror, alignment: .top)
         .mirrorFade(above: plate, depth: mirror)
@@ -753,7 +778,7 @@ struct HomeFeatureCard: View {
         guard let picture, width > 0 else { return nil }
         return RunOffPlate.Ask(picture: ObjectIdentifier(picture), width: width, plate: plate,
                                depth: mirror, blurFrom: Self.blurFrom, reflection: Self.reflection,
-                               scale: displayScale)
+                               scale: displayScale, night: night)
     }
 
     /// Draws the plate described by ``bakeAsk``. It runs again whenever that value changes. The
@@ -791,15 +816,16 @@ struct HomeFeatureCard: View {
                             .aspectRatio(contentMode: .fill)
                     }
                     .clipped()
-                    // **The picture is darkened everywhere.** See ``held``, which the reflection
-                    // under the banner also uses.
-                    .overlay { Color.black.opacity(Self.held) }
+                    // **In night mode the picture is darkened everywhere.** See ``held``, which
+                    // the reflection under the banner also carries.
+                    .overlay { if night { Color.black.opacity(Self.held) } }
                     .transition(.opacity)
             }
 
-            // A wash from the bottom up, whatever the picture is. The text is drawn on it, so a
-            // title over a bright photograph can still be read.
-            Self.foot
+            // In night mode, a wash from the bottom up, whatever the picture is. The text is drawn
+            // on it, so a title over a bright photograph can still be read. Outside night mode
+            // the words have their own shade, over the run-off (``dayFoot``).
+            if night { Self.foot }
         }
     }
 
@@ -829,6 +855,35 @@ struct HomeFeatureCard: View {
     /// `nonisolated` because `RunOffPlate` reads it while drawing off the main actor, and a
     /// constant `Double` can be read safely from any thread.
     nonisolated static let held: Double = 0.2
+
+    /// Outside night mode, how dark the shade is at the card's foot, and how dark the mirror under
+    /// the card is. **The two must be the same**: the foot's last row and the mirror's first row
+    /// are the same rows of the photograph, and a different shade on each side shows as a hard
+    /// line where the card ends.
+    static let dayShade: Double = 0.45
+
+    /// Outside night mode, the shade behind the words at the card's foot: nothing over the upper
+    /// half, so the photograph shows as the artist page shows it, and enough under the kicker,
+    /// the title and the artist for white letters with their shadow to read on a light
+    /// photograph. It ends at ``dayShade``, where the mirror continues it.
+    static let dayFoot = LinearGradient(
+        stops: [.init(color: .clear, location: 0),
+                .init(color: .clear, location: 0.5),
+                .init(color: .black.opacity(0.22), location: 0.72),
+                .init(color: .black.opacity(dayShade), location: 1)],
+        startPoint: .top, endPoint: .bottom)
+
+    /// How far down the shade at the top of a card runs. The clock, the other status icons and
+    /// the page's title are white and stand on the card. On a light photograph they cannot be
+    /// read without it.
+    static let topFade: Double = 140
+
+    /// The shade at the top of a card: 0.45 black at the top, easing to clear at ``topFade``.
+    static let topShade = LinearGradient(
+        stops: [.init(color: .black.opacity(0.45), location: 0),
+                .init(color: .black.opacity(0.45 * 0.55), location: 0.45),
+                .init(color: .clear, location: 1)],
+        startPoint: .top, endPoint: .bottom)
 
     private var writing: some View {
         HStack(alignment: .bottom, spacing: HomeBannerMetrics.margin) {
