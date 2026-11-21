@@ -1006,7 +1006,7 @@ struct RootView: View {
               }
               .environment(\.roomsRest, page != tab || playing.up)
               .offset(x: TabSlide.place(of: page.place, shown: tab.place) * pageWidth)
-              .transition(.offset(x: TabSlide.entry(from: cameFrom.place, to: page.place) * pageWidth))
+              .transition(AnyTransition.offset(x: TabSlide.entry(from: cameFrom.place, to: page.place) * pageWidth))
               .allowsHitTesting(page == tab)
               .accessibilityHidden(page != tab)
             }

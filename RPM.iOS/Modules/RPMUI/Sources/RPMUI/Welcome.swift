@@ -104,8 +104,9 @@ public struct Welcome: View {
                 }
             }
             .id(page)
-            .transition(.asymmetric(insertion: .opacity.animation(.easeOut(duration: 0.28).delay(0.17)),
-                                    removal: .opacity.animation(.easeIn(duration: 0.17))))
+            .transition(AnyTransition.asymmetric(
+                insertion: AnyTransition.opacity.animation(.easeOut(duration: 0.28).delay(0.17)),
+                removal: AnyTransition.opacity.animation(.easeIn(duration: 0.17))))
         }
         .background(Color.black.ignoresSafeArea())
         // Every touch stops here: the app under the welcome is not in play yet.
