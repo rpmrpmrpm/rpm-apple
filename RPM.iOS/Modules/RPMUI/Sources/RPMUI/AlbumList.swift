@@ -98,7 +98,7 @@ struct AlbumList: View {
                                    corner: 6, mark: 22, covers: covers)
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(album.album)
+                        MarkedTitle(album.album, explicit: album.isExplicit, edge: 15)
                             .font(RPMFont.displayBold(17))
                             .foregroundStyle(.white)
                             .lineLimit(2)
@@ -144,7 +144,7 @@ struct AlbumList: View {
                 .frame(width: 24, alignment: .trailing)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(track.title ?? "")
+                MarkedTitle(track.title ?? "", explicit: track.isExplicit)
                     .font(RPMFont.display(15))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -184,7 +184,7 @@ struct AlbumList: View {
                                covers: covers)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(track.title ?? "")
+                    MarkedTitle(track.title ?? "", explicit: track.isExplicit)
                         .font(RPMFont.display(16))
                         .foregroundStyle(.white)
                         .lineLimit(1)

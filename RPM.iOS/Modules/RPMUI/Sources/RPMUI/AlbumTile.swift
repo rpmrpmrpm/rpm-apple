@@ -184,7 +184,8 @@ public struct AlbumTile: View {
 
             Spacer().frame(height: AlbumCaption.artGap)
 
-            Text(album.album)
+            // The E after the title of an explicit record. See ``MarkedTitle``.
+            MarkedTitle(album.album, explicit: album.isExplicit, edge: caption.badge)
                 .font(.system(size: caption.album, weight: .medium))
                 .lineLimit(1)
                 .feathered()

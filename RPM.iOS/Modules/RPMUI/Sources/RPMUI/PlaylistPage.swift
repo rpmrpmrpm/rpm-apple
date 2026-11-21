@@ -708,13 +708,7 @@ public struct PlaylistPage: View {
 
                     // The E (explicit) mark after the title, inside the layout, so a long title is
                     // shortened to leave room for it and does not run under it.
-                    if track.isExplicit {
-                        Text("E")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(RPMInk.ground)
-                            .frame(width: 14, height: 14)
-                            .background(RoundedRectangle(cornerRadius: 3).fill(RPMInk.white(0xAA / 255)))
-                    }
+                    if track.isExplicit { ExplicitMark() }
                 }
 
                 Text(said(track))

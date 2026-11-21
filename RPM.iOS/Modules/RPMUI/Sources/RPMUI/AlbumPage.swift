@@ -328,7 +328,7 @@ public struct AlbumPage: View {
                 // point less height than its lines need drops a whole line and ends in "...". The
                 // list row can be measured a little short while the about text and the page width
                 // settle, and the title is the first thing it would take that from.
-                Text(album.album)
+                MarkedTitle(album.album, explicit: album.isExplicit, edge: 18)
                     .font(RPMFont.displayBold(24))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
@@ -765,13 +765,7 @@ public struct AlbumPage: View {
                     // The E after the title rather than before it, and in the flow so
                     // a long title is trimmed to make room for it instead of running
                     // underneath it.
-                    if track.isExplicit {
-                        Text("E")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(RPMInk.ground)
-                            .frame(width: 14, height: 14)
-                            .background(RoundedRectangle(cornerRadius: 3).fill(RPMInk.white(0xAA / 255)))
-                    }
+                    if track.isExplicit { ExplicitMark() }
                 }
 
                 // The track's own artist, which on a compilation is not the album's.

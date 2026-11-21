@@ -806,7 +806,8 @@ struct HomePicksRow: View {
                 Button { play(track) } label: {
                     line(title: track.title ?? "",
                          subtitle: songLine == .record ? track.album : track.artist,
-                         glyph: Glyph.song, track: track, list: nil)
+                         glyph: Glyph.song, track: track, list: nil,
+                         explicit: track.isExplicit)
                 }
                 .buttonStyle(.plain)
                 // **The menu only.** Every line of the panels is inside one list row on an
@@ -833,7 +834,8 @@ struct HomePicksRow: View {
                 Button { onOpen(album) } label: {
                     line(title: album.album,
                          subtitle: Self.kindLine("Home_QuickAlbum", album.artist),
-                         glyph: Glyph.record, track: album.tracks.first, list: nil)
+                         glyph: Glyph.record, track: album.tracks.first, list: nil,
+                         explicit: album.isExplicit)
                 }
                 .buttonStyle(.plain)
             }
@@ -908,15 +910,17 @@ struct HomePicksRow: View {
         return Loc.get("Home_QuickKindJoin", Loc.get(kindKey), rest)
     }
 
+    /// - Parameter explicit: whether the E goes after the title: on a song and on a record. A
+    ///   mixtape is a radio and not the song it starts from, so it has none.
     private func line(title: String, subtitle: String?, glyph: String,
                       track: CloudTrack?, list: ListPicture?,
-                      framed: FramedList? = nil) -> some View {
+                      framed: FramedList? = nil, explicit: Bool = false) -> some View {
         HStack(spacing: 12) {
             PlaylistSleeve(list: list, track: track, glyph: glyph,
                            edge: Self.art, corner: 5, mark: 15, covers: covers, framed: framed)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                MarkedTitle(title, explicit: explicit, edge: 13)
                     .font(.system(size: 14, weight: .medium))
                     .lineLimit(1)
 

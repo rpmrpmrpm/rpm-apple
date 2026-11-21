@@ -28,6 +28,10 @@ public struct CloudAlbum: Sendable, Equatable, Identifiable {
     public var duration: Duration {
         .seconds(tracks.reduce(0.0) { $0 + ($1.tags?.durationSeconds ?? 0) })
     }
+
+    /// Whether the E goes beside the record's title: when any of its songs is explicit, as
+    /// streaming services mark a record and as the desktop decides.
+    public var isExplicit: Bool { tracks.contains { $0.isExplicit } }
 }
 
 /// Turning a listing into a wall.

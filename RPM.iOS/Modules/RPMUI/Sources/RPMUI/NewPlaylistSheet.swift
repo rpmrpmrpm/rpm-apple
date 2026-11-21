@@ -313,7 +313,8 @@ public struct NewPlaylistSheet: View {
                            corner: 6, mark: 16, covers: covers)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(row.track.title?.isEmpty == false ? row.track.title! : row.album.album)
+                MarkedTitle(row.track.title?.isEmpty == false ? row.track.title! : row.album.album,
+                            explicit: row.track.isExplicit, edge: 13)
                     .font(RPMFont.display(14))
                     .foregroundStyle(.white)
                     .lineLimit(1)

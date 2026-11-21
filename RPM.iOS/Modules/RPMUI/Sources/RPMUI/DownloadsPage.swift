@@ -147,7 +147,7 @@ public struct DownloadsPage: View {
             RowSleeve(album: row.album, covers: covers)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(row.album.album)
+                MarkedTitle(row.album.album, explicit: row.album.isExplicit)
                     .font(RPMFont.display(15))
                     .foregroundStyle(.white)
                     .lineLimit(1)

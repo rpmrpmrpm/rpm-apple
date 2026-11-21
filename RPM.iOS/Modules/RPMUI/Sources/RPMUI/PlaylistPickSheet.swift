@@ -131,7 +131,8 @@ public struct PlaylistPickSheet: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
-                    Text(track.title ?? "").rpmKicker().lineLimit(1)
+                    MarkedTitle(track.title ?? "", explicit: track.isExplicit, edge: 11)
+                        .rpmKicker().lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

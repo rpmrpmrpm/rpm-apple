@@ -762,7 +762,7 @@ public struct LibraryPage: View {
     /// The shape every row of the results shares: the playing mark in the margin, a 40-point
     /// picture, two lines, and whatever goes at the end.
     private func entry<Picture: View, End: View>(
-        _ title: String, _ line: String, playing: Bool = false,
+        _ title: String, _ line: String, playing: Bool = false, explicit: Bool = false,
         @ViewBuilder picture: () -> Picture,
         @ViewBuilder end: () -> End
     ) -> some View {
@@ -778,7 +778,8 @@ public struct LibraryPage: View {
                 .padding(.leading, 9)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                // The E after an explicit song's or record's title. See ``MarkedTitle``.
+                MarkedTitle(title, explicit: explicit)
                     .font(RPMFont.display(15))
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -801,10 +802,10 @@ public struct LibraryPage: View {
 
     /// A row with nothing at its end.
     private func entry<Picture: View>(
-        _ title: String, _ line: String, playing: Bool = false,
+        _ title: String, _ line: String, playing: Bool = false, explicit: Bool = false,
         @ViewBuilder picture: () -> Picture
     ) -> some View {
-        entry(title, line, playing: playing, picture: picture) { EmptyView() }
+        entry(title, line, playing: playing, explicit: explicit, picture: picture) { EmptyView() }
     }
 
     /// An artist found: their photograph where there is one, in a circle, their name, and how many
@@ -844,7 +845,7 @@ public struct LibraryPage: View {
     /// row: a song row has nothing at its end, and the track count shows that this row is a
     /// record and not a song with a long title.
     private func record(_ album: CloudAlbum) -> some View {
-        entry(album.album, album.artist) {
+        entry(album.album, album.artist, explicit: album.isExplicit) {
             SearchSleeve(album: album, covers: covers)
         } end: {
             Text(Loc.get("Rpm_Album_Tracks", album.tracks.count))
@@ -870,7 +871,8 @@ public struct LibraryPage: View {
     /// Finding it per row would scan the whole library once per row, which costs most of a
     /// frame on any collection of real size. See ``SongSearch/SongHit``.
     private func row(_ hit: SongSearch.SongHit) -> some View {
-        entry(hit.track.title ?? "", hit.track.artist ?? "", playing: hit.track.rpmId == playing) {
+        entry(hit.track.title ?? "", hit.track.artist ?? "", playing: hit.track.rpmId == playing,
+              explicit: hit.track.isExplicit) {
             SearchSleeve(album: hit.album, covers: covers)
         }
     }
