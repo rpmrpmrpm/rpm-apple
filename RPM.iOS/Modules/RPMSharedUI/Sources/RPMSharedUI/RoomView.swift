@@ -108,6 +108,27 @@ public struct RoomView: View {
     /// current wall clock time.
     @State private var from = Date()
 
+    /// Whether the rooms here rest. See ``SwiftUI/EnvironmentValues/roomsRest``.
+    @Environment(\.roomsRest) private var resting
+
+    /// When this room last stopped, or nil while it moves. While it rests the frame is drawn at
+    /// this time, so the room keeps the picture it stopped on.
+    @State private var stoppedAt: Date?
+
+    /// How long this room has rested in all, in seconds. Taken off its clock, so a room that moves
+    /// again goes on from the picture it stopped on and does not jump. Only for a room with its
+    /// own clock (``Zero/whenShown``): rooms on a shared clock must keep drawing the same frame as
+    /// each other, so they keep the wall clock and jump on together.
+    @State private var restedFor: TimeInterval = 0
+
+    /// Whether the clock moves now.
+    ///
+    /// A card's room rests while the phone saves power, and keeps its picture. The stage's room
+    /// keeps moving, at a lower rate (``PowerSaving``).
+    private var moving: Bool {
+        running && !resting && !(breathes && PowerSaving.shared.isOn)
+    }
+
     /// The date at which this room's clock starts.
     private var start: Date {
         switch zero {
@@ -150,7 +171,11 @@ public struct RoomView: View {
     public var body: some View {
         // The timeline is paused and not removed, so a room that comes back is the same room a
         // moment later and does not start again from zero.
-        TimelineView(.animation(paused: !running)) { timeline in
+        //
+        // While the phone saves power, the stage's room is drawn at a lower rate. It still moves,
+        // because it is lit by the music, but a full-screen program on every frame of the display
+        // is what the phone cannot spare then.
+        TimelineView(.animation(minimumInterval: PowerSaving.shared.frameGap, paused: !moving)) { timeline in
             // **Two clocks, for two different things.** The timeline's date measures how far the
             // room has drifted since it appeared, and it needs its own zero. The ramp is read in
             // the reader's monotonic seconds, because its readings are stamped with that clock.
@@ -159,7 +184,10 @@ public struct RoomView: View {
 
             // A card uses its own faster clock, and the swell is read from the same clock. The
             // envelopes and the figures must not be read at two different times.
-            let ran = timeline.date.timeIntervalSince(start) + lead
+            //
+            // A resting room is drawn at the moment it stopped, whatever the timeline says.
+            let date = stoppedAt ?? timeline.date
+            let ran = date.timeIntervalSince(start) - restedFor + lead
             let seconds = breathes ? CardRoomBreath.clock(ran) : ran
             let heard = breathes ? CardRoomBreath.at(seconds) : sound.read(now).levels
 
@@ -172,6 +200,16 @@ public struct RoomView: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
+        .onChange(of: moving, initial: true) { _, now in
+            if now {
+                if let stoppedAt, case .whenShown = zero {
+                    restedFor += Date().timeIntervalSince(stoppedAt)
+                }
+                stoppedAt = nil
+            } else if stoppedAt == nil {
+                stoppedAt = Date()
+            }
+        }
     }
 
     /// Converts a colour to a shader argument. `Shader.Argument.float3` takes three scalars and not
