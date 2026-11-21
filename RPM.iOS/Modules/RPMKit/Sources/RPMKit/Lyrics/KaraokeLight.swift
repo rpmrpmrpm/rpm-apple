@@ -117,7 +117,9 @@ public enum KaraokeLight {
 
 /// Which words of the score are lit when, for karaoke: the measured words a line takes, and the line
 /// that is shown while the last one is still being sung. The rules of the Android TV app's lyric
-/// column.
+/// column, with the Android phone's early hand-over (`KaraokeLines` in its `core`): a line also
+/// takes over before its stamp when its measured words start earlier (``held(_:piece:seconds:heard:)``).
+/// The Apple TV's `LyricColumn` has its own, older rule.
 public enum KaraokeLines {
     /// How far before its stamp a line's last measured word may end and still be taken, in seconds.
     static let stray = 1.0
@@ -128,6 +130,16 @@ public enum KaraokeLines {
 
     /// The longest a line waits past its stamp for its first measured word, in seconds.
     static let waitLongest = 4.0
+
+    /// The earliest before its stamp a line takes over for its first measured word, in seconds.
+    static let earliest = 1.0
+
+    /// How long an unmeasured backing line stays up after its words are shared out, at most, in
+    /// seconds. Its last word is often held, and shared out at singing speed it would go too soon.
+    static let asideHeld = 3.0
+
+    /// How far before the next line an unmeasured backing line goes, in seconds.
+    static let asideGap = 0.25
 
     /// The measured words of the line `text` at `seconds`, where they fall in the line's own time:
     /// none may end before the line starts (with ``stray`` of slack), and the first may not start
@@ -162,10 +174,46 @@ public enum KaraokeLines {
         return LyricTiming.sweep(line.text, from: line.seconds, until: next(after: part, in: score))
     }
 
-    /// When the piece after `part` starts, or infinity after the last piece.
+    /// When the piece after `part` starts, or its first backing line (``LyricScore/Aside``) where
+    /// that is sooner; infinity after the last piece.
     public static func next(after part: LyricScore.Part, in score: LyricScore) -> Double {
         let after = part.id + 1
-        return score.parts.indices.contains(after) ? score.parts[after].seconds : .infinity
+        let following = score.parts.indices.contains(after) ? score.parts[after].seconds : .infinity
+        guard let aside = part.asides.first else { return following }
+        return min(following, aside.line.seconds)
+    }
+
+    /// When a backing line is shown and how its words are lit: `spans` over its text, shown from
+    /// `from` until `until`.
+    public struct Voice: Sendable, Equatable {
+        public let spans: [WordSpan]
+        public let from: Double
+        public let until: Double
+
+        public init(spans: [WordSpan], from: Double, until: Double) {
+            self.spans = spans; self.from = from; self.until = until
+        }
+    }
+
+    /// When the backing line `aside` is shown under its line, and its words.
+    ///
+    /// With measured words that fit it, it comes in ``lead`` before its first word, as a line does
+    /// (``held(_:piece:seconds:heard:)``), but no earlier than ``earliest`` before its stamp, and it
+    /// goes when its last word ends. Without them it comes in at its stamp, with its time shared
+    /// between its words by length, and stays while its last word may still be held: up to
+    /// ``asideHeld`` longer, and ``asideGap`` before the line after it.
+    public static func voice(_ aside: LyricScore.Aside, measured: [MeasuredLine]) -> Voice {
+        let line = aside.line
+        if let words = heard(measured, text: line.text, seconds: line.seconds, next: aside.until),
+           let first = words.first, let last = words.last {
+            return Voice(spans: words, from: max(first.from - lead, line.seconds - earliest),
+                         until: last.to)
+        }
+
+        let swept = LyricTiming.sweep(line.text, from: line.seconds, until: aside.until)
+        let sung = swept.last?.to ?? line.seconds
+        let stays = min(aside.until - asideGap, sung + asideHeld)
+        return Voice(spans: swept, from: line.seconds, until: max(sung, stays))
     }
 
     /// The piece to show at `seconds`, given the piece that the time stamps say.
@@ -178,8 +226,35 @@ public enum KaraokeLines {
     /// line measured to start well after its stamp would stand there unlit until the voice reaches
     /// it. That wait is never longer than ``waitLongest`` past the stamp, so a measurement that went
     /// wrong cannot hold the lyrics back.
+    ///
+    /// And it is the next piece once that piece's first measured word is ``lead`` away, even before
+    /// its stamp. A sheet's stamp is often a little after the voice starts the line, by up to half a
+    /// second in quick singing. Waiting for the stamp would show the line late, with its first words
+    /// already sung and lit all at once. It moves on no earlier than ``earliest`` before the stamp,
+    /// and not while the line it leaves is still on its last measured word, unless the next line's
+    /// first word has already started.
     public static func held(_ score: LyricScore, piece: Int?, seconds: Double,
                             heard: [[WordSpan]?]) -> Int? {
+        let stays = heldBack(score, piece: piece, seconds: seconds, heard: heard)
+        if stays != piece { return stays }
+
+        let next = (piece ?? -1) + 1
+        guard heard.indices.contains(next), score.parts.indices.contains(next),
+              let starts = heard[next]?.first?.from
+        else { return piece }
+
+        if seconds < starts - lead || seconds < score.parts[next].seconds - earliest { return piece }
+        if let piece, heard.indices.contains(piece), let singing = heard[piece]?.last,
+           singing.to > seconds, starts > seconds {
+            return piece
+        }
+        return next
+    }
+
+    /// ``held(_:piece:seconds:heard:)`` without moving on early: the previous piece while it is
+    /// still sung or the words of `piece` are well ahead.
+    private static func heldBack(_ score: LyricScore, piece: Int?, seconds: Double,
+                                 heard: [[WordSpan]?]) -> Int? {
         guard let piece, heard.indices.contains(piece), score.parts.indices.contains(piece)
         else { return piece }
 

@@ -59,12 +59,35 @@ public struct LyricScore: Sendable, Equatable {
 
         public let piece: Piece
 
+        /// The backing lines sung after this line of words that ``LyricScore/of(_:asides:)`` put
+        /// under it. Empty for a rest, and for every piece of a score made without asides.
+        public let asides: [Aside]
+
+        init(id: Int, section: Int, piece: Piece, asides: [Aside] = []) {
+            self.id = id
+            self.section = section
+            self.piece = piece
+            self.asides = asides
+        }
+
         /// When this piece begins.
         public var seconds: Double {
             switch piece {
             case .words(let line): return line.seconds
             case .rest(let from, _): return from
             }
+        }
+    }
+
+    /// A line bracketed from end to end (``LyricVoices/isAside(_:)``), a backing vocal: its `line`, and
+    /// `until`, when the line after it in the sheet starts (infinity after the last).
+    public struct Aside: Sendable, Equatable {
+        public let line: LyricLine
+        public let until: Double
+
+        public init(line: LyricLine, until: Double) {
+            self.line = line
+            self.until = until
         }
     }
 
@@ -75,7 +98,11 @@ public struct LyricScore: Sendable, Equatable {
     /// A line with no words is treated as a rest, not as a piece of words. It is the writer's way of saying
     /// that the singing stops here. Drawing it as a line with no text would show nothing to the reader. The
     /// rest runs from the line's own time to the next line's time.
-    public static func of(_ sheet: LyricSheet) -> LyricScore {
+    ///
+    /// With `asides`, a line bracketed from end to end (``LyricVoices/isAside(_:)``) is not a piece of its
+    /// own. It goes with the line of words before it (``Part/asides``), and the score moves on as if it were
+    /// not there. A backing line with no line of words before it in its stretch stays a piece of its own.
+    public static func of(_ sheet: LyricSheet, asides: Bool = false) -> LyricScore {
         var parts: [Part] = []
         var section = 0
         var lastSang: Double?
@@ -88,6 +115,15 @@ public struct LyricScore: Sendable, Equatable {
                                   piece: .rest(from: line.seconds, until: next)))
                 section += 1
                 lastSang = nil
+                continue
+            }
+
+            // A backing line goes under the line of words before it, when that line is in the same stretch.
+            if asides, let sang = lastSang, let held = parts.last, case .words = held.piece,
+               LyricVoices.isAside(line.text), line.seconds - sang < rest {
+                parts[parts.count - 1] = Part(id: held.id, section: held.section, piece: held.piece,
+                                              asides: held.asides + [Aside(line: line, until: next)])
+                lastSang = line.seconds
                 continue
             }
 
