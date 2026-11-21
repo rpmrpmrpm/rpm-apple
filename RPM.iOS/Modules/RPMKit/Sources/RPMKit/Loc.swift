@@ -41,4 +41,17 @@ public enum Loc {
     public static func get(_ key: String, _ arguments: any CustomStringConvertible...) -> String {
         String(format: get(key), arguments: arguments.map { $0.description as NSString })
     }
+
+    /// The string for a key in one of the five locales, whatever this phone is set to. The welcome
+    /// uses it to say hello in each of the app's languages in turn.
+    ///
+    /// The locale is a language tag such as "fr" or "zh-Hans". SwiftPM can write a locale's folder
+    /// in lower case (`zh-hans.lproj`), so both spellings are tried. A locale that is not in the
+    /// bundle gives the phone's own string.
+    public static func get(_ key: String, in locale: String) -> String {
+        let path = table.path(forResource: locale, ofType: "lproj")
+            ?? table.path(forResource: locale.lowercased(), ofType: "lproj")
+        guard let path, let bundle = Bundle(path: path) else { return get(key) }
+        return bundle.localizedString(forKey: key, value: key, table: nil)
+    }
 }

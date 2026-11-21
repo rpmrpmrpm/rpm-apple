@@ -43,6 +43,20 @@ struct LocTests {
 
     /// The table is the same one the desktop reads, so a key the desktop has is a key
     /// this head has. One spot check against a long-standing string.
+    /// The welcome says hello in each locale in turn, whatever the phone is set to.
+    @Test func aKeyCanBeReadInAnotherLocale() {
+        #expect(Loc.get("AlbumSort_Artist", in: "fr") == "Par artiste")
+        #expect(Loc.get("AlbumSort_Artist", in: "en") == "By artist")
+    }
+
+    @Test func aLocaleSpelledWithCapitalsIsFound() {
+        #expect(Loc.get("AlbumSort_Artist", in: "zh-Hans") != "AlbumSort_Artist")
+    }
+
+    @Test func aLocaleNotInTheBundleGivesThePhonesOwnString() {
+        #expect(Loc.get("AlbumSort_Artist", in: "xx") == Loc.get("AlbumSort_Artist"))
+    }
+
     @Test func itIsTheSameTableTheDesktopReads() throws {
         let french = try #require(Loc.table.path(forResource: "fr", ofType: "lproj"))
         let bundle = try #require(Bundle(path: french))
