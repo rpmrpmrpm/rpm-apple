@@ -84,7 +84,7 @@ public enum QuickRefs {
         guard !theirs.isEmpty else { return Array(suggested.prefix(most)) }
 
         let refs = Set(added)
-        let mixtapes = suggested.prefix { $0.kind == .radio }
+        let mixtapes = suggested.prefix(while: { $0.kind == .radio })
         let rest = suggested.dropFirst(mixtapes.count).filter { pick in
             guard let ref = refOf(pick) else { return true }
             return !refs.contains(ref)

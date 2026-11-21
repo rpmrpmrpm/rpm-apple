@@ -283,9 +283,9 @@ public struct HomePage: View {
     private func warm(_ screen: HomeScreen) async {
         let byKey = self.byKey
         let listsByName = self.listsByName
-        let picks = picks(of: screen, byKey: byKey, listsByName: listsByName)
-        let songs = songs(of: picks)
-        let quick = HomePicksRow.drawable(picks, albums: byKey, songs: songs, stations: stations)
+        let dealt = picks(of: screen, byKey: byKey, listsByName: listsByName)
+        let songs = songs(of: dealt)
+        let quick = HomePicksRow.drawable(dealt, albums: byKey, songs: songs, stations: stations)
 
         var early: [Early] = []
         var logos: [RadioStation] = []
@@ -374,9 +374,9 @@ public struct HomePage: View {
         // them inside the rows loop would rebuild them for every key.
         let byKey = self.byKey
         let listsByName = self.listsByName
-        let picks = picks(of: screen, byKey: byKey, listsByName: listsByName)
-        let songs = songs(of: picks)
-        let quick = HomePicksRow.drawable(picks, albums: byKey, songs: songs, stations: stations)
+        let dealt = picks(of: screen, byKey: byKey, listsByName: listsByName)
+        let songs = songs(of: dealt)
+        let quick = HomePicksRow.drawable(dealt, albums: byKey, songs: songs, stations: stations)
 
         return Group {
             // Starts at the top of the screen, under the status bar. Content that scrolls up behind

@@ -153,9 +153,9 @@ public enum MoodPick {
     public static func pick(_ moods: [Mood], genres: [String], offered: [PlaylistSet],
                             dayNumber: Int) -> PlaylistSet? {
         for mood in moods {
-            let group = group(mood, genres: genres, offered: offered)
-            if group.isEmpty { continue }
-            return group[which(group.count, dayNumber: dayNumber)]
+            let members = group(mood, genres: genres, offered: offered)
+            if members.isEmpty { continue }
+            return members[which(members.count, dayNumber: dayNumber)]
         }
         return nil
     }
@@ -176,14 +176,14 @@ public enum MoodPick {
     /// has one cut.
     public static func group(_ mood: Mood, genres: [String], offered: [PlaylistSet]) -> [PlaylistSet] {
         let ofMood = offered.filter { $0.cut?.kind == mood.rawValue }
-        var group: [PlaylistSet] = []
+        var members: [PlaylistSet] = []
         for genre in genres where !genre.isEmpty {
             if let cut = ofMood.first(where: { !isWhole($0) && $0.cut?.genre == genre }) {
-                group.append(cut)
+                members.append(cut)
             }
         }
-        if let whole = ofMood.first(where: isWhole) { group.append(whole) }
-        return group
+        if let whole = ofMood.first(where: { isWhole($0) }) { members.append(whole) }
+        return members
     }
 
     /// Which of a group of `groupSize` to show on `dayNumber`: 0 on six days in seven. On the
@@ -209,10 +209,10 @@ public enum MoodPick {
         guard let kind = whole.cut?.kind, let mood = Mood(rawValue: kind),
               brokenOutByGenre.contains(mood) else { return whole }
 
-        let group = group(mood, genres: genres, offered: offered)
-        guard let first = group.first else { return whole }
+        let members = group(mood, genres: genres, offered: offered)
+        guard let first = members.first else { return whole }
         if first.id != taken?.id { return first }
-        return group.count > 1 ? group[1] : first
+        return members.count > 1 ? members[1] : first
     }
 
     /// The mood lists among `lists` that a pick or a cut may take: the generated lists of a mood,
