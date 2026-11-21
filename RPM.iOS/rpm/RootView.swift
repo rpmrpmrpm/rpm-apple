@@ -645,7 +645,16 @@ struct RootView: View {
         // Debug only. See `AppModel.start()`. The key is not known until the library has loaded,
         // so it cannot be read with the other script values.
         .onChange(of: model.openedByScript) { if let key = $1 { opened = [.album(key)] } }
+        // The language of the artist and album descriptions, chosen on the settings page. The
+        // next page opened reads it. See ``ArticleLanguages``.
+        .onChange(of: articleLanguage) { _, chosen in
+            model.articles.languages = ArticleLanguages.wikipedias(chosen: chosen,
+                                                                   phone: Locale.preferredLanguages)
+        }
     }
+
+    /// What the settings page stores for the descriptions' language. See ``ArticleLanguages``.
+    @AppStorage(ArticleLanguages.key) private var articleLanguage = ""
 
     /// Called when the connection is lost. It shows the library tab, on the records, on the
     /// user's own shelf.

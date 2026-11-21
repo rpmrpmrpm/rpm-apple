@@ -310,7 +310,9 @@ final class AppModel {
         diagnostics = Diagnostics(transport: transport)
         articles = ArticleStore(
             client: PapersClient(transport: transport, reach: reach),
-            languages: Encyclopedia.languages(preferred: Locale.preferredLanguages),
+            // The language the reader chose for the descriptions, or the phone's own. RootView
+            // tells the store when the choice changes. See ``ArticleLanguages``.
+            languages: ArticleLanguages.wikipedias(in: .standard, phone: Locale.preferredLanguages),
             directory: ArticleStore.inCaches())
         worldPlays = WorldPlays(client: cloud)
 

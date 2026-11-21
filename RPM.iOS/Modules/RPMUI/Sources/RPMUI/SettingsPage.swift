@@ -182,6 +182,7 @@ public struct SettingsPage: View {
                     HintsCard()
                     about
                     device
+                    ArticleLanguageCard()
                 case .appearance:
                     backdrop
                 case .playback:

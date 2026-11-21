@@ -60,7 +60,11 @@ public final class ArticleStore {
     private static let blank: TimeInterval = 5 * 24 * 3600
 
     private let fetch: @Sendable (Subject, [String]) async throws -> ArticleAnswer
-    private let languages: [String]
+
+    /// Which Wikipedias to read, best first. The app changes it when the reader chooses another
+    /// language for the descriptions (``ArticleLanguages``). Every key carries it, so a change is
+    /// a new question, and an answer kept in the other languages is not shown for it.
+    public var languages: [String]
     private let directory: URL?
 
     private var memory: [String: Kept] = [:]
