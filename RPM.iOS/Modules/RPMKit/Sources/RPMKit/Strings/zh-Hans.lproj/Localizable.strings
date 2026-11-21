@@ -3280,7 +3280,7 @@
 /* Status line after the cloud download finishes. */
 "Queue_DownloadDone" = "已下载 %1$@/%2$@ 个文件";
 
-/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre or year. */
+/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre, year or explicit marks. */
 "Queue_CatalogueFilled" = "已从目录补全的唱片：%1$@";
 
 /* Tooltip on the duplicate mark. */
@@ -4213,11 +4213,11 @@
 /* Settings hint under the required tags checkboxes. */
 "Settings_RequiredTagsHint" = "队列中的文件缺少其中任何一项时会被标记出来。别担心，照样可以导入。";
 
-/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
-"Settings_CatalogueFill" = "添加音乐时补全缺失的流派和年份";
+/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue, fills blank genre, subgenre and year in the import queue, marks explicit songs and finds a picture of the disc. */
+"Settings_CatalogueFill" = "添加音乐时补全缺失的内容";
 
 /* Settings hint under the catalogue fill toggle. */
-"Settings_CatalogueFillHint" = "rpm 会在目录中查找每张唱片，在流派、子流派和年份为空或不在 rpm 流派列表中时补上。你已经填好的内容保持不变，导入之前也不会写入你的文件。";
+"Settings_CatalogueFillHint" = "rpm 会在目录中查找每张唱片，在流派、子流派和年份为空或不在 rpm 流派列表中时补上。它还会标出歌词露骨的歌曲，并在你的文件没有附带碟片图片时为你找一张。你已经填好的内容保持不变，导入之前也不会写入你的文件。";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "隐藏重复项";
@@ -4422,6 +4422,21 @@
 
 /* Button under one of the two picture wells in the import tag panel: which picture it changes. */
 "Queue_TagPanelDiscLabel" = "唱片";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The picture is inside the music files. */
+"Queue_ArtInFiles" = "在文件中";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The picture is an image file beside the music files. */
+"Queue_ArtInFolder" = "在文件夹中";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. rpm found the picture online by itself. 'Picture' is the implied subject (feminine in French and Spanish). */
+"Queue_ArtFoundOnline" = "已在线找到";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The person chose this picture in rpm. 'Picture' is the implied subject (feminine in French and Spanish). */
+"Queue_ArtPicked" = "由你选择";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The record has no such picture yet. 'Picture' is the implied subject (feminine in French and Spanish, 'Bild' in German). */
+"Queue_ArtNone" = "暂无";
 
 /* Tooltip of the word-timing button in the full-screen Pegasus lyric view while words are spread evenly across each line, so the next press measures them against the recording. */
 "Viz_AlignOff" = "按听感跟词";

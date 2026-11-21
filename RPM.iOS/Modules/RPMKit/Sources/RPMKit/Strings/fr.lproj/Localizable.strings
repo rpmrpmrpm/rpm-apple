@@ -3280,7 +3280,7 @@
 /* Status line after the cloud download finishes. */
 "Queue_DownloadDone" = "%1$@ fichiers sur %2$@ téléchargés";
 
-/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre or year. */
+/* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre, year or explicit marks. */
 "Queue_CatalogueFilled" = "Disques complétés depuis le catalogue : %1$@";
 
 /* Tooltip on the duplicate mark. */
@@ -4213,11 +4213,11 @@
 /* Settings hint under the required tags checkboxes. */
 "Settings_RequiredTagsHint" = "Un fichier en file reçoit une marque s’il lui manque l’un de ces champs. Pas d’inquiétude, vous pouvez quand même l’importer.";
 
-/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue and fills blank genre, subgenre and year in the import queue. */
-"Settings_CatalogueFill" = "Compléter le genre et l'année manquants lors de l'ajout de musique";
+/* Settings > Collection, required tags card: toggle that looks each added record up in the catalogue, fills blank genre, subgenre and year in the import queue, marks explicit songs and finds a picture of the disc. */
+"Settings_CatalogueFill" = "Compléter ce qui manque lors de l’ajout de musique";
 
 /* Settings hint under the catalogue fill toggle. */
-"Settings_CatalogueFillHint" = "rpm cherche chaque disque dans son catalogue et complète le genre, le sous-genre et l’année quand ils sont vides ou absents de la liste des genres de rpm. Ce que vous avez déjà renseigné ne bouge pas, et rien n’est écrit dans vos fichiers avant l’importation.";
+"Settings_CatalogueFillHint" = "rpm cherche chaque disque dans son catalogue et complète le genre, le sous-genre et l’année quand ils sont vides ou absents de la liste des genres de rpm. Il signale aussi les morceaux aux paroles explicites, et trouve une image du disque quand vos fichiers n’en ont pas. Ce que vous avez déjà renseigné ne bouge pas, et rien n’est écrit dans vos fichiers avant l’importation.";
 
 /* Import filter chip: hides the copies Remove duplicates would delete. */
 "Queue_ChipDuplicates" = "Masquer les doublons";
@@ -4422,6 +4422,21 @@
 
 /* Button under one of the two picture wells in the import tag panel: which picture it changes. */
 "Queue_TagPanelDiscLabel" = "Disque";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The picture is inside the music files. */
+"Queue_ArtInFiles" = "Dans les fichiers";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The picture is an image file beside the music files. */
+"Queue_ArtInFolder" = "Dans le dossier";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. rpm found the picture online by itself. 'Picture' is the implied subject (feminine in French and Spanish). */
+"Queue_ArtFoundOnline" = "Trouvée en ligne";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The person chose this picture in rpm. 'Picture' is the implied subject (feminine in French and Spanish). */
+"Queue_ArtPicked" = "Choisie par vous";
+
+/* Caption under a picture well (cover or disc) in the import queue's tag panel: where the record's picture is. The record has no such picture yet. 'Picture' is the implied subject (feminine in French and Spanish, 'Bild' in German). */
+"Queue_ArtNone" = "Aucune pour l’instant";
 
 /* Tooltip of the word-timing button in the full-screen Pegasus lyric view while words are spread evenly across each line, so the next press measures them against the recording. */
 "Viz_AlignOff" = "Suivre les mots à l'oreille";
