@@ -65,6 +65,16 @@ public final class Player {
         }
     }
 
+    /// The equaliser curve for the speakers the sound goes to now.
+    ///
+    /// **Held by the engine, not here**, for the reason given at ``normalize``: the pump reads it
+    /// for every block, on its own thread. It reaches the record already playing, and a speaker in
+    /// another room. ``EqualizerSettings`` sets it.
+    public var equalizer: EqCurve {
+        get { sound.equalizer }
+        set { sound.equalizer = newValue }
+    }
+
     private static let log = Logger(subsystem: "com.rpm.player", category: "audio")
 
     /// The queue: this app's own engine. It is what makes the drawn stages, casting

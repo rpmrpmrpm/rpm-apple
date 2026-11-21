@@ -190,6 +190,7 @@ public struct SettingsPage: View {
                 case .playback:
                     playback
                     loudness
+                    EqualizerCard()
                 case .downloads:
                     downloads
                 case .account:

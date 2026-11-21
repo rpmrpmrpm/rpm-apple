@@ -650,6 +650,21 @@ public final class PcmEngine: @unchecked Sendable {
 
     private var setting: NormalizeContext
 
+    // ── how it sounds ──
+
+    /// The equaliser curve for the speakers the sound goes to now (``EqCurve``).
+    ///
+    /// **Read by the pump for every block**, after the levelling and before the fork, so the
+    /// handset, a speaker in another room and the picture all get the same sound. A change is heard
+    /// once the audio already handed over has played out, as for ``normalize``. Off until something
+    /// sets it: the Apple TV never does, and its sound is never changed.
+    public var equalizer: EqCurve {
+        get { gate.withLock { curve } }
+        set { gate.withLock { curve = newValue } }
+    }
+
+    private var curve = EqCurve.off
+
     // ── where the sound goes ──
 
     /// Sends the sound to a speaker instead of to this phone.
@@ -750,6 +765,8 @@ public final class PcmEngine: @unchecked Sendable {
         // Local to this run of the pump: a new start or a seek is a new pump, and lands
         // on its gain rather than sliding to it from the record before.
         var level = GainSlide()
+        // Local for the same reason: a start or a seek begins with clear filter memory.
+        var eq = EqStage()
 
         while gate.withLock({ pumpRun }) == mine {
             if PumpDiag.on {
@@ -815,6 +832,10 @@ public final class PcmEngine: @unchecked Sendable {
             // same samples and the picture is drawn from what is heard. The setting is
             // read for every block, so a change reaches this record without a restart.
             level.apply(next.loudness.gain(under: normalize).linear, to: buffer)
+
+            // **Equalised after the levelling and before the fork**, for the same reasons: the
+            // handset, a speaker and the picture hear one sound, and a change reaches this record.
+            eq.apply(equalizer, to: buffer, source: next.id)
 
             // **Every block, whichever destination takes it, at the frame that destination is about
             // to give it.** Both branches below open their runs at `scheduled` and advance it by

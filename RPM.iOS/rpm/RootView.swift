@@ -504,6 +504,8 @@ struct RootView: View {
         // Quick selection's own picks and the pinned lists, for the long-press menus. Set below the
         // overlays for the same reason.
         .environment(holds)
+        // The equaliser, for its card on the settings page.
+        .environment(model.equalizer)
         .task {
             LaunchClock.mark("root appeared")
             MainActorWatch.start()

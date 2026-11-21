@@ -69,6 +69,9 @@ final class AppModel {
 
     let player: Player
 
+    /// The equaliser: one curve for each set of speakers, the one in use heard by the player.
+    let equalizer: EqualizerSettings
+
     /// The albums downloaded to this phone, and the transfers that bring more. The player reads
     /// its book before it signs anything, so a downloaded record plays with no network.
     let downloads: AlbumDownloads
@@ -379,6 +382,7 @@ final class AppModel {
         remote = RemoteControl(player: player, reach: reach, songCovers: songCovers,
                                marksExplicit: true)
         speakerChoice = Speakers(player: player)
+        equalizer = EqualizerSettings(player: player)
         record = NowPlayingRecord(session: session, artwork: artwork, player: player,
                                   remote: remote, edge: 600)
 
@@ -386,6 +390,10 @@ final class AppModel {
 
         // What this phone plays at each part of the day, which home's banner list is cut by.
         session.dayParts = DayPartPlays(file: DayPartPlays.defaultFile)
+
+        // The equaliser follows the speakers even while no screen shows it, as the music plays on
+        // without one.
+        equalizer.start()
 
         // The rate is read off the quota, so a quota read settles it again.
         session.onQuotaRead = { [weak self] in self?.settleTheRate() }
@@ -444,6 +452,9 @@ final class AppModel {
         // volume belongs to the phone and iOS shows its own bar for it.
         player.onCastChanged = { [weak self] room in
             guard let self else { return }
+
+            // A cast has its own equaliser curve.
+            equalizer.follow()
 
             guard room != nil else { keys.stop(); return }
 
