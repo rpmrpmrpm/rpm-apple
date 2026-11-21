@@ -182,6 +182,7 @@ public struct SettingsPage: View {
                     HintsCard()
                     about
                     device
+                    OpeningSoundCard()
                     ArticleLanguageCard()
                 case .appearance:
                     backdrop

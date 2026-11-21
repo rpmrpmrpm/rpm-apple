@@ -470,6 +470,10 @@ struct RootView: View {
             // playing, and the place to see what played is the collection it came from.
             tab = model.player.wasTheRadio ? .radio : .library
         }
+        // The opening sound gives way to the music, as the desktop's does.
+        .onChange(of: model.player.isPlaying) { _, playing in
+            if playing { OpeningSound.stop() }
+        }
         // The opening screen (`Opening`), over everything until the sign-in form is up or the home
         // screen has drawn what it opens on, then faded away. Once per launch: a later read of the
         // library (another collection, a retry) shows its own wait mark.

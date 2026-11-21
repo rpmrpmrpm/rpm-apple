@@ -55,6 +55,8 @@ public struct Opening: View {
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
+        // The opening sound, as the opening screen shows: once per start of the app.
+        .onAppear { OpeningSound.play() }
         .task(id: ready) {
             guard ready else { return }
 
