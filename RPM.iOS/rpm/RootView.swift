@@ -331,6 +331,7 @@ struct RootView: View {
                                 karaoke: karaokeWanted && model.isSupporter,
                                 measured: model.measuredLines,
                                 onNeedTiming: { await model.readMeasured() },
+                                onWarmNext: { await model.warmNextTiming() },
                                 onMark: { on in Task { await model.markTrack(on) } },
                                 songMenu: songMenu,
                                 pull: $playing,

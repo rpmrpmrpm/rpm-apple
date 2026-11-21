@@ -89,4 +89,19 @@ public final class LyricsLookup {
         sheet = found
         looking = false
     }
+
+    /// The sheet ``read(_:on:)`` would find for `track`: the owner's chosen sheet, else LRCLIB's
+    /// for the same names and length. It changes nothing here. The iPhone uses it to have the
+    /// words of the next song measured before that song starts, against the sheet it will show.
+    public func find(_ track: CloudTrack, on shelf: CloudShelf = .own) async -> LyricSheet {
+        guard let title = track.title, !title.isEmpty else { return .empty }
+
+        if let cloud, !track.rpmId.isEmpty,
+           let lrc = try? await cloud.lyricSheet(rpmId: track.rpmId, on: shelf) {
+            let chosen = LyricSheet.parse(lrc)
+            if chosen.isSynced { return chosen }
+        }
+        return await lrclib.sheet(artist: track.artist, title: title,
+                                  album: track.album, duration: track.duration.seconds)
+    }
 }

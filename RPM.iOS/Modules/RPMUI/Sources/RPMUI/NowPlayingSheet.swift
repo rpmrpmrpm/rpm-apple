@@ -52,6 +52,11 @@ public struct NowPlayingSheet: View {
     /// or its lyrics change.
     private let onNeedTiming: () async -> Void
 
+    /// Has the words of the song after this one measured ahead, so its karaoke is ready when it
+    /// starts. It is called while the player is shown and karaoke is on, and again when the next
+    /// song changes.
+    private let onWarmNext: () async -> Void
+
     private let marked: Bool
     private let onMark: (Bool) -> Void
 
@@ -148,6 +153,7 @@ public struct NowPlayingSheet: View {
                 onNeedLyrics: @escaping () async -> Void = {},
                 karaoke: Bool, measured: [MeasuredLine],
                 onNeedTiming: @escaping () async -> Void,
+                onWarmNext: @escaping () async -> Void = {},
                 onMark: @escaping (Bool) -> Void, songMenu: TrackMenu,
                 pull: Binding<ScreenPull>,
                 onFile: (() -> Void)? = nil,
@@ -163,6 +169,7 @@ public struct NowPlayingSheet: View {
         self.karaoke = karaoke
         self.measured = measured
         self.onNeedTiming = onNeedTiming
+        self.onWarmNext = onWarmNext
         self.marked = marked
         self.onMark = onMark
         self.songMenu = songMenu
@@ -180,6 +187,18 @@ public struct NowPlayingSheet: View {
         let rpmId: String?
         let karaoke: Bool
         let lines: Int
+    }
+
+    /// What the read ahead is for: the song after this one, and whether karaoke is on.
+    private struct WarmAsk: Equatable {
+        let next: String?
+        let karaoke: Bool
+    }
+
+    /// The song after the one playing, or nil at the end of the queue.
+    private var nextUp: String? {
+        guard let at = player.index, player.queue.indices.contains(at + 1) else { return nil }
+        return player.queue[at + 1].rpmId
     }
 
     public var body: some View {
@@ -217,6 +236,11 @@ public struct NowPlayingSheet: View {
         .task(id: TimingAsk(rpmId: player.current?.rpmId, karaoke: karaoke,
                             lines: lyrics.lines.count)) {
             if karaoke { await onNeedTiming() }
+        }
+        // The next song's words, measured while this one plays. Only while the player is shown,
+        // like the lyrics themselves.
+        .task(id: WarmAsk(next: nextUp, karaoke: karaoke)) {
+            if karaoke, nextUp != nil { await onWarmNext() }
         }
         // **The background and overlays are modifiers and not siblings in a stack**, which is the
         // same rule as on the album page and for the same reason. The background ignores the

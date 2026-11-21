@@ -1083,8 +1083,14 @@ final class AppModel {
 
     /// Reads the measured words of the song that is playing. If they do not cover its lyric
     /// sheet, the cloud is asked to measure them from the recording. That takes the transcoder
-    /// about half a minute for a song, so the answer is read again after 20 seconds and then every
-    /// 15 seconds, at most eight times. The TV apps do the same.
+    /// about half a minute for a song, so the answer is looked for soon after the request and then
+    /// every few seconds, for about two and a half minutes (``measureRounds``). A read is one small
+    /// request, and it stops at the first answer that covers the sheet. The Android phone does the
+    /// same.
+    ///
+    /// Words already read for this song are used and not asked for again: those read when the
+    /// player was open before, and those read ahead while the song before it played
+    /// (``warmNextTiming()``).
     ///
     /// The caller runs this while the player is shown and karaoke is on, and cancels it when the
     /// song changes.
@@ -1092,6 +1098,12 @@ final class AppModel {
         let sheet = lyrics
         guard sheet.isSynced, let track = player.current else { return }
         let rpmId = track.rpmId
+        if measured.rpmId == rpmId, MeasuredLyrics.covers(measured.lines, sheet: sheet) { return }
+        if ahead.rpmId == rpmId, MeasuredLyrics.covers(ahead.lines, sheet: sheet) {
+            measured = ahead
+            return
+        }
+
         let shelf = shelves.shelf(of: rpmId)
         let cloud = self.cloud
         func read() async -> [MeasuredLine] {
@@ -1108,14 +1120,65 @@ final class AppModel {
         }
         guard (try? await cloud.measureLyrics(rpmId: rpmId, on: shelf, lines: ask)) != nil else { return }
 
-        for round in 0..<8 {
-            try? await Task.sleep(for: .seconds(round == 0 ? 20 : 15))
+        for round in 0..<Self.measureRounds {
+            try? await Task.sleep(for: .seconds(round == 0 ? Self.firstMeasureWait : Self.measureWait))
             guard !Task.isCancelled else { return }
             lines = await read()
             guard !Task.isCancelled else { return }
             measured = (rpmId, lines)
             if MeasuredLyrics.covers(lines, sheet: sheet) { return }
         }
+    }
+
+    /// How often the measured words are looked for after the cloud was asked to measure them, and
+    /// the waits before the first look and between two looks, in seconds. See ``readMeasured()``.
+    private static let measureRounds = 36
+    private static let firstMeasureWait = 6
+    private static let measureWait = 4
+
+    /// Measured words read ahead for a song that is still to come, which already cover its sheet.
+    /// ``readMeasured()`` starts from them when that song plays.
+    @ObservationIgnored private var ahead: (rpmId: String, lines: [MeasuredLine]) = ("", [])
+
+    /// The songs ``warmNextTiming()`` has asked about, for the life of the app.
+    @ObservationIgnored private var warmed: Set<String> = []
+
+    /// Asks the cloud to measure the words of the song after the one playing, while this one
+    /// plays, so its karaoke is ready when it starts: the transcoder needs about half a minute for
+    /// a song, longer than many songs take to reach their first line. The sheet is found the way the
+    /// lyrics lookup will find it when the song starts (``LyricsLookup/find(_:on:)``), so the
+    /// measured lines match it. Each song is asked about once for the life of the app. Only the
+    /// person's own songs: the cloud measures nobody else's.
+    ///
+    /// The player screen calls this only while it is shown with karaoke on, as it reads the
+    /// lyrics: ordinary listening sends no record names anywhere.
+    func warmNextTiming() async {
+        guard let at = player.index, player.queue.indices.contains(at + 1) else { return }
+        let next = player.queue[at + 1]
+        let rpmId = next.rpmId
+        let shelf = shelves.shelf(of: rpmId)
+        guard shelf.isOwn, !rpmId.isEmpty, let title = next.title, !title.isEmpty,
+              !warmed.contains(rpmId)
+        else { return }
+        warmed.insert(rpmId)
+
+        let sheet = await words.find(next, on: shelf)
+        // A look cut short is tried again the next time the player is open.
+        guard !Task.isCancelled else { warmed.remove(rpmId); return }
+        guard sheet.isSynced else { return }
+
+        let cloud = self.cloud
+        let lines = (try? await cloud.lyricTiming(rpmId: rpmId, on: shelf)) ?? []
+        guard !Task.isCancelled else { warmed.remove(rpmId); return }
+        if MeasuredLyrics.covers(lines, sheet: sheet) {
+            ahead = (rpmId, lines)
+            return
+        }
+
+        let ask = sheet.lines.enumerated().map {
+            SheetLine(index: $0.offset, seconds: $0.element.seconds, text: $0.element.text)
+        }
+        _ = try? await cloud.measureLyrics(rpmId: rpmId, on: shelf, lines: ask)
     }
 
     // ── the speaker in another room ──
