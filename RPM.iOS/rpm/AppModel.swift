@@ -380,6 +380,9 @@ final class AppModel {
 
         watchTheLine()
 
+        // What this phone plays at each part of the day, which home's banner list is cut by.
+        session.dayParts = DayPartPlays(file: DayPartPlays.defaultFile)
+
         // The rate is read off the quota, so a quota read settles it again.
         session.onQuotaRead = { [weak self] in self?.settleTheRate() }
 
@@ -394,6 +397,8 @@ final class AppModel {
         player.onPlayCounted = { [weak self] counted in
             guard let self else { return }
             Task { await self.plays.note(rpmId: counted.rpmId, at: counted.at) }
+            // What is played at which time of day, for the banner's mood list.
+            Task { @MainActor in self.session.noteDayPart(rpmId: counted.rpmId, at: counted.at) }
         }
 
         // Radio heard, in parts. The same rule applies: the counter stays synchronous, and the log

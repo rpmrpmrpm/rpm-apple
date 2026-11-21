@@ -109,6 +109,46 @@ public final class LibrarySession {
     /// and stays the same during a session.
     private let homeDraw = Int(Date().timeIntervalSince1970)
 
+    /// What this device plays in each part of the day, by genre, which the banner's mood list is
+    /// cut by (``MoodPick``). Set by a head that counts plays. Without it home still follows the
+    /// clock, with no listening to cut the moods by.
+    public var dayParts: DayPartPlays?
+
+    /// The moment home is worked out for (``HomeMoment``), read at the first working out and kept
+    /// for the others, so a read that lands later does not change the banner because the hour has
+    /// turned. Nil until it is read. Cleared when the app comes back to the front
+    /// (``syncPlays()``), so home then follows the hour and what was played since.
+    private var moment: HomeMoment?
+
+    /// The moment held, or the moment now where none is held.
+    private func momentNow() async -> HomeMoment {
+        if let moment { return moment }
+
+        let now = Date()
+        var genres: [String] = []
+        if let dayParts, let user = await auth.current?.userId,
+           let part = DayParts.of(Calendar.current.component(.hour, from: now)) {
+            genres = await dayParts.genresAt(userId: user, part: part)
+        }
+
+        let read = HomeMoment.at(now, calendar: .current, genres: genres)
+        moment = read
+        return read
+    }
+
+    /// Counts one play for the time-of-day reading (``dayParts``): the genre the genres list files
+    /// its record under. Only on the person's own shelf, as home reads it, and only for a record
+    /// whose genre the app knows.
+    public func noteDayPart(rpmId: String, at: Int64) {
+        guard let dayParts, viewing.isOwn, let user = who?.userId else { return }
+        guard let album = albums.first(where: { $0.tracks.contains { $0.rpmId == rpmId } })
+        else { return }
+
+        let genre = GenreWall.genre(of: album)
+        guard genre != GenreWall.unclassified else { return }
+        Task { await dayParts.note(userId: user, genre: genre, at: at) }
+    }
+
     /// Called after the keychain has been read and no one is signed in.
     public func showSignedOut() {
         standing = .signedOut
@@ -243,6 +283,7 @@ public final class LibrarySession {
         redraw()
         playlistStanding = .reading
         home = nil
+        moment = nil
         played = [:]
         homeStations = [:]
         who = nil
@@ -293,9 +334,11 @@ public final class LibrarySession {
         let played = await plays.everythingPlayed()
         self.played = played
 
+        let listened = await radioListens.top(QuickPicks.count)
+
         // Read here, before the records are looked at. Everything after this line runs after the
         // last `await`, so the records, the playlists and the shelf come from the same moment.
-        let listened = await radioListens.top(QuickPicks.count)
+        let clock = await momentNow()
 
         // A collection being opened has no records yet. The open step settles home itself once they
         // arrive. This state is read after the `await` above, because a switch can start during it.
@@ -327,10 +370,13 @@ public final class LibrarySession {
             }
         })
 
+        // The clock chooses the banner's list on the person's own shelf only, as on the desktop.
+        // A collection somebody shares holds none of this listener's plays.
         home = HomeScreen.build(shelf: shelf, songs: songs,
                                 lists: HomeLists.offered(playlists, on: viewing),
                                 stations: heard.map(\.station.uuid), draw: homeDraw, radios: radios,
-                                songRecords: songRecords)
+                                songRecords: songRecords,
+                                moment: viewing.isOwn ? clock : nil, sets: playlists)
     }
 
     /// Reads the collection's playlists if they have not been read, and works home out again with
@@ -345,6 +391,10 @@ public final class LibrarySession {
     /// Syncs the play counts and the station log in both directions. Runs at launch and when the
     /// app returns to the front.
     public func syncPlays() async {
+        // The app is starting or has come back to the front: home reads the clock again when it is
+        // next worked out, so the banner follows the hour.
+        moment = nil
+
         guard await auth.isSignedIn else { return }
         await PlaysSync.run(log: plays, client: cloud, mine: playDevice.id)
         await StationListensSync.run(log: radioListens, client: cloud)

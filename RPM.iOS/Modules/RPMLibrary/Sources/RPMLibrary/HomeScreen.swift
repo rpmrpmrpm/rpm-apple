@@ -129,9 +129,17 @@ public struct HomeScreen: Sendable, Equatable {
     ///   and the quick selection's records are too.
     /// - Parameter songRecords: The record each song (and radio) is from
     ///   (``QuickPicks/recordName(_:_:)``), by cloud id, so the quick selection offers each record once.
+    /// - Parameter moment: The local time and this device's listening at that time of day
+    ///   (``HomeMoment``). It chooses the banner's list and the lists the Made for you cards open,
+    ///   on the person's own shelf. Nil works out home without a clock: the banner takes the first
+    ///   of `lists`, and the row holds `lists` as they are. A borrowed shelf passes nil, as on the
+    ///   desktop.
+    /// - Parameter sets: The playlists the names in `lists` stand for, generated lists among them,
+    ///   for the clock to choose from. Read only when `moment` is given.
     public static func build(shelf: [HomeAlbum], songs: [String], lists: [String],
                              stations: [String], draw: Int, radios: [String] = [],
-                             songRecords: [String: String] = [:]) -> HomeScreen {
+                             songRecords: [String: String] = [:],
+                             moment: HomeMoment? = nil, sets: [PlaylistSet] = []) -> HomeScreen {
         let gate = HomeGate.of(albums: shelf.count)
         let length = HomeShelf.rowLength
 
@@ -162,6 +170,13 @@ public struct HomeScreen: Sendable, Equatable {
             played: shelf.filter { $0.plays > 0 }.map(\.key),
             exclude: listened + suggested, count: length, draw: draw)
 
+        // The banner's one list: the mood the hour asks for, cut to what is played at this time of
+        // day, or the first of the lists where no mood list fits (the desktop's
+        // `banner ?? offered.First`). The Made for you cards open the cuts played now.
+        let picked = moment.flatMap { MoodPick.bannerList(sets, moment: $0) }
+        let rowLists = moment.map { cutToListening(lists, sets: sets, moment: $0, taken: picked) } ?? lists
+        let bannerLists = moment == nil ? lists : [picked?.name ?? rowLists.first].compactMap { $0 }
+
         let rows = [
             HomeRow(kind: .listened, keys: listened),
             HomeRow(kind: .suggested, keys: suggested),
@@ -177,7 +192,7 @@ public struct HomeScreen: Sendable, Equatable {
         let strip = HomeFeatures.strip(
             continued: Array(listened.prefix(1)),
             added: added,
-            lists: lists,
+            lists: bannerLists,
             suggested: suggested,
             played: HomeShelf.varied(played, draw: draw, salt: "played", reach: HomeShelf.bannerReach),
             listened: listened,
@@ -185,11 +200,32 @@ public struct HomeScreen: Sendable, Equatable {
             isVariousArtists: { ArtistCredit.isVariousArtists(byKey[$0]?.artist) },
             count: HomeFeatures.count)
 
-        return HomeScreen(gate: gate, strip: strip, rows: rows, lists: lists,
+        return HomeScreen(gate: gate, strip: strip, rows: rows, lists: rowLists,
                           quickPicks: picks(songs: songs,
                                             played: HomeShelf.listened(shelf, count: QuickPicks.count * 3),
                                             lists: lists, stations: stations, radios: radios,
                                             recordOf: recordOf(shelf: shelf, songRecords: songRecords)))
+    }
+
+    /// The lists row with each mood that is cut to genres opening the cut this listener plays at
+    /// this time of day (``MoodPick/cut(_:genres:offered:taken:)``), as the desktop's row does, and
+    /// never the list the banner shows (`taken`) where there is another. Each card keeps its place
+    /// in the row. A name the row already holds is not taken twice: the card keeps its own list.
+    static func cutToListening(_ names: [String], sets: [PlaylistSet], moment: HomeMoment,
+                               taken: PlaylistSet?) -> [String] {
+        let offered = MoodPick.offered(sets)
+        var row: [String] = []
+        for name in names {
+            guard let set = HomeLists.set(named: name, in: sets), set.origin == .generated,
+                  MoodPick.isWhole(set)
+            else {
+                row.append(name)
+                continue
+            }
+            let cut = MoodPick.cut(set, genres: moment.genres, offered: offered, taken: taken).name
+            row.append(row.contains(cut) || names.contains(cut) ? name : cut)
+        }
+        return row
     }
 
     /// Which record a quick pick stands for: a song's or a radio's from `songRecords`, a record's
