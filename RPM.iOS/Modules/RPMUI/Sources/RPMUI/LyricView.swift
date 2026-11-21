@@ -27,6 +27,12 @@ import RPMAudio
 /// Here SwiftUI lays out the lines, including wrapping, and this view only says which line
 /// goes in the middle. Every opacity is derived from the playhead in the pass that draws
 /// it, so there is no state that can become stale and nothing to re-stack.
+///
+/// **Words a sheet puts in round brackets are a second voice**, shown as on the desktop and the
+/// Android phone (``LyricVoices``): on a smaller row under their line while it is sung, folded
+/// away after. A line bracketed from end to end has no row of its own. It comes in under the line
+/// before it while it is sung and folds away when it is done, and the lyrics move on as if it were
+/// not there (``LyricScore/Aside``).
 struct LyricView: View {
     let sheet: LyricSheet
     let player: Player
@@ -41,13 +47,22 @@ struct LyricView: View {
 
     /// The last position read from the player, and when it was read. The player reads the engine
     /// four times a second, which is too coarse for a light moving through a word, so the sung
-    /// line works out the time in between from this. See ``SweptLine``.
-    @State private var reading = Reading(seconds: 0, at: .now)
+    /// line works out the time in between from this. See ``LyricTime``.
+    @State private var reading = Reading(seconds: 0, at: .distantPast)
 
     struct Reading {
         let seconds: Double
         let at: Date
     }
+
+    /// The steady time the karaoke words follow, one for each record. The line hand-over and the
+    /// letter sweep both read it, so the light does not step back when a reading of the player
+    /// does. See ``KaraokeClock``.
+    @State private var clock = KaraokeClock()
+
+    /// The piece the last scroll went to. A late second scroll goes only to the piece that is still
+    /// the sung one.
+    @State private var aimed: Int?
 
     /// How many lines either side of the sung line are drawn at all. Together with the ramp
     /// in `fade(distance:started:)`, this is the whole fade at the top and bottom of the
@@ -62,29 +77,54 @@ struct LyricView: View {
     /// The gap between lines, as a multiple of the type's own size.
     private static let leading: CGFloat = 0.62
 
+    /// The gap between a line and the second voice under it, as a multiple of the type's own size.
+    private static let voiceGap: CGFloat = 0.2
+
+    /// How long a second voice takes to open or fold away, in seconds. Quicker than the scroll: it
+    /// is a thing finishing, and a slow fold would look like the lyrics were still deciding.
+    private static let fold = 0.25
+
+    /// The time for the karaoke words, worked out from the player's readings. See ``LyricTime``.
+    private var time: LyricTime {
+        LyricTime(reading: reading, position: player.position.seconds, playing: player.isPlaying,
+                  clock: clock)
+    }
+
     var body: some View {
         GeometryReader { box in
             let size = min(max(box.size.width * 0.055, 16), 26)
 
             // Computed here and not kept in state. It is one pass over a sheet of about
             // sixty lines, and a stored copy would have to be kept in step with the
-            // current record.
-            let score = LyricScore.of(sheet)
+            // current record. A line bracketed from end to end goes with the line before it.
+            let score = LyricScore.of(sheet, asides: true)
             let heard = karaoke ? KaraokeLines.heard(score, measured: measured) : []
-            let stamped = score.index(at: player.position.seconds)
-            // With karaoke, a line stays up while its last measured word is still sung.
-            let at = karaoke ? KaraokeLines.held(score, piece: stamped,
-                                                 seconds: player.position.seconds, heard: heard)
-                             : stamped
+            // The steady time, read once for this pass. It moves the karaoke lines and shows the
+            // backing lines.
+            let now = time.seconds(at: .now)
+            // With karaoke, a line stays up while its last measured word is still sung, and takes
+            // over as its measured words start.
+            let at = karaoke ? KaraokeLines.held(score, piece: score.index(at: now),
+                                                 seconds: now, heard: heard)
+                             : score.index(at: player.position.seconds)
+            // When each backing line shows, by piece, and which of them show now.
+            let voices = score.parts.map { part in
+                part.asides.map { KaraokeLines.voice($0, measured: karaoke ? measured : []) }
+            }
+            let shown = Self.showing(voices, at: now)
 
             ScrollViewReader { hand in
                 ScrollView {
                     LazyVStack(spacing: size * Self.leading) {
                         ForEach(score.parts) { part in
-                            row(part, of: score, at: at, size: size, heard: heard)
+                            row(part, of: score, at: at, size: size, heard: heard,
+                                voices: voices[part.id], now: now)
                                 .id(part.id)
                         }
                     }
+                    // A second voice opening or folding away moves the lines under it with it, so
+                    // they do not jump.
+                    .animation(.easeInOut(duration: Self.fold), value: Folds(at: at, showing: shown))
                     // Half the height on each side, so the first and the last line can
                     // both be scrolled to the middle.
                     .padding(.vertical, box.size.height / 2)
@@ -92,8 +132,19 @@ struct LyricView: View {
                 }
                 .scrollIndicators(.hidden)
                 .onChange(of: at) { _, now in
+                    aimed = now
                     withAnimation(.easeOut(duration: 0.45)) {
                         hand.scrollTo(now ?? 0, anchor: .center)
+                    }
+                    // A second voice that folds away during the scroll moves the line by its
+                    // height. Once the scroll is done, the line is centred again, if it is still
+                    // the sung line.
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(460))
+                        guard aimed == now else { return }
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            hand.scrollTo(now ?? 0, anchor: .center)
+                        }
                     }
                 }
                 .onAppear {
@@ -115,6 +166,26 @@ struct LyricView: View {
         .onChange(of: player.position) { _, now in
             reading = Reading(seconds: now.seconds, at: .now)
         }
+        // A new clock for each record, so nothing of the last record's time carries over.
+        .onChange(of: player.current?.rpmId) { _, _ in clock = KaraokeClock() }
+    }
+
+    /// What opens and folds the second voices: the sung line, and the backing lines shown.
+    private struct Folds: Equatable {
+        let at: Int?
+        let showing: [Int]
+    }
+
+    /// The backing lines shown at `seconds`, as one number each: its piece times 1000 plus its place
+    /// under that piece.
+    private static func showing(_ voices: [[KaraokeLines.Voice]], at seconds: Double) -> [Int] {
+        var shown: [Int] = []
+        for (piece, asides) in voices.enumerated() {
+            for (place, voice) in asides.enumerated() where voice.shows(at: seconds) {
+                shown.append(piece * 1000 + place)
+            }
+        }
+        return shown
     }
 
     /// The screen before the first line: the title and artist, and how much of the intro
@@ -160,7 +231,8 @@ struct LyricView: View {
     /// AND at the waits that nobody marked, which are most of them.
     @ViewBuilder
     private func row(_ part: LyricScore.Part, of score: LyricScore,
-                     at: Int?, size: CGFloat, heard: [[WordSpan]?]) -> some View {
+                     at: Int?, size: CGFloat, heard: [[WordSpan]?],
+                     voices: [KaraokeLines.Voice], now: Double) -> some View {
         let here = at.map { score.parts[$0] }
         let distance = abs(part.id - (at ?? 0))
         let sung = part.id == at
@@ -179,14 +251,47 @@ struct LyricView: View {
                 .animation(.easeOut(duration: 0.35), value: at)
 
         case .words(let line):
-            Group {
-                if sung && karaoke {
-                    SweptLine(text: line.text,
-                              spans: KaraokeLines.spans(of: part, in: score, heard: heard),
-                              reading: reading, playing: player.isPlaying)
-                } else {
-                    Text(line.text)
-                        .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
+            // Its measured words where they fit the line, else its time shared between its words
+            // by length. The bracketed words come out of the line onto a row of their own.
+            let spans = KaraokeLines.spans(of: part, in: score, heard: heard)
+            let split = LyricVoices.split(line.text, spans: spans)
+
+            VStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    verse(line.text, split: split, spans: spans, sung: sung)
+
+                    // The second voice is read with its line: it shows only while the line is
+                    // sung, at the line's own strength, and folds away when the line is done.
+                    if let voice = split?.voice {
+                        Fold(open: sung, gap: size * Self.voiceGap) {
+                            Group {
+                                if sung && karaoke {
+                                    SweptLine(text: voice.text, spans: voice.spans, time: time,
+                                              light: spans, letters: voice.letters)
+                                } else {
+                                    Text(voice.text)
+                                        .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
+                                }
+                            }
+                            .font(.system(size: size * LyricVoices.scale, weight: .semibold))
+                        }
+                    }
+                }
+                    .opacity(ours && !resting ? fade(distance: distance, started: at != nil) : 0)
+                    // Animated when the playhead reaches a new piece, not when this row
+                    // becomes the sung line. When a new stretch arrives, a dozen rows change
+                    // from invisible to their own opacity at once, and none of them is the
+                    // sung line. **Nothing else changes this opacity**, which keeps it
+                    // smooth. An opacity that also included a fade computed from the playhead
+                    // would change four times a second, the rate at which the playhead is read.
+                    .animation(.easeOut(duration: 0.35), value: at)
+
+                // The backing lines that go with this line pop in under it while they are sung,
+                // and fold away after. They are at full strength, as the sung line is.
+                ForEach(Array(part.asides.enumerated()), id: \.offset) { place, aside in
+                    if place < voices.count {
+                        backing(aside, voice: voices[place], now: now, size: size)
+                    }
                 }
             }
                 // **The same weight on every line, sung or not.** A heavier weight makes
@@ -195,14 +300,44 @@ struct LyricView: View {
                 .font(.system(size: size, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
-                .opacity(ours && !resting ? fade(distance: distance, started: at != nil) : 0)
-                // Animated when the playhead reaches a new piece, not when this row
-                // becomes the sung line. When a new stretch arrives, a dozen rows change
-                // from invisible to their own opacity at once, and none of them is the
-                // sung line. **Nothing else changes this opacity**, which keeps it
-                // smooth. An opacity that also included a fade computed from the playhead
-                // would change four times a second, the rate at which the playhead is read.
-                .animation(.easeOut(duration: 0.35), value: at)
+        }
+    }
+
+    /// The verse of a line: the whole line, or the line without its bracketed words where it has
+    /// a second voice. The sung line lights letter by letter with karaoke.
+    @ViewBuilder
+    private func verse(_ text: String, split: LyricVoices.Split?, spans: [WordSpan],
+                       sung: Bool) -> some View {
+        if sung && karaoke {
+            if let verse = split?.verse {
+                SweptLine(text: verse.text, spans: verse.spans, time: time,
+                          light: spans, letters: verse.letters)
+            } else {
+                SweptLine(text: text, spans: spans, time: time)
+            }
+        } else {
+            Text(split?.verse.text ?? text)
+                .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
+        }
+    }
+
+    /// A backing line (``LyricScore/Aside``) under the line it goes with: shown while it is sung
+    /// (``KaraokeLines/voice(_:measured:)``), lit word by word with karaoke, and folded away when
+    /// it is done. It has no row of its own, so the lyrics move on as if it were not there.
+    private func backing(_ aside: LyricScore.Aside, voice: KaraokeLines.Voice, now: Double,
+                         size: CGFloat) -> some View {
+        // The words as the row shows them: the line without the brackets round it.
+        let row = LyricVoices.unbracketed(aside.line.text, spans: voice.spans)
+        return Fold(open: voice.shows(at: now), gap: size * Self.voiceGap) {
+            Group {
+                if karaoke {
+                    SweptLine(text: row.text, spans: row.spans, time: time,
+                              light: voice.spans, letters: row.letters)
+                } else {
+                    Text(row.text).foregroundStyle(Color.white)
+                }
+            }
+            .font(.system(size: size * LyricVoices.scale, weight: .semibold))
         }
     }
 
@@ -235,31 +370,76 @@ struct LyricView: View {
     }
 }
 
+/// The time the karaoke words are lit by: the player's last reading carried forward, made steady by
+/// a ``KaraokeClock``.
+///
+/// The reading is carried forward no further than ``ahead`` past it, so a reading that is late does
+/// not run the light past the voice. A reading older than a second (or none yet, as the view opens)
+/// is not used: the player's position is, so the first frame already shows the right line.
+struct LyricTime {
+    let reading: LyricView.Reading
+    let position: Double
+    let playing: Bool
+    let clock: KaraokeClock
+
+    /// How far past the player's last reading the time may run, in seconds: a little more than
+    /// the time between two readings.
+    static let ahead = 0.3
+
+    func seconds(at date: Date) -> Double {
+        let age = date.timeIntervalSince(reading.at)
+        let reported = playing && age >= 0 && age < 1 ? reading.seconds + min(age, Self.ahead) : position
+        return clock.seconds(reported: reported, advancing: playing,
+                             at: date.timeIntervalSinceReferenceDate)
+    }
+}
+
+extension KaraokeLines.Voice {
+    /// Whether the backing line is shown at `seconds`.
+    func shows(at seconds: Double) -> Bool { seconds >= from && seconds < until }
+}
+
+/// A row that opens under a line and folds away again. While `open` it takes its full height and
+/// shows; otherwise it takes none. The lyric view animates the change, so the lines under it move
+/// with it and do not jump.
+private struct Fold<Content: View>: View {
+    let open: Bool
+    let gap: CGFloat
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if open {
+                content()
+                    .padding(.top, gap)
+                    .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .clipped()
+    }
+}
+
 /// The sung line for karaoke: a soft edge of light moves through each word as it is sung, letter
 /// by letter, from ``KaraokeLight/rest`` up to white. See ``KaraokeLight``.
 ///
-/// Only this line is redrawn every frame. Each frame works out the time from the player's last
-/// reading (``LyricView/Reading``), and no further than ``ahead`` past it, so a reading that is
-/// late does not run the light past the voice.
+/// Only this line is redrawn every frame. Each frame reads the steady time (``LyricTime``).
+///
+/// The letters are lit as the letters of `light`, the words of the whole line, and `letters` says
+/// which of those each letter of `spans` is (nil when `spans` are the whole line). So a line cut
+/// into its verse and its second voice (``LyricVoices/split(_:spans:)``) is lit as one line: the
+/// light goes from one row to the other as the words do.
 private struct SweptLine: View {
     let text: String
     let spans: [WordSpan]
-    let reading: LyricView.Reading
-    let playing: Bool
-
-    /// How far past the player's last reading the line may run, in seconds: a little more than
-    /// the time between two readings.
-    private static let ahead = 0.3
+    let time: LyricTime
+    var light: [WordSpan]? = nil
+    var letters: [Int]? = nil
 
     var body: some View {
-        TimelineView(.animation(paused: !playing)) { context in
-            Text(lit(at: now(context.date)))
+        TimelineView(.animation(paused: !time.playing)) { context in
+            Text(lit(at: time.seconds(at: context.date)))
         }
-    }
-
-    private func now(_ date: Date) -> Double {
-        guard playing else { return reading.seconds }
-        return reading.seconds + min(max(date.timeIntervalSince(reading.at), 0), Self.ahead)
     }
 
     /// The line with each letter at its strength. The space between two words takes the strength
@@ -267,7 +447,10 @@ private struct SweptLine: View {
     private func lit(at now: Double) -> AttributedString {
         // The sung line does not fade after its last word: it stays lit until the next line takes
         // over. See ``KaraokeLight/light(_:now:fades:)``.
-        let strengths = KaraokeLight.light(spans, now: now, fades: false)
+        let whole = KaraokeLight.light(light ?? spans, now: now, fades: false)
+        let strengths = letters.map { places in
+            places.map { whole.indices.contains($0) ? whole[$0] : KaraokeLight.rest }
+        } ?? whole
         let characters = Array(text)
 
         var strength = Array(repeating: KaraokeLight.rest, count: characters.count)
@@ -277,7 +460,7 @@ private struct SweptLine: View {
         for span in spans {
             while at < min(span.start, characters.count) { strength[at] = last; at += 1 }
             for offset in 0..<span.length where span.start + offset < characters.count {
-                last = strengths[letter]
+                last = letter < strengths.count ? strengths[letter] : KaraokeLight.rest
                 strength[span.start + offset] = last
                 letter += 1
             }
