@@ -52,3 +52,25 @@ jobs:
             echo "::error::Tests failed in:${failed}"
             exit 1
           fi
+
+  apps:
+    # Builds the iPhone and Apple TV apps for the simulator. The module tests above do not compile
+    # RPMUI or the app targets, so without this job a compile error there shows only in Xcode Cloud.
+    # Release, because Xcode Cloud archives in Release. No signing, no API key and no Font Awesome
+    # Pro files: the apps build without them (pages that need the key stay empty, those icons blank).
+    name: App builds
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: iPhone app
+        run: >
+          xcodebuild build -project RPM.iOS/rpm.xcodeproj -scheme rpm
+          -destination 'generic/platform=iOS Simulator' -configuration Release
+          -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Apple TV app
+        # Built also when the iPhone app fails, so that one run shows the errors of both.
+        if: success() || failure()
+        run: >
+          xcodebuild build -project RPM.tvOS/rpm.xcodeproj -scheme rpm
+          -destination 'generic/platform=tvOS Simulator' -configuration Release
+          -skipPackagePluginValidation -skipMacroValidation CODE_SIGNING_ALLOWED=NO -quiet
