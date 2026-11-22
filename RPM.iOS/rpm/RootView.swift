@@ -864,208 +864,13 @@ struct RootView: View {
 
             // The other tabs' pages. Each is built when its tab is shown, slides in, and is taken
             // away once it has slid off the screen. See ``slide(to:)``.
-            ForEach(pagesOnScreen, id: \.self) { page in
-              Group {
-            switch page {
-            case .home:
-                EmptyView()
-
-            case .library:
-                // The four views of the library fade into one another (``libraryFade``), and the row
-                // of views under each header moves across the change (``LibraryModeTabs``).
-                ZStack {
-                    switch mode {
-                    case .artists:
-                        // This view has its own stack and its own path. Switching back to the records must
-                        // not leave an artist's page on the screen, and returning to the artists must not
-                        // show the place where the user was in the records.
-                        NavigationStack(path: $browsing) {
-                            ArtistsPage(
-                                inOrder: { readArtists.artists(model.albums, in: $0) },
-                                albums: readArtists.albums(model.albums),
-                                standing: model.wallStanding, covers: covers,
-                                mode: $mode, lender: model.lender,
-                                onOpen: { browsing.append(.artist($0.name)) },
-                                onRefresh: { await model.refresh() })
-                                .footRoom(chrome, .insideAStack)
-                                .navigationDestination(for: LibraryStep.self) { step in
-                                    page(step, on: $browsing).footRoom(chrome, .insideAStack)
-                                }
-                        }
-
-                    case .genres:
-                        // This view has its own stack and path, as the artists view does. A genre opened
-                        // here must not be on screen after the user goes to the records.
-                        NavigationStack(path: $genrePath) {
-                            GenresPage(genres: readGenres.genres(model.albums),
-                                       standing: model.wallStanding,
-                                       mode: $mode, lender: model.lender,
-                                       onOpen: { genrePath.append(.genre($0.name)) },
-                                       onRefresh: { await model.refresh() })
-                                .toolbar(.hidden, for: .navigationBar)
-                                .footRoom(chrome, .insideAStack)
-                                .navigationDestination(for: GenreStep.self) { step in
-                                    genrePage(step).footRoom(chrome, .insideAStack)
-                                }
-                        }
-
-                    case .playlists:
-                        // The lists have their own stack, so that a playlist pushed here is not still on
-                        // screen after the user goes to the records. Both views are on the library tab.
-                        NavigationStack(path: $lists) {
-                            PlaylistsPage(
-                                playlists: model.playlists,
-                                mode: $mode,
-                                // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
-                                // cannot be marked from a phone, so the list would always be empty.
-                                favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
-                                covers: covers, lender: model.lender,
-                                standing: model.playlistStanding,
-                                albums: model.albums,
-                                onOpen: { row in if let open = named(row) { lists.append(open) } },
-                                onReread: { await model.rereadPlaylists() },
-                                onMake: { name, folder, tracks in
-                                    await model.makePlaylist(name: name, in: folder, tracks: tracks)
-                                },
-                                history: model.playedLately,
-                                onOpenHistory: { lists.append(.history) })
-                                .footRoom(chrome, .insideAStack)
-                                .navigationDestination(for: OpenList.self) { open in
-                                    page(open, back: { lists.removeLast() })
-                                        .toolbar(.hidden, for: .navigationBar)
-                                        .footRoom(chrome, .insideAStack)
-                                }
-                        }
-                        .task { await model.showPlaylists() }
-
-                    case .albums:
-                        // The stack belongs to the library and not to the app. A record pushed here must
-                        // not still be on screen after the user goes to the account.
-                        NavigationStack(path: $opened) {
-                            LibraryPage(
-                                albums: model.albums, standing: model.wallStanding, covers: covers,
-                                playing: model.nowPlaying,
-                                inOrder: inOrder, mode: $mode,
-                                lender: model.lender,
-                                onOpen: { opened.append(.album($0.key)) },
-                                onPlay: { track in Task { await model.play(track) } },
-                                onRefresh: { await model.refresh() },
-                                isTrackMarked: { model.isTrackMarked($0) },
-                                isTrackMine: { model.isTrackMine($0) },
-                                onMarkTrack: { track, on in Task { await model.mark(track, on) } },
-                                onFile: { model.filing = $0 },
-                                upNext: .send { model.playNext($0) },
-                                found: LibraryPage.Findable(
-                                    artists: readArtists.artists(model.albums),
-                                    genres: readGenres.genres(model.albums),
-                                    playlists: model.playlists,
-                                    albums: readArtists.albums(model.albums)),
-                                onOpenArtist: { opened.append(.artist($0.name)) },
-                                onOpenGenre: { opened.append(.genre($0.name)) },
-                                onOpenList: { opened.append(.list(.playlist($0.id))) })
-                                .footRoom(chrome, .insideAStack)
-                                .navigationDestination(for: LibraryStep.self) { step in
-                                    page(step, on: $opened).footRoom(chrome, .insideAStack)
-                                }
-                        }
-                        // The search finds playlists as well, so they are read with the records' view too:
-                        // once a session, as the playlists' own view reads them.
-                        .task { await model.showPlaylists() }
-
-                    }
-                }
-                .animation(.easeInOut(duration: Self.libraryFade), value: mode)
-
-            case .radio:
-                RadioPage(stations: model.stations, saved: model.savedStations,
-                          countries: model.countries,
-                          tuned: model.player.station?.uuid,
-                          announced: model.player.announced,
-                          standing: model.radioStanding,
-                          onSearch: { asked, genre, country in
-                              await model.searchStations(asked, genre: genre, country: country)
-                          },
-                          onTune: { model.tune($0) },
-                          onSave: { model.save($0) })
-                    .footRoom(chrome, .underTheChrome)
-                    // Run each time the radio is shown and when another library is opened, so that
-                    // a shared library's saved stations are its owner's current stations.
-                    .task(id: [model.who?.userId ?? "", model.viewing.ownerId]) {
-                        await model.readSharedStations()
-                    }
-
-            case .feed:
-                if let feed {
-                    FeedPage(items: feed.items, answered: feed.answered, trouble: feed.trouble,
-                             hasMore: feed.next != nil, isSample: feed.isSample,
-                             readerId: model.who?.userId ?? "", unread: notices?.unread ?? 0,
-                             pictureOf: { model.community.avatar(userId: $0, hasAvatar: $1) ?? sampleFaces[$0] },
-                             coverFor: reviewCover, actions: feedActions(feed))
-                        .footRoom(chrome, .underTheChrome)
-                        .task { await feed.read() }
-                        .task { await notices?.readUnread() }
-                        .sheet(isPresented: Binding(get: { feedReview != nil }, set: { if !$0 { feedReview = nil } })) {
-                            feedReviewPage(feed)
-                        }
-                } else {
-                    // Keyed on the account: the tab can be shown before the sign-in has finished,
-                    // and the pages are made for the account once it is known.
-                    Color.clear.task(id: model.who?.userId) { makeOwnPage() }
-                }
-
-            case .settings:
-                SettingsPage(name: model.who?.displayName ?? "",
-                            email: model.who?.email ?? "",
-                            quota: model.quota,
-                            onWifi: Binding(get: { model.prefs.rateOnWifi },
-                                            set: { model.prefs.rateOnWifi = $0
-                                                   model.settleTheRate() }),
-                            onCellular: Binding(get: { model.prefs.rateOnCellular },
-                                                set: { model.prefs.rateOnCellular = $0
-                                                       model.settleTheRate() }),
-                            // The queue is pumped at once, so that tracks that are still to be
-                            // downloaded are signed at the new rate now and not at the next wake.
-                            onDownload: Binding(get: { model.prefs.rateForDownloads },
-                                                set: { model.prefs.rateForDownloads = $0
-                                                       Task { await model.downloads.pump() } }),
-                            levelling: Binding(get: { model.levelling },
-                                               set: { model.levelling = $0 }),
-                            levelsClassical: Binding(get: { model.levelsClassical },
-                                                     set: { model.levelsClassical = $0 }),
-                            reach: model.reading,
-                            cached: model.cachedBytes,
-                            downloaded: (model.downloads.list.count, model.downloads.bytes),
-                            onDownloads: { showingDownloads = true },
-                            version: model.version,
-                            onClearCache: { Task { await model.clearCache() } },
-                            onSignOut: { Task { await model.signOut() } },
-                            onDeleteAccount: { await model.deleteAccount(confirmEmail: model.who?.email ?? "") },
-                            onSupport: { openUrl(AppModel.becomeSupporter) },
-                            crashReports: Binding(get: { model.diagnostics.sendsCrashReports },
-                                                  set: { model.diagnostics.sendsCrashReports = $0 }),
-                            onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil,
-                            sharesListening: Binding(get: { model.sharesListening },
-                                                     set: { on in Task { await model.setSharesListening(on) } }))
-                    .task { await model.readCacheSize() }
-                    .task { await model.readSharing() }
-                    .footRoom(chrome, .underTheChrome)
-                    .sheet(isPresented: $showingDownloads) {
-                        DownloadsPage(
-                            rows: model.downloads.list.map {
-                                DownloadsPage.Row(album: $0.album, bytes: $0.bytes,
-                                                  standing: $0.standing)
-                            },
-                            covers: covers,
-                            onRemove: { model.downloads.remove($0) },
-                            onClose: { showingDownloads = false })
-                    }
-            }
-              }
-              .environment(\.roomsRest, page != tab || playing.up)
-              .offset(x: TabSlide.place(of: page.place, shown: tab.place) * pageWidth)
-              .transition(AnyTransition.offset(x: TabSlide.entry(from: cameFrom.place, to: page.place) * pageWidth))
-              .allowsHitTesting(page == tab)
-              .accessibilityHidden(page != tab)
+            ForEach(pagesOnScreen, id: \.self) { which in
+                tabPage(which)
+                    .environment(\.roomsRest, which != tab || playing.up)
+                    .offset(x: TabSlide.place(of: which.place, shown: tab.place) * pageWidth)
+                    .transition(AnyTransition.offset(x: TabSlide.entry(from: cameFrom.place, to: which.place) * pageWidth))
+                    .allowsHitTesting(which == tab)
+                    .accessibilityHidden(which != tab)
             }
         }
         .background {
@@ -1129,6 +934,227 @@ struct RootView: View {
             guard model.filing != nil else { return }
             await model.showPlaylists()
         }
+    }
+
+    /// The page of a tab other than home. Home is built once in ``shell`` and is not built here.
+    ///
+    /// Each page is a property of its own, and so is each view of the library. In one expression
+    /// they take the compiler too long to type-check, and the build fails.
+    @ViewBuilder
+    private func tabPage(_ which: RPMTab) -> some View {
+        switch which {
+        case .home: EmptyView()
+        case .library: libraryTab
+        case .radio: radioTab
+        case .feed: feedTab
+        case .settings: settingsTab
+        }
+    }
+
+    /// The library tab. Its four views fade into one another (``libraryFade``), and the row of views
+    /// under each header moves across the change (``LibraryModeTabs``).
+    private var libraryTab: some View {
+        ZStack {
+            switch mode {
+            case .artists: artistsView
+            case .genres: genresView
+            case .playlists: playlistsView
+            case .albums: albumsView
+            }
+        }
+        .animation(.easeInOut(duration: Self.libraryFade), value: mode)
+    }
+
+    /// This view has its own stack and its own path. Switching back to the records must
+    /// not leave an artist's page on the screen, and returning to the artists must not
+    /// show the place where the user was in the records.
+    private var artistsView: some View {
+        NavigationStack(path: $browsing) {
+            ArtistsPage(
+                inOrder: { readArtists.artists(model.albums, in: $0) },
+                albums: readArtists.albums(model.albums),
+                standing: model.wallStanding, covers: covers,
+                mode: $mode, lender: model.lender,
+                onOpen: { browsing.append(.artist($0.name)) },
+                onRefresh: { await model.refresh() })
+                .footRoom(chrome, .insideAStack)
+                .navigationDestination(for: LibraryStep.self) { step in
+                    page(step, on: $browsing).footRoom(chrome, .insideAStack)
+                }
+        }
+    }
+
+    /// This view has its own stack and path, as the artists view does. A genre opened
+    /// here must not be on screen after the user goes to the records.
+    private var genresView: some View {
+        NavigationStack(path: $genrePath) {
+            GenresPage(genres: readGenres.genres(model.albums),
+                       standing: model.wallStanding,
+                       mode: $mode, lender: model.lender,
+                       onOpen: { genrePath.append(.genre($0.name)) },
+                       onRefresh: { await model.refresh() })
+                .toolbar(.hidden, for: .navigationBar)
+                .footRoom(chrome, .insideAStack)
+                .navigationDestination(for: GenreStep.self) { step in
+                    genrePage(step).footRoom(chrome, .insideAStack)
+                }
+        }
+    }
+
+    /// The lists have their own stack, so that a playlist pushed here is not still on
+    /// screen after the user goes to the records. Both views are on the library tab.
+    private var playlistsView: some View {
+        NavigationStack(path: $lists) {
+            PlaylistsPage(
+                playlists: model.playlists,
+                mode: $mode,
+                // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
+                // cannot be marked from a phone, so the list would always be empty.
+                favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
+                covers: covers, lender: model.lender,
+                standing: model.playlistStanding,
+                albums: model.albums,
+                onOpen: { row in if let open = named(row) { lists.append(open) } },
+                onReread: { await model.rereadPlaylists() },
+                onMake: { name, folder, tracks in
+                    await model.makePlaylist(name: name, in: folder, tracks: tracks)
+                },
+                history: model.playedLately,
+                onOpenHistory: { lists.append(.history) })
+                .footRoom(chrome, .insideAStack)
+                .navigationDestination(for: OpenList.self) { open in
+                    page(open, back: { lists.removeLast() })
+                        .toolbar(.hidden, for: .navigationBar)
+                        .footRoom(chrome, .insideAStack)
+                }
+        }
+        .task { await model.showPlaylists() }
+    }
+
+    /// The stack belongs to the library and not to the app. A record pushed here must
+    /// not still be on screen after the user goes to the account.
+    private var albumsView: some View {
+        NavigationStack(path: $opened) {
+            LibraryPage(
+                albums: model.albums, standing: model.wallStanding, covers: covers,
+                playing: model.nowPlaying,
+                inOrder: inOrder, mode: $mode,
+                lender: model.lender,
+                onOpen: { opened.append(.album($0.key)) },
+                onPlay: { track in Task { await model.play(track) } },
+                onRefresh: { await model.refresh() },
+                isTrackMarked: { model.isTrackMarked($0) },
+                isTrackMine: { model.isTrackMine($0) },
+                onMarkTrack: { track, on in Task { await model.mark(track, on) } },
+                onFile: { model.filing = $0 },
+                upNext: .send { model.playNext($0) },
+                found: LibraryPage.Findable(
+                    artists: readArtists.artists(model.albums),
+                    genres: readGenres.genres(model.albums),
+                    playlists: model.playlists,
+                    albums: readArtists.albums(model.albums)),
+                onOpenArtist: { opened.append(.artist($0.name)) },
+                onOpenGenre: { opened.append(.genre($0.name)) },
+                onOpenList: { opened.append(.list(.playlist($0.id))) })
+                .footRoom(chrome, .insideAStack)
+                .navigationDestination(for: LibraryStep.self) { step in
+                    page(step, on: $opened).footRoom(chrome, .insideAStack)
+                }
+        }
+        // The search finds playlists as well, so they are read with the records' view too:
+        // once a session, as the playlists' own view reads them.
+        .task { await model.showPlaylists() }
+    }
+
+    /// The radio tab.
+    private var radioTab: some View {
+        RadioPage(stations: model.stations, saved: model.savedStations,
+                  countries: model.countries,
+                  tuned: model.player.station?.uuid,
+                  announced: model.player.announced,
+                  standing: model.radioStanding,
+                  onSearch: { asked, genre, country in
+                      await model.searchStations(asked, genre: genre, country: country)
+                  },
+                  onTune: { model.tune($0) },
+                  onSave: { model.save($0) })
+            .footRoom(chrome, .underTheChrome)
+            // Run each time the radio is shown and when another library is opened, so that
+            // a shared library's saved stations are its owner's current stations.
+            .task(id: [model.who?.userId ?? "", model.viewing.ownerId]) {
+                await model.readSharedStations()
+            }
+    }
+
+    /// The feed tab.
+    @ViewBuilder
+    private var feedTab: some View {
+        if let feed {
+            FeedPage(items: feed.items, answered: feed.answered, trouble: feed.trouble,
+                     hasMore: feed.next != nil, isSample: feed.isSample,
+                     readerId: model.who?.userId ?? "", unread: notices?.unread ?? 0,
+                     pictureOf: { model.community.avatar(userId: $0, hasAvatar: $1) ?? sampleFaces[$0] },
+                     coverFor: reviewCover, actions: feedActions(feed))
+                .footRoom(chrome, .underTheChrome)
+                .task { await feed.read() }
+                .task { await notices?.readUnread() }
+                .sheet(isPresented: Binding(get: { feedReview != nil }, set: { if !$0 { feedReview = nil } })) {
+                    feedReviewPage(feed)
+                }
+        } else {
+            // Keyed on the account: the tab can be shown before the sign-in has finished,
+            // and the pages are made for the account once it is known.
+            Color.clear.task(id: model.who?.userId) { makeOwnPage() }
+        }
+    }
+
+    /// The settings tab.
+    private var settingsTab: some View {
+        SettingsPage(name: model.who?.displayName ?? "",
+                    email: model.who?.email ?? "",
+                    quota: model.quota,
+                    onWifi: Binding(get: { model.prefs.rateOnWifi },
+                                    set: { model.prefs.rateOnWifi = $0
+                                           model.settleTheRate() }),
+                    onCellular: Binding(get: { model.prefs.rateOnCellular },
+                                        set: { model.prefs.rateOnCellular = $0
+                                               model.settleTheRate() }),
+                    // The queue is pumped at once, so that tracks that are still to be
+                    // downloaded are signed at the new rate now and not at the next wake.
+                    onDownload: Binding(get: { model.prefs.rateForDownloads },
+                                        set: { model.prefs.rateForDownloads = $0
+                                               Task { await model.downloads.pump() } }),
+                    levelling: Binding(get: { model.levelling },
+                                       set: { model.levelling = $0 }),
+                    levelsClassical: Binding(get: { model.levelsClassical },
+                                             set: { model.levelsClassical = $0 }),
+                    reach: model.reading,
+                    cached: model.cachedBytes,
+                    downloaded: (model.downloads.list.count, model.downloads.bytes),
+                    onDownloads: { showingDownloads = true },
+                    version: model.version,
+                    onClearCache: { Task { await model.clearCache() } },
+                    onSignOut: { Task { await model.signOut() } },
+                    onDeleteAccount: { await model.deleteAccount(confirmEmail: model.who?.email ?? "") },
+                    onSupport: { openUrl(AppModel.becomeSupporter) },
+                    crashReports: Binding(get: { model.diagnostics.sendsCrashReports },
+                                          set: { model.diagnostics.sendsCrashReports = $0 }),
+                    onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil,
+                    sharesListening: Binding(get: { model.sharesListening },
+                                             set: { on in Task { await model.setSharesListening(on) } }))
+            .task { await model.readCacheSize() }
+            .task { await model.readSharing() }
+            .footRoom(chrome, .underTheChrome)
+            .sheet(isPresented: $showingDownloads) {
+                DownloadsPage(
+                    rows: model.downloads.list.map {
+                        DownloadsPage.Row(album: $0.album, bytes: $0.bytes,
+                                          standing: $0.standing)
+                    },
+                    covers: covers,
+                    onRemove: { model.downloads.remove($0) },
+                    onClose: { showingDownloads = false })
+            }
     }
 
     /// The tabs other than home whose pages are on the screen: the one shown, and those still
