@@ -63,6 +63,9 @@ final class TVModel {
     /// Matches `AlbumRatings` in the Android TV app.
     let ratings = AlbumRatings()
     let plays = PlayLog()
+
+    /// The listens not yet sent to the store's listening log, which cuts the lists that read it.
+    let listens = ListenLog()
     /// The last queue. It is stored between runs and restored at the next launch.
     let keptQueue = KeptQueueFile(folder: KeptFiles.folder)
     let radioListens = RadioListens(file: RadioListens.defaultFile)
@@ -110,7 +113,7 @@ final class TVModel {
         homeNetwork = home
         session = LibrarySession(
             auth: auth, cloud: cloud, community: community, library: library,
-            plays: plays, radioListens: radioListens, playDevice: PlayDevice(store: .standard),
+            plays: plays, listens: listens, radioListens: radioListens, playDevice: PlayDevice(store: .standard),
             additions: { read in
                 let catalogs = Array(home.here.values)
                 guard !catalogs.isEmpty else { return read }
@@ -153,6 +156,18 @@ final class TVModel {
             guard let self else { return }
             Task {
                 await self.plays.note(rpmId: counted.rpmId, at: counted.at)
+                self.syncPlaysSoon()
+            }
+        }
+
+        // Every listen worth writing down, plays and skips, for the store's listening log. Sent with
+        // the plays.
+        player.onListened = { [weak self] heard in
+            guard let self else { return }
+            Task {
+                await self.listens.note(rpmId: heard.rpmId, at: heard.at, heardSeconds: heard.heardSeconds,
+                                        lengthSeconds: heard.lengthSeconds, counted: heard.counted,
+                                        localHour: heard.localHour, localDayOfWeek: heard.localDayOfWeek)
                 self.syncPlaysSoon()
             }
         }
@@ -216,6 +231,7 @@ final class TVModel {
         }
 
         await plays.load()
+        await listens.load()
         Task { await self.syncPlays() }
         Task { await self.stations.radioState.refresh() }
 

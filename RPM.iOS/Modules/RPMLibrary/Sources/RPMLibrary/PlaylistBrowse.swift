@@ -1,19 +1,19 @@
 import Foundation
 import RPMKit
 
-/// One row on the playlists tab: a stored playlist, a folder to step into, or one of the two
-/// lists that nobody made.
+/// One row on the playlists tab: a stored playlist, a generated list, the marked songs, or a
+/// folder to step into.
 public struct PlaylistRow: Sendable, Equatable, Identifiable {
     public enum Kind: Sendable, Equatable {
-        /// What is playing. This is not stored anywhere, and it belongs to this phone alone.
-        case queue
+        /// Every song the listener has marked, in the order they were marked. **The songs are read
+        /// from the catalogue on this phone, not from the cloud.** The set gives the id and the
+        /// frame of the computer's Favourite tracks list. See
+        /// ``GeneratedLists/marked(_:among:)``.
+        case favorites(PlaylistSet)
 
-        /// Every song the listener has marked, in the order they were marked. **This is read
-        /// from the catalogue and not filled by anybody.** So it is not a `PlaylistSet`. There is
-        /// nothing in the cloud to open.
-        case favorites
+        /// A folder, and what its square shows. See ``FolderFace``.
+        case folder(PlaylistFolderRow, FolderFace)
 
-        case folder(PlaylistFolderRow)
         case playlist(PlaylistSet)
     }
 
@@ -21,60 +21,62 @@ public struct PlaylistRow: Sendable, Equatable, Identifiable {
 
     public let name: String
 
-    /// What the row holds. It is empty for a folder: a folder is a place, and what is in it is
-    /// a count, not a running order.
+    /// What the row holds. It is empty for a folder: a folder has a count of rows, not a
+    /// running order.
     public let tracks: [CloudTrack]
 
     /// How many of a stored playlist's tracks are not in this library. This is always zero for
-    /// the kinds that are made from the library, rather than named against it.
+    /// the marked songs, which are made from the library.
     public let missing: Int
 
-    /// How many playlists a folder holds, including everything beneath it. This is zero on every
-    /// row that is a list rather than a place.
+    /// How many rows a folder shows when it is opened. This is zero on every row that is a list.
     public let playlists: Int
 
 
     public var id: String {
         switch kind {
-        case .queue: return "\u{1}queue"
-        case .favorites: return "\u{1}favorites"
-        case .folder(let folder): return "\u{1}folder/" + folder.path.joined(separator: "/")
+        case .favorites: return GeneratedLists.markedId
+        case .folder(let folder, _): return "\u{1}folder/" + folder.path.joined(separator: "/")
         case .playlist(let set): return set.id
         }
     }
 
-    /// Whether tapping the row goes somewhere, rather than opening a list of songs. Only these
-    /// rows show a chevron. A chevron repeated down a list of rows that all behave the same way
-    /// adds no information.
+    /// Whether tapping the row steps into a folder, rather than opening a list of songs. Only
+    /// these rows show a chevron.
     public var isFolder: Bool {
         if case .folder = kind { return true }
         return false
     }
 
-    /// The record that the row takes its picture from, when the list has no picture of its own.
-    /// This is the first track. It is nil for a folder. A picture that stands for a place says
-    /// something about one of the things inside it, and nothing about the place itself.
-    public var artSource: CloudTrack? { isFolder ? nil : tracks.first }
-
-    /// The list's OWN picture, where it has one. See ``ListPicture``.
-    ///
-    /// A playlist has a cover that somebody chose. A list that the app built uses its shipped
-    /// photograph where it has one. Otherwise it uses the figure that the computer drew for it.
-    /// This is nil for rows that are not stored lists. The queue and the marked songs are made
-    /// here, out of what is playing and what has been marked. A folder is a place.
-    public var picture: ListPicture? {
-        guard case .playlist(let set) = kind else { return nil }
-        return set.picture
+    /// What a folder's square shows, or nil for a row that is a list.
+    public var face: FolderFace? {
+        if case .folder(_, let face) = kind { return face }
+        return nil
     }
 
-    /// The list itself, if this row is one. This is nil for the queue, the marked songs and a
-    /// folder. None of them is a running order that the cloud holds.
+    /// The record that the row takes its picture from, when the list has no picture of its own.
+    /// This is the first track. It is nil for a folder, which shows a mark and not a record.
+    public var artSource: CloudTrack? { isFolder ? nil : tracks.first }
+
+    /// The list's own picture, where it has one. See ``ListPicture``. This is nil for a folder.
+    ///
+    /// The marked songs have a picture only under the id of the computer's copy. Without a copy
+    /// their id names nothing in the store, and asking for it would be a request that always
+    /// fails.
+    public var picture: ListPicture? {
+        if case .favorites(let set) = kind, set.id == GeneratedLists.markedId { return nil }
+        return self.set?.picture
+    }
+
+    /// The list itself, or nil for a folder.
     ///
     /// The square tiles read this, because they need more of a list than its picture. A
-    /// generated list's frame is coloured from what the list IS. See `GeneratedListLook`.
+    /// generated list's frame is coloured from what the list is. See `GeneratedListLook`.
     public var set: PlaylistSet? {
-        guard case .playlist(let set) = kind else { return nil }
-        return set
+        switch kind {
+        case .favorites(let set), .playlist(let set): return set
+        case .folder: return nil
+        }
     }
 
     public var duration: Duration {
@@ -89,112 +91,223 @@ public struct PlaylistRow: Sendable, Equatable, Identifiable {
     }
 }
 
+/// What a folder's square shows in place of the plain folder mark.
+///
+/// It is worked out from the lists under the folder, not from the folder's name. The name is in
+/// the language of the computer that filed the lists, which can be different from the phone's.
+/// The desktop draws the same marks in its playlist tree (`PlaylistTreeItem.Glyph`).
+public enum FolderFace: Sendable, Equatable {
+    /// A folder somebody made, a folder that holds at least one list somebody made, or a folder
+    /// of generated lists of more than one kind.
+    case plain
+
+    /// The folder of the moods: the moods picture.
+    case moods
+
+    /// The folder of the decades: a clock.
+    case decades
+
+    /// One mood and its cuts by genre. `kind` is the mood, as the desktop's `SmartPlaylistKind`
+    /// spells it, for example "Calm".
+    case mood(String)
+}
+
 /// The playlists tab as it stands at one place in the tree.
 ///
 /// **Where you are and what is on screen are one answer.** So they are worked out together and
-/// handed over together. The open folder is the surface's state, and the tree is not the
-/// surface's to own. A playlist deleted on a computer can empty the folder that somebody is
-/// standing in. A path kept as it was would leave them in a place that no longer exists.
-/// ``PlaylistFolderTree/stillOpen(_:folders:)`` is folded in here, rather than left for the
-/// caller to remember. A caller that forgets it does not fail. It draws an empty list that will
-/// never fill.
+/// returned together. The open folder is state of the screen, and the tree is not. A playlist
+/// deleted on a computer can empty the folder that somebody is in. A path kept as it was would
+/// leave them in a folder that no longer exists. So
+/// ``PlaylistFolderTree/stillOpen(_:folders:)`` is applied here, and not left for the caller to
+/// remember. A caller that forgot it would not fail. It would draw an empty list that never fills.
 public struct PlaylistBrowse: Sendable, Equatable {
-    /// Where the reader actually is, which is not always where they were standing.
+    /// Where the reader actually is, which is not always where they were.
     public let at: [String]
 
-    /// The folders inside it, then the playlists in it. Folders come above playlists, as on the
-    /// desktop's own grid and in every file browser. The folders are the frame, and the lists
-    /// are what is in it. Both are sorted alphabetically. A flat screen is not the tree. The
-    /// order that siblings happen to have on a computer means nothing once they are off that
-    /// computer.
+    /// The folders inside it, then the lists in it.
+    ///
+    /// The app's own folders come first: Moods at the top of the tree, with Decades first inside
+    /// it. Then the other folders by name. Then the lists: a mood's own list first in the folder
+    /// named after it, then the app's lists, then the person's own, each by name. The Android app
+    /// uses the same order.
     public let rows: [PlaylistRow]
 
     /// - Parameters:
     ///   - at: the folder being looked at. Empty means the top of the tree.
     ///   - playlists: what the cloud holds for this shelf, resolved against it.
-    ///   - queue: what is playing. **A row at the top of the tree even when it is empty.** It
-    ///     is where the music actually is. A row that comes and goes is a row that nobody
-    ///     learns the position of.
-    ///   - favorites: every song the listener has marked, or nil on a borrowed shelf. Nil and
-    ///     empty are different answers. A borrowed row cannot be marked from a phone at all. The
-    ///     mark is a tag on a catalogue row under the account that holds the file. So the list
-    ///     would be empty by construction, and a row that is always empty is worse than no row.
+    ///   - favorites: every song the listener has marked, or nil on a borrowed shelf. **Nil and
+    ///     empty are different answers.** Nil leaves the cut as the computer sent it. Empty is
+    ///     this phone saying that nothing is marked now, so the computer's older copy of
+    ///     Favourite tracks is not shown either.
+    ///
+    /// There is no row for the queue. The queue key on the player shows it, and the desktop
+    /// leaves it out of its tree for the same reason.
+    ///
+    /// **The listening lists stand at the top of the tree** (Your mix, On repeat, Favourite
+    /// tracks and the others, ``GeneratedLists/ownerOnly``). The computer files them in its Smart
+    /// playlists folder. The phone apps have no such folder and show them as lists of their own.
+    /// **The decades are a folder inside Moods**, not beside it. See `regrouped`.
     public static func of(
-        at: [String], playlists: [PlaylistSet],
-        queue: [CloudTrack], favorites: [CloudTrack]?
+        at: [String], playlists: [PlaylistSet], favorites: [CloudTrack]?
     ) -> PlaylistBrowse {
-        let folders = playlists.map(\.folder)
+        // The marked songs as this phone has them now, in the place of the computer's copy.
+        // The copy is removed whenever this phone has an answer, so the two are never shown
+        // together.
+        let marked = favorites.flatMap { GeneratedLists.marked($0, among: playlists) }
+        let sent = (favorites == nil ? playlists : playlists.filter { !GeneratedLists.isMarkedCopy($0) })
+            + (marked.map { [$0] } ?? [])
+        let moods = moodsFolder(sent)
+        let shown = sent.map { regrouped($0, moods: moods) }
+
+        let folders = shown.map(\.folder)
         let here = PlaylistFolderTree.stillOpen(at, folders: folders)
 
         var rows: [PlaylistRow] = []
 
-        // The queue and the marked songs belong to the top of the tree, and only there. They are
-        // not filed anywhere. Drawing them inside every folder would say that they are.
-        if here.isEmpty {
-            rows.append(PlaylistRow(kind: .queue, name: "", tracks: queue,
-                                    missing: 0, playlists: 0))
-
-            if let favorites {
-                rows.append(PlaylistRow(kind: .favorites, name: "", tracks: favorites,
-                                        missing: 0, playlists: 0))
-            }
+        let places = PlaylistFolderTree.foldersIn(folders, at: here).map { folder in
+            (folder, shown.filter { PlaylistFolderTree.isUnder($0.folder, folder.path) })
         }
 
-        for folder in PlaylistFolderTree.foldersIn(folders, at: here) {
-            rows.append(PlaylistRow(kind: .folder(folder), name: folder.name,
-                                    tracks: [], missing: 0, playlists: folder.playlists))
+        // The index breaks ties, so folders of the same rank keep their order by name. Swift's
+        // sort is not stable.
+        for (folder, inside) in places.enumerated()
+            .sorted(by: { (rank($0.element.1), $0.offset) < (rank($1.element.1), $1.offset) })
+            .map(\.element) {
+            rows.append(PlaylistRow(kind: .folder(folder, face(of: folder, holding: inside, moods: moods)),
+                                    name: folder.name, tracks: [], missing: 0,
+                                    playlists: folder.playlists))
         }
 
         // Sorted here, and not assumed to arrive sorted. The caller resolves these against a
         // listing, and the listing's order belongs to the store, not to the reader.
         //
-        // **A mood's own list comes first, above the cuts of it.** When standing in Adrenaline,
-        // the row somebody came for is Adrenaline, the whole of it. Alphabetical order would put
-        // it among Amplified and Hustle, by the accident of its letters. It is the only row this
-        // rule can move, because it is the only row whose name is the name of the place it is in.
-        let inside = playlists
+        // **A mood's own list comes first, above the cuts of it.** In the Adrenaline folder, the
+        // row somebody came for is the whole Adrenaline list. Alphabetical order would put it
+        // among Amplified and Hustle because of its letters. It is the only row this rule moves,
+        // because it is the only row whose name is the name of the folder it is in.
+        let inside = shown
             .filter { PlaylistFolderTree.isIn($0.folder, here) }
             .sorted { a, b in
                 let (first, second) = (GeneratedLists.isPooled(a), GeneratedLists.isPooled(b))
                 if first != second { return first }
+
+                // The app's lists above the person's own.
+                let (madeA, madeB) = (a.origin == .generated, b.origin == .generated)
+                if madeA != madeB { return madeA }
 
                 return a.name.compare(b.name, options: .caseInsensitive,
                                       range: nil, locale: .current) == .orderedAscending
             }
 
         for set in inside {
-            rows.append(PlaylistRow(kind: .playlist(set), name: set.name,
+            let kind: PlaylistRow.Kind = set.id == marked?.id ? .favorites(set) : .playlist(set)
+            rows.append(PlaylistRow(kind: kind, name: set.name,
                                     tracks: set.tracks, missing: set.missing, playlists: 0))
         }
 
         return PlaylistBrowse(at: here, rows: rows)
     }
 
-    /// The tree alone: the folders and the stored playlists, without the two lists that nobody made.
+    /// The tree alone: the folders and the stored playlists.
     ///
-    /// This is what a picker walks through. A song cannot be filed into the queue or into the
-    /// marked songs. One is what is playing, and the other is a question asked of the rows. A
-    /// picker that drew them would be offering two places that refuse.
+    /// This is what a picker walks through. A song cannot be filed into the marked songs, which
+    /// are a question asked of the catalogue, not a list.
     ///
     /// **Nor into a generated list.** The computer cuts those from the collection and replaces
-    /// them whole on its next run. A song put into one would be gone by the next morning.
-    /// Generated lists are removed before the tree is walked, not filtered out of the rows
-    /// afterwards. This also removes the folders that held nothing else. A Moods folder that
-    /// opens on nothing is a place that refuses, and it would be drawn one step later.
+    /// them whole on its next run. A song put into one would be gone the next day. Generated
+    /// lists are removed before the tree is walked, not filtered out of the rows afterwards. This
+    /// also removes the folders that held nothing else. A Moods folder that opens on nothing
+    /// would be a place that refuses songs, one step later.
     public static func places(at: [String], playlists: [PlaylistSet]) -> PlaylistBrowse {
-        let whole = of(at: at, playlists: playlists.filter { $0.origin == .stored },
-                       queue: [], favorites: nil)
-
-        return PlaylistBrowse(at: whole.at,
-                              rows: whole.rows.filter { $0.kind != .queue })
+        of(at: at, playlists: playlists.filter { $0.origin == .stored }, favorites: nil)
     }
 
     /// Where the open folder sits, for the line above its name. Two folders called "90s" are two
-    /// places. The name alone would not say which one is open. There is nothing to show at the
-    /// top of the tree, or one step into it.
+    /// places, and the name alone would not say which one is open. There is nothing to show at
+    /// the top of the tree, or one step into it.
     public var path: [String] { at.count > 1 ? Array(at.dropLast()) : [] }
 
     /// The way back out, or nil at the top of the tree, where there is nowhere to go. A key
     /// that does nothing is worse than no key.
     public var back: [String]? { at.isEmpty ? nil : Array(at.dropLast()) }
+
+    // ── where a list stands ──
+
+    /// The two changes to the folders the computer filed its generated lists in. A list
+    /// somebody made is returned as it is. The Android app makes the same two changes.
+    ///
+    /// - A listening list moves to the top of the tree. See ``of(at:playlists:favorites:)``.
+    /// - A decade moves into the moods folder: the folder the computer filed it in, usually
+    ///   Decades, becomes a folder inside Moods. A computer that sent no folders, or a shelf with
+    ///   no moods, is left as it is.
+    ///
+    /// Both are found by what the lists are, not by the folders' names, which are in the
+    /// computer's language.
+    private static func regrouped(_ set: PlaylistSet, moods: String?) -> PlaylistSet {
+        guard set.origin == .generated, let outer = set.folder.first else { return set }
+
+        if GeneratedLists.ownerOnly.contains(set.cut?.kind ?? "") {
+            return set.filed(in: [])
+        }
+
+        if let moods, (set.cut?.decade ?? 0) > 0,
+           outer.lowercased(with: .current) != moods.lowercased(with: .current) {
+            return set.filed(in: [moods] + set.folder)
+        }
+
+        return set
+    }
+
+    // ── what a folder shows ──
+
+    /// The name of the folder the computer filed its moods in: the outermost folder of a
+    /// generated list that is neither a listening list nor a decade. Nil when there is none, or
+    /// when the computer sent no folders.
+    private static func moodsFolder(_ sets: [PlaylistSet]) -> String? {
+        sets.first {
+            $0.origin == .generated && ($0.cut?.decade ?? 0) == 0
+                && !GeneratedLists.ownerOnly.contains($0.cut?.kind ?? "") && !$0.folder.isEmpty
+        }?.folder.first
+    }
+
+    /// What a folder's square shows, from `inside`, the lists anywhere under it.
+    ///
+    /// A folder that holds a list somebody made is plain, so a person's own folder never shows
+    /// the app's marks, whatever it is called.
+    private static func face(of folder: PlaylistFolderRow, holding inside: [PlaylistSet],
+                             moods: String?) -> FolderFace {
+        guard !inside.isEmpty, inside.allSatisfy({ $0.origin == .generated }) else { return .plain }
+
+        if let moods, folder.path.count == 1,
+           folder.path[0].lowercased(with: .current) == moods.lowercased(with: .current) {
+            return .moods
+        }
+
+        if inside.allSatisfy({ ($0.cut?.decade ?? 0) > 0 }) { return .decades }
+
+        // One mood and its cuts. A listening list is never a mood.
+        if let kind = inside.first?.cut?.kind, !GeneratedLists.ownerOnly.contains(kind),
+           inside.allSatisfy({ $0.cut?.kind == kind && $0.cut?.decade == 0 }) {
+            return .mood(kind)
+        }
+
+        return .plain
+    }
+
+    /// The order of folders in one place, from what is under each: a folder that holds decades
+    /// first, then a folder that holds other generated lists, then every other folder. At the
+    /// top of the tree this puts Moods first. Inside Moods it puts Decades first.
+    private static func rank(_ inside: [PlaylistSet]) -> Int {
+        if inside.contains(where: { $0.origin == .generated && ($0.cut?.decade ?? 0) > 0 }) { return 0 }
+        if inside.contains(where: { $0.origin == .generated }) { return 1 }
+        return 2
+    }
+}
+
+extension PlaylistSet {
+    /// The same set filed in another folder.
+    fileprivate func filed(in folder: [String]) -> PlaylistSet {
+        PlaylistSet(id: id, name: name, tracks: tracks, missing: missing, folder: folder,
+                    stamp: stamp, shelf: shelf, origin: origin, cut: cut)
+    }
 }

@@ -239,7 +239,7 @@ struct RecordPage: View {
                 // Another selection of a generated list, where the computer sent enough of it.
                 if case .list(let set) = of, model.session.hasAnotherList(set) {
                     Button {
-                        model.session.newGeneratedList(set)
+                        Task { await model.session.newGeneratedList(set) }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }

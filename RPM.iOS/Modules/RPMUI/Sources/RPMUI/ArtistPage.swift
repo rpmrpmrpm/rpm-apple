@@ -25,7 +25,7 @@ public struct ArtistPage: View {
     private let shelves: ArtistShelves
     private let covers: any CoverStore
 
-    /// Where the Wikipedia text under the keys comes from. See ``AboutText``.
+    /// Where the Wikipedia text under the keys comes from. See ``CentredAboutText``.
     private let articles: ArticleStore
 
     /// Where the listen counts of all users for each of their records come from, for Popular tracks. See
@@ -138,6 +138,10 @@ public struct ArtistPage: View {
     /// Whether their Wikipedia text was there when the page was built, read before and kept. Text
     /// that arrives after comes in from the top (``CentredAboutText/arrives``).
     private let aboutAtOpen: Bool
+
+    /// The width of the column under the title, measured before the text arrives, so the text is cut
+    /// for it on its first layout. See ``CentredAboutText``.
+    @State private var aboutColumn: CGFloat = 0
 
     /// The photograph's colour, which leads the page's ground (``ArtGround``): its best vivid
     /// colour, no brighter than white text allows (``GroundLead``). Read once, when the photograph
@@ -260,7 +264,7 @@ public struct ArtistPage: View {
     @ViewBuilder
     private var aboutThem: some View {
         if let article = about.article(for: subject) {
-            CentredAboutText(article: article, arrives: !aboutAtOpen)
+            CentredAboutText(article: article, column: aboutColumn, arrives: !aboutAtOpen)
                 .padding(.top, 10)
         }
     }
@@ -332,6 +336,8 @@ public struct ArtistPage: View {
                 // Under the name, so the reader sees it before they play the music.
                 aboutThem
             }
+            // Inside the margins: the width the Wikipedia text is laid out in.
+            .measuresWidth(into: $aboutColumn)
             .shadow(color: .black.opacity(0.6), radius: 6, y: 1)
             .padding(.horizontal, RPMLayout.margin)
             .padding(.bottom, Self.writingFoot)

@@ -184,7 +184,7 @@ public struct PlaylistPickSheet: View {
     private func tap(_ row: PlaylistRow) {
         said = nil
 
-        if case .folder(let folder) = row.kind {
+        if case .folder(let folder, _) = row.kind {
             Haptics.pick()
             at = folder.path
             picked = nil

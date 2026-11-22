@@ -24,6 +24,9 @@ public final class LibrarySession {
     /// What this device has played, and what the listener's other devices have.
     public let plays: PlayLog
 
+    /// The listens this device has not sent to the store's listening log yet.
+    public let listens: ListenLog
+
     /// What has been heard on the radio, on this device and the listener's other devices.
     public let radioListens: RadioListens
 
@@ -58,7 +61,7 @@ public final class LibrarySession {
     ///   tracks beyond the cloud's must pass its own function. A head with none passes
     ///   ``nothingAdded``.
     public init(auth: AuthClient, cloud: RPMCloudClient, community: RPMCommunityClient,
-                library: CloudLibrary, plays: PlayLog, radioListens: RadioListens,
+                library: CloudLibrary, plays: PlayLog, listens: ListenLog, radioListens: RadioListens,
                 playDevice: PlayDevice, additions: @escaping Additions) {
         self.additions = additions
         self.auth = auth
@@ -66,6 +69,7 @@ public final class LibrarySession {
         self.community = community
         self.library = library
         self.plays = plays
+        self.listens = listens
         self.radioListens = radioListens
         self.playDevice = playDevice
     }
@@ -279,6 +283,7 @@ public final class LibrarySession {
         // The plays are cleared with the account, and so is the id they were sent under. If the id
         // were kept, the next account would send the previous account's unsent plays as its own.
         await plays.forget()
+        await listens.forget()
         playDevice.forget()
 
         albums = []
@@ -412,6 +417,7 @@ public final class LibrarySession {
 
         guard await auth.isSignedIn else { return }
         await PlaysSync.run(log: plays, client: cloud, mine: playDevice.id)
+        await ListensSync.run(log: listens, client: cloud, mine: playDevice.id)
         await StationListensSync.run(log: radioListens, client: cloud)
 
         // Counts that arrive after home is settled change the answer for every row, so home is
@@ -451,7 +457,8 @@ public final class LibrarySession {
     /// against the whole of the listing. A read that lands before the listing has its lists
     /// resolved again when the listing is placed.
     private func redraw() {
-        playlists = held.sets(against: albums.flatMap(\.tracks), readings: moodReadings.all)
+        playlists = held.sets(against: albums.flatMap(\.tracks), readings: moodReadings.all,
+                              fresh: moodReadings.fresh)
     }
 
     /// Reads the playlist tree once per session.
@@ -483,13 +490,32 @@ public final class LibrarySession {
         return list.shows > 0 && list.trackIds.count > list.shows
     }
 
-    /// Shows the next slice of one generated list. Nothing is fetched: the cut is already held in
-    /// memory.
-    public func newGeneratedList(_ set: PlaylistSet) {
+    /// Shows a new selection of one generated list.
+    ///
+    /// On the account's own shelf the store cuts it (`cloud/moodlists/next`) from this device's own
+    /// count of presses, so every press is a new list, as it is on a computer. Where the store cannot
+    /// answer (offline, or the account's library not built yet), and on a borrowed shelf, the next
+    /// slice of the run that came with the cut is shown instead.
+    ///
+    /// The press is counted before the request, so presses in a row each ask for the next list. An
+    /// answer that arrives after a later press is not shown: see
+    /// ``GeneratedListReadings/noteFresh(_:reading:trackIds:)``.
+    public func newGeneratedList(_ set: PlaylistSet) async {
         guard set.origin == .generated, set.shelf == held.shelf, held.moodLists != nil
         else { return }
 
-        moodReadings.step(GeneratedLists.storeId(of: set))
+        let id = GeneratedLists.storeId(of: set)
+        let reading = moodReadings.step(id)
+
+        if set.shelf.isOwn,
+           let answer = try? await cloud.nextReading(of: id, reading: reading, language: Loc.language,
+                                                     zone: TimeZone.current.identifier),
+           !answer.trackIds.isEmpty {
+            moodReadings.noteFresh(id, reading: reading, trackIds: answer.trackIds)
+        }
+
+        // A read for another shelf may have landed while the request was out. The rows are drawn
+        // for whatever is held now.
         redraw()
     }
 
@@ -531,7 +557,8 @@ public final class LibrarySession {
     /// cut any lists, and throws when the request failed. The two are different answers.
     private func cutAnswer(_ shelf: CloudShelf) async -> HeldPlaylists.CutAnswer {
         do {
-            return try await cloud.moodLists(shelf).map { .cut($0) } ?? .none
+            return try await cloud.moodLists(shelf, language: Loc.language,
+                                             zone: TimeZone.current.identifier).map { .cut($0) } ?? .none
         } catch {
             return .failed
         }

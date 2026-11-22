@@ -139,7 +139,14 @@ public struct NowPlayingSheet: View {
     @State private var showingSleepTimer = false
 
     /// How far a finger has pushed the cover sideways, and in which direction it will go.
-    @State private var flick: CGFloat = 0
+    ///
+    /// **Gesture state, not view state.** SwiftUI does not call `onEnded` when a drag is
+    /// cancelled: the screen locks during the touch, the app goes to the background, or the
+    /// sheet's pull takes the touch over. A value that only `onEnded` sets back to zero would keep
+    /// the cover and the spectrum pushed to one side. Gesture state goes back to zero on both the
+    /// end and a cancel, with the same spring as the drag.
+    @GestureState(resetTransaction: Transaction(animation: .spring(duration: 0.3)))
+    private var flick: CGFloat = 0
 
     /// The name of the room the sound is going to, or nil for the phone itself.
     private let playingOn: String?
@@ -579,10 +586,11 @@ public struct NowPlayingSheet: View {
         // A station has no next or previous track to go to, because it has no queue.
         .gesture(
             DragGesture(minimumDistance: 12)
-                .onChanged { if !player.onTheRadio { flick = $0.translation.width } }
+                .updating($flick) { drag, flick, _ in
+                    if !player.onTheRadio { flick = drag.translation.width }
+                }
                 .onEnded { thrown in
                     let far = abs(thrown.translation.width) > 80
-                    flick = 0
                     guard far, !player.onTheRadio else { return }
 
                     Task {

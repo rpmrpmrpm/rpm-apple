@@ -82,6 +82,40 @@ struct GeneratedListsTests {
         #expect(next.first?.missing == 0)
     }
 
+    /// A press answered by the store shows the store's new list, not a slice of the run the cut came with.
+    @Test func aNewReadingFromTheStoreReplacesTheSlice() {
+        let run = ids(100)
+        let tracks = (run + ["n1", "n2", "n3"]).map(track)
+        let list = CloudMoodList(kind: "Calm", title: "Chill", folder: ["Moods"],
+                                 listId: "chill", trackIds: run, shows: 50)
+
+        let sets = GeneratedLists.sets(cut([list]), against: tracks, shelf: .own,
+                                       readings: ["chill": 5], fresh: ["chill": ["n1", "n2", "n3"]])
+
+        #expect(sets.first?.tracks.map(\.rpmId) == ["n1", "n2", "n3"])
+    }
+
+    @Test func aReadingIsKeptForThePressItAnswered() {
+        let defaults = UserDefaults(suiteName: "rpm-test-\(UUID().uuidString)")!
+        var readings = GeneratedListReadings(store: defaults)
+
+        let first = readings.step("chill")
+        readings.noteFresh("chill", reading: first, trackIds: ["a"])
+        #expect(readings.fresh == ["chill": ["a"]])
+
+        // The next press has no answer yet: the old answer is for another press, and is not shown.
+        _ = readings.step("chill")
+        #expect(readings.fresh.isEmpty)
+
+        // An answer that arrives late, for a press that is no longer the latest, is not shown either.
+        readings.noteFresh("chill", reading: first, trackIds: ["late"])
+        #expect(readings.fresh.isEmpty)
+
+        // Kept across launches.
+        readings.noteFresh("chill", reading: 2, trackIds: ["b"])
+        #expect(GeneratedListReadings(store: defaults).fresh == ["chill": ["b"]])
+    }
+
     // ── what a list is called ──
 
     /// The name on a cut comes from the computer, which owns the titles. Copying its title table here would
@@ -375,38 +409,38 @@ struct GeneratedListsTests {
         PlaylistBrowse.of(
             at: at,
             playlists: GeneratedLists.sets(wholeCut(), against: [track("a")], shelf: .own),
-            queue: [], favorites: nil).rows
+            favorites: nil).rows
     }
 
-    /// Two folders at the top. Each shows how many rows are inside it.
-    @Test func theShelfPutsTwoFoldersAtTheTop() {
-        // The queue is always the first row at the top of the tree.
-        let top = Array(rows([]).dropFirst())
+    /// One folder at the top: Moods, with the decades inside it, as on Android.
+    @Test func theShelfPutsOneFolderAtTheTop() {
+        let top = rows([])
 
-        #expect(top.map(\.name) == [decades, moods])
-        #expect(top.allSatisfy { $0.isFolder })
-        #expect(top[0].playlists == 6)
+        #expect(top.map(\.name) == [moods])
+        #expect(top.map(\.face) == [.moods])
 
-        // Six rows: four moods that are places, and two that are plain lists. The count is not the
-        // twenty lists under them, which the user does not see at this level.
-        #expect(top[1].playlists == 6)
+        // Seven rows: the Decades folder, four moods that are places, and two that are plain lists.
+        // The count is not the lists under them, which the user does not see at this level.
+        #expect(top[0].playlists == 7)
     }
 
-    /// A mood with cuts under it is a place. A mood without cuts is a list. Places are listed above lists, as
-    /// this tab shows at every level.
-    @Test func theMoodsFolderHoldsThePlacesAndThePlainMoods() {
+    /// Decades first, then the moods with cuts under them, which are places, then the moods without cuts,
+    /// which are lists. Places are listed above lists, as this tab shows at every level.
+    @Test func theMoodsFolderHoldsTheDecadesThePlacesAndThePlainMoods() {
         let inside = rows([moods])
 
         #expect(inside.map(\.name) == [
-            Loc.get("Playlists_Energetic"), chill,
+            decades, Loc.get("Playlists_Energetic"), chill,
             Loc.get("Playlists_Danceable"), Loc.get("Playlists_Focus"),
             Loc.get("Playlists_Classical"), Loc.get("Playlists_Sleep"),
         ])
-        #expect(inside.prefix(4).allSatisfy { $0.isFolder })
+        #expect(inside.prefix(5).allSatisfy { $0.isFolder })
         #expect(inside.suffix(2).allSatisfy { !$0.isFolder })
+        #expect(inside[0].face == .decades)
+        #expect(inside[1].face == .mood("Energetic"))
 
         // Its own list, and the four cuts of it.
-        #expect(inside[0].playlists == 5)
+        #expect(inside[1].playlists == 5)
     }
 
     /// **The Adrenaline place holds playlists.** Its own list comes first, as the whole list is what someone
@@ -431,8 +465,8 @@ struct GeneratedListsTests {
         #expect(classical.tracks.count == 1)
     }
 
-    @Test func theDecadesStandBesideTheMoodsAndNotUnderThem() {
-        let inside = rows([decades])
+    @Test func theDecadesAreAFolderInsideTheMoods() {
+        let inside = rows([moods, decades])
 
         #expect(inside.map(\.name) == ["1960s", "1970s", "1980s", "1990s", "2000s", "2010s"])
         #expect(inside.allSatisfy { !$0.isFolder })

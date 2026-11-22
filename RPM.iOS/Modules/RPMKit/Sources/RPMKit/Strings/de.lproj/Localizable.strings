@@ -1215,9 +1215,6 @@
 /* Import pane empty state, under Queue_EmptyTitle. */
 "Queue_EmptyHint" = "Ordner hinzufügen, CD rippen oder eine Seite aufnehmen: Die Dateien erscheinen hier zur Prüfung, bevor sie in die Sammlung kommen.";
 
-/* Tooltip for the deck's pane pill. */
-"Deck_PaneTip" = "Seitenbereich ein- oder ausblenden";
-
 /* The pinned playlist the player always plays. */
 "Playlists_NowPlaying" = "Aktuelle Wiedergabe";
 
@@ -1256,6 +1253,12 @@
 
 /* Playlist tree context menu: remove the playlist from the cloud, and the tracks that were only there for it. */
 "Playlists_RemoveFromCloud" = "Aus Cloud entfernen";
+
+/* Playlist tree context menu when several playlists are selected: upload those playlists and every track they play to the cloud. {0} is the number of selected playlists that are not in the cloud yet (2 or more). */
+"Playlists_AddManyToCloud" = "%1$@ Playlists zur Cloud hinzufügen";
+
+/* Playlist tree context menu when several playlists are selected: remove those playlists from the cloud, and the tracks that were only there for them. {0} is the number of selected playlists that are in the cloud (2 or more). */
+"Playlists_RemoveManyFromCloud" = "%1$@ Playlists aus der Cloud entfernen";
 
 /* Playlist tree context menu: play this playlist/folder/song. */
 "Playlists_Play" = "Wiedergeben";
@@ -2263,6 +2266,9 @@
 
 /* Phone collection search: accessibility label of the cross on one earlier search. */
 "Rpm_Search_Forget" = "Aus letzten Suchen entfernen";
+
+/* Placeholder in the search bar that Cmd+F or Ctrl+F opens over the whole window, and the tooltip of the search key beside Home that opens it, on the desktop and in the web app. */
+"Rpm_Search_Library" = "In deiner Mediathek suchen";
 
 /* Phone profile page: key beside the box for a new post. */
 "Rpm_Profile_Post" = "Posten";

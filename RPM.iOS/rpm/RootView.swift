@@ -754,6 +754,16 @@ struct RootView: View {
 
         if let name = asked["RPM_OPEN_TAB"], let want = RPMTab(rawValue: name) { tab = want }
 
+        // RPM_SWITCH_TAB: another tab, opened after RPM_OPEN_AFTER seconds, as a press on the tab key
+        // opens it. For looking at the change from one tab to another.
+        if let name = asked["RPM_SWITCH_TAB"], let want = RPMTab(rawValue: name) {
+            let wait = Double(asked["RPM_OPEN_AFTER"] ?? "") ?? 0
+            Task {
+                try? await Task.sleep(for: .seconds(wait))
+                tab = want
+            }
+        }
+
         if asked["RPM_OPEN_PLAYER"] != nil { playing.raise() }
         if let key = asked["RPM_OPEN_ALBUM"], !key.isEmpty { opened = [.album(key)] }
 
@@ -767,7 +777,16 @@ struct RootView: View {
 
         if let name = asked["RPM_OPEN_ARTIST"], !name.isEmpty {
             mode = .artists
-            browsing = [.artist(name)]
+            // RPM_OPEN_AFTER: the page is pushed after this many seconds and slides in, as after a
+            // tap. See the same switch in `AppModel`.
+            if let wait = Double(asked["RPM_OPEN_AFTER"] ?? "") {
+                Task {
+                    try? await Task.sleep(for: .seconds(wait))
+                    browsing = [.artist(name)]
+                }
+            } else {
+                browsing = [.artist(name)]
+            }
         }
 
         // A person's page over the app: "me" for the reader's own, or a user id. It waits for the
@@ -815,11 +834,11 @@ struct RootView: View {
 
     // MARK: The app once there is something to show
 
-    /// A screen, the player and the tab bar. The player and the tab bar below the screen are one
-    /// stack, because they move together.
     /// How long one view of the library takes to fade into another.
     private static let libraryFade: Double = 0.25
 
+    /// A screen, the player and the tab bar. The player and the tab bar below the screen are one
+    /// stack, because they move together.
     private var shell: some View {
         ZStack {
             // **Home is built once and kept, under whichever tab is shown.** If it were rebuilt
@@ -893,14 +912,13 @@ struct RootView: View {
                             PlaylistsPage(
                                 playlists: model.playlists,
                                 mode: $mode,
-                                queue: model.player.queue,
                                 // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
                                 // cannot be marked from a phone, so the list would always be empty.
                                 favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
                                 covers: covers, lender: model.lender,
                                 standing: model.playlistStanding,
                                 albums: model.albums,
-                                onOpen: { row in lists.append(named(row)) },
+                                onOpen: { row in if let open = named(row) { lists.append(open) } },
                                 onReread: { await model.rereadPlaylists() },
                                 onMake: { name, folder, tracks in
                                     await model.makePlaylist(name: name, in: folder, tracks: tracks)
@@ -1284,13 +1302,12 @@ struct RootView: View {
 
     @Environment(\.openURL) private var openUrl
 
-    private func named(_ row: PlaylistRow) -> OpenList {
+    private func named(_ row: PlaylistRow) -> OpenList? {
         switch row.kind {
-        case .queue: return .queue
         case .favorites: return .favorites
         case .playlist(let set): return .playlist(set.id)
         // A folder is opened on the tab itself. It never opens a page.
-        case .folder: return .queue
+        case .folder: return nil
         }
     }
 
@@ -1326,9 +1343,14 @@ struct RootView: View {
                          upNext: .itIsTheQueue)
 
         case .favorites:
-            // The marked songs: a list that marking a song changes, so it has no menu.
+            // The marked songs: a list that marking a song changes, so it has no menu. It is
+            // shown as the computer's Favourite tracks list, with that list's frame and room, as
+            // its row on the playlists tab is. The room is drawn instead of a cover, so no
+            // picture is asked for.
             list(Loc.get("Playlists_FavoriteTracks"), model.favoriteTracks, missing: 0,
-                 adding: nil, picture: nil, showing: nil, menu: .none, back: back)
+                 adding: nil, picture: nil,
+                 showing: GeneratedLists.marked(model.favoriteTracks, among: model.playlists),
+                 menu: .none, back: back)
 
         case .history:
             // The songs played lately: a list that playing changes, so it has no menu either.

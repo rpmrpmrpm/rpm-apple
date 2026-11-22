@@ -29,7 +29,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
               {"kind":"Sleep","trackIds":["e","f"]}]}
     """#)
 
-    let cut = try await cloud.moodLists()
+    let cut = try await cloud.moodLists(.own, language: "en", zone: "UTC")
 
     #expect(cut?.lists.first?.shows == 2)
     #expect(cut?.lists.last?.shows == 0)
@@ -42,7 +42,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
               {"kind":"Danceable","genre":null,"decade":1970,"trackIds":["d"]}]}
     """#)
 
-    let cut = try await cloud.moodLists()
+    let cut = try await cloud.moodLists(.own, language: "en", zone: "UTC")
 
     #expect(cut?.recipe == 1)
     #expect(cut?.lists.count == 2)
@@ -60,7 +60,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
     // and no generated lists.
     let cloud = client(404, "{}")
 
-    #expect(try await cloud.moodLists() == nil)
+    #expect(try await cloud.moodLists(.own, language: "en", zone: "UTC") == nil)
 }
 
 @Test func aCutSaysHowOldItIs() async throws {
@@ -69,7 +69,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
     let stamped = Int64(Date().timeIntervalSince1970 * 1000) - 60_000
     let cloud = client(200, #"{"recipe":1,"computedAt":\#(stamped),"lists":[]}"#)
 
-    let age = try await cloud.moodLists()?.age
+    let age = try await cloud.moodLists(.own, language: "en", zone: "UTC")?.age
 
     #expect(age != nil)
     #expect(age! > 30 && age! < 300)
@@ -78,7 +78,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
 @Test func aCutWithNoStampAdmitsItCannotSayHowOldItIs() async throws {
     let cloud = client(200, #"{"recipe":1,"lists":[]}"#)
 
-    #expect(try await cloud.moodLists()?.age == nil)
+    #expect(try await cloud.moodLists(.own, language: "en", zone: "UTC")?.age == nil)
 }
 
 @Test func aFieldAnOlderStoreDoesNotSendDoesNotThrowTheCutAway() async throws {
@@ -86,7 +86,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
     // every decade, which is what an absent field means.
     let cloud = client(200, #"{"lists":[{"kind":"Sleep","trackIds":["a"]}]}"#)
 
-    let cut = try await cloud.moodLists()
+    let cut = try await cloud.moodLists(.own, language: "en", zone: "UTC")
 
     #expect(cut?.lists.count == 1)
     #expect(cut?.lists.first?.decade == 0)
@@ -111,7 +111,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
      "lists":[{"kind":"Calm","genre":"Rock","decade":0,"title":"Slow Burn","trackIds":["a"]}]}
     """#)
 
-    #expect(try await cloud.moodLists()?.lists.first?.title == "Slow Burn")
+    #expect(try await cloud.moodLists(.own, language: "en", zone: "UTC")?.lists.first?.title == "Slow Burn")
 }
 
 /// A cut pushed without names has none. An ordinary answer, and not one
@@ -122,7 +122,7 @@ private func client(_ status: Int, _ json: String) -> RPMCloudClient {
      "lists":[{"kind":"Calm","genre":"Rock","decade":0,"trackIds":["a"]}]}
     """#)
 
-    let cut = try await cloud.moodLists()
+    let cut = try await cloud.moodLists(.own, language: "en", zone: "UTC")
     #expect(cut?.lists.count == 1)
     #expect(cut?.lists.first?.title == nil)
 }

@@ -72,6 +72,15 @@ public struct TrackActions: ViewModifier {
 
         /// The long-press menu only.
         case menuOnly
+
+        /// One of several songs drawn inside one `List` row, such as the quick selection's
+        /// panels on an artist page: the long-press menu only, with this song's line as the
+        /// menu's preview, `width` wide.
+        ///
+        /// A `List` shows its whole row as the preview of a menu set anywhere inside it. Without
+        /// a preview of its own, a long press on one song lifts every song in the panels and the
+        /// edge of the next panel.
+        case menuInSharedRow(width: CGFloat)
     }
 
     private let upNext: UpNext
@@ -111,40 +120,54 @@ public struct TrackActions: ViewModifier {
         switch swipes {
         case .onItsRow: swiped(menu(content))
         case .menuOnly: menu(content)
+        case .menuInSharedRow(let width): lifted(content, width: width)
         }
     }
 
     private func menu(_ content: some View) -> some View {
-        content
-            .contextMenu {
-                playNext
+        content.contextMenu { items }
+    }
 
-                // On a borrowed row too: a radio only plays, it writes nothing.
-                if let startRadio {
-                    Button { startRadio(track) } label: {
-                        Label(Loc.get("Track_StartMixtape"), systemImage: "recordingtape")
-                    }
-                }
+    /// The menu with the song's own line as its preview. See ``Swipes/menuInSharedRow(width:)``.
+    private func lifted(_ content: some View, width: CGFloat) -> some View {
+        content.contextMenu {
+            items
+        } preview: {
+            content
+                .frame(width: width)
+                .padding(.horizontal, 12)
+        }
+    }
 
-                // Add to home's Quick selection, or take it out. On a borrowed row too: it is kept
-                // on this phone and writes nothing to anybody's collection.
-                if let holds {
-                    HoldItems.quick(holds, ref: QuickRefs.of(song: track.rpmId))
-                }
+    @ViewBuilder
+    private var items: some View {
+        playNext
 
-                // A borrowed row gets only the action that works on it. The other
-                // actions are left out, not disabled: a disabled button suggests "not
-                // now", but they never work from here.
-                if mine {
-                    Button { mark() } label: {
-                        Label(favourite, systemImage: marked ? "heart.slash" : "heart")
-                    }
-
-                    Button { onFile(track) } label: {
-                        Label(Loc.get("Rpm_Track_AddToPlaylist"), systemImage: "text.badge.plus")
-                    }
-                }
+        // On a borrowed row too: a radio only plays, it writes nothing.
+        if let startRadio {
+            Button { startRadio(track) } label: {
+                Label(Loc.get("Track_StartMixtape"), systemImage: "recordingtape")
             }
+        }
+        // Add to home's Quick selection, or take it out. On a borrowed row too: it is kept on this
+        // phone and writes nothing to anybody's collection.
+        if let holds {
+            HoldItems.quick(holds, ref: QuickRefs.of(song: track.rpmId))
+        }
+
+
+        // A borrowed row gets only the action that works on it. The other
+        // actions are left out, not disabled: a disabled button suggests "not
+        // now", but they never work from here.
+        if mine {
+            Button { mark() } label: {
+                Label(favourite, systemImage: marked ? "heart.slash" : "heart")
+            }
+
+            Button { onFile(track) } label: {
+                Label(Loc.get("Rpm_Track_AddToPlaylist"), systemImage: "text.badge.plus")
+            }
+        }
     }
 
     @ViewBuilder

@@ -102,9 +102,11 @@ public enum GeneratedLists {
     ///   - readings: how many times refresh has been pressed on each list, by
     ///     ``CloudMoodList/id``. A list nobody has pressed is at zero, which is the first
     ///     slice of the run. That is the best slice, and it is what the computer shows.
+    ///   - fresh: the store's answers to the current press of each list, by id
+    ///     (``GeneratedListReadings/fresh``). A list with one shows it instead of its slice.
     public static func sets(
         _ cut: CloudMoodLists, against tracks: [CloudTrack], shelf: CloudShelf,
-        readings: [String: Int] = [:]
+        readings: [String: Int] = [:], fresh: [String: [String]] = [:]
     ) -> [PlaylistSet] {
         guard !cut.lists.isEmpty else { return [] }
 
@@ -122,9 +124,9 @@ public enum GeneratedLists {
         // An empty list is not a row. The computer does not send one. A list that arrives
         // from a build that did would promise music and open on nothing.
         let sets = drawn.map { list -> PlaylistSet in
-            // The slice this phone is showing, not the whole run the computer sent.
-            let showing = window(list.trackIds, shows: list.shows,
-                                 reading: readings[list.id] ?? 0)
+            // The store's new list for this press, or else the slice of the run the computer sent.
+            let showing = fresh[list.id]
+                ?? window(list.trackIds, shows: list.shows, reading: readings[list.id] ?? 0)
             let found = showing.compactMap { byId[$0] }
 
             return PlaylistSet(
@@ -220,9 +222,53 @@ public enum GeneratedLists {
     /// the desktop's `SmartPlaylists.OwnerOnly`: Your mix and the listening lists. They are
     /// cut from the owner's listening. The API takes them out of a borrowed cut as well.
     public static let ownerOnly: Set<String> = [
-        "RightNow", "OnRepeat", "FavoriteTracks", "FirstListens", "Rediscover",
+        "RightNow", "OnRepeat", favoritesKind, "FirstListens", "Rediscover",
         "LovedAndForgotten", "LateNight",
     ]
+
+    // ── the marked songs ──
+
+    /// The kind of the computer's Favourite tracks list, as the desktop's `SmartPlaylistKind`
+    /// spells it.
+    static let favoritesKind = "FavoriteTracks"
+
+    /// The id of the marked songs when the computer sent no copy of them. It starts with the
+    /// same character as the generated ids, so no store id can be the same.
+    static let markedId = "\u{1}favorites"
+
+    /// Whether a set is the computer's copy of Favourite tracks.
+    public static func isMarkedCopy(_ set: PlaylistSet) -> Bool {
+        set.origin == .generated && set.cut?.kind == favoritesKind
+    }
+
+    /// The listener's marked songs as a generated list, or nil when no song is marked.
+    ///
+    /// The computer sends its own copy of this list in its cut. That copy is only as new as the
+    /// cut. This phone has the marks as they are now, including a song marked here a moment
+    /// ago. So the songs come from `tracks`, and the copy gives only its id, for its picture.
+    /// The caller shows this set in place of the copy, never next to it.
+    ///
+    /// It stands at the top of the tree with the other listening lists. See
+    /// ``PlaylistBrowse/of(at:playlists:favorites:)``.
+    ///
+    /// No marked songs gives nil, not an empty list. The desktop shows Favourite tracks from one
+    /// song up (`SmartPlaylists.LeastToShow`).
+    ///
+    /// - Parameter playlists: every set of the shelf, as the session resolved them.
+    public static func marked(_ tracks: [CloudTrack], among playlists: [PlaylistSet]) -> PlaylistSet? {
+        guard !tracks.isEmpty else { return nil }
+
+        return PlaylistSet(
+            id: playlists.first(where: isMarkedCopy)?.id ?? markedId,
+            name: Loc.get("Playlists_FavoriteTracks"),
+            tracks: tracks,
+            missing: 0,
+            folder: [],
+            stamp: 0,
+            shelf: .own,
+            origin: .generated,
+            cut: GeneratedCut(kind: favoritesKind, genre: nil, decade: 0))
+    }
 
     /// The name this app gives to one of the moods or to "Your mix", or nil for a kind it
     /// has no name for.

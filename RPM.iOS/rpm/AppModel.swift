@@ -133,6 +133,9 @@ final class AppModel {
     /// here because two parts use it: the player, which counts, and the home screen, which reads.
     let plays = PlayLog()
 
+    /// The listens not yet sent to the store's listening log, which cuts the lists that read it.
+    let listens = ListenLog()
+
     /// What has been heard on the radio, on this phone and on the listener's other devices. It is
     /// held here for the same two users as the play log: the player, which counts, and the home
     /// screen.
@@ -334,7 +337,7 @@ final class AppModel {
 
         // Made before the player, which asks its classical marks about every track it hands over.
         session = LibrarySession(auth: auth, cloud: cloud, community: community,
-                                 library: library, plays: plays, radioListens: radioListens,
+                                 library: library, plays: plays, listens: listens, radioListens: radioListens,
                                  playDevice: PlayDevice(store: .standard),
                                  additions: LibrarySession.nothingAdded)
 
@@ -415,6 +418,17 @@ final class AppModel {
             }
             // What is played at which time of day, for the banner's mood list.
             Task { @MainActor in self.session.noteDayPart(rpmId: counted.rpmId, at: counted.at) }
+        }
+
+        // Every listen worth writing down, plays and skips, for the store's listening log. The same
+        // rule as the play log: the counter stays synchronous, and the log does not depend on order.
+        player.onListened = { [weak self] heard in
+            guard let self else { return }
+            Task {
+                await self.listens.note(rpmId: heard.rpmId, at: heard.at, heardSeconds: heard.heardSeconds,
+                                        lengthSeconds: heard.lengthSeconds, counted: heard.counted,
+                                        localHour: heard.localHour, localDayOfWeek: heard.localDayOfWeek)
+            }
         }
 
         // Radio heard, in parts. The same rule applies: the counter stays synchronous, and the log
@@ -530,6 +544,7 @@ final class AppModel {
         // wall and not after it. The home screen's rows depend on listening, and a screen drawn
         // before the counts arrive would say that this listener has played nothing.
         await plays.load()
+        await listens.load()
         Task { await self.syncPlays() }
 
         // Which stations are hidden and whether a logo changed. The first request skips the URL
@@ -803,6 +818,12 @@ final class AppModel {
         }
         if let name = ProcessInfo.processInfo.environment["RPM_OPEN_ALBUM_TITLED"],
            let album = titled(name) {
+            // RPM_OPEN_AFTER waits this many seconds first, so the record is pushed over the wall
+            // that is already on screen and slides in, as it does after a tap. Without it the page
+            // is opened under the wait mark and never slides.
+            if let wait = Double(ProcessInfo.processInfo.environment["RPM_OPEN_AFTER"] ?? "") {
+                try? await Task.sleep(for: .seconds(wait))
+            }
             openedByScript = album.key
         }
 
@@ -1227,7 +1248,7 @@ final class AppModel {
     func loadPlaylists() async { await session.loadPlaylists() }
     func rereadPlaylists() async { await session.rereadPlaylists() }
     func hasAnotherList(_ set: PlaylistSet) -> Bool { session.hasAnotherList(set) }
-    func newGeneratedList(_ set: PlaylistSet) { session.newGeneratedList(set) }
+    func newGeneratedList(_ set: PlaylistSet) { Task { await session.newGeneratedList(set) } }
 
     func makePlaylist(name: String, in folder: [String], tracks: [CloudTrack]) async -> String? {
         await session.makePlaylist(name: name, in: folder, tracks: tracks)

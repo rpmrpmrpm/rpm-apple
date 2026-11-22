@@ -22,47 +22,146 @@ private func set(_ name: String, in folder: [String] = [], tracks: [CloudTrack] 
                 folder: folder, stamp: 0, shelf: .own, origin: origin)
 }
 
+/// A list the computer generated, keyed as `GeneratedLists.sets` keys it.
+private func cut(_ name: String, kind: String, genre: String? = nil, decade: Int = 0,
+                 in folder: [String], tracks: [CloudTrack] = [track("c")]) -> PlaylistSet {
+    PlaylistSet(id: "\u{1}mood/\(name)", name: name, tracks: tracks, missing: 0,
+                folder: folder, stamp: 0, shelf: .own, origin: .generated,
+                cut: GeneratedCut(kind: kind, genre: genre, decade: decade))
+}
+
 private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
-                    queue: [CloudTrack] = [], favorites: [CloudTrack]? = []) -> PlaylistBrowse {
-    PlaylistBrowse.of(at: at, playlists: playlists, queue: queue, favorites: favorites)
+                    favorites: [CloudTrack]? = []) -> PlaylistBrowse {
+    PlaylistBrowse.of(at: at, playlists: playlists, favorites: favorites)
 }
 
-// ── the two lists nobody made ──
+private var favourites: String { Loc.get("Playlists_FavoriteTracks") }
 
-/// The queue is always a row at the top, even when it is empty. It is where the music is, and a row that
-/// appears and disappears is one that the user cannot learn to find.
-@Test func theQueueIsARowWhenThereIsNothingInIt() {
-    let rows = browse([], []).rows
+// ── no queue, and the listening lists at the top ──
 
-    #expect(rows.count == 2)
-    #expect(rows[0].kind == .queue)
-    #expect(rows[1].kind == .favorites)
+/// The queue has no row. The queue key on the player shows it, and the desktop leaves it out of its tree.
+/// Nothing marked and nothing stored is an empty tab.
+@Test func anEmptyShelfHasNoRows() {
+    #expect(browse([], []).rows.isEmpty)
 }
 
-/// These lists are not filed in any folder. Showing them inside a folder would say that they are.
-@Test func neitherOfThemIsDrawnInsideAFolder() {
-    let rows = browse(["Mixes"], [set("Late", in: ["Mixes"])],
-                      queue: [track("q")], favorites: [track("f")]).rows
+/// The listening lists stand at the top of the tree, as lists of their own. The computer files them in its
+/// Smart playlists folder, and the phone apps have no such folder.
+@Test func theListeningListsStandAtTheTop() {
+    let lists = [
+        cut("On repeat", kind: "OnRepeat", in: ["Smart playlists"]),
+        cut("Your mix", kind: "RightNow", in: ["Smart playlists"]),
+    ]
 
-    #expect(rows.count == 1)
-    #expect(rows[0].name == "Late")
+    let top = browse([], lists, favorites: nil).rows
+
+    #expect(top.map(\.name) == ["On repeat", "Your mix"])
+    #expect(top.allSatisfy { !$0.isFolder })
 }
 
-/// On a borrowed shelf the marked songs are nil, not empty. A borrowed row cannot be marked from a phone, so
-/// the list would always be empty. A row that is always empty is worse than no row.
-@Test func aBorrowedShelfHasNoMarkedSongsRow() {
-    let rows = PlaylistBrowse.of(at: [], playlists: [], queue: [], favorites: nil).rows
+/// The app's lists come above the person's own, as on Android. Each group is by name.
+@Test func theAppsListsComeAboveThePersonsOwn() {
+    let lists = [set("Aardvark"), cut("Your mix", kind: "RightNow", in: ["Smart playlists"]), set("Zebra")]
 
-    #expect(rows.map(\.kind) == [.queue])
+    let top = browse([], lists, favorites: [track("f")]).rows
+
+    #expect(top.map(\.name) == [favourites, "Your mix", "Aardvark", "Zebra"])
+    #expect(top[0].kind == .favorites(GeneratedLists.marked([track("f")], among: [])!))
 }
 
-@Test func theQueueCarriesWhatIsInIt() {
-    let queue = [track("a", seconds: 100), track("b", seconds: 200)]
-    let row = browse([], [], queue: queue).rows[0]
+/// **The computer's copy and the phone's list are one row.** The phone's marks are newer, so its songs win.
+/// The copy gives only its id, for its picture.
+@Test func theMarkedSongsTakeThePlaceOfTheComputersCopy() {
+    let lists = [
+        cut("Favourite tracks", kind: "FavoriteTracks", in: ["Listes intelligentes"],
+            tracks: [track("old")]),
+        cut("On repeat", kind: "OnRepeat", in: ["Listes intelligentes"]),
+    ]
+
+    let top = browse([], lists, favorites: [track("new1"), track("new2")]).rows
+
+    #expect(top.map(\.name) == [favourites, "On repeat"])
+    #expect(top[0].tracks.map(\.rpmId) == ["new1", "new2"])
+    #expect(top[0].set?.id == "\u{1}mood/Favourite tracks", "the computer's id, for its picture")
+    #expect(top[0].id == "\u{1}favorites", "the row is the marked songs, whatever the copy is called")
+}
+
+/// Nothing marked on this phone is the newer answer, so the computer's older copy is not shown either.
+@Test func nothingMarkedHidesTheComputersCopyToo() {
+    let lists = [cut("Favourite tracks", kind: "FavoriteTracks", in: ["Smart playlists"])]
+
+    #expect(browse([], lists, favorites: []).rows.isEmpty)
+}
+
+/// On a borrowed shelf the marked songs are nil, not empty. The cut is shown as the computer sent it.
+@Test func aBorrowedShelfKeepsTheCutAsItWasSent() {
+    let lists = [cut("Chill", kind: "Calm", in: ["Moods"])]
+    let rows = PlaylistBrowse.of(at: [], playlists: lists, favorites: nil).rows
+
+    #expect(rows.map(\.name) == ["Moods"])
+    #expect(!rows.contains { if case .favorites = $0.kind { return true } else { return false } })
+}
+
+@Test func theMarkedSongsCarryWhatIsInThem() {
+    let marked = [track("a", seconds: 100), track("b", seconds: 200)]
+    let row = browse([], [], favorites: marked).rows[0]
 
     #expect(row.tracks.count == 2)
     #expect(row.duration == .seconds(300))
     #expect(row.artSource?.rpmId == "a")
+}
+
+// ── what a folder shows ──
+
+/// The desktop's marks: the moods picture on Moods, a clock on Decades (inside Moods, as on Android), and the
+/// mood's own mark on each mood that has cuts under it. A person's folder is plain.
+@Test func eachOfTheAppsFoldersHasItsOwnFace() {
+    let lists = [
+        cut("Chill", kind: "Calm", in: ["Moods", "Chill"]),
+        cut("Slow Burn", kind: "Calm", genre: "Rock", in: ["Moods", "Chill"]),
+        cut("Sleep", kind: "Sleep", in: ["Moods"]),
+        cut("1980s", kind: "Decade", decade: 1980, in: ["Decades"]),
+        set("Mine", in: ["Road trips"]),
+    ]
+
+    let top = browse([], lists, favorites: nil).rows
+    #expect(top.map(\.face) == [.moods, .plain])
+
+    let moods = browse(["Moods"], lists, favorites: nil).rows
+    #expect(moods.map(\.name) == ["Decades", "Chill", "Sleep"])
+    #expect(moods.map(\.face) == [.decades, .mood("Calm"), nil], "a mood with no cuts is a list, not a folder")
+}
+
+/// A person's folder never shows the app's marks, even when it holds a generated list beside their own.
+@Test func aFolderHoldingAListSomebodyMadeIsPlain() {
+    let lists = [cut("Chill", kind: "Calm", in: ["Moods"]), set("Mine", in: ["Moods"])]
+
+    #expect(browse([], lists, favorites: nil).rows[0].face == .plain)
+}
+
+/// The app's folders come first. A person's own folders follow by name, even one whose name sorts before
+/// them. The lists come after every folder.
+@Test func theAppsFoldersComeFirst() {
+    let lists = [
+        cut("1980s", kind: "Decade", decade: 1980, in: ["Decades"]),
+        cut("Chill", kind: "Calm", in: ["Moods"]),
+        set("Mine", in: ["Aardvark"]),
+        set("Other", in: ["Zebra"]),
+    ]
+
+    let top = browse([], lists, favorites: [track("f")]).rows
+
+    #expect(top.map(\.name) == ["Moods", "Aardvark", "Zebra", favourites])
+}
+
+/// A shelf with no moods has nowhere to put the decades, so they stay where the computer filed them.
+@Test func withNoMoodsTheDecadesStayWhereTheyWereFiled() {
+    let lists = [cut("1980s", kind: "Decade", decade: 1980, in: ["Decades"])]
+
+    let top = browse([], lists, favorites: nil).rows
+
+    #expect(top.map(\.name) == ["Decades"])
+    #expect(top[0].face == .decades)
 }
 
 // ── the tree ──
@@ -73,15 +172,15 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
     let rows = browse([], [set("Aardvark"), set("Zebra", in: ["Mixes"])],
                       favorites: nil).rows
 
-    #expect(rows.map(\.name) == ["", "Mixes", "Aardvark"])
-    #expect(rows[1].isFolder)
-    #expect(!rows[2].isFolder)
+    #expect(rows.map(\.name) == ["Mixes", "Aardvark"])
+    #expect(rows[0].isFolder)
+    #expect(!rows[1].isFolder)
 }
 
 @Test func bothAreAlphabeticalWhateverOrderTheyArriveIn() {
     let rows = browse([], [set("zoo"), set("Alpha"), set("mid")], favorites: nil).rows
 
-    #expect(rows.dropFirst().map(\.name) == ["Alpha", "mid", "zoo"])
+    #expect(rows.map(\.name) == ["Alpha", "mid", "zoo"])
 }
 
 /// The count is for the rows behind the tap, not for everything below the folder. A folder that says
@@ -93,9 +192,9 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
                            set("c", in: ["Mixes", "Late", "Deeper"])],
                       favorites: nil).rows
 
-    #expect(rows.dropFirst().map(\.name) == ["Mixes"])
+    #expect(rows.map(\.name) == ["Mixes"])
     // "a", and the folder "Late", not the two playlists filed away beneath it.
-    #expect(rows[1].playlists == 2)
+    #expect(rows[0].playlists == 2)
 }
 
 @Test func steppingIntoAFolderShowsWhatIsDirectlyInIt() {
@@ -110,7 +209,7 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
 /// A folder has no track order of its own and no cover image.
 @Test func aFolderCarriesNoTracks() {
     let folder = browse([], [set("a", in: ["Mixes"], tracks: [track("t")])],
-                        favorites: nil).rows[1]
+                        favorites: nil).rows[0]
 
     #expect(folder.isFolder)
     #expect(folder.tracks.isEmpty)
@@ -130,10 +229,10 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
 }
 
 @Test func aTreeThatHasGoneEntirelyPutsTheReaderAtTheTop() {
-    let made = browse(["Mixes", "Late"], [], queue: [track("q")])
+    let made = browse(["Mixes", "Late"], [set("a")])
 
     #expect(made.at.isEmpty)
-    #expect(made.rows.map(\.kind) == [.queue, .favorites])
+    #expect(made.rows.map(\.name) == ["a"])
 }
 
 /// The correction is always applied. The caller passes in where it was standing and gets back where
@@ -172,7 +271,7 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
 
 @Test func aPlaylistCarriesItsTracksAndWhatIsMissingFromThem() {
     let row = browse([], [set("Mine", tracks: [track("a"), track("b")], missing: 3)],
-                     favorites: nil).rows[1]
+                     favorites: nil).rows[0]
 
     #expect(row.tracks.count == 2)
     #expect(row.missing == 3)
@@ -190,14 +289,13 @@ private func browse(_ at: [String] = [], _ playlists: [PlaylistSet],
 
 // ── the tree a picker walks ──
 
-/// A song cannot be added to the queue or to the marked songs. A picker that showed them would
-/// offer two places that refuse songs.
-@Test func aPickerSeesTheTreeAndNeitherOfTheGeneratedLists() {
+/// A song cannot be added to the marked songs. A picker that showed them would offer a place that
+/// refuses songs.
+@Test func aPickerSeesTheTreeAndNotTheMarkedSongs() {
     let made = PlaylistBrowse.places(at: [], playlists: [set("a"), set("b", in: ["Mixes"])])
 
     #expect(made.rows.map(\.name) == ["Mixes", "a"])
-    #expect(!made.rows.contains { $0.kind == .queue })
-    #expect(!made.rows.contains { $0.kind == .favorites })
+    #expect(!made.rows.contains { if case .favorites = $0.kind { return true } else { return false } })
 }
 
 /// Otherwise it is the same walk, so the correction to the current folder still applies.

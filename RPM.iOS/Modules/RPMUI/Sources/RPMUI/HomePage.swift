@@ -796,7 +796,7 @@ struct HomePicksRow: View {
                     ForEach(Array(panels.enumerated()), id: \.offset) { _, panel in
                         VStack(spacing: 0) {
                             ForEach(Array(panel.enumerated()), id: \.offset) { _, pick in
-                                row(pick)
+                                row(pick, width: strip.width)
                             }
                         }
                         .frame(width: strip.width, alignment: .top)
@@ -827,8 +827,9 @@ struct HomePicksRow: View {
         }
     }
 
+    /// - Parameter width: the panel's width, which is the width of the menu's preview.
     @ViewBuilder
-    private func row(_ pick: QuickPick) -> some View {
+    private func row(_ pick: QuickPick, width: CGFloat) -> some View {
         switch pick.kind {
         case .song:
             if let track = songs[pick.key] {
@@ -839,11 +840,12 @@ struct HomePicksRow: View {
                          explicit: track.isExplicit)
                 }
                 .buttonStyle(.plain)
-                // **The menu only.** Every line of the panels is inside one list row on an
-                // artist's page, so swipe actions here would all belong to that row, and a
-                // sideways swipe through the panels would open them. See
-                // ``TrackActions/Swipes``.
-                .trackActions(track, songMenu, swipes: .menuOnly)
+                // **The menu only, with this line as its preview.** Every line of the panels is
+                // inside one list row on an artist's page. Swipe actions here would all belong
+                // to that row, and a sideways swipe through the panels would open them. Without
+                // its own preview, the menu would lift the whole row. See
+                // ``TrackActions/Swipes/menuInSharedRow(width:)``.
+                .trackActions(track, songMenu, swipes: .menuInSharedRow(width: width))
             }
 
         case .radio:

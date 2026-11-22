@@ -23,6 +23,10 @@ public enum Loc {
     /// This property always points at the bundle that has the table.
     static var table: Bundle { .module }
 
+    /// The locale the strings come from, out of the five: `en`, `fr`, `es`, `de` or `zh-Hans`. Sent
+    /// to the store, which names the lists it cuts in the same language.
+    public static var language: String { table.preferredLocalizations.first ?? "en" }
+
     /// The string for a key, in the locale this phone is set to, out of the five locales.
     public static func get(_ key: String) -> String {
         table.localizedString(forKey: key, value: key, table: nil)

@@ -56,8 +56,8 @@ public struct RPMTabBar: View {
                     .accessibilityAddTraits(showing == tab ? .isSelected : [])
             }
         }
-        // Animated here and not with `withAnimation` at the tap, so the pill slides and the page
-        // that the tab opens does not.
+        // Animated here and not with `withAnimation` at the tap, so the pill slides with its own
+        // spring. The page that the tab opens slides in by the app's own animation, not this one.
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showing)
         .padding(4)
         .rpmGlass(Capsule())

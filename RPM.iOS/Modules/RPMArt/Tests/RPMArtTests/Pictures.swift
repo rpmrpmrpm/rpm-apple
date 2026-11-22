@@ -87,6 +87,43 @@ enum Pictures {
         return RGB(pixel[0], pixel[1], pixel[2])
     }
 
+    /// A picture with a different colour in each quarter, so a test can tell which way up it is:
+    /// red at the top left, green at the top right, blue at the bottom left, yellow at the bottom
+    /// right.
+    static func quarters(width: Int, height: Int) -> CGImage {
+        let context = CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+
+        let w = Double(width) / 2, h = Double(height) / 2
+        // A context counts up from the bottom, so the top row is at y = h.
+        for (rgb, x, y) in [(quarterColours[0], 0.0, h), (quarterColours[1], w, h),
+                            (quarterColours[2], 0.0, 0.0), (quarterColours[3], w, 0.0)] {
+            context.setFillColor(colour(rgb))
+            context.fill(CGRect(x: x, y: y, width: w, height: h))
+        }
+        return context.makeImage()!
+    }
+
+    /// The colours of ``quarters(width:height:)``: top left, top right, bottom left, bottom right.
+    static let quarterColours = [RGB(220, 30, 30), RGB(30, 200, 40), RGB(30, 40, 220), RGB(230, 220, 30)]
+
+    /// A JPEG that carries an orientation tag and its own dots per inch across and down.
+    static func jpeg(_ image: CGImage, orientation: UInt32, dpi: (across: Double, down: Double)) -> Data {
+        let out = NSMutableData()
+        let destination = CGImageDestinationCreateWithData(
+            out as CFMutableData, UTType.jpeg.identifier as CFString, 1, nil)!
+        CGImageDestinationAddImage(destination, image, [
+            kCGImagePropertyOrientation: orientation,
+            kCGImagePropertyDPIWidth: dpi.across,
+            kCGImagePropertyDPIHeight: dpi.down,
+            kCGImageDestinationLossyCompressionQuality: 1.0,
+        ] as CFDictionary)
+        _ = CGImageDestinationFinalize(destination)
+        return out as Data
+    }
+
     private static func encoded(_ image: CGImage, as type: UTType) -> Data {
         let out = NSMutableData()
         let destination = CGImageDestinationCreateWithData(

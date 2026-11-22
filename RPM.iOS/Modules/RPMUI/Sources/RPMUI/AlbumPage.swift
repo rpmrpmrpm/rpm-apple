@@ -21,7 +21,7 @@ public struct AlbumPage: View {
     /// every classical record as forty rows called "Allegro" without saying why.
     private let classical: Bool
 
-    /// Where the Wikipedia text under the keys comes from. See ``AboutText``.
+    /// Where the Wikipedia text under the keys comes from. See ``CentredAboutText``.
     private let articles: ArticleStore
 
     /// Which row the speaker is on, if it is on one of these. The mark is out in the
@@ -119,6 +119,10 @@ public struct AlbumPage: View {
     /// Whether the text was there when the page was built, read before and kept. Text that arrives
     /// after comes in from the top (``CentredAboutText/arrives``).
     private let aboutAtOpen: Bool
+
+    /// The width of the header's column, measured before the text arrives, so the text is cut for it
+    /// on its first layout. See ``CentredAboutText``.
+    @State private var aboutColumn: CGFloat = 0
 
     /// The disc the sleeve holds, read when the page opens so it is ready for the first tap. See
     /// ``caseAndDisc(edge:)``.
@@ -384,8 +388,9 @@ public struct AlbumPage: View {
             // and the songs down in one step, and nothing else moves: the row grows, and a row that
             // grows is not animated (see AboutRead). The text fades in.
             if let article = about.article(for: subject) {
-                CentredAboutText(article: article, lead: Loc.get("TrackInfo_AboutAlbum"),
-                                 capitalKeys: true, arrives: !aboutAtOpen)
+                CentredAboutText(article: article, column: aboutColumn,
+                                 lead: Loc.get("TrackInfo_AboutAlbum"), capitalKeys: true,
+                                 arrives: !aboutAtOpen)
                     .padding(.top, 6)
             }
 
@@ -400,6 +405,8 @@ public struct AlbumPage: View {
             }
         }
         .frame(maxWidth: .infinity)
+        // Inside the margins: the width the Wikipedia text is laid out in.
+        .measuresWidth(into: $aboutColumn)
         .padding(.horizontal, RPMLayout.margin)
         // The space under the keys sets the songs apart from the header.
         .padding(.bottom, 30)
