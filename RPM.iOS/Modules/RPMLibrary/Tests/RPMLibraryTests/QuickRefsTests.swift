@@ -88,6 +88,20 @@ struct QuickRefsTests {
         #expect(added.filter { $0 == "song:10" }.count == 1)
         #expect(!QuickRefs.removing("song:10", from: added).contains("song:10"))
     }
+
+    /// A starter track or record goes away once the person has music, so it is never kept
+    /// (``StarterTracks``).
+    @Test func aStarterTrackOrRecordIsNotAdded() throws {
+        let song = try #require(StarterTracks.tracks.first)
+        let record = try #require(StarterTracks.albums.first)
+
+        #expect(QuickRefs.adding(QuickRefs.of(song: song.rpmId), to: ["song:a"]) == ["song:a"])
+        #expect(QuickRefs.adding(QuickRefs.of(album: record.key), to: ["song:a"]) == ["song:a"])
+        #expect(QuickRefs.namesStarter(QuickRefs.of(album: record.key)))
+        #expect(!QuickRefs.namesStarter("song:a"))
+        #expect(!QuickRefs.namesStarter("album:folder:talk talk/laughing stock"))
+        #expect(!QuickRefs.namesStarter(QuickRefs.of(list: StarterTracks.prefix + "connect")))
+    }
 }
 
 /// The songs played lately, at the top of the playlists tab. The Android app's `PlayedLatelyTest`.

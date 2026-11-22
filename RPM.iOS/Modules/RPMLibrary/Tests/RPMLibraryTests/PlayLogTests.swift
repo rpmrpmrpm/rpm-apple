@@ -37,6 +37,19 @@ struct PlayLogTests {
         #expect(await log.unsent(limit: 50, in: log.pass()).isEmpty)
     }
 
+    /// A starter track is in the app and not in the cloud: its plays count here and are never sent.
+    @Test func aStarterTrackIsCountedHereAndNeverSent() async throws {
+        let log = PlayLog(inMemory: true)
+        let starter = try #require(StarterTracks.tracks.first).rpmId
+
+        await log.note(rpmId: starter, at: 500)
+        await log.note(rpmId: "t1", at: 600)
+
+        #expect(await log.plays(of: starter) == 1)
+        #expect(await log.everythingPlayed()[starter]?.lastPlayedAt == 500)
+        #expect(await log.unsent(limit: 50, in: log.pass()).map(\.rpmId) == ["t1"])
+    }
+
     @Test func whatHasBeenSentIsNotOfferedAgain() async {
         let log = PlayLog(inMemory: true)
         await log.note(rpmId: "t1", at: 500)

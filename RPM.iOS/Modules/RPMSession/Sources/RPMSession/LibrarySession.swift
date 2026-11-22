@@ -57,6 +57,26 @@ public final class LibrarySession {
     /// network can be laid over it again without another read.
     private var ownAsRead: [CloudAlbum] = []
 
+    /// The records shown in place of an own collection that holds no music: the iPhone's starter
+    /// tracks (``StarterTracks``). Empty on the TV, which never shows them. Set once by the head
+    /// after it is built, before the wall is first read.
+    public var starters: [CloudAlbum] = []
+
+    /// Shows ``starters`` over an own collection that has music too, to look at a new account's
+    /// screens. Only a debug build sets it.
+    public var forcesStarters = false
+
+    /// Whether the store has answered for the own shelf, as ``settled(_:of:)`` last found it. The
+    /// starter tracks wait for an answer: a read that failed is not an empty collection.
+    private var ownReached = false
+
+    /// The own shelf as it is shown: `read` with ``additions`` laid over it, or the starter tracks
+    /// in its place. See ``StarterTracks/shown(_:starters:reached:force:)``.
+    private func ownShown(_ read: [CloudAlbum]) -> [CloudAlbum] {
+        StarterTracks.shown(additions(read), starters: starters, reached: ownReached,
+                            force: forcesStarters)
+    }
+
     /// - Parameter additions: what is added to the own shelf. There is no default. A head with
     ///   tracks beyond the cloud's must pass its own function. A head with none passes
     ///   ``nothingAdded``.
@@ -155,9 +175,11 @@ public final class LibrarySession {
 
     /// Counts one play for the time-of-day reading (``dayParts``): the genre the genres list files
     /// its record under. Only on the person's own shelf, as home reads it, and only for a record
-    /// whose genre the app knows.
+    /// whose genre the app knows. A starter track (``StarterTracks``) is not the person's music, so
+    /// it does not shape home's banner.
     public func noteDayPart(rpmId: String, at: Int64) {
-        guard let dayParts, viewing.isOwn, let user = who?.userId else { return }
+        guard let dayParts, viewing.isOwn, let user = who?.userId,
+              !StarterTracks.isStarter(rpmId) else { return }
         guard let album = albums.first(where: { $0.tracks.contains { $0.rpmId == rpmId } })
         else { return }
 
@@ -288,6 +310,7 @@ public final class LibrarySession {
 
         albums = []
         ownAsRead = []
+        ownReached = false
         marks = []
         classical.forget()
         marksEra += 1
@@ -314,12 +337,13 @@ public final class LibrarySession {
         SupporterGround.adopt(isSupporter: false, in: .standard)
     }
 
-    /// Puts a shelf's records on the wall: the own shelf with ``additions`` laid over it. The
-    /// playlists are resolved against the new listing.
+    /// Puts a shelf's records on the wall: the own shelf with ``additions`` laid over it, or the
+    /// starter tracks in its place (``ownShown(_:)``). The playlists are resolved against the new
+    /// listing.
     private func place(_ read: [CloudAlbum], of shelf: CloudShelf) {
         if shelf.isOwn {
             ownAsRead = read
-            albums = additions(read)
+            albums = ownShown(read)
         } else {
             albums = read
         }
@@ -331,7 +355,7 @@ public final class LibrarySession {
     /// borrowed shelf is not changed.
     public func additionsChanged() async {
         guard viewing.isOwn, standing == .showing else { return }
-        albums = additions(ownAsRead)
+        albums = ownShown(ownAsRead)
         // The playlists are resolved against the own shelf with the additions laid over it, so a
         // computer that joins or leaves changes which of their tracks can play.
         redraw()
@@ -600,6 +624,12 @@ public final class LibrarySession {
     ///   decides. See ``PlaylistWriter/AlreadyThere``.
     public func addToPlaylist(_ set: PlaylistSet, tracks: [CloudTrack],
                               whenAlreadyThere: PlaylistWriter.AlreadyThere) async -> String? {
+        // A playlist names cloud tracks, and a starter track is not one (``StarterTracks``). Songs
+        // that are all starter tracks are refused, rather than reported as already in the list.
+        if !tracks.isEmpty, tracks.allSatisfy({ StarterTracks.isStarter($0.rpmId) }) {
+            return Loc.get("Rpm_PlaylistPick_Failed")
+        }
+
         let ticket = held.startWrite()
 
         do {
@@ -854,8 +884,22 @@ public final class LibrarySession {
     /// Decides what an empty result means. An empty array can mean the shelf is empty or that it
     /// could not be reached. Only the library knows which, so it is asked. See
     /// ``CloudLibrary/reached(_:)``.
+    ///
+    /// The first answer for the own shelf also lays it out again, so an own collection that holds
+    /// no music gets its starter tracks (``ownShown(_:)``).
     private func settled(_ read: [CloudAlbum], of shelf: CloudShelf) async -> ReadStanding {
-        guard read.isEmpty, await !library.reached(shelf) else { return .showing }
+        let reached = await library.reached(shelf)
+
+        // Checked after the `await`: the own shelf may have left the wall during it.
+        if shelf.isOwn, viewing.isOwn, reached, !ownReached {
+            ownReached = true
+            if !starters.isEmpty, ownAsRead.isEmpty {
+                albums = ownShown(ownAsRead)
+                redraw()
+            }
+        }
+
+        guard read.isEmpty, !reached else { return .showing }
         return .trouble(Loc.get("Rpm_Library_Error"))
     }
 
@@ -868,11 +912,11 @@ public final class LibrarySession {
     // ── the marked songs ──
 
     /// Whether a song belongs to this account. A song on a borrowed shelf cannot be marked or
-    /// filed.
+    /// filed, and neither can a starter track, which the cloud does not hold (``StarterTracks``).
     /// The check is made on the song itself, because the queue can still hold a borrowed record
     /// after the reader returns to their own wall.
     public func isTrackMine(_ track: CloudTrack) -> Bool {
-        shelves.shelf(of: track.rpmId).isOwn
+        shelves.shelf(of: track.rpmId).isOwn && !StarterTracks.isStarter(track.rpmId)
     }
 
     public func isTrackMarked(_ track: CloudTrack?) -> Bool {
@@ -881,9 +925,11 @@ public final class LibrarySession {
     }
 
     /// Marks a song, or clears the mark. The change is shown before the network call and undone if
-    /// the call fails. Returns whether the store accepted it.
+    /// the call fails. Returns whether the store accepted it. A starter track is not in the cloud,
+    /// so it has no mark to keep, and nothing changes.
     @discardableResult
     public func mark(_ track: CloudTrack, _ on: Bool) async -> Bool {
+        guard !StarterTracks.isStarter(track.rpmId) else { return false }
         let at = UtcTicks.now
         library.marks.note(track.rpmId, favorite: on, at: at)
 
@@ -914,8 +960,9 @@ public final class LibrarySession {
 
     /// Marks a record, or clears the mark. The change is shown before the network call and undone
     /// if the call fails. A mark is stored under the best key. A clear removes it from every key it
-    /// is stored under.
+    /// is stored under. A starter record is not in the cloud, so nothing changes for one.
     public func mark(_ album: CloudAlbum, _ on: Bool) async {
+        guard !StarterTracks.isStarter(album) else { return }
         let spellings = markKeys(of: album)
         let keys = on ? Array(spellings.prefix(1)) : spellings.filter(marks.contains)
 

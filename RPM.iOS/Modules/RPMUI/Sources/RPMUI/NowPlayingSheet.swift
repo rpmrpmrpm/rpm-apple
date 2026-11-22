@@ -2,6 +2,7 @@ import SwiftUI
 import RPMSharedUI
 import QuartzCore
 import RPMKit
+import RPMLibrary
 import RPMAudio
 import RPMRadio
 import RPMArt
@@ -658,14 +659,22 @@ public struct NowPlayingSheet: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .coachTarget(.playerHeart)
+            .coachTarget(.playerHeart, shown: canMark)
             .padding(.trailing, -12)
             // A station is not a song, so it cannot be marked as a favourite. The key is hidden and
             // not greyed out, because a heart that cannot be pressed raises the question of what
             // it would do.
-            .opacity(player.current == nil ? 0 : 1)
-            .disabled(player.current == nil)
+            .opacity(canMark ? 1 : 0)
+            .disabled(!canMark)
         }
+    }
+
+    /// Whether the heart shows: a song is playing, and it is not a starter track, which the cloud
+    /// does not hold and so keeps no mark for (``StarterTracks``). While it is hidden, its hint
+    /// waits for a song that shows it.
+    private var canMark: Bool {
+        guard let current = player.current else { return false }
+        return !StarterTracks.isStarter(current.rpmId)
     }
 
     /// What the station playing announces (``StationSaid``), or nil for a record.

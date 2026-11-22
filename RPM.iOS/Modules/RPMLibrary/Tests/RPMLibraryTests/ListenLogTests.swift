@@ -36,6 +36,15 @@ struct ListenLogTests {
         #expect(await log.unsent(limit: 50, in: log.pass()).isEmpty)
     }
 
+    /// The store does not hold a starter track, so a listen of one is not kept for it.
+    @Test func aListenOfAStarterTrackIsNotKept() async throws {
+        let log = ListenLog(inMemory: true)
+        let starter = try #require(StarterTracks.tracks.first).rpmId
+        await note(log, starter)
+        await note(log, "t1")
+        #expect(await log.unsent(limit: 50, in: log.pass()).map(\.rpmId) == ["t1"])
+    }
+
     @Test func oldestGoFirstAndTheRestWait() async {
         let log = ListenLog(inMemory: true)
         for i in 0..<5 { await note(log, "t\(i)", at: 1_790_000_000 + Int64(i)) }

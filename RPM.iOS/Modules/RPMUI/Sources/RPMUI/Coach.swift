@@ -131,6 +131,13 @@ extension View {
             }
         }
     }
+
+    /// ``coachTarget(_:)`` while `shown`, and no target while not: a part that is hidden for now
+    /// is not pointed at, and its hint waits until the part shows.
+    @ViewBuilder
+    public func coachTarget(_ target: CoachTarget, shown: Bool) -> some View {
+        if shown { coachTarget(target) } else { self }
+    }
 }
 
 /// The look of the hints, which is the desktop's `CoachmarkPainter`.

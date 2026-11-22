@@ -33,7 +33,9 @@ let package = Package(
             // The record itself is in RPMSharedUI. The brand font is here for the two
             // glyphs the sign-in buttons show, and it is registered at runtime rather
             // than declared in a plist.
-            resources: [.process("Resources")],
+            // The starter tracks, their covers and the Moonlight Sonata's disc are copied as they
+            // are, in their own folder (`StarterFiles`). The Apple TV app does not link this package.
+            resources: [.process("Resources"), .copy("Starter")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]

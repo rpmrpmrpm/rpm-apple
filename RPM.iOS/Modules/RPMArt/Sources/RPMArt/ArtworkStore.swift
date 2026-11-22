@@ -56,16 +56,29 @@ public actor ArtworkStore {
     private let disk: CoverDisk
     private let now: @Sendable () -> Date
 
-    /// - Parameter mostBytes: how many bytes of decoded sleeves are held. The default is
-    ///   ``mostBytesHeld``, the phone's limit. The TV passes more, because it draws more sleeves
-    ///   at once.
+    /// The pictures that ship inside the app: the file of a record's cover or disc, or nil for a
+    /// picture the store keeps. See ``Shipped``.
+    private let shipped: Shipped
+
+    /// Where a picture that ships inside the app is: the iPhone's starter records
+    /// (`StarterTracks`) bring their covers, and the Moonlight Sonata its disc. Nil for every
+    /// other picture, which is asked of the store as usual.
+    public typealias Shipped = @Sendable (RecordPicture, CloudAlbum) -> URL?
+
+    /// - Parameters:
+    ///   - mostBytes: how many bytes of decoded sleeves are held. The default is
+    ///     ``mostBytesHeld``, the phone's limit. The TV passes more, because it draws more sleeves
+    ///     at once.
+    ///   - shipped: the pictures that ship inside the app. The default is none, as on the TV.
     public init(source: any ArtSource,
                 disk: CoverDisk = .inCaches(),
                 now: @escaping @Sendable () -> Date = { Date() },
-                mostBytes: Int = ArtworkStore.mostBytesHeld) {
+                mostBytes: Int = ArtworkStore.mostBytesHeld,
+                shipped: @escaping Shipped = { _, _ in nil }) {
         self.source = source
         self.disk = disk
         self.now = now
+        self.shipped = shipped
         held.totalCostLimit = mostBytes
         handed.totalCostLimit = mostBytes
     }
@@ -233,6 +246,14 @@ public actor ArtworkStore {
     private func art(_ picture: RecordPicture,
                      for album: CloudAlbum, on shelf: CloudShelf, edge: Int) async -> CoverArt? {
         let bucket = Self.bucket(holding: edge)
+
+        // A picture that ships inside the app is read from its file. A starter record is not in the
+        // store, so a picture it does not ship (a disc) is not asked for either.
+        if let file = shipped(picture, album) {
+            return fromApp(picture, file: file, album: album, bucket: bucket)
+        }
+        guard !StarterTracks.isStarter(album) else { return nil }
+
         let spellings = AlbumArtKey.spellings(picture, for: album.tracks)
         guard !spellings.isEmpty else { return nil }
 
@@ -317,6 +338,19 @@ public actor ArtworkStore {
         indexRunning = [:]
 
         await disk.empty()
+    }
+
+    /// A picture that ships inside the app, decoded at the size asked for and held like any
+    /// other. Nil when the file cannot be read, which is never expected.
+    private func fromApp(_ picture: RecordPicture, file: URL, album: CloudAlbum,
+                         bucket: Int) -> CoverArt? {
+        let identity = "app|\(picture.rawValue)|\(album.key)"
+        let address = "\(identity)|\(bucket)"
+        if let entry = held.object(forKey: address as NSString) { return entry.art }
+
+        guard let data = try? Data(contentsOf: file) else { return nil }
+        return finish(picture, data, big: nil, identity: identity, stamp: 0, bucket: bucket,
+                      address: address, era: era)
     }
 
     // ── coalescing ──

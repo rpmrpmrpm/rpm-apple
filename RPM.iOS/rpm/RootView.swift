@@ -335,7 +335,11 @@ struct RootView: View {
                                 onMark: { on in Task { await model.markTrack(on) } },
                                 songMenu: songMenu,
                                 pull: $playing,
-                                onFile: model.player.current.map { track in { model.filing = track } },
+                                // A starter track cannot go in a playlist: the cloud does not
+                                // hold it (`StarterTracks`).
+                                onFile: model.player.current
+                                    .flatMap { StarterTracks.isStarter($0.rpmId) ? nil : $0 }
+                                    .map { track in { model.filing = track } },
                                 onAlbum: model.player.current.flatMap { track in
                                     let key = AlbumGrouping.key(for: track)
                                     guard model.albums.contains(where: { $0.key == key }) else { return nil }
@@ -1622,13 +1626,14 @@ struct RootView: View {
                   // The shelf on the screen. On a borrowed shelf the result is its owner's.
                   classical: model.isClassical(album, on: model.viewing),
                   // Only for the user's own records. A download is signed as one of this
-                  // account's tracks.
-                  download: model.viewing.isOwn
+                  // account's tracks. A starter record is inside the app already.
+                  download: model.viewing.isOwn && !StarterTracks.isStarter(album)
                       ? DownloadKey(standing: model.downloads.standing(of: album.key),
                                     onDownload: { model.downloads.download(album) },
                                     onRemove: { model.downloads.remove([album.key]) })
                       : nil,
-                  canPlay: { model.reading.isOnline || model.downloads.isOnPhone($0.rpmId) },
+                  canPlay: { model.reading.isOnline || model.downloads.isOnPhone($0.rpmId)
+                                 || StarterTracks.isStarter($0.rpmId) },
                   shelf: model.albums, onOpenAlbum: open,
                   artists: readArtists.artists(of: album, in: model.albums),
                   onArtist: openArtist,
@@ -1715,9 +1720,10 @@ struct RootView: View {
     }
 
     /// The badges the reader's own collection unlocks, worked out here and sent once their page is read; the server
-    /// notifies the reader of each new one. None while someone else's collection is open.
+    /// notifies the reader of each new one. None while someone else's collection is open, and none for the starter
+    /// tracks shown in place of an empty collection, which are not the reader's (`StarterTracks`).
     private var ownBadges: [String] {
-        guard model.viewing.isOwn, !model.albums.isEmpty else { return [] }
+        guard model.viewing.isOwn, !model.albums.isEmpty, !StarterTracks.isStarterShelf(model.albums) else { return [] }
         let shelves = Dictionary(readGenres.genres(model.albums).map { ($0.name, $0.albums.count) }, uniquingKeysWith: +)
         return RPMProfileBadges.unlocked(albums: model.albums.count,
                                          tracks: model.albums.reduce(0) { $0 + $1.tracks.count },

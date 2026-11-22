@@ -1,5 +1,6 @@
 import Foundation
 import RPMKit
+import RPMLibrary
 import RPMAudio
 
 /// The words of what is playing: the sheet the owner chose on a desktop, kept in the cloud,
@@ -71,9 +72,10 @@ public final class LyricsLookup {
         looking = true
 
         // The owner's own choice comes first. A track the cloud does not know, a sheet with no
-        // timings, or a failed request all fall back to LRCLIB.
+        // timings, or a failed request all fall back to LRCLIB. A starter track is never asked
+        // about: the cloud does not hold it (``StarterTracks``).
         var found = LyricSheet.empty
-        if let cloud, !track.rpmId.isEmpty,
+        if let cloud, !track.rpmId.isEmpty, !StarterTracks.isStarter(track.rpmId),
            let lrc = try? await cloud.lyricSheet(rpmId: track.rpmId, on: shelf) {
             found = LyricSheet.parse(lrc)
         }
@@ -96,7 +98,7 @@ public final class LyricsLookup {
     public func find(_ track: CloudTrack, on shelf: CloudShelf = .own) async -> LyricSheet {
         guard let title = track.title, !title.isEmpty else { return .empty }
 
-        if let cloud, !track.rpmId.isEmpty,
+        if let cloud, !track.rpmId.isEmpty, !StarterTracks.isStarter(track.rpmId),
            let lrc = try? await cloud.lyricSheet(rpmId: track.rpmId, on: shelf) {
             let chosen = LyricSheet.parse(lrc)
             if chosen.isSynced { return chosen }

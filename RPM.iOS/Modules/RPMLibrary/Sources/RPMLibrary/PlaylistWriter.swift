@@ -110,14 +110,15 @@ public struct PlaylistWriter: Sendable {
     ///   - folder: The folder to file it in, outermost first. An empty array means
     ///     the top of the tree, and it is a real answer. The argument has no default,
     ///     so every caller decides the folder.
-    ///   - tracks: The songs to put in, in the order they should appear.
+    ///   - tracks: The songs to put in, in the order they should appear. A starter track is left
+    ///     out: the cloud does not hold it, so a playlist cannot name it (``StarterTracks``).
     /// - Returns: The row as the store now holds it, with the store's stamp.
     public func create(
         name: String, folder: [String], tracks: [CloudTrack]
     ) async throws -> CloudPlaylist {
         let id = mint()
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let own = tracks.filter { shelfOf($0.rpmId).isOwn }
+        let own = tracks.filter { shelfOf($0.rpmId).isOwn && !StarterTracks.isStarter($0.rpmId) }
 
         // The precondition is `0`, not `nil`. The id was made a moment ago, so nothing
         // should be stored under it. If the store reports that it is already in use,
@@ -164,7 +165,8 @@ public struct PlaylistWriter: Sendable {
         public let row: CloudPlaylist?
     }
 
-    /// Adds songs to a playlist that already exists.
+    /// Adds songs to a playlist that already exists. A starter track is left out, as in
+    /// ``create(name:folder:tracks:)``, and songs that are all starter tracks write nothing.
     ///
     /// - Parameter whenAlreadyThere: What to do with a song that the list already
     ///   contains. **There is no default.** Adding a second copy without the user
@@ -177,6 +179,9 @@ public struct PlaylistWriter: Sendable {
                     whenAlreadyThere: AlreadyThere) async throws -> Added {
         guard playlist.shelf.isOwn else { throw PlaylistWriteError.notYours }
         guard playlist.origin == .stored else { throw PlaylistWriteError.notYoursToCut }
+
+        let tracks = tracks.filter { !StarterTracks.isStarter($0.rpmId) }
+        guard !tracks.isEmpty else { return Added(songs: [], row: nil) }
 
         // The listing is read again, and the write does not use the copy the page holds.
         // A page can stay open for a long time, and the order it shows may be several

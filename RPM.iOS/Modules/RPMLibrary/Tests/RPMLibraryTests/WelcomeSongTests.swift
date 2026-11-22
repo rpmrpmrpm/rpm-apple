@@ -95,4 +95,37 @@ struct WelcomeSongTests {
     @Test func anEmptyCollectionHasNoSong() {
         #expect(pick([]) == nil)
     }
+
+    // ── the starter tracks ──
+
+    /// A new account has only the starter tracks, and the welcome still has a song to spin:
+    /// Connect first, whatever order the wall is in and whatever was played.
+    @Test func theStarterShelfSpinsConnect() {
+        let shelf = Array(StarterTracks.albums.reversed())
+        let gymnopedie = StarterTracks.prefix + "gymnopedie"
+
+        #expect(pick(shelf) == StarterTracks.prefix + "connect")
+        #expect(pick(shelf, played: played([gymnopedie: 9]), marked: [gymnopedie])
+                == StarterTracks.prefix + "connect")
+    }
+
+    @Test func aStarterRecordThatCannotPlayIsPassedOver() {
+        let playable = Set(StarterTracks.albums.filter {
+            $0.tracks[0].rpmId != StarterTracks.prefix + "connect"
+        }.map(\.key))
+
+        #expect(pick(StarterTracks.albums, playable: playable) == StarterTracks.prefix + "gymnopedie")
+    }
+
+    /// A wall with a song of the person's own beside the starter tracks is not the starter shelf,
+    /// so the usual rule chooses.
+    @Test func aSongOfTheirOwnBesideTheStarterTracksIsChosenByTheUsualRule() {
+        let shelf = StarterTracks.albums + [album("k1", [track("a")])]
+
+        #expect(pick(shelf, played: played(["a": 1])) == "a")
+    }
+
+    @Test func nothingPlayableIsNoSong() {
+        #expect(pick(StarterTracks.albums, playable: []) == nil)
+    }
 }

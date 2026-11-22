@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import RPMSharedUI
 import RPMKit
+import RPMLibrary
 import CoreText
 import Foundation
 
@@ -866,7 +867,10 @@ public struct PlayableHere: Equatable, Sendable {
     /// assume this, or it greys out a whole wall that works.
     public static let everything = PlayableHere(isOnline: true, onPhone: [])
 
-    public func canPlay(_ albumKey: String) -> Bool { isOnline || onPhone.contains(albumKey) }
+    /// A starter record (``StarterTracks``) is inside the app, so it always plays.
+    public func canPlay(_ albumKey: String) -> Bool {
+        isOnline || onPhone.contains(albumKey) || StarterTracks.isStarterKey(albumKey)
+    }
 }
 
 private struct PlayableHereKey: EnvironmentKey {

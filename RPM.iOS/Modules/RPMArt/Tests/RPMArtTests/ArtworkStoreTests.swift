@@ -648,3 +648,45 @@ private final class Clock: @unchecked Sendable {
 
     #expect(store.coverInMemory(for: album, on: .own, edge: 256) == nil)
 }
+
+// ── pictures that ship inside the app ──
+
+/// The iPhone's starter records bring their own covers, and the store is never asked about them:
+/// the cloud does not hold them.
+@Test func aRecordThatShipsItsCoverIsDrawnFromTheFileAndTheStoreIsNotAsked() async throws {
+    let file = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("rpm-shipped-\(UUID().uuidString).jpg")
+    try sleeve.write(to: file)
+    defer { try? FileManager.default.removeItem(at: file) }
+
+    let source = FakeArt()
+    let starter = try #require(StarterTracks.albums.first { StarterTracks.record(of: $0)?.hasDisc == false })
+    let (disk, _) = scratchDisk()
+    let store = ArtworkStore(source: source, disk: disk, shipped: { picture, album in
+        picture == .cover && album.key == starter.key ? file : nil
+    })
+
+    let art = try #require(await store.cover(for: starter, on: .own, edge: 256))
+    #expect(art.image.width == 256)
+    #expect(art.colours.dominant != nil, "the shipped sleeve gave the room no colour")
+
+    // It ships no disc, and a starter record has nothing in the store to ask for.
+    #expect(await store.disc(for: starter, on: .own, edge: 256) == nil)
+
+    #expect(await source.listings == 0)
+    #expect(await source.signings == 0)
+    #expect(await source.sidecars == 0)
+}
+
+/// Every other record is asked of the store as before.
+@Test func aRecordThatShipsNothingIsAskedOfTheStore() async {
+    let source = FakeArt()
+    let album = record("Spirit of Eden")
+    await source.hold(StoredCover(albumKey: keyOf(album), updatedAt: 1), picture: sleeve)
+
+    let (disk, _) = scratchDisk()
+    let store = ArtworkStore(source: source, disk: disk, shipped: { _, _ in nil })
+
+    #expect(await store.cover(for: album, on: .own, edge: 256) != nil)
+    #expect(await source.listings == 1)
+}

@@ -61,10 +61,11 @@ public actor ListenLog {
 
     /// Notes one finished listen.
     ///
-    /// A track with no cloud id is not kept: the store has nothing to join the listen to.
+    /// A track with no cloud id is not kept: the store has nothing to join the listen to. Nor is a
+    /// starter track (``StarterTracks``), which the store does not hold.
     public func note(rpmId: String, at: Int64, heardSeconds: Double, lengthSeconds: Double,
                      counted: Bool, localHour: Int, localDayOfWeek: Int) {
-        guard !rpmId.isEmpty else { return }
+        guard !rpmId.isEmpty, !StarterTracks.isStarter(rpmId) else { return }
 
         held.unsent.append(CloudListen(
             listenId: UUID().uuidString.lowercased(), rpmId: rpmId, at: at,

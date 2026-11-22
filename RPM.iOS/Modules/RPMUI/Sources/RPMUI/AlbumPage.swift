@@ -249,17 +249,20 @@ public struct AlbumPage: View {
         .rpmFloatingBack(RPMBackKey(label: Loc.get("Album_Back"), action: onBack))
         // The mark on the record, across from the back key and in the same glass. It goes to the
         // shared wall, so an album loved on the phone is loved on the computer. The mark on the
-        // **record** is not a mark on its songs.
+        // **record** is not a mark on its songs. A starter record has none: the cloud, which
+        // keeps the marks, does not hold it (``StarterTracks``).
         .overlay(alignment: .topTrailing) {
-            Button { onMark(!marked) } label: {
-                Text(Glyph.heart)
-                    .font(marked ? RPMFont.icon(15) : RPMFont.iconOutline(15))
-                    .foregroundStyle(RPMInk.white(0xE6 / 255))
+            if !StarterTracks.isStarter(album) {
+                Button { onMark(!marked) } label: {
+                    Text(Glyph.heart)
+                        .font(marked ? RPMFont.icon(15) : RPMFont.iconOutline(15))
+                        .foregroundStyle(RPMInk.white(0xE6 / 255))
+                }
+                .buttonStyle(RPMGlassKey(edge: 40))
+                .accessibilityLabel(marked ? Loc.get("Album_UnsetFavorite") : Loc.get("Album_SetFavorite"))
+                .frame(height: RPMLayout.backRow)
+                .padding(.trailing, RPMLayout.margin)
             }
-            .buttonStyle(RPMGlassKey(edge: 40))
-            .accessibilityLabel(marked ? Loc.get("Album_UnsetFavorite") : Loc.get("Album_SetFavorite"))
-            .frame(height: RPMLayout.backRow)
-            .padding(.trailing, RPMLayout.margin)
         }
         .task(id: album.key) {
             let album = album

@@ -204,8 +204,10 @@ public final class AlbumDownloads {
 
     // ── what the keys do ──
 
-    /// Downloads an album, or tries again for one that is stuck.
+    /// Downloads an album, or tries again for one that is stuck. A starter record
+    /// (``StarterTracks``) is in the app already, and the cloud has nothing to download for it.
     public func download(_ album: CloudAlbum) {
+        guard !StarterTracks.isStarter(album) else { return }
         book.want(album)
         for track in album.tracks { goes[track.rpmId] = nil }
         making.forget(album.tracks.map(\.rpmId))

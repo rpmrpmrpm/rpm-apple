@@ -96,7 +96,9 @@ enum HoldItems {
     }
 }
 
-/// The long-press menu on a record, wherever one is shown: play next, and Quick selection.
+/// The long-press menu on a record, wherever one is shown: play next, and Quick selection. A
+/// starter record is not offered for Quick selection: it goes away once the person has music of
+/// their own (``StarterTracks``).
 private struct AlbumHold: ViewModifier {
     let album: CloudAlbum
 
@@ -114,7 +116,9 @@ private struct AlbumHold: ViewModifier {
                           systemImage: "text.line.first.and.arrowtriangle.forward")
                 }
 
-                HoldItems.quick(holds, ref: QuickRefs.of(album: album.key))
+                if !StarterTracks.isStarter(album) {
+                    HoldItems.quick(holds, ref: QuickRefs.of(album: album.key))
+                }
             }
         } else {
             content

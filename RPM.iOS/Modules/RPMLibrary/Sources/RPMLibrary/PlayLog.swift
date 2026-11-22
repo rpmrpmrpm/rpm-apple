@@ -157,11 +157,14 @@ public actor PlayLog {
 
     /// This phone's rows that hold more plays than the cloud has taken, as totals. The result is
     /// empty for a pass from before a ``forget()``.
+    ///
+    /// A starter track (``StarterTracks``) is never sent: the cloud does not hold it. Its plays are
+    /// kept here all the same, so the history and home still show it was heard.
     public func unsent(limit: Int, in pass: Pass) -> [TrackPlaysEntry] {
         guard pass.era == era else { return [] }
 
         return held.own
-            .filter { $0.value.plays > $0.value.sent }
+            .filter { $0.value.plays > $0.value.sent && !StarterTracks.isStarter($0.key) }
             .sorted { $0.key < $1.key }
             .prefix(limit)
             .map { TrackPlaysEntry(rpmId: $0.key, plays: $0.value.plays,

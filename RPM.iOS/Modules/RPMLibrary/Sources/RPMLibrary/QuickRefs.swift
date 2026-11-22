@@ -25,8 +25,18 @@ public enum QuickRefs {
     }
 
     /// `added` with `ref` at its front, newest first, each ref once, at most ``most``.
+    ///
+    /// A starter track or record (``StarterTracks``) is not added: it goes away once the person
+    /// has music of their own.
     public static func adding(_ ref: String, to added: [String]) -> [String] {
-        Array(([ref] + added.filter { $0 != ref }).prefix(most))
+        guard !namesStarter(ref) else { return added }
+        return Array(([ref] + added.filter { $0 != ref }).prefix(most))
+    }
+
+    /// Whether `ref` names a starter track or a starter record.
+    public static func namesStarter(_ ref: String) -> Bool {
+        if let id = songId(ref) { return StarterTracks.isStarter(id) }
+        return ref.hasPrefix(album) && StarterTracks.isStarterKey(String(ref.dropFirst(album.count)))
     }
 
     /// `added` without `ref`.

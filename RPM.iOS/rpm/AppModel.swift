@@ -326,7 +326,8 @@ final class AppModel {
         worldPlays = WorldPlays(client: cloud)
 
         library = CloudLibrary(source: cloud, marks: FavoriteMarks(), storeRoot: Self.storeRoot)
-        artwork = ArtworkStore(source: cloud)
+        // The starter records' covers and the Moonlight Sonata's disc ship with the app.
+        artwork = ArtworkStore(source: cloud, shipped: { StarterFiles.picture($0, of: $1) })
         listPictures = PlaylistPictures(source: cloud)
         backdrops = BackdropStore(source: cloud)
         portraits = ArtistPortraits(source: cloud, disk: ArtistPortraits.diskInCaches())
@@ -340,6 +341,16 @@ final class AppModel {
                                  library: library, plays: plays, listens: listens, radioListens: radioListens,
                                  playDevice: PlayDevice(store: .standard),
                                  additions: LibrarySession.nothingAdded)
+
+        // The three records that stand in for an own collection with no music (`StarterTracks`).
+        session.starters = StarterTracks.albums
+
+        #if DEBUG
+        // Shows the starter tracks over the person's music, as a new account sees them, to look at
+        // those screens without signing out. Debug builds only, and only when the environment sets
+        // it; see `start()`.
+        session.forcesStarters = ProcessInfo.processInfo.environment["RPM_STARTER_PREVIEW"] != nil
+        #endif
 
         // **The cover that the other room shows is not the one on this screen.** A
         // television gets a JPEG small enough to travel as a message. The store is asked for
@@ -375,8 +386,10 @@ final class AppModel {
 
         let classical = session.classical
 
+        // The starter tracks are read from the app's own files, as a download is read from the
+        // phone: nothing is signed for them, and they play offline.
         player = Player(source: cloud, shelves: whoseShelf,
-                        copies: book, nearby: NothingNearby(), reach: reach,
+                        copies: StarterCopies(over: book), nearby: NothingNearby(), reach: reach,
                         levelling: prefs.levelling,
                         levelsClassical: prefs.levelsClassical,
                         classical: { classical.isClassical($0, on: whoseShelf.shelf(of: $0.rpmId)) },
@@ -655,9 +668,10 @@ final class AppModel {
     // ── the profile page ──
 
     /// Sends the size of the collection for the counts on the reader's page, when it changed
-    /// since the last send. A borrowed collection is someone else's and is not sent.
+    /// since the last send. A borrowed collection is someone else's and is not sent, and the
+    /// starter tracks shown in place of an empty one are not the reader's (`StarterTracks`).
     func reportCounts() async {
-        guard who != nil, viewing.isOwn else { return }
+        guard who != nil, viewing.isOwn, !StarterTracks.isStarterShelf(self.albums) else { return }
         let albums = self.albums.count
         guard albums > 0 else { return }
         let tracks = self.albums.reduce(0) { $0 + $1.tracks.count }
@@ -1126,10 +1140,12 @@ final class AppModel {
     /// (``warmNextTiming()``).
     ///
     /// The caller runs this while the player is shown and karaoke is on, and cancels it when the
-    /// song changes.
+    /// song changes. A starter track is not in the cloud, so it is never asked about
+    /// (`StarterTracks`).
     func readMeasured() async {
         let sheet = lyrics
-        guard sheet.isSynced, let track = player.current else { return }
+        guard sheet.isSynced, let track = player.current, !StarterTracks.isStarter(track.rpmId)
+        else { return }
         let rpmId = track.rpmId
         if measured.rpmId == rpmId, MeasuredLyrics.covers(measured.lines, sheet: sheet) { return }
         if ahead.rpmId == rpmId, MeasuredLyrics.covers(ahead.lines, sheet: sheet) {
@@ -1184,13 +1200,15 @@ final class AppModel {
     /// person's own songs: the cloud measures nobody else's.
     ///
     /// The player screen calls this only while it is shown with karaoke on, as it reads the
-    /// lyrics: ordinary listening sends no record names anywhere.
+    /// lyrics: ordinary listening sends no record names anywhere. A starter track is not in the
+    /// cloud, so it is never asked about (`StarterTracks`).
     func warmNextTiming() async {
         guard let at = player.index, player.queue.indices.contains(at + 1) else { return }
         let next = player.queue[at + 1]
         let rpmId = next.rpmId
         let shelf = shelves.shelf(of: rpmId)
-        guard shelf.isOwn, !rpmId.isEmpty, let title = next.title, !title.isEmpty,
+        guard shelf.isOwn, !rpmId.isEmpty, !StarterTracks.isStarter(rpmId),
+              let title = next.title, !title.isEmpty,
               !warmed.contains(rpmId)
         else { return }
         warmed.insert(rpmId)
@@ -1392,9 +1410,11 @@ final class AppModel {
 
     /// The copyright line and the label of a record, from its first song's sidecar. Nil on a
     /// borrowed shelf, because the sidecar route takes no shelf and would answer about this
-    /// account's own files. Nil also when the read fails.
+    /// account's own files. Nil also when the read fails, and for a starter record, which the
+    /// cloud does not hold (`StarterTracks`).
     func credits(of album: CloudAlbum) async -> AlbumCredits? {
-        guard viewing.isOwn, let first = album.tracks.first else { return nil }
+        guard viewing.isOwn, !StarterTracks.isStarter(album), let first = album.tracks.first
+        else { return nil }
         if let known = creditsRead[first.rpmId] { return known }
 
         guard let sidecar = try? await cloud.sidecar(rpmId: first.rpmId) else { return nil }

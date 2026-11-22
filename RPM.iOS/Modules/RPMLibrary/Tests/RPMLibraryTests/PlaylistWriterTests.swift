@@ -448,3 +448,38 @@ private func writer(_ store: Store, borrowed: Set<String> = []) -> PlaylistWrite
     }
     #expect(await store.deletes.isEmpty)
 }
+
+// ── the starter tracks ──
+
+/// A starter track is not in the cloud, so a playlist never names one (``StarterTracks``).
+@Test func aNewPlaylistLeavesTheStarterTracksOut() async throws {
+    let store = Store()
+    let starter = try #require(StarterTracks.tracks.first)
+    let made = try await writer(store).create(name: "Mine", folder: [],
+                                              tracks: [track("a"), starter])
+
+    #expect(made.trackIds == ["a"])
+    #expect(await store.writes[0].playlist.trackIds == ["a"])
+}
+
+@Test func addingOnlyStarterTracksWritesNothing() async throws {
+    let store = Store([list("p", "Evening", ["a"])])
+    let added = try await writer(store).add(to: set("p", "Evening", [track("a")]),
+                                            tracks: StarterTracks.tracks,
+                                            whenAlreadyThere: .addAnother)
+
+    #expect(added.songs.isEmpty)
+    #expect(added.row == nil)
+    #expect(await store.writes.isEmpty)
+    #expect(await store.listings == 0, "the store was asked about songs it does not hold")
+}
+
+@Test func addingLeavesTheStarterTracksOutOfTheSongsItAdds() async throws {
+    let store = Store([list("p", "Evening", ["a"])])
+    let added = try await writer(store).add(to: set("p", "Evening", [track("a")]),
+                                            tracks: StarterTracks.tracks + [track("b")],
+                                            whenAlreadyThere: .leaveIt)
+
+    #expect(added.songs.map(\.rpmId) == ["b"])
+    #expect(await store.writes[0].playlist.trackIds == ["a", "b"])
+}

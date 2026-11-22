@@ -150,8 +150,9 @@ public struct TrackActions: ViewModifier {
             }
         }
         // Add to home's Quick selection, or take it out. On a borrowed row too: it is kept on this
-        // phone and writes nothing to anybody's collection.
-        if let holds {
+        // phone and writes nothing to anybody's collection. Not for a starter track, which goes
+        // away once the person has music of their own (``StarterTracks``).
+        if let holds, !StarterTracks.isStarter(track.rpmId) {
             HoldItems.quick(holds, ref: QuickRefs.of(song: track.rpmId))
         }
 

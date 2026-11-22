@@ -6,7 +6,12 @@ import RPMKit
 /// One the person already knows: the song they have played most, else one they marked as a
 /// favourite, else any song in the collection. Only a song that can be played now, that has a title
 /// to show, and that is long enough to look round the player while it plays. The Android app picks
-/// the same way (`rememberSample`).
+/// the same way (`sampleOf`).
+///
+/// A collection that is only the starter tracks (``StarterTracks``), shown while the person has no
+/// music of their own, has no plays and no marks to go by. Its song is the first of
+/// ``StarterTracks/welcomeOrder`` that fits. Without them a new account would have no song, and the
+/// welcome would leave out its last step and the player's tour.
 public enum WelcomeSong {
     /// A song shorter than this ends before the player has been shown round, in seconds.
     public static let shortest: Double = 90
@@ -27,11 +32,21 @@ public enum WelcomeSong {
                             canPlay: (CloudAlbum) -> Bool) -> (album: CloudAlbum, at: Int)? {
         var best: (album: CloudAlbum, at: Int, plays: Int, marked: Bool, id: String)?
 
+        // The starter tracks that fit, and whether every song that fits is one.
+        var starters: [String: (album: CloudAlbum, at: Int)] = [:]
+        var onlyStarters = true
+
         for album in albums where canPlay(album) {
             for (at, track) in album.tracks.enumerated() {
                 guard let title = track.title, !title.trimmingCharacters(in: .whitespaces).isEmpty,
                       (track.tags?.durationSeconds ?? 0) >= shortest
                 else { continue }
+
+                if StarterTracks.isStarter(track.rpmId) {
+                    starters[track.rpmId] = (album, at)
+                } else {
+                    onlyStarters = false
+                }
 
                 let plays = played[track.rpmId]?.plays ?? 0
                 let marked = isMarked(track)
@@ -47,6 +62,11 @@ public enum WelcomeSong {
                 }
                 best = (album, at, plays, marked, track.rpmId)
             }
+        }
+
+        if onlyStarters,
+           let first = StarterTracks.welcomeOrder.lazy.compactMap({ starters[$0] }).first {
+            return first
         }
 
         return best.map { (album: $0.album, at: $0.at) }

@@ -168,6 +168,78 @@ struct PlaylistReadOrderTests {
         #expect(session.standing != .showing)
     }
 
+    // ── the starter tracks ──
+
+    /// A new account's collection holds no music, so the iPhone's starter tracks stand in for it.
+    @Test func anEmptyCollectionShowsTheStarterTracks() async throws {
+        let source = HeldSource(tracks: [])
+        await source.release()
+        let session = try await makeSession(source: source, cloud: StubCloud())
+        session.starters = StarterTracks.albums
+
+        await session.show(.nextLaunch) {}
+
+        #expect(session.albums.map(\.key) == StarterTracks.albums.map(\.key))
+        #expect(session.wallStanding == .showing)
+        #expect(session.albums.flatMap(\.tracks).allSatisfy { !session.isTrackMine($0) },
+                "a starter track can be marked or filed")
+    }
+
+    /// One song of their own takes them away, at the next read.
+    @Test func musicOfTheirOwnTakesTheStarterTracksAway() async throws {
+        let source = HeldSource(tracks: [])
+        await source.release()
+        let session = try await makeSession(source: source, cloud: StubCloud())
+        session.starters = StarterTracks.albums
+
+        await session.show(.nextLaunch) {}
+        #expect(StarterTracks.isStarterShelf(session.albums))
+
+        await source.hand([track("t0")])
+        await session.refresh()
+
+        #expect(session.albums.flatMap(\.tracks).map(\.rpmId) == ["t0"])
+    }
+
+    /// A read that failed is not an empty collection: the wall says it could not be read.
+    @Test func aCollectionThatCouldNotBeReadDoesNotShowTheStarterTracks() async throws {
+        let session = try await makeSession(source: FailingSource(), cloud: StubCloud())
+        session.starters = StarterTracks.albums
+
+        await session.show(.nextLaunch) {}
+
+        #expect(session.albums.isEmpty)
+        guard case .trouble = session.wallStanding else {
+            Issue.record("a failed read showed \(session.wallStanding)")
+            return
+        }
+    }
+
+    /// The TV hands the session no starter tracks, so an empty collection stays empty there.
+    @Test func aHeadThatShipsNoneShowsAnEmptyCollection() async throws {
+        let source = HeldSource(tracks: [])
+        await source.release()
+        let session = try await makeSession(source: source, cloud: StubCloud())
+
+        await session.show(.nextLaunch) {}
+
+        #expect(session.albums.isEmpty)
+        #expect(session.wallStanding == .showing)
+    }
+
+    /// The debug preview lays them over music, to look at a new account's screens.
+    @Test func thePreviewShowsTheStarterTracksOverMusic() async throws {
+        let source = HeldSource(tracks: ids.map(track))
+        await source.release()
+        let session = try await makeSession(source: source, cloud: StubCloud())
+        session.starters = StarterTracks.albums
+        session.forcesStarters = true
+
+        await session.show(.nextLaunch) {}
+
+        #expect(StarterTracks.isStarterShelf(session.albums))
+    }
+
     // ── the session and its doubles ──
 
     /// Waits for the playlist read that ``LibrarySession/show(_:whenUp:)`` starts on its own task.
@@ -188,7 +260,7 @@ struct PlaylistReadOrderTests {
 
     /// A session for an account that is signed in. The wall is shown only while it is.
     private func makeSession(
-        source: HeldSource, cloud: StubCloud,
+        source: any LibrarySource, cloud: StubCloud,
         additions: @escaping LibrarySession.Additions = LibrarySession.nothingAdded
     ) async throws -> LibrarySession {
         let base = URL(string: "https://api.example.com")!
@@ -226,6 +298,13 @@ struct PlaylistReadOrderTests {
 @MainActor
 private final class HomeNetwork {
     var tracks: [CloudTrack] = []
+}
+
+/// A listing that never arrives: the store cannot be reached.
+private struct FailingSource: LibrarySource {
+    struct Unreachable: Error {}
+
+    func list(_ shelf: CloudShelf) async throws -> [CloudTrack] { throw Unreachable() }
 }
 
 /// A listing that is handed over when the test says so.
