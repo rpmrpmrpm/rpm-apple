@@ -840,6 +840,39 @@
 "Settings_MusicFolder" = "Carpeta de música";
 "Settings_MusicFolderHint" = "Donde rpm guarda tu colección.";
 
+/* Settings > Collection: title of the card that says where the collection database is kept. Also a jump link at the top of the page. */
+"Settings_Database" = "Base de datos de la colección";
+
+/* Settings > Collection: hint under the collection database card's title. */
+"Settings_DatabaseHint" = "rpm guarda todo lo que sabe de tu música en una sola base de datos: tus listas, tus escuchas y tus favoritos, y todo lo que ha aprendido de cada pista. Normalmente está en tu carpeta de música, justo al lado de tu música.";
+
+/* Settings > Collection: switch that keeps the collection database in the folder below instead of in the music folder. */
+"Settings_DatabaseOffDisk" = "Guardar la base de datos en un disco más rápido";
+
+/* Settings > Collection: hint under the switch that keeps the collection database on a faster disk. */
+"Settings_DatabaseOffDiskHint" = "¿Tu música está en un disco más lento? Guarda la base de datos en la carpeta de abajo y rpm arrancará y se desplazará mucho más rápido. Tu música se queda justo donde está, solo se mueve la base de datos. Las colecciones en red siempre guardan la suya en esta carpeta.";
+
+/* Settings > Collection: label over the folder where collection databases are kept when they are not in the music folder. */
+"Settings_DatabaseFolder" = "Carpeta de la base de datos";
+
+/* Settings > Collection: button that puts the database folder back to the app's own folder. Shown only when another folder was chosen. */
+"Settings_DatabaseFolderDefault" = "Usar la predeterminada";
+
+/* Settings > Collection: line in the collection database card. {0} is the full path of the database file the app has open. */
+"Settings_DatabaseNow" = "Ahora mismo tu base de datos está aquí: %1$@";
+
+/* Settings > Collection: shown after the switch or the database folder changes. The move happens when the app next opens the collection. */
+"Settings_DatabaseNextStart" = "¡Listo! El cambio se aplica la próxima vez que abras rpm. Cuando tu base de datos se mueve, rpm guarda también la copia antigua, con otro nombre, por si acaso.";
+
+/* Settings > Collection: one-time note in the collection database card when the music folder is on a spinning disk and the database folder is on an SSD. */
+"Settings_DatabaseSpinning" = "Tu música está en un disco duro mecánico, y eso puede hacer que rpm tarde en arrancar. Este ordenador también tiene un SSD rápido, así que guardar ahí la base de datos podría notarse de verdad. ¿Quieres probarlo?";
+
+/* Settings > Collection: button on the spinning-disk note. Turns the faster-disk switch on. */
+"Settings_DatabaseSpinningYes" = "Sí, muévela";
+
+/* Settings > Collection: button on the spinning-disk note. Closes the note for good. */
+"Settings_DatabaseSpinningNo" = "No, gracias";
+
 /* Settings, Music folder card: the chosen folder has files in it and no RPM mirror. */
 "Settings_MusicFolderNotEmpty" = "Esta carpeta contiene otros archivos. Elige una carpeta vacía, una carpeta con música o una carpeta de música de rpm existente.";
 
