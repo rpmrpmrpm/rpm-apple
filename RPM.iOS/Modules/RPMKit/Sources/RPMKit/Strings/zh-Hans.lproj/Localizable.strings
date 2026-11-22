@@ -3283,8 +3283,11 @@
 /* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre, year or explicit marks. */
 "Queue_CatalogueFilled" = "已从目录补全的唱片：%1$@";
 
-/* Line above the progress bar in the import queue's tag stage, shown right after music is added: rpm fills in what the new records lack from its catalogue before the queue opens for editing. */
-"Queue_TagStageCaption" = "接下来是你的标签！我们正在从目录获取流派、子流派、年份、露骨内容标记和碟片图片。";
+/* Line above the progress bar in the import queue's tag stage, shown right after music is added: rpm fills in genres, subgenres, years, explicit marks and disc pictures from its catalogue before the queue opens for editing. */
+"Queue_TagStageCaption" = "正在获取专辑信息";
+
+/* Line above the progress bar in the import queue while added music is being read in, before the tag stage. */
+"Queue_ScanCaption" = "正在导入文件";
 
 /* Line under the progress bar in the import queue's tag stage. {0} is the album being looked up, {1} how many there are, {2} its artist and {3} its title. */
 "Queue_TagStageAlbum" = "第 %1$@/%2$@ 张专辑：%3$@ – %4$@";
