@@ -11,6 +11,7 @@ extension Credits {
         "FontAwesomePro": CreditLicense(name: "Font Awesome Pro License", file: nil, url: "https://fontawesome.com/license", isNotices: false),
         "OFL-1.1": CreditLicense(name: "SIL Open Font License 1.1", file: "OFL-1.1.txt", url: "https://openfontlicense.org", isNotices: false),
         "Pexels": CreditLicense(name: "Pexels License", file: nil, url: "https://www.pexels.com/license/", isNotices: false),
+        "PublicDomain": CreditLicense(name: "Public domain", file: nil, url: "https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_sonata_no._14_in_c_sharp_minor_%27moonlight%27,_op._27_no._2_-_i._adagio_sostenuto.ogg", isNotices: false),
         "Terms": CreditLicense(name: "Terms of use", file: nil, url: nil, isNotices: false),
     ]
 
@@ -196,6 +197,9 @@ extension Credits {
             CreditEntry(name: "Kareena  Joseph", version: nil, detail: "burning bridges (Pop)", copyright: nil, url: "https://www.pexels.com/photo/closeup-of-a-burning-matchstick-flame-33934130/", source: nil, use: nil, termsUrl: nil, licenses: ["Pexels"]),
             CreditEntry(name: "Nothing Ahead", version: nil, detail: "feels. (Hip-Hop / Rap)", copyright: nil, url: "https://www.pexels.com/photo/lights-behind-window-glass-in-rain-20164680/", source: nil, use: nil, termsUrl: nil, licenses: ["Pexels"]),
             CreditEntry(name: "Mohammed-Ali  Hamadache", version: nil, detail: "final call (Disco)", copyright: nil, url: "https://www.pexels.com/photo/red-lit-disco-ball-at-night-party-39466002/", source: nil, use: nil, termsUrl: nil, licenses: ["Pexels"]),
+        ]),
+        CreditSection(title: "Credits_Section_Music", note: nil, entries: [
+            CreditEntry(name: "Musopen", version: nil, detail: nil, copyright: "Piano Sonata No. 14, first movement, performed by Paul Pitman for Musopen", url: "https://musopen.org", source: nil, use: "Credits_Musopen_Use", termsUrl: nil, licenses: ["PublicDomain"]),
         ]),
         CreditSection(title: "Credits_Section_Catalogues", note: "Credits_Catalogues_Note", entries: [
             CreditEntry(name: "Wikipedia", version: nil, detail: nil, copyright: nil, url: "https://www.wikipedia.org", source: nil, use: "Credits_Wikipedia_Use", termsUrl: nil, licenses: ["CC-BY-SA-4.0"]),
