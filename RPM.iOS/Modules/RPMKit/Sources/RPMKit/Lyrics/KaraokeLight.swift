@@ -134,6 +134,14 @@ public enum KaraokeLines {
     /// The earliest before its stamp a line takes over for its first measured word, in seconds.
     static let earliest = 1.0
 
+    /// The shortest time a line of words is the sung line, in seconds, unless the playhead is moved
+    /// past it (``handovers(_:heard:)``).
+    static let shortest = 1.0
+
+    /// How finely the rules are followed through the song when the hand-overs are worked out, in
+    /// seconds.
+    private static let step = 0.01
+
     /// How long an unmeasured backing line stays up after its words are shared out, at most, in
     /// seconds. Its last word is often held, and shared out at singing speed it would go too soon.
     static let asideHeld = 3.0
@@ -233,6 +241,9 @@ public enum KaraokeLines {
     /// already sung and lit all at once. It moves on no earlier than ``earliest`` before the stamp,
     /// and not while the line it leaves is still on its last measured word, unless the next line's
     /// first word has already started.
+    ///
+    /// These are the rules alone. A screen asks ``handovers(_:heard:)``, which also gives every
+    /// line a moment of its own.
     public static func held(_ score: LyricScore, piece: Int?, seconds: Double,
                             heard: [[WordSpan]?]) -> Int? {
         let stays = heldBack(score, piece: piece, seconds: seconds, heard: heard)
@@ -249,6 +260,96 @@ public enum KaraokeLines {
             return piece
         }
         return next
+    }
+
+    /// When each piece of a score takes over as the sung piece (``handovers(_:heard:)``).
+    public struct Handovers: Sendable, Equatable {
+        let at: [Double]
+
+        /// The piece to show at `seconds`, or nil before the first.
+        public func piece(at seconds: Double) -> Int? {
+            var low = 0, high = at.count - 1
+            var found: Int?
+            while low <= high {
+                let mid = (low + high) / 2
+                if at[mid] <= seconds {
+                    found = mid
+                    low = mid + 1
+                } else {
+                    high = mid - 1
+                }
+            }
+            return found
+        }
+
+        /// When the next piece after `seconds` takes over, or nil when none does.
+        public func next(after seconds: Double) -> Double? {
+            at.first { $0 > seconds && $0.isFinite }
+        }
+    }
+
+    /// When each piece of `score` takes over as the sung piece: the rules of
+    /// ``held(_:piece:seconds:heard:)``, and then every line of words is the sung line for at least
+    /// ``shortest``. The Android apps' `KaraokeLines.handovers`.
+    ///
+    /// A sheet can stamp a line a quarter of a second before the next, and the measured words of
+    /// the line before can run up to the next one's. In JT's "Oh", for one, the rules alone hold
+    /// "You get these beautiful crystal slippers, baby" through its last measured word and then move
+    /// straight on to the line after the next: the line in between is never lit. So the moments are
+    /// worked out by following the rules through the song, and the pieces after a line that would be
+    /// passed over move on later. A seek still lands wherever it lands.
+    ///
+    /// The last answer is kept, so a view can ask on every pass for the same score and words.
+    public static func handovers(_ score: LyricScore, heard: [[WordSpan]?]) -> Handovers {
+        made.handovers(score, heard: heard) { workOut(score, heard: heard) }
+    }
+
+    private static let made = MadeHandovers()
+
+    private static func workOut(_ score: LyricScore, heard: [[WordSpan]?]) -> Handovers {
+        let parts = score.parts
+        var at = [Double](repeating: .infinity, count: parts.count)
+        guard let lastPart = parts.last else { return Handovers(at: at) }
+        func rule(_ seconds: Double) -> Int {
+            held(score, piece: score.index(at: seconds), seconds: seconds, heard: heard) ?? -1
+        }
+
+        // The rules are followed through the song in small steps, and each hand-over is then found
+        // exactly between the last two steps. A piece the rules pass over takes over with the one
+        // after it.
+        let sung = heard.compactMap { $0?.last?.to }.max() ?? 0
+        let end = max(lastPart.seconds, sung) + waitLongest + 1
+        var reached = -1
+        var before = -1.0
+        var seconds = -1.0
+        while seconds <= end && reached < parts.count - 1 {
+            let piece = rule(seconds)
+            if piece > reached {
+                var low = before
+                var high = seconds
+                for _ in 0..<40 {
+                    let mid = (low + high) / 2
+                    if rule(mid) > reached { high = mid } else { low = mid }
+                }
+                // Stamps and measured words are given to the hundredth, so the moment is put back on
+                // the microsecond it came from: a line takes over at its moment, not a hair after it.
+                let round = (high * 1e6).rounded() / 1e6
+                if rule(round) > reached { high = round }
+                for q in (reached + 1)...piece { at[q] = high }
+                reached = piece
+            }
+            before = seconds
+            seconds += step
+        }
+
+        // Every line of words is sung for a moment: the pieces after a line that would be passed
+        // over move on later.
+        for p in 0..<(parts.count - 1) {
+            if case .words = parts[p].piece, at[p].isFinite {
+                at[p + 1] = max(at[p + 1], at[p] + shortest)
+            }
+        }
+        return Handovers(at: at)
     }
 
     /// ``held(_:piece:seconds:heard:)`` without moving on early: the previous piece while it is
@@ -270,5 +371,22 @@ public enum KaraokeLines {
         let stamp = score.parts[piece].seconds
         if let starts, seconds < starts - lead, seconds < stamp + waitLongest { return before }
         return piece
+    }
+}
+
+/// The last hand-overs worked out (``KaraokeLines/handovers(_:heard:)``), kept for the next pass
+/// over the same score and words.
+fileprivate final class MadeHandovers: @unchecked Sendable {
+    private let lock = NSLock()
+    private var last: (score: LyricScore, heard: [[WordSpan]?], handovers: KaraokeLines.Handovers)?
+
+    func handovers(_ score: LyricScore, heard: [[WordSpan]?],
+                   workOut: () -> KaraokeLines.Handovers) -> KaraokeLines.Handovers {
+        lock.lock()
+        defer { lock.unlock() }
+        if let last, last.score == score, last.heard == heard { return last.handovers }
+        let made = workOut()
+        last = (score, heard, made)
+        return made
     }
 }

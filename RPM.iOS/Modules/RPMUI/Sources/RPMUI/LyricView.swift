@@ -103,10 +103,9 @@ struct LyricView: View {
             // backing lines.
             let now = time.seconds(at: .now)
             // With karaoke, a line stays up while its last measured word is still sung, and takes
-            // over as its measured words start.
-            let at = karaoke ? KaraokeLines.held(score, piece: score.index(at: now),
-                                                 seconds: now, heard: heard)
-                             : score.index(at: player.position.seconds)
+            // over as its measured words start. Every line is sung for a moment.
+            let at = KaraokeLines.handovers(score, heard: heard)
+                .piece(at: karaoke ? now : player.position.seconds)
             // When each backing line shows, by piece, and which of them show now.
             let voices = score.parts.map { part in
                 part.asides.map { KaraokeLines.voice($0, measured: karaoke ? measured : []) }
