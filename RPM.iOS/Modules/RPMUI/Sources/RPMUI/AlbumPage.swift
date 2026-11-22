@@ -316,7 +316,8 @@ public struct AlbumPage: View {
     // ── the record ──
 
     private func header(edge: CGFloat) -> some View {
-        VStack(spacing: 12) {
+        let title = AlbumTitle.split(album.album)
+        return VStack(spacing: 12) {
             // Room for the status bar and the back key, which floats rather than scrolling
             // with the page. The list starts at the top of the screen.
             Color.clear.frame(height: RPMSafeArea.top + RPMLayout.backRow)
@@ -328,12 +329,22 @@ public struct AlbumPage: View {
                 // point less height than its lines need drops a whole line and ends in "...". The
                 // list row can be measured a little short while the about text and the page width
                 // settle, and the title is the first thing it would take that from.
-                MarkedTitle(album.album, explicit: album.isExplicit, edge: 18)
+                MarkedTitle(title.name, explicit: album.isExplicit, edge: 18)
                     .font(RPMFont.displayBold(24))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
+
+                // The record's edition ("Deluxe", "Bonus Edition") on a quieter line of its own
+                // under its name, as the desktop's record page shows it (``AlbumTitle``).
+                if !title.editions.isEmpty {
+                    Text(title.editions.joined(separator: "  \u{00B7}  "))
+                        .font(RPMFont.display(13).weight(.semibold))
+                        .foregroundStyle(RPMInk.white(0xB3 / 255))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 artistLine
             }

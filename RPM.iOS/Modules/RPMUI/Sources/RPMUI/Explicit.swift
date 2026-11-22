@@ -33,7 +33,10 @@ struct ExplicitMark: View {
 /// The caller styles it as it would style a `Text`: the font, the colour, the line limit and the
 /// alignment are read from the environment by the text inside. The mark keeps its own look.
 ///
-/// The title gives way to the mark: a long title is shortened and the mark stays in view.
+/// On one line the title gives way to the mark: a long title is shortened and the mark stays in
+/// view. Where more lines are allowed, the mark is part of the text, after the last word and joined
+/// to it by a no-break space, so it wraps with that word and never stands alone at the edge of the
+/// block. There it is the system's filled square E, drawn in the mark's colour.
 struct MarkedTitle: View {
     let text: String
     let explicit: Bool
@@ -47,8 +50,14 @@ struct MarkedTitle: View {
         self.edge = edge
     }
 
+    @Environment(\.lineLimit) private var lineLimit
+
     var body: some View {
-        if explicit {
+        if explicit, lineLimit != 1 {
+            Text(text)
+                + Text(verbatim: "\u{00A0}")
+                + Text(Image(systemName: "e.square.fill")).foregroundStyle(RPMInk.white(0xAA / 255))
+        } else if explicit {
             HStack(spacing: 6) {
                 Text(text)
                 ExplicitMark(edge: edge)
