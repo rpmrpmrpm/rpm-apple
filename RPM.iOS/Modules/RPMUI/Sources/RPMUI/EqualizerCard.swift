@@ -175,7 +175,8 @@ private struct EqFader: View {
         )
         .accessibilityElement()
         .accessibilityLabel(label)
-        .accessibilityValue("\(Int(db)) dB")
+        // "dB" is the unit's symbol, the same in every language.
+        .accessibilityValue(Text(verbatim: "\(Int(db)) dB"))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment: send(db + 1)
