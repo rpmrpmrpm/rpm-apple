@@ -3283,6 +3283,21 @@
 /* Import queue status line after the background catalogue fill; {0} is how many records got a genre, subgenre, year or explicit marks. */
 "Queue_CatalogueFilled" = "Aus dem Katalog ergänzte Platten: %1$@";
 
+/* Line above the progress bar in the import queue's tag stage, shown right after music is added: rpm fills in what the new records lack from its catalogue before the queue opens for editing. */
+"Queue_TagStageCaption" = "Jetzt kommen deine Tags! Wir holen Genres, Subgenres, Jahre, Explicit-Markierungen und Disc-Bilder aus dem Katalog.";
+
+/* Line under the progress bar in the import queue's tag stage. {0} is the album being looked up, {1} how many there are, {2} its artist and {3} its title. */
+"Queue_TagStageAlbum" = "Album %1$@ von %2$@: %3$@ – %4$@";
+
+/* Line under the progress bar in the import queue's tag stage, before the first album is named. {0} is the album being looked up, {1} how many there are. */
+"Queue_TagStageCount" = "Album %1$@ von %2$@";
+
+/* Button in the import queue's tag stage: open the queue for editing at once, while the tags keep arriving in the background. */
+"Queue_TagStageSkip" = "Jetzt bearbeiten";
+
+/* Tooltip on the Edit now button in the import queue's tag stage. */
+"Queue_TagStageSkipHint" = "Kein Problem! Fang gleich an zu bearbeiten. Deine Tags kommen im Hintergrund weiter an, und nichts, was du eintippst, geht verloren.";
+
 /* Tooltip on the duplicate mark. */
 "QueueDup_InLibrary" = "Die Sammlung enthält diesen Titel bereits, in mindestens gleicher Qualität.";
 
