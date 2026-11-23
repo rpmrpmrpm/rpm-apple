@@ -7937,7 +7937,7 @@
 /* Phone welcome, the layout step: the line under Wizard_LayoutTitle. The phone's Wizard_LayoutBody, with two choices. */
 "Wizard_Phone_LayoutBody" = "Elige cómo se muestran tus álbumes en la colección. Puedes cambiarlo cuando quieras, arriba en la colección.";
 
-/* Wide button on the phone's radio home, under the banner. Opens the tuner page with the dial and the full station list. */
+/* Spoken label of the round key at the top right of the phone's radio home. Opens the tuner page with the dial, the search field and the full station list. */
 "Radio_HomeTuner" = "Abrir el sintonizador";
 
 /* Title of the phone's tuner page (the dial, the search field and the station list), opened from the radio home. */

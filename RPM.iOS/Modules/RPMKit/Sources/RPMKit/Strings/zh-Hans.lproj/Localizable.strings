@@ -7937,7 +7937,7 @@
 /* Phone welcome, the layout step: the line under Wizard_LayoutTitle. The phone's Wizard_LayoutBody, with two choices. */
 "Wizard_Phone_LayoutBody" = "选择专辑在收藏中的显示方式。随时可以在收藏页面顶部切换。";
 
-/* Wide button on the phone's radio home, under the banner. Opens the tuner page with the dial and the full station list. */
+/* Spoken label of the round key at the top right of the phone's radio home. Opens the tuner page with the dial, the search field and the full station list. */
 "Radio_HomeTuner" = "打开调谐器";
 
 /* Title of the phone's tuner page (the dial, the search field and the station list), opened from the radio home. */
