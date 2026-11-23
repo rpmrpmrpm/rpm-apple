@@ -237,11 +237,19 @@ struct RootView: View {
 
     /// Whether the opening screen is still up. It is shown once per launch. See the overlay that
     /// draws it.
-    @State private var opening = true
+    ///
+    /// **It starts from ``openingDone``, not from true.** A new language builds the screens again
+    /// (see `RPMApp`), and that resets every `@State` here. The opening waits for the launch hold
+    /// below, which runs only when the model starts showing the collection, and the model is already
+    /// showing it. So an opening shown again would never hand over.
+    @State private var opening = !RootView.openingDone
 
     /// Whether the shell has been shown with its home screen drawn, so the opening may hand over.
-    /// Set when the launch hold below ends.
-    @State private var shellShown = false
+    /// Set when the launch hold below ends. A shell built again after the opening is shown at once.
+    @State private var shellShown = RootView.openingDone
+
+    /// Whether the opening screen has handed over, for as long as the app runs.
+    @MainActor private static var openingDone = false
 
     /// The longest time that the launch keeps the wait mark for the home screen, after the wall's
     /// own 400 ms. A photograph is a network request, and a slow one must not block the app. After
@@ -576,6 +584,7 @@ struct RootView: View {
                 Opening(ready: model.standing == .signedOut || shellShown,
                         reading: model.standing == .loading ? Loc.get("Rpm_Library_Reading") : nil,
                         onSwept: {
+                            Self.openingDone = true
                             withAnimation(.easeOut(duration: Opening.fade)) { opening = false }
                         })
                     .transition(.opacity)
