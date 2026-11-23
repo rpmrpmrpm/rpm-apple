@@ -4,6 +4,9 @@
 <dict>
 	<key>RPMAppKey</key>
 	<string>$(RPM_APP_KEY)</string>
+	<!-- The folder shared with the home screen widget. See WidgetShelf in Shared/WidgetCard.swift. -->
+	<key>RPMAppGroup</key>
+	<string>$(RPM_APP_GROUP)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleLocalizations</key>

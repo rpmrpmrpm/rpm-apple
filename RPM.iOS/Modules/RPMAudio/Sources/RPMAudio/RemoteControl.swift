@@ -40,6 +40,12 @@ public final class RemoteControl {
     /// system's E badge after its title. The phone marks; the TV does not, as on Android.
     private let marksExplicit: Bool
 
+    /// Told each time the lock screen's card is put up, changed or taken down: the title and the
+    /// artist it shows, whether the music plays, and its picture. The title is nil when the card
+    /// is taken down. The phone's home screen widget is fed from it, so it always shows what the
+    /// lock screen shows, for a song and for a station alike.
+    public var onCard: ((_ title: String?, _ artist: String?, _ playing: Bool, _ artwork: UIImage?) -> Void)?
+
     public init(player: Player, reach: NetworkReach, songCovers: SongCovers,
                 marksExplicit: Bool = false) {
         self.player = player
@@ -359,6 +365,25 @@ public final class RemoteControl {
             told = saying
             Self.log.notice("told iOS: \(saying, privacy: .public)")
         }
+
+        if let onCard {
+            // The picture is read back from the card's artwork. Its handler returns the same image
+            // each time, so a reader can tell a new cover from the same one by identity.
+            let artwork = (info?[MPMediaItemPropertyArtwork] as? MPMediaItemArtwork)
+                .flatMap { $0.image(at: $0.bounds.size) }
+            onCard(info?[MPMediaItemPropertyTitle] as? String,
+                   info?[MPMediaItemPropertyArtist] as? String,
+                   info != nil && player.wantsToPlay,
+                   artwork)
+        }
+    }
+
+    /// Plays or pauses, as the lock screen's play and pause key does: the audio session is
+    /// claimed again before the music starts (see ``wireCommands()``). The home screen widget's
+    /// key comes here.
+    public func playOrPause() async {
+        if !player.wantsToPlay { await takeTheSession().value }
+        player.toggle()
     }
 
     private var told: String?

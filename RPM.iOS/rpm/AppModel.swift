@@ -80,6 +80,9 @@ final class AppModel {
     /// the app, because it consists of the command targets and the session observers.
     private let remote: RemoteControl
 
+    /// Writes what is playing for the home screen widget. See ``WidgetFeed``.
+    private let widgetFeed: WidgetFeed
+
     /// The account's library as the screens show it: the wall, home, the playlists, the shares,
     /// the marks and the quota. Shared with the TV; see `RPMSession`.
     let session: LibrarySession
@@ -221,6 +224,16 @@ final class AppModel {
     /// If the stream is registered first, a path change that arrives between the two lines is
     /// buffered and not lost. If the reading is read first and the stream is taken second, a
     /// change in that gap is lost.
+    /// A key on the home screen widget. The play and pause key goes through the remote control, so
+    /// the audio session is claimed again first, as for the lock screen's key.
+    private func pressed(_ key: WidgetKey) async {
+        switch key {
+        case .previous: await player.previous()
+        case .playPause: await remote.playOrPause()
+        case .next: await player.next()
+        }
+    }
+
     private func watchTheLine() {
         let changes = reach.changes
 
@@ -397,6 +410,7 @@ final class AppModel {
                                                          fitting: CastCover.limit) })
         remote = RemoteControl(player: player, reach: reach, songCovers: songCovers,
                                marksExplicit: true)
+        widgetFeed = WidgetFeed()
         speakerChoice = Speakers(player: player)
         equalizer = EqualizerSettings(player: player)
         record = NowPlayingRecord(session: session, artwork: artwork, player: player,
@@ -418,6 +432,16 @@ final class AppModel {
         // doing: the lock screen shows what it was last given. So a pause that it was not told
         // about leaves a pause key over a stopped track and a clock that still runs.
         player.onPlaybackChanged = { [weak remote] in remote?.showPosition() }
+
+        // The home screen widget shows what the lock screen shows, and its keys reach the player
+        // here. The model is made on every launch, also when iOS starts the app in the background
+        // for a widget key, so the keys work when the app is not open.
+        remote.onCard = { [widgetFeed] title, artist, playing, artwork in
+            widgetFeed.show(title: title, artist: artist, playing: playing, artwork: artwork)
+        }
+        WidgetKeys.handle = { [weak self] key in
+            await self?.pressed(key)
+        }
 
         // A play that counted. It is written down here and not by the counter, which stays
         // synchronous so that its readings cannot arrive out of order; see PlayCounter. The log

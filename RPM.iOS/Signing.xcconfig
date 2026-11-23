@@ -12,4 +12,9 @@ PRODUCT_BUNDLE_IDENTIFIER = com.rpm.player
 // from rpmrpmrpm.com/developer in Local.xcconfig. Without a key, pages that need the API stay empty.
 RPM_APP_KEY =
 
+// The App Group the app and its home screen widget share (the app writes what is playing there,
+// the widget reads it). The app's entitlements and the widget's name it. With your own team, set
+// your own group in Local.xcconfig.
+RPM_APP_GROUP = group.com.rpm.player
+
 #include? "Local.xcconfig"

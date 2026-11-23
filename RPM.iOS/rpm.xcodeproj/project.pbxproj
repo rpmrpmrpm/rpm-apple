@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5C0FA1E5C0F1A0000000B00E /* RPMWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5C0FA1E5C0F1A0000000B001 /* RPMWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		10F9E984FF42FE891B9C83D6 /* RPMKit in Frameworks */ = {isa = PBXBuildFile; productRef = D1F9303E3CD67C43E5E5B002 /* RPMKit */; };
 		734576F615D8B5038C5EB709 /* RPMDesign in Frameworks */ = {isa = PBXBuildFile; productRef = BDF9CB5FFB1FDD4ADDF41675 /* RPMDesign */; };
 		8961A46AC711133B65D8DBA6 /* RPMUI in Frameworks */ = {isa = PBXBuildFile; productRef = 39831671E6C97FA4963C617A /* RPMUI */; };
@@ -16,7 +17,34 @@
 		A1B2C3D40004000000000003 /* RPMSession in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D40004000000000002 /* RPMSession */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		5C0FA1E5C0F1A0000000B010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F415A069E900370CF4CFBD7B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C0FA1E5C0F1A0000000B007;
+			remoteInfo = RPMWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5C0FA1E5C0F1A0000000B00F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5C0FA1E5C0F1A0000000B00E /* RPMWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		5C0FA1E5C0F1A0000000B001 /* RPMWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RPMWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C0FA1E5C0F1A0000000B002 /* rpm.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = rpm.entitlements; sourceTree = "<group>"; };
+		5C0FA1E5C0F1A0000000B003 /* RPMWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RPMWidget.entitlements; sourceTree = "<group>"; };
 		05BE9347E2FAE1D9BA0F8AA8 /* RPMDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMDesign; path = Modules/RPMDesign; sourceTree = SOURCE_ROOT; };
 		3A2FAF3E0C4DB5344F6A86C9 /* RPMKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMKit; path = Modules/RPMKit; sourceTree = SOURCE_ROOT; };
 		A1B2C3D40001000000000004 /* RPMArt */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RPMArt; path = Modules/RPMArt; sourceTree = SOURCE_ROOT; };
@@ -29,6 +57,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5C0FA1E5C0F1A0000000B006 /* Exceptions for "RPMWidget" folder in "RPMWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5C0FA1E5C0F1A0000000B007 /* RPMWidget */;
+		};
 		A1B2C3D40003000000000002 /* Exceptions for "rpm" folder in "rpm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -39,6 +74,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		5C0FA1E5C0F1A0000000B004 /* RPMWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5C0FA1E5C0F1A0000000B006 /* Exceptions for "RPMWidget" folder in "RPMWidget" target */,
+			);
+			path = RPMWidget;
+			sourceTree = "<group>";
+		};
+		5C0FA1E5C0F1A0000000B005 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		EC9692F8E01D2BE25C82A32B /* rpm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -50,6 +98,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5C0FA1E5C0F1A0000000B009 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2D5841DCEDFE34B110949F40 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -71,6 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				CBECBC01A63CF53B799CCB1C /* rpm.app */,
+				5C0FA1E5C0F1A0000000B001 /* RPMWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,8 +135,12 @@
 			isa = PBXGroup;
 			children = (
 				5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */,
+				5C0FA1E5C0F1A0000000B002 /* rpm.entitlements */,
+				5C0FA1E5C0F1A0000000B003 /* RPMWidget.entitlements */,
 				F8AF5295117FCB49637B315A /* Packages */,
 				EC9692F8E01D2BE25C82A32B /* rpm */,
+				5C0FA1E5C0F1A0000000B004 /* RPMWidget */,
+				5C0FA1E5C0F1A0000000B005 /* Shared */,
 				73E823C72F9B1AD1A4C9A109 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -102,6 +162,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5C0FA1E5C0F1A0000000B007 /* RPMWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5C0FA1E5C0F1A0000000B00B /* Build configuration list for PBXNativeTarget "RPMWidget" */;
+			buildPhases = (
+				5C0FA1E5C0F1A0000000B008 /* Sources */,
+				5C0FA1E5C0F1A0000000B009 /* Frameworks */,
+				5C0FA1E5C0F1A0000000B00A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5C0FA1E5C0F1A0000000B004 /* RPMWidget */,
+				5C0FA1E5C0F1A0000000B005 /* Shared */,
+			);
+			name = RPMWidget;
+			packageProductDependencies = (
+			);
+			productName = RPMWidget;
+			productReference = 5C0FA1E5C0F1A0000000B001 /* RPMWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		29D12D87FDA79A8967495164 /* rpm */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = FE32D4A8C07A6F1361F1549E /* Build configuration list for PBXNativeTarget "rpm" */;
@@ -109,13 +192,16 @@
 				C117BE2F5E6B2C455C678DB9 /* Sources */,
 				2D5841DCEDFE34B110949F40 /* Frameworks */,
 				A1B2C3D40003000000000001 /* Resources */,
+				5C0FA1E5C0F1A0000000B00F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5C0FA1E5C0F1A0000000B011 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				EC9692F8E01D2BE25C82A32B /* rpm */,
+				5C0FA1E5C0F1A0000000B005 /* Shared */,
 			);
 			name = rpm;
 			packageProductDependencies = (
@@ -141,6 +227,10 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					29D12D87FDA79A8967495164 = {
+						DevelopmentTeam = LBW775Z8JG;
+						ProvisioningStyle = Automatic;
+					};
+					5C0FA1E5C0F1A0000000B007 = {
 						DevelopmentTeam = LBW775Z8JG;
 						ProvisioningStyle = Automatic;
 					};
@@ -170,11 +260,19 @@
 			projectRoot = "";
 			targets = (
 				29D12D87FDA79A8967495164 /* rpm */,
+				5C0FA1E5C0F1A0000000B007 /* RPMWidget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5C0FA1E5C0F1A0000000B00A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1B2C3D40003000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -185,6 +283,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5C0FA1E5C0F1A0000000B008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C117BE2F5E6B2C455C678DB9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -194,7 +299,71 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5C0FA1E5C0F1A0000000B011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C0FA1E5C0F1A0000000B007 /* RPMWidget */;
+			targetProxy = 5C0FA1E5C0F1A0000000B010 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		5C0FA1E5C0F1A0000000B00C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = RPMWidget.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RPMWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = rpm;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.8.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited).widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		5C0FA1E5C0F1A0000000B00D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = RPMWidget.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RPMWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = rpm;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.8.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited).widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		994A85FC74C53A9E733EDE2F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -319,6 +488,7 @@
 			baseConfigurationReference = 5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = rpm.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -346,6 +516,7 @@
 			baseConfigurationReference = 5C0FA1E5C0F1A0000000A001 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = rpm.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -371,6 +542,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5C0FA1E5C0F1A0000000B00B /* Build configuration list for PBXNativeTarget "RPMWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C0FA1E5C0F1A0000000B00C /* Debug */,
+				5C0FA1E5C0F1A0000000B00D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		A8B93477F5ABE2F4E7917327 /* Build configuration list for PBXProject "RPM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
