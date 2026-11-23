@@ -95,7 +95,7 @@ struct AlbumList: View {
             Button { onOpen(album) } label: {
                 HStack(spacing: 14) {
                     PlaylistSleeve(track: album.tracks.first, glyph: Glyph.record, edge: 64,
-                                   corner: 6, mark: 22, covers: covers)
+                                   mark: 22, covers: covers)
 
                     VStack(alignment: .leading, spacing: 3) {
                         MarkedTitle(album.album, explicit: album.isExplicit, edge: 15)
@@ -181,7 +181,7 @@ struct AlbumList: View {
     private func songRow(_ track: CloudTrack) -> some View {
         Button { onPlay(track) } label: {
             HStack(spacing: 14) {
-                PlaylistSleeve(track: track, glyph: Glyph.record, edge: 44, corner: 6, mark: 16,
+                PlaylistSleeve(track: track, glyph: Glyph.record, edge: 44, mark: 16,
                                covers: covers)
 
                 VStack(alignment: .leading, spacing: 1) {

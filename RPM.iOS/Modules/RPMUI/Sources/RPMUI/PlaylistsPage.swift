@@ -357,7 +357,7 @@ public struct PlaylistsPage: View {
                                                                missing: 0),
                                  end: Glyph.history) {
                             PlaylistSleeve(track: history.first, glyph: Glyph.history,
-                                           edge: 44, corner: 6, mark: 16, covers: covers)
+                                           edge: 44, mark: 16, covers: covers)
                         }
                     }
                     .buttonStyle(RowPress())
@@ -370,7 +370,7 @@ public struct PlaylistsPage: View {
                                                                missing: set.missing),
                                  end: Glyph.pin) {
                             PlaylistSleeve(list: set.picture, track: set.tracks.first,
-                                           glyph: Glyph.record, edge: 44, corner: 6, mark: 16,
+                                           glyph: Glyph.record, edge: 44, mark: 16,
                                            covers: covers, framed: FramedList.of(set))
                         }
                     }
@@ -460,7 +460,7 @@ public struct PlaylistsPage: View {
     /// them (see ``FolderFace``).
     private func sleeve(_ row: PlaylistRow) -> some View {
         PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
-                       edge: 44, corner: 6, mark: 16, covers: covers,
+                       edge: 44, mark: 16, covers: covers,
                        framed: FramedList.of(row.set), markPicture: row.markPicture,
                        folderRoom: row.folderRoom, roomSeed: row.id)
     }
@@ -540,9 +540,11 @@ struct PlaylistSleeve: View {
     let track: CloudTrack?
     let glyph: String
     let edge: CGFloat
-    let corner: CGFloat
     let mark: CGFloat
     let covers: any CoverStore
+
+    /// The rounding every cover has, from its size. See ``CoverCorner``.
+    private var corner: CGFloat { CoverCorner.radius(edge) }
 
     /// The frame of a generated list, and nil for every other row. See ``FramedList``.
     var framed: FramedList? = nil
@@ -570,14 +572,13 @@ struct PlaylistSleeve: View {
     @State private var cover: Cover?
 
     init(list: ListPicture? = nil, track: CloudTrack?, glyph: String, edge: CGFloat,
-         corner: CGFloat, mark: CGFloat, covers: any CoverStore, framed: FramedList? = nil,
+         mark: CGFloat, covers: any CoverStore, framed: FramedList? = nil,
          roomDrifts: Bool = false, markPicture: UIImage? = nil,
          folderRoom: RoomDissolve? = nil, roomSeed: String = "") {
         self.list = list
         self.track = track
         self.glyph = glyph
         self.edge = edge
-        self.corner = corner
         self.mark = mark
         self.covers = covers
         self.framed = framed
@@ -648,6 +649,9 @@ struct PlaylistSleeve: View {
         }
         .frame(width: edge, height: edge)
         .listFrame(framed, edge: edge)
+        // The frame of a generated list is a square picture laid over the cover, so it is
+        // rounded here with the rest.
+        .clipShape(shape)
         .animation(.easeOut(duration: 0.2), value: cover != nil)
         // **The list's own picture comes first, and the cover of the first record is the
         // fallback.** A playlist can have a cover that the user chose or the app drew, and

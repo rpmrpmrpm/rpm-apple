@@ -832,7 +832,7 @@ public struct LibraryPage: View {
     private func listRow(_ list: PlaylistSet) -> some View {
         entry(list.name, Loc.get("Home_Songs", list.tracks.count)) {
             PlaylistSleeve(list: list.picture, track: list.tracks.first, glyph: Glyph.playlists,
-                           edge: 40, corner: 6, mark: 15, covers: covers,
+                           edge: 40, mark: 15, covers: covers,
                            framed: FramedList.of(list))
         }
     }
@@ -965,17 +965,17 @@ private struct SearchSleeve: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: CoverCorner.radius(40), style: .continuous)
                 .fill(Color.black.opacity(0x22 / 255))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: CoverCorner.radius(40), style: .continuous)
                         .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
                 }
 
             if let cover {
                 Sleeve(image: cover.image)
                     .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(40), style: .continuous))
             } else {
                 Text(Glyph.record)
                     .font(RPMFont.icon(15))

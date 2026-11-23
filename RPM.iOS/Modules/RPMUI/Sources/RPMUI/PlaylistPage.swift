@@ -575,7 +575,7 @@ public struct PlaylistPage: View {
     /// first record.
     private var sleeve: some View {
         PlaylistSleeve(list: picture, track: rows.first?.track, glyph: Glyph.record,
-                       edge: coverEdge, corner: 4, mark: 52, covers: covers,
+                       edge: coverEdge, mark: 52, covers: covers,
                        framed: FramedList.of(showing), roomDrifts: phase == .active)
     }
 
@@ -697,7 +697,7 @@ public struct PlaylistPage: View {
                 .clipShape(Capsule())
 
             PlaylistSleeve(track: track, glyph: Glyph.record, edge: 40,
-                           corner: 6, mark: 16, covers: covers)
+                           mark: 16, covers: covers)
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 6) {

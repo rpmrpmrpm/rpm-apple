@@ -310,7 +310,7 @@ public struct NewPlaylistSheet: View {
 
         return HStack(spacing: 10) {
             PlaylistSleeve(track: row.track, glyph: Glyph.record, edge: 40,
-                           corner: 6, mark: 16, covers: covers)
+                           mark: 16, covers: covers)
 
             VStack(alignment: .leading, spacing: 1) {
                 MarkedTitle(row.track.title?.isEmpty == false ? row.track.title! : row.album.album,

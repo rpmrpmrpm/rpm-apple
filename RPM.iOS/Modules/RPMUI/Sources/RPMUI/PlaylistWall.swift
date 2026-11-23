@@ -153,7 +153,7 @@ struct PlaylistTile: View {
             // squares at once, but a row of the list shows only one. The desktop app makes the
             // same distinction between its cards and its tree.
             PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
-                           edge: art, corner: 10, mark: glyphSize, covers: covers,
+                           edge: art, mark: glyphSize, covers: covers,
                            framed: FramedList.of(row.set), markPicture: row.markPicture,
                            folderRoom: row.folderRoom, roomSeed: row.id)
 

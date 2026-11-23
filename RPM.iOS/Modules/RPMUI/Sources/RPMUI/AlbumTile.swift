@@ -173,12 +173,12 @@ public struct AlbumTile: View {
         VStack(alignment: .leading, spacing: 0) {
             sleeve
                 .frame(width: art, height: art)
-                // Ten, the same corner radius as the desktop card. One rounded shape
+                // The rounding every cover has (``CoverCorner``). One rounded shape
                 // carries the ground, the hairline and the clip: a rounded corner is a
                 // clipped layer, and a wall has many of them, so it costs frame time.
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(art), style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: CoverCorner.radius(art), style: .continuous)
                         .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
                 }
 
@@ -254,5 +254,21 @@ public struct AlbumTile: View {
         } else if !Task.isCancelled {
             cover = nil
         }
+    }
+}
+
+/// How round the corners of a cover are: the same share of its side on every cover, so a record,
+/// a playlist and a folder look alike at any size.
+///
+/// The share is the one of the album covers on the home screen: 10 points on a 132-point cover,
+/// the desktop card's corner. A small cover in a row gets small corners and a large one on a
+/// pinched wall gets large ones, and they all look equally round.
+enum CoverCorner {
+    /// Ten points on the home screen's 132-point covers.
+    static let share: CGFloat = 10.0 / 132
+
+    /// The corner radius for a cover `edge` points wide.
+    static func radius(_ edge: CGFloat) -> CGFloat {
+        edge * share
     }
 }

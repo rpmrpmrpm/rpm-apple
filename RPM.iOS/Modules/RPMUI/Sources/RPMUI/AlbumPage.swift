@@ -448,13 +448,15 @@ public struct AlbumPage: View {
 
     /// The sleeve, square and centred, filling the whole square with no mount around it.
     private func sleeve(edge: CGFloat) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color.black.opacity(0x22 / 255))
+        // The rounding every cover has, from its size (``CoverCorner``).
+        let shape = RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous)
+
+        return ZStack {
+            shape.fill(Color.black.opacity(0x22 / 255))
 
             if let cover {
                 Sleeve(image: cover.image)
-                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .clipShape(shape)
             } else {
                 Text(Glyph.record)
                     .font(RPMFont.icon(52))

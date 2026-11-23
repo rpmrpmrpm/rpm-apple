@@ -631,7 +631,7 @@ struct HomeListsRow: View {
                                 PlaylistSleeve(list: lists[name]?.picture,
                                                track: lists[name]?.tracks.first,
                                                glyph: Glyph.playlists,
-                                               edge: HomeRowView.art, corner: 10, mark: 26,
+                                               edge: HomeRowView.art, mark: 26,
                                                covers: covers,
                                                framed: FramedList.of(lists[name]),
                                                // Static: a room drifts only on the banner plate,
@@ -639,7 +639,8 @@ struct HomeListsRow: View {
                                                // own.
                                                roomDrifts: false)
                                     .overlay {
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        RoundedRectangle(cornerRadius: CoverCorner.radius(HomeRowView.art),
+                                                         style: .continuous)
                                             .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
                                     }
 
@@ -972,7 +973,7 @@ struct HomePicksRow: View {
                       framed: FramedList? = nil, explicit: Bool = false) -> some View {
         HStack(spacing: 12) {
             PlaylistSleeve(list: list, track: track, glyph: glyph,
-                           edge: Self.art, corner: 5, mark: 15, covers: covers, framed: framed)
+                           edge: Self.art, mark: 15, covers: covers, framed: framed)
 
             VStack(alignment: .leading, spacing: 1) {
                 MarkedTitle(title, explicit: explicit, edge: 13)
