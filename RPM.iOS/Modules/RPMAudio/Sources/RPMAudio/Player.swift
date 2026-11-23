@@ -1004,6 +1004,10 @@ public final class Player {
         // reads it (see ``pickUpWhereItStopped()``), so every other start clears it.
         stoppedAt = nil
 
+        // A start builds the sound again, so a device change during a pause is dealt with. See
+        // ``deviceChanged()``.
+        deviceMoved = false
+
         // **Offline, only what is on the phone can play.** The first track from the one
         // asked for that has a copy here, so a queue that mixes downloaded and streamed
         // records plays the downloaded ones and steps over the rest. If there is none at
@@ -1333,7 +1337,48 @@ public final class Player {
     /// before it was queued would toggle the wrong way.
     public func toggle() {
         if reopensWhatStopped() { return }
+        if !wantsToPlay, reopensAfterTheDeviceChanged() { return }
         apply(transport.toggle(starting: starting, loaded: holding))
+    }
+
+    /// The phone's output device changed under the engine (``PcmEngine/deviceChanged``), for
+    /// example a Bluetooth device connected. iOS has stopped the engine, so the record is started
+    /// again where it was, as after a restart of the audio server.
+    ///
+    /// **Decided when the task runs, from whether the music should play then.** A device going away
+    /// also pauses (see `RemoteControl.routeChanged`), and that pause can arrive on either side of
+    /// this. Read here, a pause that came first is seen, and the record is not started again on the
+    /// phone's own speaker. A pause that comes after this has started the record is held until its
+    /// sound arrives and applied then (``pause()``), so no sound comes out.
+    ///
+    /// While paused the record is not started at all: it would make a sound. The next Play starts
+    /// it again instead (``reopensAfterTheDeviceChanged()``).
+    private func deviceChanged() {
+        guard !onAvFoundation, !isCasting, index != nil || station != nil else { return }
+
+        Task {
+            guard wantsToPlay else {
+                deviceMoved = true
+                return
+            }
+            deviceMoved = false
+            await pickUpWhereItStopped()
+        }
+    }
+
+    /// Whether the output device changed while paused, so the engine must be built again before the
+    /// record can play. See ``deviceChanged()``.
+    private var deviceMoved = false
+
+    /// Play pressed after the output device changed during a pause: the engine was stopped under the
+    /// record, so it is started again where it was, instead of resuming a node that has lost what
+    /// was scheduled.
+    private func reopensAfterTheDeviceChanged() -> Bool {
+        guard deviceMoved, !starting else { return false }
+        deviceMoved = false
+
+        Task { await pickUpWhereItStopped() }
+        return true
     }
 
     /// Play pressed over a record that stopped for lack of a network: the engine holds
@@ -1354,6 +1399,7 @@ public final class Player {
     /// otherwise does nothing: the track is already on its way.
     public func resume() {
         if reopensWhatStopped() { return }
+        if reopensAfterTheDeviceChanged() { return }
         apply(transport.play(starting: starting, loaded: holding))
     }
 
@@ -2692,6 +2738,10 @@ public final class Player {
 
         sound.ranOut = { [weak self] ending in
             Task { @MainActor in self?.queueRanOut(ending) }
+        }
+
+        sound.deviceChanged = { [weak self] in
+            Task { @MainActor in self?.deviceChanged() }
         }
 
         // A station is somebody else's stream and keeps AVFoundation's own reporting.

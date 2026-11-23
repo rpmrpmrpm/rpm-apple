@@ -180,6 +180,21 @@ public final class PcmEngine: @unchecked Sendable {
     /// stopped from a record that is short. See ``Ending``.
     public var ranOut: (@Sendable (Ending) -> Void)?
 
+    /// Called when the phone's output device changed under the engine: a Bluetooth device or
+    /// headphones connected or went away, or the device's format changed.
+    ///
+    /// **iOS stops the engine for it, and the sound does not come back by itself.** The buffers
+    /// scheduled in front of the node can go with the stop, without their completions, so the
+    /// pump waits for room that never comes and the record stands still until the next one is
+    /// started. The player starts the record again where it was (see `Player.deviceChanged`).
+    ///
+    /// Only while the sound plays on this phone. While casting there is no local graph, and the
+    /// keep-alive silence has its own engine and recovers it itself (``CastKeepAlive``).
+    public var deviceChanged: (@Sendable () -> Void)?
+
+    /// The observer of this engine's configuration changes. See ``deviceChanged``.
+    private var deviceWatch: NSObjectProtocol?
+
     /// Why the last source to leave the front left it.
     ///
     /// Kept here because the source it belongs to is gone by the time anyone is told: the pump
@@ -197,7 +212,27 @@ public final class PcmEngine: @unchecked Sendable {
         // over the network while casting. `whereItIs` tells them apart.
         played.reads { [weak self] in self?.whereItIs()?.sample }
 
+        // **This engine's own changes only** (`object: engine`). The keep-alive silence posts the
+        // same notification for its engine while casting, and that is not a reason to start the
+        // record again.
+        deviceWatch = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil
+        ) { [weak self] _ in self?.engineChanged() }
+
         PumpDiag.announce()
+    }
+
+    deinit {
+        if let deviceWatch { NotificationCenter.default.removeObserver(deviceWatch) }
+    }
+
+    /// The engine's configuration changed and iOS stopped it. Passed on to the player while the
+    /// sound plays on this phone.
+    private func engineChanged() {
+        let home = gate.withLock { toTheRoom == nil }
+        Self.log.notice("engine: the output device changed (\(home ? "on the phone" : "casting", privacy: .public))")
+        guard home else { return }
+        deviceChanged?()
     }
 
     private let diag = PumpDiag()
