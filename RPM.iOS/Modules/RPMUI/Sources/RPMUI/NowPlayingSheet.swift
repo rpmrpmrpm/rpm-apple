@@ -25,12 +25,12 @@ import RPMSession
 /// are two views of the same record, and a player with a different colour from the page it
 /// opened from would look like a different app.
 public struct NowPlayingSheet: View {
-    private let player: Player
+    let player: Player
     private let art: CoverArt?
 
     /// The lyrics of what is playing, or `.empty` when there are none, which greys out the lyrics
     /// key. The owner of the record looks them up, and this view only draws them.
-    private let lyrics: LyricSheet
+    let lyrics: LyricSheet
 
     /// Whether the lyrics lookup is still running. This is the one state where the lyrics key
     /// is neither lit nor greyed out.
@@ -43,10 +43,10 @@ public struct NowPlayingSheet: View {
 
     /// Whether the sung line lights letter by letter: the setting, for a supporter. See
     /// ``LyricView``.
-    private let karaoke: Bool
+    let karaoke: Bool
 
     /// The words of the playing song as the cloud measured them, or none.
-    private let measured: [MeasuredLine]
+    let measured: [MeasuredLine]
 
     /// Reads the measured words of what is playing, and asks for them to be measured where none
     /// fit. It is called while the player is shown and karaoke is on, and again when the record
@@ -93,7 +93,7 @@ public struct NowPlayingSheet: View {
     /// Reads the music for the room and for the spectrum next to the cover. It belongs to this
     /// sheet and starts and stops with it. The reader holds the audio engine's tap, and a tap
     /// that keeps running while nobody sees the picture only heats the phone.
-    @State private var room = RoomReader()
+    @State var room = RoomReader()
 
     /// The colours of the station's square while a station is playing. See ``stationWears(_:)``.
     @State private var stationColours: SleeveColours?
@@ -107,11 +107,11 @@ public struct NowPlayingSheet: View {
 
     /// Whether the sheet is on the screen. The room's clock depends only on this. A shader that
     /// keeps drawing behind a hidden sheet only heats the phone.
-    @State private var showing = false
+    @State var showing = false
 
     /// Whether the room and the spectrum rest: set by the app while the music is paused. See
     /// ``RPMSharedUI/PowerSaving`` for the lower rate while the phone saves power.
-    @Environment(\.roomsRest) private var roomsRest
+    @Environment(\.roomsRest) var roomsRest
 
     /// The y position of the bottom edge of the cover, in the sheet's own points. The room is
     /// dimmed below this line, because the text is there.
@@ -137,7 +137,7 @@ public struct NowPlayingSheet: View {
     @State private var showingLyrics = Harness.opensLyrics
 
     /// Whether the lyrics are shown in place of the cover. See ``LyricsLookup/shows(asked:sheet:looking:)``.
-    private var lyricsUp: Bool {
+    var lyricsUp: Bool {
         LyricsLookup.shows(asked: showingLyrics, sheet: lyrics, looking: lookingUpLyrics)
     }
     @State private var showingSpeakers = false
@@ -161,7 +161,16 @@ public struct NowPlayingSheet: View {
 
     /// The speaker picker, built by the owner of the speakers. Nil when casting is not offered,
     /// and then the key is not shown on the sheet.
-    private let onSpeakers: ((@escaping () -> Void) -> AnyView)?
+    let onSpeakers: ((@escaping () -> Void) -> AnyView)?
+
+    /// Whether the phone is on its side and the player is laid out for that: the Modern style of
+    /// ``LandscapePlayer``. The owner of the sheet decides, because it also decides whether the
+    /// stage is shown instead. See `NowPlayingSheet+Sideways.swift`.
+    let sideways: Bool
+
+    /// What the player on its side draws behind its cover and keys: the room or one of the stage's
+    /// looks. See ``LandscapeVisual``.
+    @AppStorage(LandscapeVisual.key) var visual = LandscapeVisual.room
 
     public init(player: Player, art: CoverArt?, marked: Bool,
                 lyrics: LyricSheet = .empty, lookingUpLyrics: Bool = false,
@@ -175,7 +184,8 @@ public struct NowPlayingSheet: View {
                 onAlbum: (() -> Void)? = nil,
                 onArtist: (() -> Void)?,
                 playingOn: String? = nil,
-                onSpeakers: ((@escaping () -> Void) -> AnyView)? = nil) {
+                onSpeakers: ((@escaping () -> Void) -> AnyView)? = nil,
+                sideways: Bool = false) {
         self.player = player
         self.art = art
         self.lyrics = lyrics
@@ -194,6 +204,7 @@ public struct NowPlayingSheet: View {
         self.onArtist = onArtist
         self.playingOn = playingOn
         self.onSpeakers = onSpeakers
+        self.sideways = sideways
     }
 
     /// What the timing read is for: the record, whether karaoke is on, and how many lines its
@@ -217,30 +228,12 @@ public struct NowPlayingSheet: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            grip
-
-            // **The lyrics take the place of the cover**, as in the Uno phone app. The room behind
-            // them stays, because its colours come from the record and the lyrics are read
-            // against it.
-            ZStack {
-                if lyricsUp {
-                    // **No part of the cover is shown during the intro.** A fade that depends
-                    // on the playback position (which changes four times a second) would show the
-                    // artwork on the lyrics screen and then remove it in steps. A user who opens
-                    // the lyrics wants to see lyrics, and the intro shows what the intro IS. See
-                    // `LyricView.opening`.
-                    LyricView(sheet: lyrics, player: player, karaoke: karaoke, measured: measured)
-                } else {
-                    cover
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .transition(.opacity)
-
-            chrome
+        // **One sheet for both ways up.** The phone on its side shows the same player with the
+        // same state (the lyrics, the queue, the room's reader), laid out for landscape. See
+        // `NowPlayingSheet+Sideways.swift`.
+        Group {
+            if sideways { sidewaysLayout } else { upright }
         }
-        .animation(.easeOut(duration: 0.25), value: lyricsUp)
         // Requested when the player is shown and again when the record changes. **Only while it
         // is shown**: normal listening sends no record name to any service.
         .task(id: player.current?.rpmId) {
@@ -257,41 +250,6 @@ public struct NowPlayingSheet: View {
         .task(id: WarmAsk(next: nextUp, karaoke: karaoke)) {
             if karaoke, nextUp != nil { await onWarmNext() }
         }
-        // **The background and overlays are modifiers and not siblings in a stack**, which is the
-        // same rule as on the album page and for the same reason. The background ignores the
-        // safe area. As a sibling it would make the whole STACK extend to the screen edges, so
-        // the grip would be laid out behind the sheet's own top edge and the transport under the
-        // home indicator. A background has the size of the view it belongs to and takes no part
-        // in its layout.
-        .background {
-            // **Square against the top of the screen, and rounded as soon as it moves away from
-            // it**, like every card that is put down on this phone. The corners are cut on the
-            // background and not on the sheet, because the background is the only part that is
-            // drawn to the screen edges. A clip on the sheet would use its layout frame, which is
-            // inside the safe area. It is a mask and not a clip for the same reason: the shape
-            // must be allowed to extend past the safe area to meet the corners that it rounds.
-            ground.mask {
-                UnevenRoundedRectangle(topLeadingRadius: rounding, topTrailingRadius: rounding,
-                                       style: .continuous)
-                    .ignoresSafeArea()
-            }
-        }
-        // **The player is full screen, so closing it is handled by this app.** A system sheet
-        // has its own swipe to close. Here the player covers the whole shell, including the tab
-        // bar, and the grip at the top puts it away. So the grip handles the gesture.
-        //
-        // **The whole screen moves with the finger**, as `SheetShift` does in the Uno phone app,
-        // and the background moves with it: see ``SwiftUI/View/pulledDown(_:)``.
-        // **Every touch on the player stops at the player**, including the edges past the safe
-        // area. Without this, only the controls would take a touch, and a touch between them
-        // (beside the title, around the cover) would go through to the page underneath. A tap
-        // there would start that page's track row, and a long press would open the row's menu.
-        .background {
-            Color.clear
-                .contentShape(Rectangle())
-                .ignoresSafeArea()
-        }
-        .pulledDown(pull)
         // Always present: the drawer has its own `if`, next to its transitions. See
         // ``QueueOverlay``.
         .overlay { QueueOverlay(player: player, songMenu: queueMenu, pull: $queue) }
@@ -335,6 +293,69 @@ public struct NowPlayingSheet: View {
         // The glass takes the colours of what is playing while the player is on screen: the
         // record's cover, or the cover of the song a station plays, or the station's square.
         .coloursGlass(lit?.glass, page: colourPage)
+    }
+
+    /// The player held upright: the grip, the cover (or the lyrics) and the controls under it.
+    private var upright: some View {
+        VStack(spacing: 0) {
+            grip
+
+            // **The lyrics take the place of the cover**, as in the Uno phone app. The room behind
+            // them stays, because its colours come from the record and the lyrics are read
+            // against it.
+            ZStack {
+                if lyricsUp {
+                    // **No part of the cover is shown during the intro.** A fade that depends
+                    // on the playback position (which changes four times a second) would show the
+                    // artwork on the lyrics screen and then remove it in steps. A user who opens
+                    // the lyrics wants to see lyrics, and the intro shows what the intro IS. See
+                    // `LyricView.opening`.
+                    LyricView(sheet: lyrics, player: player, karaoke: karaoke, measured: measured)
+                } else {
+                    cover
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .transition(.opacity)
+
+            chrome
+        }
+        .animation(.easeOut(duration: 0.25), value: lyricsUp)
+        // **The background and overlays are modifiers and not siblings in a stack**, which is the
+        // same rule as on the album page and for the same reason. The background ignores the
+        // safe area. As a sibling it would make the whole STACK extend to the screen edges, so
+        // the grip would be laid out behind the sheet's own top edge and the transport under the
+        // home indicator. A background has the size of the view it belongs to and takes no part
+        // in its layout.
+        .background {
+            // **Square against the top of the screen, and rounded as soon as it moves away from
+            // it**, like every card that is put down on this phone. The corners are cut on the
+            // background and not on the sheet, because the background is the only part that is
+            // drawn to the screen edges. A clip on the sheet would use its layout frame, which is
+            // inside the safe area. It is a mask and not a clip for the same reason: the shape
+            // must be allowed to extend past the safe area to meet the corners that it rounds.
+            ground.mask {
+                UnevenRoundedRectangle(topLeadingRadius: rounding, topTrailingRadius: rounding,
+                                       style: .continuous)
+                    .ignoresSafeArea()
+            }
+        }
+        // **The player is full screen, so closing it is handled by this app.** A system sheet
+        // has its own swipe to close. Here the player covers the whole shell, including the tab
+        // bar, and the grip at the top puts it away. So the grip handles the gesture.
+        //
+        // **The whole screen moves with the finger**, as `SheetShift` does in the Uno phone app,
+        // and the background moves with it: see ``SwiftUI/View/pulledDown(_:)``.
+        // **Every touch on the player stops at the player**, including the edges past the safe
+        // area. Without this, only the controls would take a touch, and a touch between them
+        // (beside the title, around the cover) would go through to the page underneath. A tap
+        // there would start that page's track row, and a long press would open the row's menu.
+        .background {
+            Color.clear
+                .contentShape(Rectangle())
+                .ignoresSafeArea()
+        }
+        .pulledDown(pull)
     }
 
     /// The colours the room and the glass are lit from: the record's cover; for a station, the
@@ -411,7 +432,7 @@ public struct NowPlayingSheet: View {
 
     /// The background used where the room cannot be drawn: the app's grooves, the blurred cover
     /// over them, and the desktop app's ink colour down the frame.
-    private var fallbackGround: some View {
+    var fallbackGround: some View {
         ZStack {
             // The app's own background under it. A sheet is its own window and cannot see what
             // is behind the app, so it draws the grooves itself.
@@ -476,7 +497,7 @@ public struct NowPlayingSheet: View {
     /// also shown, and a name beside the key would show the same information twice. See
     /// `PlayerNeedle`.
     @ViewBuilder
-    private var speakerKey: some View {
+    var speakerKey: some View {
         if onSpeakers != nil {
             Button { showingSpeakers = true } label: {
                 // The Cast mark and not a speaker glyph, as in the Uno phone app and the desktop
@@ -508,7 +529,7 @@ public struct NowPlayingSheet: View {
     /// It uses the full width because the spectrum needs those margins. The cover keeps its own
     /// size and stays centred, so the centre line that the spectrum is mirrored about is still
     /// the cover's.
-    private var cover: some View {
+    var cover: some View {
         sleeve
             .coachTarget(.playerCover)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -623,7 +644,7 @@ public struct NowPlayingSheet: View {
 
     // ── all text and controls on the screen ──
 
-    private var chrome: some View {
+    var chrome: some View {
         VStack(spacing: 4) {
             // The title, the artist and the heart key are all about the RECORD. While the lyrics
             // are shown, the lyrics are the content, and two sets of text over one room would
@@ -658,9 +679,11 @@ public struct NowPlayingSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     // Both lines scroll when they do not fit, as in the desktop app. A title that
                     // ends in an ellipsis cannot be read in full.
-                    Marquee(title, font: RPMFont.displayBold(22), height: 28, ink: .white)
+                    // Larger on the side, where the text has half the screen to itself.
+                    Marquee(title, font: RPMFont.displayBold(sideways ? 26 : 22),
+                            height: sideways ? 32 : 28, ink: .white)
 
-                    Marquee(said, font: RPMFont.display(15), height: 20,
+                    Marquee(said, font: RPMFont.display(sideways ? 17 : 15), height: sideways ? 22 : 20,
                             ink: RPMInk.white(0xB3 / 255))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

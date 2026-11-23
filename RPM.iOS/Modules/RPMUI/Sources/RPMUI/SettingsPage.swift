@@ -222,6 +222,7 @@ public struct SettingsPage: View {
                     AppColourCard()
                     CoverCornerCard()
                     PlayerLookCard()
+                    LandscapePlayerCard()
                 case .playback:
                     playback
                     loudness

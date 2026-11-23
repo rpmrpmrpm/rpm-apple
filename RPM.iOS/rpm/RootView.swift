@@ -154,6 +154,13 @@ struct RootView: View {
     @Environment(\.verticalSizeClass) private var vertical
     @State private var staged = false
 
+    /// How the player looks on its side: the stage (Classic) or the player itself laid out for
+    /// landscape (Modern). See ``LandscapePlayer`` and `onChange(of: onStage)`.
+    @AppStorage(LandscapePlayer.key) private var landscapeStyle = LandscapePlayer.initial
+
+    /// Whether the phone on its side shows the Modern player instead of the stage.
+    private var sidewaysPlayer: Bool { onStage && landscapeStyle == .modern }
+
     /// Which lists are open on the playlists tab. This stack is separate, so that a playlist
     /// pushed here is not still on screen after the user goes to the records.
     @State private var lists: [OpenList] = []
@@ -386,7 +393,8 @@ struct RootView: View {
                                         // there is no reason to spend them for a user who never
                                         // opens the sheet.
                                         .task { await model.findSpeakers() })
-                                })
+                                },
+                                sideways: sidewaysPlayer)
                     // **This transition makes the whole movement of the player, in both
                     // directions.** The sheet moves itself only while a finger is on it
                     // (`NowPlayingSheet.putting`). When the finger lifts, the sheet hands over at
@@ -455,12 +463,29 @@ struct RootView: View {
             }
         }
         .onChange(of: onStage) { _, now in
-            // The stage is declared after the player and so draws over it, but the player is also
-            // put away and is not left under the stage. Turning the phone back therefore shows the
-            // tab that the player was opened from. The Uno app differs: it returns to the player.
+            // **Modern: the player itself turns with the phone**, laid out for landscape
+            // (`sidewaysPlayer`), and the stage is not shown. The player is raised if it was not
+            // up, and it stays up when the phone turns back, so turning back shows the upright
+            // player.
+            if now && landscapeStyle == .modern {
+                playing.raise()
+                withAnimation(.easeOut(duration: 0.25)) { staged = false }
+                return
+            }
+
+            // Classic: the stage is declared after the player and so draws over it, but the player
+            // is also put away and is not left under the stage. Turning the phone back therefore
+            // shows the tab that the player was opened from. The Uno app differs: it returns to the
+            // player.
             if now { playing.putAway() }
 
             withAnimation(.easeOut(duration: 0.25)) { staged = now }
+        }
+        // **A Modern player put away on its side turns the phone back.** The pages under the
+        // player are drawn for an upright phone. The player's menu puts it away to open the album
+        // page, the artist page or the playlist picker, and those must not be shown on their side.
+        .onChange(of: playing.up) { _, up in
+            if !up && sidewaysPlayer { StageOrientation.requestPortrait() }
         }
         // **The app rotates only while there is something to rotate to.** The other screens are
         // designed for an upright phone, so landscape is allowed only while a record is loaded.
@@ -739,10 +764,12 @@ struct RootView: View {
     }
 
     /// Whether the first-run hints may show now: after the welcome, over the reader's own
-    /// collection, and not while the wait mark, the opening screen, the stage or a picker is up.
+    /// collection, and not while the wait mark, the opening screen, the stage or a picker is up,
+    /// nor while the phone is on its side (the Modern player has no grip to point at).
     private var coachAllowed: Bool {
         FirstRun.shared.welcomed && model.standing == .showing && model.viewing.isOwn
-            && !covering && !opening && !staged && !model.pickingLibrary && model.filing == nil
+            && !covering && !opening && !staged && !onStage && !model.pickingLibrary
+            && model.filing == nil
     }
 
     /// The song the welcome plays: see ``WelcomeSong``. Only what can be played now: offline, a
