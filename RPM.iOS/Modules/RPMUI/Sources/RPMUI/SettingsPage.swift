@@ -217,6 +217,7 @@ public struct SettingsPage: View {
                 case .appearance:
                     backdrop
                     AppColourCard()
+                    CoverCornerCard()
                     PlayerLookCard()
                 case .playback:
                     playback

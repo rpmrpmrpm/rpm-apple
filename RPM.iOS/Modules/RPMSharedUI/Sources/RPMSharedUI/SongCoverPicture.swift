@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import RPMKit
 import RPMRadio
+import RPMArt
 
 /// The covers of the songs stations announce, passed down the view tree. Nil: a station shows its
 /// logo only.
@@ -26,6 +27,7 @@ extension EnvironmentValues {
 public struct SongCoverPicture: View {
     private let ask: SongAsk?
     private let edge: CGFloat
+    private let onColours: ((SleeveColours?) -> Void)?
 
     @Environment(\.songCovers) private var covers
     @Environment(\.rpmReach) private var reach
@@ -34,9 +36,13 @@ public struct SongCoverPicture: View {
     /// - Parameters:
     ///   - ask: the song to show the cover of, from ``StationSaid/coverAsk``.
     ///   - edge: the size the cover is drawn at, in points.
-    public init(_ ask: SongAsk?, edge: CGFloat) {
+    ///   - onColours: called with the colours of each cover as it is shown, and with nil when the
+    ///     logo shows again. The player lights its room and its glass from them.
+    public init(_ ask: SongAsk?, edge: CGFloat,
+                onColours: ((SleeveColours?) -> Void)? = nil) {
         self.ask = ask
         self.edge = edge
+        self.onColours = onColours
     }
 
     public var body: some View {
@@ -56,7 +62,7 @@ public struct SongCoverPicture: View {
 
     private func follow() async {
         guard let ask, let covers else {
-            shown = nil
+            show(nil)
             return
         }
         let address: URL?
@@ -67,7 +73,7 @@ public struct SongCoverPicture: View {
         }
         guard !Task.isCancelled else { return }
         guard let address else {
-            shown = nil
+            show(nil)
             return
         }
         // The picture is loaded before it is shown, so the last song's cover stays until then.
@@ -79,6 +85,20 @@ public struct SongCoverPicture: View {
             loaded = await SmallPictures.of(address, edge: edge, reach: reach)
         }
         guard !Task.isCancelled else { return }
-        shown = loaded
+        show(loaded)
+
+        // The colours are read off the main thread, from the small picture already loaded.
+        guard let onColours, let image = loaded?.cgImage else { return }
+        let colours = await Task.detached(priority: .utility) {
+            Thumbnail.colours(of: image)
+        }.value
+        guard !Task.isCancelled else { return }
+        onColours(colours)
+    }
+
+    /// Shows `picture`, or the logo for nil, and says so to ``onColours`` when the logo comes back.
+    private func show(_ picture: UIImage?) {
+        shown = picture
+        if picture == nil { onColours?(nil) }
     }
 }

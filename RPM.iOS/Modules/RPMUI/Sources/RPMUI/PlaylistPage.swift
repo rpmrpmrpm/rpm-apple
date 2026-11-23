@@ -238,6 +238,16 @@ public struct PlaylistPage: View {
 
     @State private var width: CGFloat = 0
 
+    /// This page, among the pages that colour the glass. See ``PageColour``.
+    @State private var colourPage = UUID()
+
+    /// Back, letting go of the page's colour first, so the glass changes as the page slides away
+    /// and not after it has gone.
+    private func goBack() {
+        PageColour.shared.release(colourPage)
+        onBack()
+    }
+
     /// **The layout is the same as the album page**: one `List` holds the top of the page and the
     /// songs, so the square, the name and the keys scroll away with the list, and the back key
     /// floats over it. It is a `List` because its rows can be removed and rearranged, and the
@@ -275,7 +285,7 @@ public struct PlaylistPage: View {
         .dissolvesAtTop(under: RPMSafeArea.top + RPMLayout.backRow)
         .onPreferenceChange(PageWidth.self) { width = $0 }
         .background { backdrop }
-        .rpmFloatingBack(RPMBackKey(label: Loc.get("AddMusic_Back"), action: onBack))
+        .rpmFloatingBack(RPMBackKey(label: Loc.get("AddMusic_Back"), action: goBack))
         // The menu, across from the back key and in the same glass, where a record has its heart.
         .overlay(alignment: .topTrailing) {
             corner
@@ -310,7 +320,7 @@ public struct PlaylistPage: View {
         }
         .task(id: title) { await dress() }
         // The glass takes the list's colour while it is on screen.
-        .coloursGlass(glass)
+        .coloursGlass(glass, page: colourPage)
     }
 
     /// The colour the list gives the glass: a generated list's own middle colour, as its frame and

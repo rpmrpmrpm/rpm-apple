@@ -98,6 +98,13 @@ public struct NowPlayingSheet: View {
     /// The colours of the station's square while a station is playing. See ``stationWears(_:)``.
     @State private var stationColours: SleeveColours?
 
+    /// The colours of the cover of the song the station announces, while it is shown over the
+    /// station's square. Nil while the logo shows.
+    @State private var songColours: SleeveColours?
+
+    /// This sheet, among the pages that colour the glass. See ``PageColour``.
+    @State private var colourPage = UUID()
+
     /// Whether the sheet is on the screen. The room's clock depends only on this. A shader that
     /// keeps drawing behind a hidden sheet only heats the phone.
     @State private var showing = false
@@ -306,8 +313,7 @@ public struct NowPlayingSheet: View {
         .onAppear {
             showing = true
             room.start(with: player)
-            let lit = art?.colours ?? stationColours
-            room.paint(tint: lit?.dominant, glow: lit?.highlight, shade: lit?.shade)
+            paintRoom()
         }
         .onDisappear {
             showing = false
@@ -316,24 +322,37 @@ public struct NowPlayingSheet: View {
         // The colours arrive after the sheet: a cover is decoded off the main thread, so it often
         // arrives a moment later, and it arrives again on every track change. The room changes
         // gradually to the new colours, so the change is a dissolve.
-        .onChange(of: art?.colours) { _, now in
-            let lit = now ?? stationColours
-            room.paint(tint: lit?.dominant, glow: lit?.highlight, shade: lit?.shade)
-        }
+        .onChange(of: art?.colours) { _, _ in paintRoom() }
+        // A station's songs bring their own covers, and the room follows each one.
+        .onChange(of: songColours) { _, _ in paintRoom() }
         // A station has no cover, so the room uses the colours of the station's square, including
         // its generated background, and this gives the room something to react to. The colours
         // are cleared when the station ends, so they do not mix with the next record's cover.
         .onChange(of: player.station?.uuid) { _, now in
             if now == nil { stationColours = nil }
+            songColours = nil
         }
+        // The glass takes the colours of what is playing while the player is on screen: the
+        // record's cover, or the cover of the song a station plays, or the station's square.
+        .coloursGlass(lit?.glass, page: colourPage)
+    }
+
+    /// The colours the room and the glass are lit from: the record's cover; for a station, the
+    /// cover of the song it plays, else its square.
+    private var lit: SleeveColours? {
+        art?.colours ?? songColours ?? stationColours
+    }
+
+    private func paintRoom() {
+        let colours = lit
+        room.paint(tint: colours?.dominant, glow: colours?.highlight, shade: colours?.shade)
     }
 
     /// The station's square shows its logo, with a generated background where it needs one. This
     /// colours the room with those colours while no cover is shown.
     private func stationWears(_ colours: SleeveColours) {
         stationColours = colours
-        guard art == nil else { return }
-        room.paint(tint: colours.dominant, glow: colours.highlight, shade: colours.shade)
+        paintRoom()
     }
 
     /// The spectrum, extending from both sides of the cover.
@@ -555,7 +574,8 @@ public struct NowPlayingSheet: View {
                 }
                 // The cover of the song the station plays, over its logo, as on the desktop.
                 .overlay {
-                    SongCoverPicture(player.reconnecting ? nil : announcement?.coverAsk, edge: edge)
+                    SongCoverPicture(player.reconnecting ? nil : announcement?.coverAsk, edge: edge,
+                                     onColours: { songColours = $0 })
                 }
                 // The background behind a transparent logo fills the card, so it is clipped to the
                 // card and the edge is drawn again over it.

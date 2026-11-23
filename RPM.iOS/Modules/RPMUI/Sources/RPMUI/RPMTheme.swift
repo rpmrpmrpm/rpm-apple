@@ -767,6 +767,9 @@ public enum Glyph {
     /// A palette, for the card that chooses the colour of the app's glass.
     public static let palette = "\u{f53f}"
 
+    /// A square, for the card that chooses how round the covers are.
+    public static let corners = "\u{f0c8}"
+
     /// A tick, for the row that is already the current choice.
     public static let check = "\u{f00c}"
 

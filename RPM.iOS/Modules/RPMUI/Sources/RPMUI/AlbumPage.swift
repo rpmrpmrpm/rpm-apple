@@ -198,6 +198,16 @@ public struct AlbumPage: View {
 
     @State private var width: CGFloat = 0
 
+    /// This page, among the pages that colour the glass. See ``PageColour``.
+    @State private var colourPage = UUID()
+
+    /// Back, letting go of the page's colour first, so the glass changes as the page slides away
+    /// and not after it has gone.
+    private func goBack() {
+        PageColour.shared.release(colourPage)
+        onBack()
+    }
+
     /// **A `List`, but it draws nothing a list normally draws.**
     ///
     /// A `ScrollView` round a `LazyVStack` would suit a page made of a header, some songs
@@ -246,7 +256,7 @@ public struct AlbumPage: View {
         // an overlay are sized to the view they belong to and take no part in its
         // layout, so the page keeps the geometry it would have had on its own.
         .background { ground }
-        .rpmFloatingBack(RPMBackKey(label: Loc.get("Album_Back"), action: onBack))
+        .rpmFloatingBack(RPMBackKey(label: Loc.get("Album_Back"), action: goBack))
         // The mark on the record, across from the back key and in the same glass. It goes to the
         // shared wall, so an album loved on the phone is loved on the computer. The mark on the
         // **record** is not a mark on its songs. A starter record has none: the cloud, which
@@ -275,7 +285,7 @@ public struct AlbumPage: View {
             pictures = (album.key, cover, disc)
         }
         // The glass takes the main colour of the sleeve while the record is on screen.
-        .coloursGlass(cover?.colours.glass)
+        .coloursGlass(cover?.colours.glass, page: colourPage)
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
         .task(id: SimilarAsk(album: album.key, shelf: shelf.count)) { await readSimilar() }
         .task(id: album.key) {

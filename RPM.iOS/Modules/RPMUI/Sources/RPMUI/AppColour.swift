@@ -132,9 +132,13 @@ struct AppColourCard: View {
 /// The colour of the album or playlist on screen, which the app's glass takes while it is shown:
 /// the main colour of its cover (``AppColour/shown(_:)``).
 ///
-/// Each page that has one holds it while it is on screen (`coloursGlass(_:)`), and lets it go when
-/// it leaves. The last page to hold one wins, so a record opened from a playlist colours the glass
-/// with the record, and going back gives the playlist's colour again.
+/// Each page that has one holds it while it is on screen (`coloursGlass(_:page:)`), and lets it go
+/// when it leaves. The last page to hold one wins, so a record opened from a playlist colours the
+/// glass with the record, and going back gives the playlist's colour again.
+///
+/// **A page lets go when its back key is pressed**, and not only when it disappears. A page pushed
+/// on a stack disappears at the end of the slide back, so the colour would stay on the page under
+/// it for the whole slide. A page with a back key calls ``release(_:)`` before it goes back.
 @MainActor
 @Observable
 final class PageColour {
@@ -146,9 +150,9 @@ final class PageColour {
     var current: Color? { held.last?.colour }
 
     /// Holds `colour` for `page`, last. Nil lets it go. Animated, so the glass changes colour
-    /// smoothly as a page comes in or its cover arrives.
+    /// smoothly as a page comes in or its cover arrives. Short, so it keeps up with the slide.
     func hold(_ colour: Color?, for page: UUID) {
-        withAnimation(.easeInOut(duration: 0.35)) {
+        withAnimation(.easeOut(duration: 0.2)) {
             held.removeAll { $0.page == page }
             if let colour { held.append((page, colour)) }
         }
@@ -164,7 +168,7 @@ private struct HoldsPageColour: ViewModifier {
     let colour: Color?
 
     /// This page, among the pages on screen.
-    @State private var page = UUID()
+    let page: UUID
 
     func body(content: Content) -> some View {
         content
@@ -176,8 +180,11 @@ private struct HoldsPageColour: ViewModifier {
 
 extension View {
     /// Colours the app's glass with `colour` while this page is on screen. See ``PageColour``.
-    func coloursGlass(_ colour: Color?) -> some View {
-        modifier(HoldsPageColour(colour: colour))
+    ///
+    /// - Parameter page: the page's own identity, kept in its `@State`. Its back key passes the
+    ///   same one to ``PageColour/release(_:)``.
+    func coloursGlass(_ colour: Color?, page: UUID) -> some View {
+        modifier(HoldsPageColour(colour: colour, page: page))
     }
 }
 

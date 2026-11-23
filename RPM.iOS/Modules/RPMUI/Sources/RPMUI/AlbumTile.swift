@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import RPMKit
 import RPMLibrary
 import RPMDesign
@@ -260,16 +261,46 @@ public struct AlbumTile: View {
 /// How round the corners of a cover are: the same share of its side on every cover, so a record,
 /// a playlist and a folder look alike at any size.
 ///
-/// The share is the one of the album covers on the home screen: 10 points on a 132-point cover,
-/// the desktop card's corner. A small cover in a row gets small corners and a large one on a
-/// pinched wall gets large ones, and they all look equally round.
+/// The user chooses the share on the Appearance settings (``CoverRounding``), from square corners
+/// to quite round ones. The usual share is the one of the album covers on the home screen:
+/// 10 points on a 132-point cover, the desktop card's corner. A small cover in a row gets small
+/// corners and a large one on a pinched wall gets large ones, and they all look equally round.
+///
+/// Every view that calls ``radius(_:)`` in its body reads the setting, so it is drawn again when
+/// the setting changes.
+@MainActor
 enum CoverCorner {
     /// Ten points on the home screen's 132-point covers.
-    static let share: CGFloat = 10.0 / 132
+    static let usual: CGFloat = 10.0 / 132
+
+    /// The roundest corner offered: a little under a quarter of the side.
+    static let roundest: CGFloat = 0.22
+
+    /// The share chosen.
+    static var share: CGFloat { CoverRounding.shared.share }
 
     /// The corner radius for a cover `edge` points wide.
     static func radius(_ edge: CGFloat) -> CGFloat {
         edge * share
+    }
+}
+
+/// The rounding of the covers the user chose, kept in the app's settings. See ``CoverCorner``.
+@MainActor
+@Observable
+final class CoverRounding {
+    static let shared = CoverRounding()
+
+    static let key = "look.coverCorner"
+
+    /// A share of the side, from 0 (square) to ``CoverCorner/roundest``.
+    var share: CGFloat {
+        didSet { UserDefaults.standard.set(Double(share), forKey: Self.key) }
+    }
+
+    private init() {
+        let stored = UserDefaults.standard.object(forKey: Self.key) as? Double
+        share = stored.map { min(max(CGFloat($0), 0), CoverCorner.roundest) } ?? CoverCorner.usual
     }
 }
 
@@ -279,10 +310,17 @@ enum CoverCorner {
 struct CoverShape: InsettableShape {
     private var inset: CGFloat = 0
 
-    init() {}
+    /// The share of ``CoverCorner``, read when the shape is made in a view's body, so the view is
+    /// drawn again when the setting changes.
+    private let share: CGFloat
+
+    @MainActor
+    init() {
+        share = CoverCorner.share
+    }
 
     func path(in rect: CGRect) -> Path {
-        let radius = CoverCorner.radius(min(rect.width, rect.height))
+        let radius = min(rect.width, rect.height) * share
         return RoundedRectangle(cornerRadius: max(0, radius - inset), style: .continuous)
             .path(in: rect.insetBy(dx: inset, dy: inset))
     }
