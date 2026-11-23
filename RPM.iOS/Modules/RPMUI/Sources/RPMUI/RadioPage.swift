@@ -3,6 +3,7 @@ import RPMSharedUI
 import RPMSession
 import RPMRadio
 import RPMKit
+import RPMDesign
 
 /// The tuner, opened from the radio tab's home (``RadioHome``): the desktop app's radio pane,
 /// sized for a phone.
@@ -15,6 +16,9 @@ import RPMKit
 /// A station plays through the player, like everything else here: tapping a row tunes
 /// it in, and the mark in the gutter shows which one is on, as for a track in the
 /// library. Pausing is done by the strip, which also shows for a station.
+///
+/// The stations can also be shown as a wall of their squares, as the playlists can. The key
+/// for this is on the title's line, with the order and the saved stations.
 public struct RadioPage: View {
     private let stations: [RadioStation]
 
@@ -68,6 +72,10 @@ public struct RadioPage: View {
     /// **A filter, not a place.** It is the one view that works with no network at
     /// all, so it is one tap away and not a screen of its own.
     @State private var showingSaved = false
+
+    /// Rows, or a wall of the stations' squares. **It is saved between launches**, as the
+    /// playlists' layout is, so the tuner opens in the layout last chosen.
+    @AppStorage("radio.layout") private var layout: PlaylistLayout = .list
 
     /// What the search has settled on. A keystroke is not a question to the directory, and
     /// volunteers run the directory.
@@ -144,17 +152,54 @@ public struct RadioPage: View {
                     .padding(.trailing, RPMBackKey.besideTitle)
             }
 
-            VStack(alignment: .leading, spacing: PageTitle.subtitleGap) {
-                PageTitle(Loc.get(onBack == nil ? "Rpm_Tab_Radio" : "Radio_TunerTitle"))
-
-                Text(Loc.get("Radio_Subtitle")).rpmKicker()
-            }
+            PageHeading(Loc.get(onBack == nil ? "Rpm_Tab_Radio" : "Radio_TunerTitle"),
+                        line: Loc.get("Radio_Subtitle")) { keys }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, RPMLayout.margin)
+        .padding(.leading, RPMLayout.margin)
+        .padding(.trailing, 16)
         // No top padding: the SafeArea.Insets of the Uno head replace the ten points that its
         // markup asks for, so its headers start at the safe area. See `LibraryPage.header`.
         .padding(.bottom, 8)
+    }
+
+    /// The layout, the order and the saved stations, on one glass capsule as in the other
+    /// pages' headers. They act on the whole list and not on one search, so they are on the
+    /// title's line and not in the row of filters.
+    private var keys: some View {
+        HStack(spacing: 0) {
+            // The playlists' layout key, with the same two layouts.
+            PlaylistLayoutKey(layout: $layout)
+
+            Menu {
+                Picker(Loc.get("Radio_SortHeading"), selection: $order) {
+                    ForEach(StationOrdering.allCases, id: \.self) { which in
+                        Text(named(which)).tag(which)
+                    }
+                }
+            } label: {
+                key(Glyph.sortAmount, on: order != .listed)
+            }
+            .accessibilityLabel(Loc.get("Radio_Sort"))
+
+            Button { showingSaved.toggle() } label: {
+                key(Glyph.heart, on: showingSaved)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Loc.get("Radio_ShowFavorites"))
+        }
+        .rpmGlassGroup()
+    }
+
+    /// One of the keys on the capsule. **Its mark is cyan when it is in force**, which is the
+    /// whole of its state. Without it, a list in a chosen order, or narrowed to the saved
+    /// stations, would give no sign of that, and the page would seem to be missing stations.
+    private func key(_ glyph: String, on: Bool) -> some View {
+        Text(glyph)
+            .font(RPMFont.icon(15))
+            .foregroundStyle(on ? RPMInk.cyan : RPMInk.white(0xB8 / 255))
+            .frame(width: 40, height: 40)
+            .contentShape(Rectangle())
     }
 
     // ── the search and the two filters ──
@@ -190,52 +235,11 @@ public struct RadioPage: View {
                         Button(where_.name) { country = where_.code }
                     }
                 }
-
-                // Icon-only, unlike the two boxes beside it. A third box with "Most
-                // played" in it would make the genre and the country boxes too narrow to
-                // read, and of the three filters the order is almost always the
-                // directory's own.
-                Menu {
-                    Picker(Loc.get("Radio_SortHeading"), selection: $order) {
-                        ForEach(StationOrdering.allCases, id: \.self) { which in
-                            Text(named(which)).tag(which)
-                        }
-                    }
-                } label: {
-                    key(Glyph.sortAmount, on: order != .listed)
-                }
-                .accessibilityLabel(Loc.get("Radio_Sort"))
-
-                Button { showingSaved.toggle() } label: {
-                    key(Glyph.heart, on: showingSaved)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Loc.get("Radio_ShowFavorites"))
             }
         }
         .padding(.horizontal, RPMLayout.margin)
         .padding(.top, 12)
         .padding(.bottom, 8)
-    }
-
-    /// One of the two square keys at the end of the filter row. **Cyan when it is in
-    /// force**, which is the whole of its state. Without it, a list in a chosen order, or
-    /// narrowed to the saved stations, would give no sign of that, and the page would
-    /// seem to be missing stations.
-    private func key(_ glyph: String, on: Bool) -> some View {
-        Text(glyph)
-            .font(RPMFont.icon(14))
-            .foregroundStyle(on ? RPMInk.cyan : RPMInk.white(0x88 / 255))
-            .frame(width: 44, height: 40)
-            .background {
-                let well = RoundedRectangle(cornerRadius: 8, style: .continuous)
-                well.fill(on ? RPMInk.cyan.opacity(0x1F / 255) : RPMInk.white(0x14 / 255))
-                    .overlay {
-                        well.strokeBorder(on ? RPMInk.cyan.opacity(0x55 / 255)
-                                             : RPMInk.white(0x1A / 255),
-                                          lineWidth: 1)
-                    }
-            }
     }
 
     /// The name that the menu shows for one order.
@@ -303,15 +307,10 @@ public struct RadioPage: View {
             // The stations dissolve at the top of the list. The page's own header
             // and its search are above this and do not move, so this is the only edge
             // on the screen where rows scroll away.
-            DissolvingScroll {
-                LazyVStack(spacing: 0) {
-                    ForEach(showing) { station in
-                        Button { onTune(station) } label: { row(station) }
-                            .buttonStyle(RowPress())
-                            // Pin it to the radio home's Quick selection, or save it.
-                            .stationHold(station)
-                    }
-                    Color.clear.frame(height: RPMLayout.foot)
+            Group {
+                switch layout {
+                case .list: rows(showing)
+                case .grid: wall(showing)
                 }
             }
             .scrollIndicators(.hidden)
@@ -328,6 +327,102 @@ public struct RadioPage: View {
             }
         }
     }
+
+    private func rows(_ showing: [RadioStation]) -> some View {
+        DissolvingScroll {
+            LazyVStack(spacing: 0) {
+                ForEach(showing) { station in
+                    Button { onTune(station) } label: { row(station) }
+                        .buttonStyle(RowPress())
+                        // Pin it to the radio home's Quick selection, or save it.
+                        .stationHold(station)
+                }
+                Color.clear.frame(height: RPMLayout.foot)
+            }
+        }
+    }
+
+    // ── the stations as a wall ──
+
+    /// The width a tile on the wall is asked to be: the size the records wall and the
+    /// playlists' wall open at.
+    private static let wallStride: Double = 194
+
+    /// How far a tile's logo is kept from its edges, as a share of its side: 16 points on the
+    /// radio home's 132-point squares.
+    private static let tileInset: Double = 16.0 / 132
+
+    /// The same stations as a wall of their squares, each with its name under it. It uses the
+    /// records wall's own sizing (``WallLayout``, ``AlbumCaption``), so a station is the size of
+    /// a record or a playlist on their walls. A tap tunes the station, as a row does, and a long
+    /// press offers the same menu as a row's.
+    private func wall(_ showing: [RadioStation]) -> some View {
+        GeometryReader { geometry in
+            let (columns, art) = WallLayout.wall(
+                available: geometry.size.width,
+                targetStride: Self.wallStride,
+                edge: AlbumWall.edge,
+                gutter: AlbumWall.gutter,
+                maxColumns: AlbumWall.maxColumns,
+                minColumns: AlbumWall.minColumns)
+            let caption = AlbumCaption.of(art: art)
+
+            DissolvingScroll {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: AlbumWall.gutter),
+                                   count: columns),
+                    spacing: 0
+                ) {
+                    ForEach(showing) { station in
+                        Button { onTune(station) } label: { tile(station, caption: caption) }
+                            .buttonStyle(.plain)
+                            .stationHold(station)
+                    }
+                }
+                .padding(.horizontal, AlbumWall.edge)
+                .padding(.top, 4)
+
+                Color.clear.frame(height: RPMLayout.foot)
+            }
+        }
+    }
+
+    /// One station on the wall: its square, as the radio home draws it, and its name under it in
+    /// the room of a record's two lines. **The station that is playing has a white edge**, as
+    /// the row has its white mark in the gutter. A wall has no gutter to put it in.
+    private func tile(_ station: RadioStation, caption: AlbumCaption) -> some View {
+        let art = caption.art
+        let well = RoundedRectangle(cornerRadius: CoverCorner.radius(art), style: .continuous)
+
+        return VStack(spacing: 0) {
+            // The mark follows the edge, as on an empty playlist square.
+            StationSquare(station: station, edge: art, inset: art * Self.tileInset,
+                          mark: min(max(art * 0.2, 16), 52))
+                .overlay { well.strokeBorder(RPMInk.cardBorder, lineWidth: 1) }
+                .overlay {
+                    if station.uuid == tuned {
+                        well.strokeBorder(Color.white, lineWidth: 2)
+                    }
+                }
+
+            Spacer().frame(height: AlbumCaption.artGap)
+
+            Text(station.display)
+                .font(.system(size: caption.album, weight: .medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                // At the top of its room, so a one-line name sits directly under the square.
+                .frame(width: art, height: caption.nameRoom, alignment: .top)
+
+            Spacer().frame(height: AlbumCaption.below)
+        }
+        .frame(width: art, height: caption.card, alignment: .top)
+        // The whole tile answers a tap, the name as well as the square.
+        .contentShape(Rectangle())
+    }
+
+    // ── one row ──
 
     private func row(_ station: RadioStation) -> some View {
         HStack(spacing: 10) {

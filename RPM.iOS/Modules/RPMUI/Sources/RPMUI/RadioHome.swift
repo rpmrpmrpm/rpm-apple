@@ -496,8 +496,9 @@ private struct StationShelf: View {
 }
 
 /// A station's logo in the square that a cover uses, on a dark ground so that both a transparent
-/// logo and a white square look right. The radio mark when the station has no logo.
-private struct StationSquare: View {
+/// logo and a white square look right. The radio mark when the station has no logo. The tuner's
+/// wall of stations draws the same square (``RadioPage``).
+struct StationSquare: View {
     let station: RadioStation
     let edge: CGFloat
     let inset: CGFloat
