@@ -7936,3 +7936,42 @@
 
 /* Phone welcome, the layout step: the line under Wizard_LayoutTitle. The phone's Wizard_LayoutBody, with two choices. */
 "Wizard_Phone_LayoutBody" = "选择专辑在收藏中的显示方式。随时可以在收藏页面顶部切换。";
+
+/* Wide button on the phone's radio home, under the banner. Opens the tuner page with the dial and the full station list. */
+"Radio_HomeTuner" = "打开调谐器";
+
+/* Title of the phone's tuner page (the dial, the search field and the station list), opened from the radio home. */
+"Radio_TunerTitle" = "调谐器";
+
+/* Line over a banner card on the phone's radio home that holds up one of the most played stations of the listener's country. */
+"Radio_HomeNearYou" = "你附近";
+
+/* Line over a banner card on the phone's radio home that holds up a station the listener tunes to often. */
+"Radio_HomeOnRepeat" = "常听";
+
+/* Heading over the row of the listener's country's most played stations on the phone's radio home. */
+"Radio_HomeLocal" = "本地电台";
+
+/* Heading over the row of the world's most played stations on the phone's radio home. */
+"Radio_HomePopular" = "最受欢迎";
+
+/* Line under a station on the radio home's Quick selection (phone): the listener pinned it there. */
+"Radio_HomePinned" = "已固定";
+
+/* Line under a station on the radio home's Quick selection (phone): one of the listener's saved (hearted) stations. */
+"Radio_HomeSaved" = "已保存";
+
+/* Line under a station on the radio home's Quick selection (phone): suggested because it plays the genres the listener tunes to. */
+"Radio_HomeForYou" = "为你推荐";
+
+/* Shown under the radio home's Quick selection heading (phone) while it has no stations yet. */
+"Radio_HomeQuickEmpty" = "长按电台即可固定到这里。你保存的电台也会显示在这里。";
+
+/* Long-press menu on a radio station (phone): puts it first on the radio home's Quick selection. */
+"Radio_Pin" = "固定到快速选择";
+
+/* Long-press menu on a pinned radio station (phone): takes it off the radio home's Quick selection. */
+"Radio_Unpin" = "从快速选择中取消固定";
+
+/* Long-press menu on a saved radio station (phone): the opposite of Radio_Save. */
+"Radio_Unsave" = "从已保存的电台中移除";

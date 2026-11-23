@@ -7936,3 +7936,42 @@
 
 /* Phone welcome, the layout step: the line under Wizard_LayoutTitle. The phone's Wizard_LayoutBody, with two choices. */
 "Wizard_Phone_LayoutBody" = "Pick how your albums open in the collection. You can switch any time, at the top of the collection.";
+
+/* Wide button on the phone's radio home, under the banner. Opens the tuner page with the dial and the full station list. */
+"Radio_HomeTuner" = "Open the tuner";
+
+/* Title of the phone's tuner page (the dial, the search field and the station list), opened from the radio home. */
+"Radio_TunerTitle" = "Tuner";
+
+/* Line over a banner card on the phone's radio home that holds up one of the most played stations of the listener's country. */
+"Radio_HomeNearYou" = "Near you";
+
+/* Line over a banner card on the phone's radio home that holds up a station the listener tunes to often. */
+"Radio_HomeOnRepeat" = "On repeat";
+
+/* Heading over the row of the listener's country's most played stations on the phone's radio home. */
+"Radio_HomeLocal" = "Local stations";
+
+/* Heading over the row of the world's most played stations on the phone's radio home. */
+"Radio_HomePopular" = "Most popular";
+
+/* Line under a station on the radio home's Quick selection (phone): the listener pinned it there. */
+"Radio_HomePinned" = "Pinned";
+
+/* Line under a station on the radio home's Quick selection (phone): one of the listener's saved (hearted) stations. */
+"Radio_HomeSaved" = "Saved";
+
+/* Line under a station on the radio home's Quick selection (phone): suggested because it plays the genres the listener tunes to. */
+"Radio_HomeForYou" = "For you";
+
+/* Shown under the radio home's Quick selection heading (phone) while it has no stations yet. */
+"Radio_HomeQuickEmpty" = "Hold a station to pin it here. Your saved stations show up here too.";
+
+/* Long-press menu on a radio station (phone): puts it first on the radio home's Quick selection. */
+"Radio_Pin" = "Pin to Quick selection";
+
+/* Long-press menu on a pinned radio station (phone): takes it off the radio home's Quick selection. */
+"Radio_Unpin" = "Unpin from Quick selection";
+
+/* Long-press menu on a saved radio station (phone): the opposite of Radio_Save. */
+"Radio_Unsave" = "Remove from saved stations";
