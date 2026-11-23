@@ -27,6 +27,13 @@ enum GenreLooks {
         return Color(red: Double(rgb.r) / 255, green: Double(rgb.g) / 255, blue: Double(rgb.b) / 255)
     }
 
+    /// The genre's colour, no brighter than white text allows (``GroundLead``). The genre page
+    /// stands on it, and the foot of its photograph is washed with it, so the name and the rows
+    /// over the photograph's reflection stay readable on the bright colours of the palette.
+    static func lead(_ genre: String) -> Color {
+        GroundLead.of(glow: GenreMarks.colour(genre), dominant: nil)?.color ?? RPMInk.ground
+    }
+
     /// The genre's portrait photograph, made by `scripts/gen_genre_photos_phone.py`. The file
     /// name uses the same slug as the desktop's photographs: lower case, with every run of
     /// characters that are not letters or digits replaced by one hyphen.
@@ -354,24 +361,39 @@ public struct GenrePage: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            // A soft dark outline on the page's text, so it stays readable where it stands on the
+            // photograph's reflection. See ``TextFeatherKey``.
+            .environment(\.textFeather, true)
         }
-        .background { VinylGround() }
+        // The genre's colour under the whole page, with its photograph blurred over it faintly, as
+        // the artist page stands on its photograph's colour. The reflection under the head fades
+        // out into it.
+        .background {
+            ArtGround(picture: photo.map { Image(uiImage: $0) }, showing: genre,
+                      lead: GenreLooks.lead(genre))
+        }
         .rpmFloatingBack(RPMBackKey(label: Loc.get("Album_Back"), action: onBack))
     }
 
-    private func head(width: Double) -> some View {
-        let tall = width * Self.headShape + RPMSafeArea.top
+    /// The genre's photograph, or nil for a genre that has none.
+    private var photo: UIImage? { GenreLooks.photo(genre) }
 
-        return GenrePicture(genre: genre)
-            .frame(width: width, height: tall)
-            .clipped()
-            // Fades into the page's own ground at the bottom, so the content below does not
-            // start at a sharp edge.
-            .overlay {
-                LinearGradient(stops: [.init(color: RPMInk.ground.opacity(0), location: 0.7),
-                                       .init(color: RPMInk.ground.opacity(0.85), location: 1)],
-                               startPoint: .top, endPoint: .bottom)
-            }
+    /// Where the photograph's blur starts, as a fraction of the head from the top.
+    private static let blurFrom = 0.6
+
+    /// The head: the photograph across the top, behind the clock, with the name in its lettering
+    /// on its foot.
+    ///
+    /// The photograph is drawn as the artist page draws its band: blurred toward its foot and
+    /// mirrored under it (``RunOff``), fading out into the page's ground one head deep
+    /// (``SwiftUI/View/mirrorFade(above:depth:)``). The reflection runs under the first rows of the
+    /// page. It is a background, so it takes no part in the layout and the rows start where the
+    /// head ends. The rows come later in the stack, so they are drawn over it.
+    private func head(width: Double) -> some View {
+        let plate = width * Self.headShape + RPMSafeArea.top
+
+        return Color.clear
+            .frame(width: width, height: plate)
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: 6) {
                     GenreLettering(genre: genre)
@@ -383,11 +405,61 @@ public struct GenrePage: View {
                 .padding(.horizontal, RPMLayout.margin)
                 .padding(.bottom, 8)
             }
+            .background(alignment: .top) {
+                photograph(width: width, plate: plate)
+            }
+    }
+
+    /// The photograph, blurred toward its foot and mirrored one plate deep under it, fading out
+    /// into the page's ground. While the page is pulled down past its top, it is scaled up about
+    /// its foot by just enough that its top stays at the top of the screen, as on the artist page.
+    /// The name is not scaled.
+    private func photograph(width: Double, plate: Double) -> some View {
+        RunOff(plate: plate, depth: plate, blurs: photo != nil, blurFrom: Self.blurFrom,
+               reflection: .blurred) {
+            face
+        }
+        .frame(width: width, height: plate * 2, alignment: .top)
+        .mirrorFade(above: plate, depth: plate)
+        // The foot of the photograph is half way down the photograph and its reflection.
+        .growsWithPull(plate: plate, anchor: UnitPoint(x: 0.5, y: 0.5), grows: true)
+        .allowsHitTesting(false)
+    }
+
+    /// The photograph as it is, which ``RunOff`` blurs toward the foot and mirrors. The genre's
+    /// colour is washed in toward the foot, where the name stands, as on the genre's card
+    /// (``GenrePicture``). The wash uses the page's ground colour (``GenreLooks/lead(_:)``), so the
+    /// reflection meets the ground in the same colour.
+    private var face: some View {
+        let lead = GenreLooks.lead(genre)
+
+        return ZStack {
+            // The colour fills the plate with or without a photograph, so the plate keeps its size.
+            lead
+
+            if let photo {
+                // Inside a `Color.clear`: a resizable image that fills its frame reports its
+                // scaled size as its own, and would make the head wider than the screen.
+                Color.clear
+                    .overlay {
+                        Image(uiImage: photo)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    }
+                    .clipped()
+            }
+
+            LinearGradient(stops: [.init(color: lead.opacity(0), location: 0.35),
+                                   .init(color: lead.opacity(0.6), location: 0.72),
+                                   .init(color: lead.opacity(0.92), location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+        }
     }
 
     private func heading(_ text: String) -> some View {
         Text(text)
             .font(RPMFont.display(19))
+            .feathered()
             .padding(.horizontal, RPMLayout.margin)
     }
 
