@@ -1363,6 +1363,18 @@ final class AppModel {
     /// Whose collection is on the wall, or nil for the user's own.
     var lender: String? { session.lender }
 
+    /// The name of the person whose collection is on the wall: the account's own profile name on
+    /// its own collection, the lender's on a borrowed one. Nil when no name is known: unlike
+    /// ``lender``, it has no word for an unknown person. The playlists tab names it under each
+    /// list somebody made.
+    var ownerName: String? {
+        let face = viewing.isOwn ? shelfRows.first(where: \.isOwn)?.face
+                                 : shelfRows.first { $0.shelf.ownerId == viewing.ownerId }?.face
+        if let face, face.isKnown { return face.displayName }
+        guard viewing.isOwn, let mine = who?.displayName, !mine.isEmpty else { return nil }
+        return mine
+    }
+
     // ── the radio ──
 
     var directory: RadioBrowserClient { radio.directory }

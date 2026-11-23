@@ -27,6 +27,12 @@ public struct PlaylistsPage: View {
     private let favorites: [CloudTrack]?
     private let covers: any CoverStore
     private let lender: String?
+
+    /// The name of the person whose collection this is: the account's own name on its own
+    /// collection, the lender's on a borrowed one. Nil when it is not known. It is named under
+    /// each list somebody made (``PlaylistRow/byline(owner:)``).
+    private let owner: String?
+
     private let standing: Standing
 
     /// The library to pick songs from, for the panel that the plus key opens. It is passed in and
@@ -63,7 +69,8 @@ public struct PlaylistsPage: View {
 
     public init(playlists: [PlaylistSet], mode: Binding<LibraryMode>,
                 favorites: [CloudTrack]?,
-                covers: any CoverStore, lender: String?, standing: Standing,
+                covers: any CoverStore, lender: String?, owner: String?,
+                standing: Standing,
                 albums: [CloudAlbum],
                 onOpen: @escaping (PlaylistRow) -> Void,
                 onReread: @escaping () async -> Void,
@@ -75,6 +82,7 @@ public struct PlaylistsPage: View {
         self.favorites = favorites
         self.covers = covers
         self.lender = lender
+        self.owner = owner
         self.standing = standing
         self.albums = albums
         self.onOpen = onOpen
@@ -308,7 +316,7 @@ public struct PlaylistsPage: View {
     /// grid draws no path over the tiles (the desktop app does). See ``PlaylistWall``.
     private func wall(_ browse: PlaylistBrowse) -> some View {
         PlaylistWall(
-            rows: browse.rows, covers: covers,
+            rows: browse.rows, covers: covers, owner: owner,
             targetStride: pinching ?? Self.bounded(stride),
             onPress: press,
             onPinch: { factor in
@@ -423,7 +431,8 @@ public struct PlaylistsPage: View {
     }
 
     /// The row from the computer's drawer, on the phone: the square cover, the name, and one
-    /// quiet line under it. **There is no chevron except on a folder.** Every other row opens
+    /// quiet line under it that says what kind of row it is (``PlaylistRow/byline(owner:)``),
+    /// as the wall's tile does. **There is no chevron except on a folder.** Every other row opens
     /// something, and a mark repeated on every row that behaves the same way only takes space
     /// from the names.
     private func line(_ row: PlaylistRow) -> some View {
@@ -436,7 +445,7 @@ public struct PlaylistsPage: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
-                Text(detail(row))
+                Text(row.byline(owner: owner))
                     .font(RPMFont.display(11))
                     .foregroundStyle(RPMInk.white(0x88 / 255))
                     .lineLimit(1)
@@ -464,14 +473,6 @@ public struct PlaylistsPage: View {
                        edge: 44, mark: 16, covers: covers,
                        framed: FramedList.of(row.set), markPicture: row.markPicture,
                        folder: row.face, folderFrame: row.folderFrame)
-    }
-
-    private func detail(_ row: PlaylistRow) -> String {
-        guard !row.isFolder else {
-            return row.playlists == 1 ? Loc.get("Stats_PlaylistsOne")
-                                      : Loc.get("Stats_Playlists", row.playlists)
-        }
-        return PlaylistWords.holding(row.tracks.count, row.duration, missing: row.missing)
     }
 
     // ── what to say when there are no rows ──

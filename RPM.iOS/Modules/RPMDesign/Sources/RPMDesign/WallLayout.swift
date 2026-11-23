@@ -146,11 +146,9 @@ public struct AlbumCaption: Hashable, Sendable {
     /// The room a caption gives one piece of writing, rather than two. That is both lines and the gap
     /// between them.
     ///
-    /// A playlist tile's name is laid out in this room. A record has a title over an artist. A playlist
-    /// has only a name. So the name takes the whole caption and wraps across as much of it as it needs.
-    /// The tile is the same height either way. That keeps a row of tiles on one line. It is also the same
-    /// height as a record card at the same art edge, because a playlist and a record are both pictures in
-    /// a grid. The desktop app uses the same rule, in `PlaylistView.TileCaption`.
+    /// A card with only one piece of writing can lay it out in this room, wrapped across as much of it as
+    /// it needs. The card is then the same height as a record card at the same art edge, so a row of cards
+    /// stays on one line. The desktop app uses the same rule, in `PlaylistView.TileCaption`.
     public var nameRoom: Double { albumLine + Self.lineGap + artistLine }
 
     /// The caption for an art edge of `art` points.

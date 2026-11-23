@@ -1080,7 +1080,7 @@ struct RootView: View {
                 // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
                 // cannot be marked from a phone, so the list would always be empty.
                 favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
-                covers: covers, lender: model.lender,
+                covers: covers, lender: model.lender, owner: model.ownerName,
                 standing: model.playlistStanding,
                 albums: model.albums,
                 onOpen: { row in if let open = named(row) { lists.append(open) } },

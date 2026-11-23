@@ -552,6 +552,15 @@ public enum RPMFont {
         loaded.descenderEnd(said, size: size)
     }
 
+    /// How far across the word the first letter that reaches below the baseline starts, in
+    /// points from the word's start. Zero for a word with no descender.
+    ///
+    /// For ``PageHeading``: a line short enough to end before this point is set under the title
+    /// at the left, and not beside the last descender.
+    public static func headerDescenderStart(_ said: String, size: CGFloat = 96) -> CGFloat {
+        loaded.descenderStart(said, size: size)
+    }
+
     /// Font Awesome, solid and hollow. They are two separate faces, which is how a heart can show
     /// filled or empty without a change of colour, size or place.
     public static func icon(_ size: CGFloat) -> Font { face(.solid, size) }
@@ -647,26 +656,41 @@ public enum RPMFont {
         }
 
         func descenderEnd(_ said: String, size: CGFloat) -> CGFloat {
-            lock.withLock {
-                let asked = "end|\(size)|\(said)"
-                if let already = measured[asked] { return already }
+            descender(said, size: size).end
+        }
 
-                let answer = Self.end(said, size: size, name: name(of: .thiamine, locked: true))
-                measured[asked] = answer
+        func descenderStart(_ said: String, size: CGFloat) -> CGFloat {
+            descender(said, size: size).start
+        }
+
+        /// Both edges of the descenders, measured together and kept under two keys.
+        private func descender(_ said: String, size: CGFloat) -> (start: CGFloat, end: CGFloat) {
+            lock.withLock {
+                let (startKey, endKey) = ("start|\(size)|\(said)", "end|\(size)|\(said)")
+                if let start = measured[startKey], let end = measured[endKey] {
+                    return (start: start, end: end)
+                }
+
+                let answer = Self.descenders(said, size: size, name: name(of: .thiamine, locked: true))
+                measured[startKey] = answer.start
+                measured[endKey] = answer.end
                 return answer
             }
         }
 
-        /// The right-hand edge of the ink of the last glyph whose ink goes below the baseline.
-        /// The font of each run is used, so a letter drawn from a fallback face is measured in
-        /// that face.
-        private static func end(_ said: String, size: CGFloat, name: String?) -> CGFloat {
-            guard let name else { return 0 }
+        /// The left-hand edge of the ink of the first glyph whose ink goes below the baseline, and
+        /// the right-hand edge of the ink of the last one. Both are zero for a word with no
+        /// descender. The font of each run is used, so a letter drawn from a fallback face is
+        /// measured in that face.
+        private static func descenders(_ said: String, size: CGFloat,
+                                       name: String?) -> (start: CGFloat, end: CGFloat) {
+            guard let name else { return (0, 0) }
 
             let font = CTFontCreateWithName(name as CFString, size, nil)
             let line = CTLineCreateWithAttributedString(
                 NSAttributedString(string: said, attributes: [.font: font]))
 
+            var start: CGFloat = .infinity
             var end: CGFloat = 0
             for run in CTLineGetGlyphRuns(line) as? [CTRun] ?? [] {
                 let count = CTRunGetGlyphCount(run)
@@ -685,10 +709,11 @@ public enum RPMFont {
                 // Half a point below the baseline, so a round letter that dips slightly under it
                 // is not counted as a descender.
                 for i in 0..<count where ink[i].minY < -0.5 {
+                    start = min(start, positions[i].x + ink[i].minX)
                     end = max(end, positions[i].x + ink[i].maxX)
                 }
             }
-            return end
+            return start.isFinite ? (max(0, start), end) : (0, 0)
         }
 
         private static func slack(_ said: String, size: CGFloat, name: String?) -> CGFloat {

@@ -40,10 +40,12 @@ public struct PageTitle: View {
 
 /// A library view's title, the line under it, and the keys on the title's line.
 ///
-/// **The same height for every title.** The title is laid out as if it had no descender. If it
-/// has one, the line under it starts just to the right of the last letter that reaches below the
-/// baseline, level with that letter. "playlists" is then as tall as "collection" and "artists",
-/// and the tabs under the three headers do not move when the user switches between them.
+/// **The same height for every title.** The title is laid out as if it had no descender, and the
+/// line sits level with the descenders. A line short enough to end before the first letter that
+/// reaches below the baseline is set at the left, under the title. A longer line starts just to
+/// the right of the last such letter, so it never runs into one. "playlists" is then as tall as
+/// "collection" and "artists", and the tabs under the three headers do not move when the user
+/// switches between them.
 struct PageHeading<Keys: View>: View {
     private let title: String
     private let line: String
@@ -55,12 +57,10 @@ struct PageHeading<Keys: View>: View {
         self.keys = keys()
     }
 
-    /// The space between the last descender and the start of the line next to it.
+    /// The space between a descender and the line next to it.
     private static var besideDescender: Double { 6 }
 
     var body: some View {
-        let end = RPMFont.headerDescenderEnd(title)
-
         VStack(alignment: .leading, spacing: PageTitle.subtitleGap) {
             // The keys are centred on the title's line, not hung from its top. They are taller
             // than the letters, and hung from the top they reached down into the line under the
@@ -69,10 +69,49 @@ struct PageHeading<Keys: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(alignment: .trailing) { keys }
 
-            Text(line)
-                .rpmKicker()
-                .lineLimit(1)
-                .padding(.leading, end > 0 ? end + Self.besideDescender : 0)
+            LineUnderTitle(start: RPMFont.headerDescenderStart(title),
+                           end: RPMFont.headerDescenderEnd(title),
+                           gap: Self.besideDescender) {
+                Text(line)
+                    .rpmKicker()
+                    .lineLimit(1)
+            }
         }
+    }
+}
+
+/// Places the line under a title: at the left when it ends a ``gap`` before the first descender
+/// (``start``), and otherwise a ``gap`` to the right of the last one (``end``). A title with no
+/// descender has an ``end`` of zero, and its line is always at the left.
+///
+/// A layout and not a padding, because the choice depends on how wide the line is, and only a
+/// layout can measure its content before it places it. The Android app's `PageHeading` makes the
+/// same choice.
+private struct LineUnderTitle: Layout {
+    let start: CGFloat
+    let end: CGFloat
+    let gap: CGFloat
+
+    /// How far from the left the line starts, given its width on one line.
+    private func inset(_ natural: CGSize) -> CGFloat {
+        guard end > 0, natural.width + gap > start else { return 0 }
+        return end + gap
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let line = subviews.first else { return .zero }
+        let inset = inset(line.sizeThatFits(.unspecified))
+        let room = proposal.width.map { max(0, $0 - inset) }
+        let size = line.sizeThatFits(ProposedViewSize(width: room, height: proposal.height))
+        return CGSize(width: inset + size.width, height: size.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews,
+                       cache: inout ()) {
+        guard let line = subviews.first else { return }
+        let inset = inset(line.sizeThatFits(.unspecified))
+        line.place(at: CGPoint(x: bounds.minX + inset, y: bounds.minY), anchor: .topLeading,
+                   proposal: ProposedViewSize(width: max(0, bounds.width - inset),
+                                              height: bounds.height))
     }
 }

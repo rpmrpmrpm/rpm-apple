@@ -68,6 +68,10 @@ struct PlaylistWall<Header: View, Footer: View>: View {
     let rows: [PlaylistRow]
     let covers: any CoverStore
 
+    /// The name of the person whose collection is shown, for the line under a playlist's name.
+    /// Nil when it is not known. See ``PlaylistRow/byline(owner:)``.
+    let owner: String?
+
     /// How wide a tile should be. The actual width is this value adjusted to a whole number of
     /// columns. See ``WallLayout/wall(available:targetStride:edge:gutter:maxColumns:minColumns:)``,
     /// which is the same calculation that the records wall uses, not a copy of it.
@@ -108,7 +112,8 @@ struct PlaylistWall<Header: View, Footer: View>: View {
                     spacing: 0
                 ) {
                     ForEach(rows) { row in
-                        PlaylistTile(row: row, art: art, covers: covers)
+                        PlaylistTile(row: row, line: row.byline(owner: owner), art: art,
+                                     covers: covers)
                             .onTapGesture { onPress(row) }
                             // Pin it, or put it on Quick selection. See ``Holds``.
                             .listHold(row.set)
@@ -132,15 +137,19 @@ struct PlaylistWall<Header: View, Footer: View>: View {
     }
 }
 
-/// One playlist, folder or generated list on the wall: the square cover and the name under it.
+/// One playlist, folder or generated list on the wall: the square cover, the name under it, and
+/// one quiet line under the name.
 ///
 /// **This card has the same measurements as the records wall's card.** A playlist and a record
-/// are both pictures in a grid of pictures, so they should have the same size. The text is the
-/// only difference. A record has a title above an artist, but a playlist has only a name, so the
-/// name uses the space of both lines and wraps as much as it needs. See
-/// ``AlbumCaption/nameRoom``.
+/// are both pictures in a grid of pictures, so they should have the same size. The name takes
+/// the record's title line and ``line`` takes its artist line, in the same type. See
+/// ``PlaylistRow/byline(owner:)`` for what that line says.
 struct PlaylistTile: View {
     let row: PlaylistRow
+
+    /// The line under the name, where a record shows its artist.
+    let line: String
+
     let art: Double
     let covers: any CoverStore
 
@@ -162,11 +171,17 @@ struct PlaylistTile: View {
             Text(row.title)
                 .font(.system(size: caption.album, weight: .medium))
                 .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                // At the TOP of its space, so a one-line name sits directly under the picture
-                // and not in the middle of the space that two lines would use.
-                .frame(width: art, height: caption.nameRoom, alignment: .top)
+                .lineLimit(1)
+                .frame(width: art, height: caption.albumLine)
+
+            Spacer().frame(height: AlbumCaption.lineGap)
+
+            // The record's artist line: the same size and the same quiet colour.
+            Text(line)
+                .font(.system(size: caption.artist))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(width: art, height: caption.artistLine)
 
             Spacer().frame(height: AlbumCaption.below)
         }
@@ -193,6 +208,46 @@ extension PlaylistRow {
         switch kind {
         case .favorites: Loc.get("Playlists_FavoriteTracks")
         case .folder, .playlist: name
+        }
+    }
+
+    /// The line under the name, where a record shows its artist: what kind of row this is.
+    ///
+    /// - A folder says that it is a folder.
+    /// - A list somebody made names the person whose collection is shown. Only the owner of a
+    ///   collection can make lists in it.
+    /// - A mood list names the genre it is cut to. A list cut across all genres (a whole mood, or
+    ///   a decade) says that it is a mood list.
+    /// - The listening lists and the marked songs are neither. They say how much they hold.
+    ///
+    /// The genre is the genres wall's name for it (``Genres/match(_:)``), so a list and the wall
+    /// call the same music by the same name. Genre names are not translated anywhere.
+    ///
+    /// - Parameter owner: the name of the person whose collection this is, or nil when it is not
+    ///   known. A list somebody made then says only that it is a playlist.
+    func byline(owner: String?) -> String {
+        switch kind {
+        case .folder:
+            return Loc.get("Playlists_RowFolder")
+
+        case .favorites:
+            return PlaylistWords.holding(tracks.count, duration, missing: missing)
+
+        case .playlist(let set):
+            guard set.origin == .generated else {
+                guard let owner, !owner.isEmpty else { return Loc.get("Home_QuickPlaylist") }
+                return Loc.get("Playlists_RowBy", owner)
+            }
+
+            if GeneratedLists.ownerOnly.contains(set.cut?.kind ?? "") {
+                return PlaylistWords.holding(tracks.count, duration, missing: missing)
+            }
+
+            if let genre = set.cut?.genre?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !genre.isEmpty {
+                return Genres.match(genre) ?? genre
+            }
+            return Loc.get("Playlists_RowMood")
         }
     }
 
