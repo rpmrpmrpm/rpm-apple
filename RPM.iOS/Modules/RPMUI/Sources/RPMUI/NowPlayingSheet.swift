@@ -91,8 +91,10 @@ public struct NowPlayingSheet: View {
     private let onArtist: (() -> Void)?
 
     /// Reads the music for the room and for the spectrum next to the cover. It belongs to this
-    /// sheet and starts and stops with it. The reader holds the audio engine's tap, and a tap
-    /// that keeps running while nobody sees the picture only heats the phone.
+    /// sheet, and it runs only while something on the screen moves with the music
+    /// (``readsTheMusic``). The reader holds the audio engine's tap, and a tap that keeps running
+    /// while nobody sees the picture only heats the phone. The room's colours do not need it:
+    /// ``RoomReader/paint(tint:glow:shade:)`` works while it is stopped.
     @State var room = RoomReader()
 
     /// The spectrum beside the cover as it is drawn, smoothed by time. See ``RunFollower``.
@@ -112,9 +114,40 @@ public struct NowPlayingSheet: View {
     /// keeps drawing behind a hidden sheet only heats the phone.
     @State var showing = false
 
-    /// Whether the room and the spectrum rest: set by the app while the music is paused. See
-    /// ``RPMSharedUI/PowerSaving`` for the room's lower rate while the phone saves power.
+    /// Whether the room and the spectrum rest: set by the app while the music is paused.
     @Environment(\.roomsRest) var roomsRest
+
+    /// What moves and how much is drawn. While the phone saves power the plan can hold the room
+    /// still, and the spectrum then carries the music alone. See ``RPMDesign/MotionPlan``.
+    @Environment(\.motionPlan) var motionPlan
+
+    /// Whether the room behind the player moves with the music: it is drawn, the plan does not
+    /// hold it still, and on the player's side no stage look is drawn in its place.
+    var roomMoves: Bool {
+        RoomView.works
+            && motionPlan.stageRoom != .still
+            && !(sideways && LandscapeVisual.look(visual) != nil)
+    }
+
+    /// Whether the reader runs: while the sheet is shown, the music has not rested, and the bars
+    /// or the room move with it.
+    ///
+    /// **Stopping the reader does not stop a stage look.** `Player.draw` is one flag and not a
+    /// count, so `RoomReader.stop` clears it while a look's ``RPMSharedUI/StageClock`` may still
+    /// run. That is safe: each of them takes the engine's sound when it starts and keeps it until
+    /// it stops, and nothing reads the flag after that. Each one sets the flag again when it
+    /// starts.
+    var readsTheMusic: Bool {
+        showing && !roomsRest && ((bars && !lyricsUp) || roomMoves)
+    }
+
+    /// The sound the room is lit by. A room the plan holds still is given silence that does not
+    /// change: it draws a frame only when its input changes, and the readings change forty times
+    /// a second, so a still room handed the readings would draw the whole screen forty times a
+    /// second.
+    var roomSound: RoomRamp {
+        motionPlan.stageRoom == .still ? .still : room.ramp
+    }
 
     /// The y position of the bottom edge of the cover, in the sheet's own points. The room is
     /// dimmed below this line, because the text is there.
@@ -274,19 +307,23 @@ public struct NowPlayingSheet: View {
                 SleepTimerSheet(player: player) { showingSleepTimer = false }
             }
         }
-        // Start with the sheet and stop with it. `stop` is the only way to release the tap,
-        // because the reader cannot do it in a `deinit`, so this pair is required and is not
-        // only for convenience.
         .coordinateSpace(name: Self.sheet)
         .onPreferenceChange(SleeveFoot.self) { where_ in foot = where_ }
+        // The reader runs only while something shown moves with the music (``readsTheMusic``):
+        // it starts when the sheet appears and stops when the music rests, the bars are hidden
+        // while the room is still, or the sheet goes. `stop` is the only way to release the tap,
+        // because the reader cannot do it in a `deinit`, so the stop on disappearing is required
+        // and is not only for convenience.
         .onAppear {
             showing = true
-            room.start(with: player)
             paintRoom()
         }
         .onDisappear {
             showing = false
             room.stop(player)
+        }
+        .onChange(of: readsTheMusic) { _, reads in
+            if reads { room.start(with: player) } else { room.stop(player) }
         }
         // The colours arrive after the sheet: a cover is decoded off the main thread, so it often
         // arrives a moment later, and it arrives again on every track change. The room changes
@@ -411,7 +448,13 @@ public struct NowPlayingSheet: View {
         TimelineView(.animation(paused: !showing || roomsRest)) { _ in
             let now = CACurrentMediaTime()
 
-            SpectrumRunView(run: runShown.follow(room.ramp.read(now).run, at: now),
+            // **A sheet opened on music that has rested shows the resting line.** The reader
+            // does not run then (``readsTheMusic``), so it has no run to give. While the sound
+            // plays in another room the phone hears nothing, and no bars are drawn at all.
+            let heard = room.ramp.read(now).run
+            let run = heard.isEmpty && playingOn == nil ? Self.restingRun : heard
+
+            SpectrumRunView(run: runShown.follow(run, at: now),
                             side: edge * (player.isPlaying ? 1 : Self.pausedScale),
                             shift: flick, sides: .both,
                             tint: RGB(room.palette.tint), glow: RGB(room.palette.glow))
@@ -438,7 +481,7 @@ public struct NowPlayingSheet: View {
             // benefit.
             GeometryReader { geo in
                 RoomView(colours: room.colours,
-                         sound: room.ramp,
+                         sound: roomSound,
                          foot: foot > 0 ? foot / geo.size.height : 1,
                          running: showing,
                          // This is the one room in the app that IS the record being played, so
@@ -547,6 +590,9 @@ public struct NowPlayingSheet: View {
     /// cover is measured against both.
     private static let sleeveEdge: CGFloat = 260
     private static let pausedScale: CGFloat = 0.9
+
+    /// A run of silence: every bar at its resting line.
+    private static let restingRun = [Float](repeating: 0, count: RoomBands.bands)
 
     /// The cover in the space it is given, with the spectrum drawn in the margins on both sides.
     /// It uses the full width because the spectrum needs those margins. The cover keeps its own

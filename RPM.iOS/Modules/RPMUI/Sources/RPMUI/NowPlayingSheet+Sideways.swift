@@ -160,7 +160,7 @@ extension NowPlayingSheet {
     ///
     /// **Only one of them is in the tree**, so only one runs. The room stops when a look takes its
     /// place, and a look stops when the room comes back. The room's reader still runs for the
-    /// spectrum beside the cover.
+    /// spectrum beside the cover while the bars are shown (``readsTheMusic``).
     ///
     /// A look rests like the room: it keeps its last frame while the sheet is hidden or the music
     /// has been paused for a moment (``SwiftUI/EnvironmentValues/roomsRest``).
@@ -172,7 +172,7 @@ extension NowPlayingSheet {
             // The whole room is lit: there is no text under the cover on this layout, so it is
             // not dimmed from a foot line. The gradient over it darkens the right instead.
             RoomView(colours: room.colours,
-                     sound: room.ramp,
+                     sound: roomSound,
                      foot: 1,
                      running: showing,
                      // The same room as the upright player: the record lights it.

@@ -1,6 +1,7 @@
 import SwiftUI
 import Metal
 import QuartzCore
+import RPMDesign
 import RPMStages
 
 /// Draws the room that the record plays in.
@@ -121,12 +122,40 @@ public struct RoomView: View {
     /// each other, so they keep the wall clock and jump on together.
     @State private var restedFor: TimeInterval = 0
 
-    /// Whether the clock moves now.
+    /// What moves and how much is drawn. See ``RPMDesign/MotionPlan``.
+    @Environment(\.motionPlan) private var plan
+
+    /// Whether the colours are still changing toward a new record's colours: true from a change
+    /// of ``colours`` until ``RPMStages/RoomDissolve/settledAt``.
     ///
-    /// A card's room rests while the phone saves power, and keeps its picture. The stage's room
-    /// keeps moving, at a lower rate (``PowerSaving``).
+    /// **A room that does not move still draws until then.** Its picture is drawn only when the
+    /// timeline gives a frame, so without these frames a dissolve would stop at its first colour.
+    /// While it settles, the figures stay where they stopped and only the colours change.
+    @State private var settling = false
+
+    /// Whether the plan lets this room move. While the phone saves power a card's room keeps its
+    /// picture, and the stage's room keeps it too when the plan holds it still.
+    private var planMoves: Bool {
+        breathes ? plan.cardRoomsMove : plan.stageRoom != .still
+    }
+
+    /// Whether the clock moves now.
     private var moving: Bool {
-        running && !resting && !(breathes && PowerSaving.shared.isOn)
+        running && !resting && planMoves
+    }
+
+    /// Whether the timeline gives frames now: while the room moves, and while a room that does
+    /// not move changes colour. A resting room draws no frames at all.
+    private var drawing: Bool {
+        moving || (settling && !resting)
+    }
+
+    /// The share of each side the stage's room is drawn at before it is magnified, or nil to draw
+    /// it at the screen's own pixels. A card's room is always drawn at its own pixels.
+    private var reducedScale: CGFloat? {
+        guard !breathes, case .reduced(let scale) = plan.stageRoom, scale > 0, scale < 1
+        else { return nil }
+        return scale
     }
 
     /// The date at which this room's clock starts.
@@ -161,7 +190,8 @@ public struct RoomView: View {
         let library = ShaderLibrary.bundle(.module)
         let black = Shader.Argument.float3(0, 0, 0)
         let stage = library.rpmRoom(.float2(CGSize(width: 1, height: 1)), .float(0),
-                                    .float(0), .float(0), .float(0), black, black, black, black, .float(1))
+                                    .float(0), .float(0), .float(0), black, black, black, black,
+                                    .float(1), .float(1))
         let card = library.rpmCardRoom(.float2(CGSize(width: 1, height: 1)), .float(0),
                                        .float(0), .float(0), .float(0), black, black, black, black, .float(0))
         try? await stage.compile(as: .colorEffect)
@@ -172,10 +202,11 @@ public struct RoomView: View {
         // The timeline is paused and not removed, so a room that comes back is the same room a
         // moment later and does not start again from zero.
         //
-        // While the phone saves power, the stage's room is drawn at a lower rate. It still moves,
-        // because it is lit by the music, but a full-screen program on every frame of the display
-        // is what the phone cannot spare then.
-        TimelineView(.animation(minimumInterval: PowerSaving.shared.frameGap, paused: !moving)) { timeline in
+        // **Every frame of the display, or none.** A room that moves is drawn on every frame,
+        // also while the phone saves power: a lower rate does not divide the display's rate
+        // evenly, and the room would move in steps. While the phone saves power the plan draws
+        // less instead (``RPMDesign/MotionPlan``).
+        TimelineView(.animation(paused: !drawing)) { timeline in
             // **Two clocks, for two different things.** The timeline's date measures how far the
             // room has drifted since it appeared, and it needs its own zero. The ramp is read in
             // the reader's monotonic seconds, because its readings are stamped with that clock.
@@ -185,17 +216,37 @@ public struct RoomView: View {
             // A card uses its own faster clock, and the swell is read from the same clock. The
             // envelopes and the figures must not be read at two different times.
             //
-            // A resting room is drawn at the moment it stopped, whatever the timeline says.
+            // A room that does not move is drawn at the moment it stopped, whatever the timeline
+            // says. That includes the frames it draws while its colours settle.
             let date = stoppedAt ?? timeline.date
             let ran = date.timeIntervalSince(start) - restedFor + lead
             let seconds = breathes ? CardRoomBreath.clock(ran) : ran
             let heard = breathes ? CardRoomBreath.at(seconds) : sound.read(now).levels
 
             GeometryReader { geo in
-                Rectangle()
-                    .fill(Color(rgb: palette.ground))
-                    .colorEffect(shader(size: geo.size, at: seconds,
-                                        heard: heard, palette: palette))
+                if let scale = reducedScale {
+                    // **Fewer pixels, on every frame.** The room is drawn into a small picture
+                    // of its own (the drawing group) and that picture is magnified to the full
+                    // size. The figures are soft, so the magnified room looks almost the same.
+                    // The shader's sizes are the small picture's, so the composition is the
+                    // same. There is no grain: magnified, it would show as blotches.
+                    let small = CGSize(width: geo.size.width * scale,
+                                       height: geo.size.height * scale)
+                    Rectangle()
+                        .fill(Color(rgb: palette.ground))
+                        .colorEffect(shader(size: small, at: seconds, heard: heard,
+                                            palette: palette, grain: false))
+                        .frame(width: small.width, height: small.height)
+                        .drawingGroup()
+                        .scaleEffect(1 / scale, anchor: .topLeading)
+                        .frame(width: geo.size.width, height: geo.size.height,
+                               alignment: .topLeading)
+                } else {
+                    Rectangle()
+                        .fill(Color(rgb: palette.ground))
+                        .colorEffect(shader(size: geo.size, at: seconds, heard: heard,
+                                            palette: palette, grain: true))
+                }
             }
         }
         .ignoresSafeArea()
@@ -210,6 +261,20 @@ public struct RoomView: View {
                 stoppedAt = Date()
             }
         }
+        // Frames for a room that does not move while its colours change, until they have
+        // arrived. See ``settling``. A new change of colour starts this again, from its own
+        // departure.
+        .task(id: colours) {
+            let left = colours.settledAt - CACurrentMediaTime()
+            guard left > 0 else {
+                settling = false
+                return
+            }
+
+            settling = true
+            try? await Task.sleep(for: .seconds(left))
+            if !Task.isCancelled { settling = false }
+        }
     }
 
     /// Converts a colour to a shader argument. `Shader.Argument.float3` takes three scalars and not
@@ -219,9 +284,11 @@ public struct RoomView: View {
         .float3(colour.x, colour.y, colour.z)
     }
 
+    /// The room's shader. `grain` adds the stage room's dither, and is false only when the room
+    /// is drawn small and magnified. A card's room always has its grain.
     private func shader(size: CGSize, at seconds: TimeInterval,
                         heard: (bass: Float, middle: Float, air: Float),
-                        palette: RoomPalette) -> Shader {
+                        palette: RoomPalette, grain: Bool) -> Shader {
         let library = ShaderLibrary.bundle(.module)
 
         // **A card's background does not use the stage's treatment**, as on the desktop. The wash,
@@ -251,7 +318,8 @@ public struct RoomView: View {
             rgb(palette.ground), rgb(palette.tint), rgb(palette.glow), rgb(palette.shade),
             // Clamped to the range that the room was tuned for. A value of 0 would dim the whole
             // picture because of a sleeve that has not been measured yet.
-            .float(Float(min(1, max(0.2, foot)))))
+            .float(Float(min(1, max(0.2, foot)))),
+            .float(grain ? Float(1) : Float(0)))
     }
 }
 

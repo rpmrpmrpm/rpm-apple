@@ -240,11 +240,15 @@ static float3 rpmCardRoomAt(float x, float yy, float2 size, float time,
 
 // `foot` is where the text starts, as a fraction of the height from the top. The room is dimmed
 // below it. 1 means there is no text anywhere and the whole room is lit.
+//
+// `grain` is 1 to add the dither below and 0 to leave it out. It is 0 when the room is drawn small
+// and then magnified (RoomView, MotionPlan.StageRoom.reduced): magnified, each grain becomes a
+// blotch several pixels wide, and the magnification smooths the bands anyway.
 [[ stitchable ]] half4 rpmRoom(float2 position, half4 colour,
                                float2 size, float time,
                                float bass, float mid, float air,
                                float3 ground, float3 tint, float3 glow, float3 shade,
-                               float foot)
+                               float foot, float grain)
 {
     // SwiftUI counts y down from the top, but the room is written counting up from the bottom.
     // The flip is done once here and not in the shared figures, which no app may change alone.
@@ -272,8 +276,10 @@ static float3 rpmCardRoomAt(float x, float yy, float2 size, float time,
 
     // A grain of dither. 8 bits across a gradient this wide and this soft show visible bands, and
     // the bands crawl as the figures drift, which is more distracting than the noise.
-    float grain = fract(sin(dot(position, float2(12.9898, 78.233))) * 43758.5453) - 0.5;
-    col += grain * (1.6 / 255.0);
+    if (grain > 0.0) {
+        float dither = fract(sin(dot(position, float2(12.9898, 78.233))) * 43758.5453) - 0.5;
+        col += dither * (1.6 / 255.0);
+    }
 
     return half4(half3(max(col, float3(0.0))), 1.0h);
 }

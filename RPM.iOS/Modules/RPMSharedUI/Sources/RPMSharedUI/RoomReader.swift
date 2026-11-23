@@ -166,10 +166,20 @@ public final class RoomReader {
 
     /// Releases the tap. **The engine keeps one listener**, so a reader that is dropped without
     /// calling this leaves the tap running for a picture that nobody is looking at.
+    ///
+    /// **The picture keeps the reading it stopped on.** The player stops the reader while the
+    /// music rests and its bars stand still, so the bars keep their resting line and do not
+    /// vanish. When the reader starts again, the first reading travels from this one, so nothing
+    /// jumps.
     public func stop(_ player: Player) {
-        loop?.cancel()
-        loop = nil
-        ramp = .still
+        if let running = loop {
+            running.cancel()
+            loop = nil
+
+            let now = CACurrentMediaTime()
+            let held = ramp.read(now)
+            ramp = RoomRamp(from: held, to: held, at: now, over: Self.beat)
+        }
 
         player.draw(false)
     }

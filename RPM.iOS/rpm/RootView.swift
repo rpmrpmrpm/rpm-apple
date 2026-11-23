@@ -609,6 +609,10 @@ struct RootView: View {
         .environment(holds)
         // The equaliser, for its card on the settings page.
         .environment(model.equalizer)
+        // What moves and how much is drawn, from Low Power Mode. Read here, so a change of Low
+        // Power Mode reaches every view at once. Set below the overlays for the same reason as
+        // above: the player is one of them.
+        .environment(\.motionPlan, MotionPlan(saving: PowerSaving.shared.isOn))
         // Once for the life of the app. The screens are built again when the user chooses another
         // language (see `RPMApp`), and the model has already started by then.
         .task {

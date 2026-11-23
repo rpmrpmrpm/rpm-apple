@@ -37,6 +37,19 @@ public struct RoomDissolve: Sendable, Equatable {
     /// A room that has never been told a colour: the app's own blue, standing still.
     public static let still = RoomDissolve(from: .fallback, to: .fallback, at: 0)
 
+    /// How long a change takes to be seen as finished, in seconds: the time after which less than
+    /// one part in 200 of the gap is left. That is about one step of an 8-bit colour channel, so a
+    /// picture drawn later looks the same.
+    public static let settling: Double = log(200.0) / Double(RoomDissolve.rate)
+
+    /// When the room stops changing colour, on the clock ``at`` is on. A room that does not move
+    /// still draws new frames until this time, so its colours arrive and do not stop at the
+    /// first colour of the change. A dissolve that is already where it is going is settled at
+    /// ``at``.
+    public var settledAt: Double {
+        from == to ? at : at + Self.settling
+    }
+
     public init(from: RoomPalette, to: RoomPalette, at: Double) {
         self.from = from
         self.to = to

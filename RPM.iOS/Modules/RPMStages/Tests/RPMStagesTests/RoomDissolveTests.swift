@@ -100,4 +100,50 @@ struct RoomDissolveTests {
         #expect(abs(there.tint.x - sleeve.tint.x) < 0.001)
         #expect(abs(there.glow.y - sleeve.glow.y) < 0.001)
     }
+
+    // ── when it has settled ──
+
+    /// A room that does not move draws frames only until this time. It must be late enough that
+    /// the colours have arrived.
+    @Test func atItsSettledTimeLessThanOnePartIn200OfTheGapIsLeft() {
+        let travel = dissolve()
+        let there = travel.read(travel.settledAt)
+
+        #expect(abs(there.tint.y - green.tint.y) <= 0.005 + 1e-5)
+        #expect(abs(there.tint.x - green.tint.x) <= 0.005 + 1e-5)
+    }
+
+    /// After the settled time, a frame drawn much later looks the same: no channel moves by more
+    /// than about one step of 8 bits.
+    @Test func afterItsSettledTimeTheColoursHardlyChange() {
+        let travel = dissolve()
+        let settled = travel.read(travel.settledAt)
+        let later = travel.read(travel.settledAt + 100)
+
+        let pairs = [(settled.ground, later.ground), (settled.tint, later.tint),
+                     (settled.glow, later.glow), (settled.shade, later.shade)]
+        for (a, b) in pairs {
+            #expect(abs(a.x - b.x) <= 0.005 + 1e-5)
+            #expect(abs(a.y - b.y) <= 0.005 + 1e-5)
+            #expect(abs(a.z - b.z) <= 0.005 + 1e-5)
+        }
+    }
+
+    @Test func itSettlesAboutTwoSecondsAfterItSetsOff() {
+        let travel = dissolve(at: 10)
+        #expect(abs(travel.settledAt - (10 + log(200.0) / Double(RoomDissolve.rate))) < 1e-9)
+        #expect(travel.settledAt > 12 && travel.settledAt < 12.5)
+    }
+
+    /// A room with nothing to travel needs no frames at all.
+    @Test func aRoomAlreadyWhereItIsGoingIsSettledAtOnce() {
+        #expect(RoomDissolve.still.settledAt == 0)
+        #expect(RoomDissolve(from: red, to: red, at: 5).settledAt == 5)
+    }
+
+    /// A change of sleeve during a change counts from the new departure.
+    @Test func aRedirectedRoomSettlesFromItsNewDeparture() {
+        let turned = dissolve(at: 10).toward(red, at: 11)
+        #expect(abs(turned.settledAt - (11 + RoomDissolve.settling)) < 1e-9)
+    }
 }

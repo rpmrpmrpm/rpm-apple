@@ -1,18 +1,22 @@
 import SwiftUI
 import Foundation
 import Observation
+import RPMDesign
 
 /// Whether the phone saves power: Low Power Mode.
 ///
-/// A moving room is a full-screen fragment program drawn on every frame of the display, the most
-/// expensive thing the app draws, and it redraws the whole screen even while nothing else moves.
-/// While the phone saves power it often runs the processor and the GPU slower, and then a scroll or
-/// a tap waits behind that work. So while ``isOn`` is true a card's room keeps its picture, as a
-/// stopped room does, and the stage's room and the player's spectrum are drawn ``savingRate`` times
-/// a second. See ``RoomView``. The Android app does the same while battery saver is on.
+/// This is the one source of the power state. Views do not read it: they read the
+/// ``SwiftUI/EnvironmentValues/motionPlan`` that the app makes from it, which says what moves and
+/// how much is drawn (``RPMDesign/MotionPlan``). Nothing is drawn at a lower rate while the phone
+/// saves power. What moves is drawn on every frame of the display, and less is drawn: a card's
+/// room keeps its picture, and the player's room keeps its picture or is drawn at fewer pixels.
+/// The Android app does the same while battery saver is on.
 ///
 /// The value follows the system's notification, so a change shows at once. It is always false on
 /// the TV, which has no Low Power Mode.
+///
+/// **The Simulator has no Low Power Mode.** In a debug build, set `RPM_POWER_SAVING=1` in the
+/// scheme's environment to make the app behave as if it were on.
 @MainActor
 @Observable
 public final class PowerSaving {
@@ -22,25 +26,27 @@ public final class PowerSaving {
     /// Whether Low Power Mode is on.
     public private(set) var isOn: Bool
 
-    /// How many frames a second a moving picture that must keep moving is drawn while the phone
-    /// saves power.
-    public static let savingRate: Double = 15
-
-    /// The shortest time between two frames of such a picture while the phone saves power, or nil
-    /// for every frame of the display.
-    public var frameGap: Double? { isOn ? 1 / Self.savingRate : nil }
+    /// Whether a debug launch asked to behave as if Low Power Mode were on (`RPM_POWER_SAVING=1`).
+    /// Always false in a release build. Read once, because it is fixed for the whole launch.
+    private nonisolated static let forced: Bool = {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["RPM_POWER_SAVING"] == "1"
+        #else
+        return false
+        #endif
+    }()
 
     @ObservationIgnored private var watch: (any NSObjectProtocol)?
 
     private init() {
         #if os(iOS)
-        isOn = ProcessInfo.processInfo.isLowPowerModeEnabled
+        isOn = Self.forced || ProcessInfo.processInfo.isLowPowerModeEnabled
         watch = NotificationCenter.default.addObserver(
             forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
         ) { [weak self] _ in
             // Delivered on the main queue, which is where this object lives.
             MainActor.assumeIsolated {
-                self?.isOn = ProcessInfo.processInfo.isLowPowerModeEnabled
+                self?.isOn = PowerSaving.forced || ProcessInfo.processInfo.isLowPowerModeEnabled
             }
         }
         #else
@@ -63,5 +69,20 @@ extension EnvironmentValues {
     public var roomsRest: Bool {
         get { self[RoomsRestKey.self] }
         set { self[RoomsRestKey.self] = newValue }
+    }
+}
+
+private struct MotionPlanKey: EnvironmentKey {
+    static let defaultValue = MotionPlan.full
+}
+
+extension EnvironmentValues {
+    /// What moves and how much is drawn under this view. See ``RPMDesign/MotionPlan``.
+    ///
+    /// The app sets it once, at the top of its views, from ``PowerSaving``, and sets it again when
+    /// Low Power Mode changes. Where nothing sets it (the TV, a preview) everything moves.
+    public var motionPlan: MotionPlan {
+        get { self[MotionPlanKey.self] }
+        set { self[MotionPlanKey.self] = newValue }
     }
 }
