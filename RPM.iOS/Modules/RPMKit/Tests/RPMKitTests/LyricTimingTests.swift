@@ -15,8 +15,23 @@ struct LyricTimingTests {
         #expect(spans.map(\.length) == [2, 4])
     }
 
-    @Test func theSweepIsNeverSlowerThanItsCap() {
-        let spans = LyricTiming.sweep("seven!!", from: 0, until: 60)
+    @Test func theSweepIsNeverSlowerThanItsCapAndTheLastWordHoldsOn() {
+        // Seven letters before the last word, swept at the cap. The last word then holds on, at most
+        // `lastHeld`.
+        let spans = LyricTiming.sweep("seven!! on", from: 0, until: 60)
+        #expect(abs(spans[0].to - 7 / LyricTiming.slowestChars) < 1e-9)
+        #expect(abs((spans.last?.to ?? 0) - (9 / LyricTiming.slowestChars + LyricTiming.lastHeld)) < 1e-9)
+    }
+
+    @Test func aHeldLastWordEndsJustShortOfTheNextLine() {
+        // "sends it on" is swept over 9/7 s. The next line is at 2.5 s, so "on" holds until a quarter
+        // of a second before it.
+        let spans = LyricTiming.sweep("sends it on", from: 0, until: 2.5)
+        #expect(abs((spans.last?.to ?? 0) - (2.5 - LyricTiming.beforeNext)) < 1e-9)
+    }
+
+    @Test func withNoNextLineTheLastWordIsNotHeld() {
+        let spans = LyricTiming.sweep("seven!!", from: 0, until: .infinity)
         #expect(abs((spans.last?.to ?? 0) - 7 / LyricTiming.slowestChars) < 1e-9)
     }
 

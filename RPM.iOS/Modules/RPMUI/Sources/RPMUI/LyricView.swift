@@ -32,7 +32,11 @@ import RPMAudio
 /// Android phone (``LyricVoices``): on a smaller row under their line while it is sung, folded
 /// away after. A line bracketed from end to end has no row of its own. It comes in under the line
 /// before it while it is sung and folds away when it is done, and the lyrics move on as if it were
-/// not there (``LyricScore/Aside``).
+/// not there (``LyricScore/Aside``). A row opens and folds as on the Android phone (``Fold``).
+///
+/// **The view wakes at each moment something changes**: when the next piece takes over, and when a
+/// backing line comes in or goes. Between two readings of the player it would otherwise wait for
+/// the next reading, up to a quarter of a second late. See ``awaitMoment(_:from:)``.
 struct LyricView: View {
     let sheet: LyricSheet
     let player: Player
@@ -64,6 +68,10 @@ struct LyricView: View {
     /// the sung one.
     @State private var aimed: Int?
 
+    /// Counts the wakes at the moments something changes. A change draws the view again. See
+    /// ``awaitMoment(_:from:)``.
+    @State private var beat = 0
+
     /// How many lines either side of the sung line are drawn at all. Together with the ramp
     /// in `fade(distance:started:)`, this is the whole fade at the top and bottom of the
     /// sheet.
@@ -80,10 +88,6 @@ struct LyricView: View {
     /// The gap between a line and the second voice under it, as a multiple of the type's own size.
     private static let voiceGap: CGFloat = 0.2
 
-    /// How long a second voice takes to open or fold away, in seconds. Quicker than the scroll: it
-    /// is a thing finishing, and a slow fold would look like the lyrics were still deciding.
-    private static let fold = 0.25
-
     /// The time for the karaoke words, worked out from the player's readings. See ``LyricTime``.
     private var time: LyricTime {
         LyricTime(reading: reading, position: player.position.seconds, playing: player.isPlaying,
@@ -99,18 +103,19 @@ struct LyricView: View {
             // current record. A line bracketed from end to end goes with the line before it.
             let score = LyricScore.of(sheet, asides: true)
             let heard = karaoke ? KaraokeLines.heard(score, measured: measured) : []
-            // The steady time, read once for this pass. It moves the karaoke lines and shows the
-            // backing lines.
+            // The steady time, read once for this pass. It moves the lines and shows the backing
+            // lines, with karaoke or without, as on the Android phone.
             let now = time.seconds(at: .now)
             // With karaoke, a line stays up while its last measured word is still sung, and takes
             // over as its measured words start. Every line is sung for a moment.
-            let at = KaraokeLines.handovers(score, heard: heard)
-                .piece(at: karaoke ? now : player.position.seconds)
-            // When each backing line shows, by piece, and which of them show now.
+            let handovers = KaraokeLines.handovers(score, heard: heard)
+            let at = handovers.piece(at: now)
+            // When each backing line shows, by piece.
             let voices = score.parts.map { part in
                 part.asides.map { KaraokeLines.voice($0, measured: karaoke ? measured : []) }
             }
-            let shown = Self.showing(voices, at: now)
+            let wake = Wake(seconds: Self.nextMoment(after: now, handovers: handovers, voices: voices),
+                            playing: player.isPlaying, beat: beat)
 
             ScrollViewReader { hand in
                 ScrollView {
@@ -121,9 +126,6 @@ struct LyricView: View {
                                 .id(part.id)
                         }
                     }
-                    // A second voice opening or folding away moves the lines under it with it, so
-                    // they do not jump.
-                    .animation(.easeInOut(duration: Self.fold), value: Folds(at: at, showing: shown))
                     // Half the height on each side, so the first and the last line can
                     // both be scrolled to the middle.
                     .padding(.vertical, box.size.height / 2)
@@ -132,20 +134,22 @@ struct LyricView: View {
                 .scrollIndicators(.hidden)
                 .onChange(of: at) { _, now in
                     aimed = now
-                    withAnimation(.easeOut(duration: 0.45)) {
+                    withAnimation(LyricMotion.ease(LyricMotion.scroll)) {
                         hand.scrollTo(now ?? 0, anchor: .center)
                     }
-                    // A second voice that folds away during the scroll moves the line by its
-                    // height. Once the scroll is done, the line is centred again, if it is still
-                    // the sung line.
+                    // The second voices that open and fold away at this moment move the line while
+                    // it scrolls, and a scroll goes to where the line was when it started. Once
+                    // the folds are done, the scroll is aimed at the line again, to arrive when the
+                    // first scroll would have, if it is still the sung line.
                     Task {
-                        try? await Task.sleep(for: .milliseconds(460))
+                        try? await Task.sleep(for: .seconds(LyricMotion.fold + 0.01))
                         guard aimed == now else { return }
-                        withAnimation(.easeOut(duration: 0.2)) {
+                        withAnimation(.easeOut(duration: LyricMotion.scroll - LyricMotion.fold - 0.01)) {
                             hand.scrollTo(now ?? 0, anchor: .center)
                         }
                     }
                 }
+                .task(id: wake) { await awaitMoment(wake, from: now) }
                 .onAppear {
                     // Jump straight to the current position with no animation. The user
                     // has just opened the view and is not following a scroll.
@@ -169,22 +173,41 @@ struct LyricView: View {
         .onChange(of: player.current?.rpmId) { _, _ in clock = KaraokeClock() }
     }
 
-    /// What opens and folds the second voices: the sung line, and the backing lines shown.
-    private struct Folds: Equatable {
-        let at: Int?
-        let showing: [Int]
+    /// The next moment the view must wake at (``awaitMoment(_:from:)``), in seconds of the record,
+    /// nil when there is none; whether the record plays; and how many wakes there have been.
+    private struct Wake: Equatable {
+        let seconds: Double?
+        let playing: Bool
+        let beat: Int
     }
 
-    /// The backing lines shown at `seconds`, as one number each: its piece times 1000 plus its place
-    /// under that piece.
-    private static func showing(_ voices: [[KaraokeLines.Voice]], at seconds: Double) -> [Int] {
-        var shown: [Int] = []
-        for (piece, asides) in voices.enumerated() {
-            for (place, voice) in asides.enumerated() where voice.shows(at: seconds) {
-                shown.append(piece * 1000 + place)
+    /// The first moment after `seconds` at which something on screen changes: the next piece takes
+    /// over, or a backing line comes in or goes. Nil when nothing changes any more.
+    private static func nextMoment(after seconds: Double, handovers: KaraokeLines.Handovers,
+                                   voices: [[KaraokeLines.Voice]]) -> Double? {
+        var next = handovers.next(after: seconds)
+        for asides in voices {
+            for voice in asides {
+                let moment = seconds < voice.from ? voice.from : voice.until
+                guard moment > seconds, moment.isFinite else { continue }
+                next = min(next ?? moment, moment)
             }
         }
-        return shown
+        return next
+    }
+
+    /// Waits until the moment `wake` names and draws the view again, so the sung line and the
+    /// backing lines change at their moment and not at the next reading of the player. `now` is the
+    /// time the view was drawn at. The Android phone waits for each moment in the same way.
+    ///
+    /// The steady clock can still be a little short of the moment when the view is drawn again.
+    /// Each wake is counted in `beat`, which is part of the task's identity, so the view then waits
+    /// again for what is left.
+    private func awaitMoment(_ wake: Wake, from now: Double) async {
+        guard wake.playing, let moment = wake.seconds else { return }
+        try? await Task.sleep(for: .seconds(max(moment - now, 0.016)))
+        guard !Task.isCancelled else { return }
+        beat &+= 1
     }
 
     /// The screen before the first line: the title and artist, and how much of the intro
@@ -247,7 +270,7 @@ struct LyricView: View {
             // break instead, which also shows how much of it is left.
             LyricDots(through: through(from: from, until: until))
                 .opacity(ours ? fade(distance: distance, started: at != nil) : 0)
-                .animation(.easeOut(duration: 0.35), value: at)
+                .animation(LyricMotion.ease(LyricMotion.line), value: at)
 
         case .words(let line):
             // Its measured words where they fit the line, else its time shared between its words
@@ -263,16 +286,7 @@ struct LyricView: View {
                     // sung, at the line's own strength, and folds away when the line is done.
                     if let voice = split?.voice {
                         Fold(open: sung, gap: size * Self.voiceGap) {
-                            Group {
-                                if sung && karaoke {
-                                    SweptLine(text: voice.text, spans: voice.spans, time: time,
-                                              light: spans, letters: voice.letters)
-                                } else {
-                                    Text(voice.text)
-                                        .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
-                                }
-                            }
-                            .font(.system(size: size * LyricVoices.scale, weight: .semibold))
+                            secondVoice(voice, light: spans, sung: sung, size: size)
                         }
                     }
                 }
@@ -283,7 +297,8 @@ struct LyricView: View {
                     // sung line. **Nothing else changes this opacity**, which keeps it
                     // smooth. An opacity that also included a fade computed from the playhead
                     // would change four times a second, the rate at which the playhead is read.
-                    .animation(.easeOut(duration: 0.35), value: at)
+                    // The second voice fades with it, and with its fold.
+                    .animation(LyricMotion.ease(LyricMotion.line), value: at)
 
                 // The backing lines that go with this line pop in under it while they are sung,
                 // and fold away after. They are at full strength, as the sung line is.
@@ -318,6 +333,28 @@ struct LyricView: View {
             Text(split?.verse.text ?? text)
                 .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
         }
+    }
+
+    /// The second voice of a line, on its smaller row: lit letter by letter as part of the whole
+    /// line (`light`) while the line is sung with karaoke, else in the line's colour.
+    ///
+    /// The two ways of drawing it change in one step when the line is done, as on the Android
+    /// phone. Without `.transition(.identity)` they would cross-fade during the fold.
+    @ViewBuilder
+    private func secondVoice(_ voice: LyricVoices.Row, light: [WordSpan], sung: Bool,
+                             size: CGFloat) -> some View {
+        Group {
+            if sung && karaoke {
+                SweptLine(text: voice.text, spans: voice.spans, time: time,
+                          light: light, letters: voice.letters)
+                    .transition(.identity)
+            } else {
+                Text(voice.text)
+                    .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
+                    .transition(.identity)
+            }
+        }
+        .font(.system(size: size * LyricVoices.scale, weight: .semibold))
     }
 
     /// A backing line (``LyricScore/Aside``) under the line it goes with: shown while it is sung
@@ -398,24 +435,104 @@ extension KaraokeLines.Voice {
     func shows(at seconds: Double) -> Bool { seconds >= from && seconds < until }
 }
 
-/// A row that opens under a line and folds away again. While `open` it takes its full height and
-/// shows; otherwise it takes none. The lyric view animates the change, so the lines under it move
-/// with it and do not jump.
+/// The timings and the curve of the lyric view's movements, the same as the Android phone's.
+private enum LyricMotion {
+    /// How long a second voice takes to open or fold away, in seconds. Quicker than the scroll: it
+    /// is a thing finishing, and a slow fold would look like the lyrics were still deciding.
+    static let fold = 0.25
+
+    /// How long a line takes to fade to its new opacity, in seconds.
+    static let line = 0.35
+
+    /// How long the scroll to the next line takes, in seconds.
+    static let scroll = 0.45
+
+    /// Compose's `FastOutSlowInEasing`, a cubic Bezier curve with the control points (0.4, 0) and
+    /// (0.2, 1), over `duration` seconds. The Android phone eases the folds, the line fades and the
+    /// scroll on it.
+    static func ease(_ duration: Double) -> Animation {
+        .timingCurve(0.4, 0, 0.2, 1, duration: duration)
+    }
+}
+
+/// A row that opens under a line and folds away again, as on the Android phone. While `open` it
+/// takes its full height and shows; otherwise it takes none and is not drawn. Between the two it
+/// eases over ``LyricMotion/fold``, its height and its opacity together (``FoldLayout``), so the
+/// lines under it move with it and do not jump. The row is cut at the bottom while it opens, so it
+/// is uncovered from the top down.
 private struct Fold<Content: View>: View {
     let open: Bool
     let gap: CGFloat
-    @ViewBuilder let content: () -> Content
+    let content: () -> Content
+
+    /// Whether the content is kept after the row closes, while it folds away. It is dropped once the
+    /// fold is done, so a closed row holds no karaoke line that is drawn again on every frame.
+    @State private var kept: Bool
+
+    /// The last value of `open`, read when the fold is done.
+    @State private var wanted: Bool
+
+    init(open: Bool, gap: CGFloat, @ViewBuilder content: @escaping () -> Content) {
+        self.open = open
+        self.gap = gap
+        self.content = content
+        _kept = State(initialValue: open)
+        _wanted = State(initialValue: open)
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if open {
+        FoldLayout(amount: open ? 1 : 0) {
+            if open || kept {
                 content()
                     .padding(.top, gap)
+                    .frame(maxWidth: .infinity)
+                    .opacity(open ? 1 : 0)
+                    // The content comes in as the row opens, so it fades in with the fold.
                     .transition(.opacity)
             }
         }
-        .frame(maxWidth: .infinity)
         .clipped()
+        .animation(LyricMotion.ease(LyricMotion.fold), value: open)
+        .onChange(of: open) { _, now in
+            wanted = now
+            if now {
+                kept = true
+                return
+            }
+            Task {
+                try? await Task.sleep(for: .seconds(LyricMotion.fold + 0.05))
+                if !wanted { kept = false }
+            }
+        }
+    }
+}
+
+/// Lays its one child out at its full height from the top, and takes `amount` of that height: 0
+/// when closed, 1 when open. The lines under it follow its height on every frame of the animation.
+/// The child is not made smaller; the ``Fold`` clips what does not fit.
+private struct FoldLayout: Layout {
+    var amount: CGFloat
+
+    /// `nonisolated` because `Animatable` is. See `SpectrumRunView.animatableData`.
+    nonisolated var animatableData: CGFloat {
+        get { amount }
+        set { amount = newValue }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let full = subviews.first?.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+            ?? .zero
+        // An infinite width must not be returned to the parent as a size.
+        let width = proposal.width.map { $0.isFinite ? $0 : full.width } ?? full.width
+        return CGSize(width: width, height: full.height * amount)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews,
+                       cache: inout ()) {
+        guard let child = subviews.first else { return }
+        let full = child.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+        child.place(at: CGPoint(x: bounds.minX, y: bounds.minY), anchor: .topLeading,
+                    proposal: ProposedViewSize(width: bounds.width, height: full.height))
     }
 }
 

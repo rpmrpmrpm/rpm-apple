@@ -142,13 +142,6 @@ public enum KaraokeLines {
     /// seconds.
     private static let step = 0.01
 
-    /// How long an unmeasured backing line stays up after its words are shared out, at most, in
-    /// seconds. Its last word is often held, and shared out at singing speed it would go too soon.
-    static let asideHeld = 3.0
-
-    /// How far before the next line an unmeasured backing line goes, in seconds.
-    static let asideGap = 0.25
-
     /// The measured words of the line `text` at `seconds`, where they fall in the line's own time:
     /// none may end before the line starts (with ``stray`` of slack), and the first may not start
     /// after the next piece does (`next`). Words placed outside that are the aligner's mistake, and
@@ -206,10 +199,10 @@ public enum KaraokeLines {
     /// When the backing line `aside` is shown under its line, and its words.
     ///
     /// With measured words that fit it, it comes in ``lead`` before its first word, as a line does
-    /// (``held(_:piece:seconds:heard:)``), but no earlier than ``earliest`` before its stamp, and it
-    /// goes when its last word ends. Without them it comes in at its stamp, with its time shared
-    /// between its words by length, and stays while its last word may still be held: up to
-    /// ``asideHeld`` longer, and ``asideGap`` before the line after it.
+    /// (``held(_:piece:seconds:heard:)``), but no earlier than ``earliest`` before its stamp. Without
+    /// them it comes in at its stamp, with its time shared between its words by length
+    /// (``LyricTiming/sweep(_:from:until:)``, which holds the last word on). It goes when its last
+    /// word has been sung.
     public static func voice(_ aside: LyricScore.Aside, measured: [MeasuredLine]) -> Voice {
         let line = aside.line
         if let words = heard(measured, text: line.text, seconds: line.seconds, next: aside.until),
@@ -219,9 +212,7 @@ public enum KaraokeLines {
         }
 
         let swept = LyricTiming.sweep(line.text, from: line.seconds, until: aside.until)
-        let sung = swept.last?.to ?? line.seconds
-        let stays = min(aside.until - asideGap, sung + asideHeld)
-        return Voice(spans: swept, from: line.seconds, until: max(sung, stays))
+        return Voice(spans: swept, from: line.seconds, until: swept.last?.to ?? line.seconds)
     }
 
     /// The piece to show at `seconds`, given the piece that the time stamps say.

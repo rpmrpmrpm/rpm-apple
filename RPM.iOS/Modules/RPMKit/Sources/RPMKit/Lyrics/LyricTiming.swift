@@ -18,8 +18,19 @@ public struct WordSpan: Equatable, Sendable {
 /// spread across its words by their length, from the line's own moment to the next line's, and no slower
 /// than ``slowestChars`` characters a second: past that the sweep finishes and the line stays lit, rather
 /// than crawling through an instrumental.
+///
+/// The line's last word then takes the time left before the next line, up to ``lastHeld`` and ending
+/// ``beforeNext`` short of it. A line's last word is often a held note ("...and sends it on"). Lit at
+/// singing speed, it would be fully lit while the voice still holds it. The Android apps' `LyricTiming`
+/// has the same rule.
 public enum LyricTiming {
     public static let slowestChars = 7.0
+
+    /// The longest a line's last word is held for, in seconds, past the singing-speed sweep.
+    public static let lastHeld = 3.0
+
+    /// How far short of the next line the held last word ends, in seconds.
+    public static let beforeNext = 0.25
 
     public static func sweep(_ text: String?, from: Double, until: Double) -> [WordSpan] {
         let words = split(text)
@@ -29,13 +40,22 @@ public enum LyricTiming {
         let end = until.isFinite ? min(max(from, until), capped) : capped
         let run = max(0, end - from)
         var soFar = 0
-        return words.map { word in
+        var spans: [WordSpan] = words.map { word in
             // Measured from the start of the line, so rounding cannot drift the last word off the end.
             let opens = from + run * Double(soFar) / Double(max(1, chars))
             soFar += word.length
             let closes = from + run * Double(soFar) / Double(max(1, chars))
             return WordSpan(start: word.start, length: word.length, from: opens, to: closes)
         }
+
+        // The last word holds on into the time the sweep left over, when the next line is known.
+        guard until.isFinite, let last = spans.last else { return spans }
+        let held = min(until - beforeNext, last.to + lastHeld)
+        if held > last.to {
+            spans[spans.count - 1] = WordSpan(start: last.start, length: last.length,
+                                              from: last.from, to: held)
+        }
+        return spans
     }
 
     /// Runs of anything that is not whitespace, by character offset; punctuation stays with its word.

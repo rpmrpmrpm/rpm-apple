@@ -107,8 +107,20 @@ private func texts(_ score: LyricScore) -> [String] {
     #expect(abs(voice.from - (11.6 - KaraokeLines.lead)) < 1e-9)
     #expect(abs(voice.until - 12.8) < 1e-9)
 
-    // Unmeasured, it shows from its stamp, and stays while its last word may still be held.
+    // Unmeasured, it shows from its stamp, and stays while its last word is held, until just before
+    // the next line.
     let swept = KaraokeLines.voice(aside, measured: [])
     #expect(swept.from == 12.0)
-    #expect(abs(swept.until - (14.0 - KaraokeLines.asideGap)) < 1e-9)
+    #expect(abs(swept.until - (14.0 - LyricTiming.beforeNext)) < 1e-9)
+}
+
+@Test func anUnmeasuredLastBackingLineGoesWhenItsWordsAreSung() {
+    let sheet = LyricSheet.parse("""
+        [00:10.00]To crown you
+        [00:12.00](Oh yeah)
+        """)
+    let aside = LyricScore.of(sheet, asides: true).parts[0].asides[0]
+    // Nothing comes after it, so its last word is not held on: it goes at singing speed.
+    let swept = KaraokeLines.voice(aside, measured: [])
+    #expect(abs(swept.until - (12.0 + 8 / LyricTiming.slowestChars)) < 1e-9)
 }
