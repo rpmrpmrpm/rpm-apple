@@ -125,9 +125,10 @@ struct LyricView: View {
                     // so laying them all out costs little.
                     VStack(spacing: size * Self.leading) {
                         ForEach(score.parts) { part in
+                            // The scroll id is on the line inside the row, not on the row: see
+                            // ``row(_:of:at:size:heard:voices:now:)``.
                             row(part, of: score, at: at, size: size, heard: heard,
                                 voices: voices[part.id], now: now)
-                                .id(part.id)
                         }
                     }
                     // Half the height on each side, so the first and the last line can
@@ -136,6 +137,9 @@ struct LyricView: View {
                     .padding(.horizontal, 24)
                 }
                 .scrollIndicators(.hidden)
+                // **The lyrics follow the song and cannot be dragged.** Only the seek bar moves
+                // the song. `scrollTo` still scrolls a disabled scroll view.
+                .scrollDisabled(true)
                 .onChange(of: at) { _, now in
                     aimed = now
                     withAnimation(LyricMotion.ease(LyricMotion.scroll)) {
@@ -275,6 +279,7 @@ struct LyricView: View {
             LyricDots(through: through(from: from, until: until))
                 .opacity(ours ? fade(distance: distance, started: at != nil) : 0)
                 .animation(LyricMotion.ease(LyricMotion.line), value: at)
+                .id(part.id)
 
         case .words(let line):
             // Its measured words where they fit the line, else its time shared between its words
@@ -284,7 +289,12 @@ struct LyricView: View {
 
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
+                    // **The scroll id is on the line itself**, so the scroll centres the line
+                    // that is sung. On the whole row it would centre the line together with its
+                    // open second voice and backing lines, and the sung line would sit above the
+                    // middle by half their height.
                     verse(line.text, split: split, spans: spans, sung: sung)
+                        .id(part.id)
 
                     // The second voice is read with its line: it shows only while the line is
                     // sung, at the line's own strength, and folds away when the line is done.
