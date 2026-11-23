@@ -5,7 +5,8 @@ import RPMKit
 /// The short sound rpm plays as it opens: the desktop's opening sound (`AppSound.PlayOpen`,
 /// `rpm-open.wav`), at the same seven tenths of full volume. The Android phone plays it the same way.
 ///
-/// It plays once per start of the app, as the opening screen shows, and only when:
+/// It plays once per start of the app, as the opening screen fades away and the home screen fades
+/// in, and only when:
 ///
 /// - the setting is on (``key``);
 /// - no other app plays sound: a sound over somebody else's music is noise;

@@ -11,7 +11,7 @@ import RPMSharedUI
 ///
 /// **The hand-over waits for the end of a pass.** When `ready` turns true, the band finishes the pass
 /// it is in, and `onSwept` is called as it leaves the last letter. The caller fades the screen out then
-/// (``fade``). `reading` is the line under the wordmark while the library is read from the cloud.
+/// (``fade``), and the opening sound starts at the same moment. `reading` is the line under the wordmark while the library is read from the cloud.
 ///
 /// The band is a Core Animation animation, not a SwiftUI one. It runs in the render server, so a main
 /// thread that is busy with the launch does not make it stutter. Android draws it on a thread of its own
@@ -55,14 +55,15 @@ public struct Opening: View {
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
-        // The opening sound, as the opening screen shows: once per start of the app.
-        .onAppear { OpeningSound.play() }
         .task(id: ready) {
             guard ready else { return }
 
             let into = (CACurrentMediaTime() - began).truncatingRemainder(dividingBy: SweepBand.pass)
             try? await Task.sleep(for: .seconds(SweepBand.pass - into))
             guard !Task.isCancelled else { return }
+            // The opening sound starts with the hand-over, as the home screen fades in under this
+            // screen: once per start of the app.
+            OpeningSound.play()
             onSwept()
         }
     }
