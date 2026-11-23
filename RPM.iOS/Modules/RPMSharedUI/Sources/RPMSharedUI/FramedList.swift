@@ -46,6 +46,26 @@ public struct FramedList: Equatable {
     }
 }
 
+/// The room a folder of moods stands on, behind its mark.
+///
+/// One mood's folder is drawn in the colours of that mood's own list, the colours its frame has in
+/// the folder (``GeneratedListLook``), so the folder and what is in it look alike. The folder of all
+/// the moods is drawn in the app's own colours, the room's own blue (``RoomPalette/fallback``).
+/// Every other folder has no room.
+public enum FolderRoom {
+    public static func of(_ face: FolderFace) -> RoomDissolve? {
+        switch face {
+        case .moods:
+            return .still
+        case .mood(let kind):
+            guard let look = GeneratedListLook.of(kind: kind, genre: nil, decade: 0) else { return nil }
+            return FramedList(name: kind, look: look).room
+        case .plain, .decades:
+            return nil
+        }
+    }
+}
+
 extension View {
     /// Draws the frame over this view, when the list has one.
     ///

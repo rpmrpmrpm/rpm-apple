@@ -1,5 +1,6 @@
 import SwiftUI
 import RPMSharedUI
+import RPMStages
 import RPMKit
 import RPMLibrary
 import RPMDesign
@@ -153,7 +154,8 @@ struct PlaylistTile: View {
             // same distinction between its cards and its tree.
             PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
                            edge: art, corner: 10, mark: glyphSize, covers: covers,
-                           framed: FramedList.of(row.set), markPicture: row.markPicture)
+                           framed: FramedList.of(row.set), markPicture: row.markPicture,
+                           folderRoom: row.folderRoom, roomSeed: row.id)
 
             Spacer().frame(height: AlbumCaption.artGap)
 
@@ -214,6 +216,11 @@ extension PlaylistRow {
     /// font draws one colour.
     @MainActor var markPicture: UIImage? {
         face == .moods ? Self.moodsMark : nil
+    }
+
+    /// The room behind the mark of a folder of moods, or nil. See ``FolderRoom``.
+    var folderRoom: RoomDissolve? {
+        face.flatMap(FolderRoom.of)
     }
 
     /// Read once. Every moods folder row shows the same picture.

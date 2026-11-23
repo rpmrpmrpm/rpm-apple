@@ -1,5 +1,6 @@
 import SwiftUI
 import RPMSharedUI
+import RPMStages
 import RPMSession
 import RPMKit
 import RPMLibrary
@@ -115,7 +116,9 @@ public struct PlaylistsPage: View {
         let browse = self.browse
 
         return VStack(spacing: 0) {
-            VStack(spacing: 0) {
+            // A ZStack and not a VStack: while a folder changes, the folder that leaves and the
+            // one that comes in are both here for a moment, in the same place (``folderFade``).
+            ZStack {
                 switch standing {
                 case .reading:
                     waiting
@@ -162,7 +165,7 @@ public struct PlaylistsPage: View {
             // the top of the tree there is nowhere to go back to, and a key that does nothing is
             // worse than no key.
             if let back = browse.back {
-                RPMBackKey(label: Loc.get("AddMusic_Back")) { Haptics.pick(); at = back }
+                RPMBackKey(label: Loc.get("AddMusic_Back")) { Haptics.pick(); open(back) }
                     .padding(.trailing, RPMBackKey.besideTitle)
             }
 
@@ -241,10 +244,27 @@ public struct PlaylistsPage: View {
     private func press(_ row: PlaylistRow) {
         if case .folder(let folder, _) = row.kind {
             Haptics.pick()
-            at = folder.path
+            open(folder.path)
         } else {
             onOpen(row)
         }
+    }
+
+    /// Opens the folder at `path`, or goes back up to it. The folder shown fades out, and then
+    /// the new one fades in (``folderFade``).
+    private func open(_ path: [String]) {
+        withAnimation(.easeInOut(duration: Self.fadeOut + Self.fadeIn)) { at = path }
+    }
+
+    /// How a folder leaves and comes in: the old one fades out first, and the new one fades in
+    /// after it. One after the other and not together, so the two lists are never seen through
+    /// each other.
+    private static let fadeOut = 0.14
+    private static let fadeIn = 0.22
+
+    private static var folderFade: AnyTransition {
+        .asymmetric(insertion: AnyTransition.opacity.animation(.easeOut(duration: fadeIn).delay(fadeOut)),
+                    removal: AnyTransition.opacity.animation(.easeIn(duration: fadeOut)))
     }
 
     // ── the rows ──
@@ -268,13 +288,14 @@ public struct PlaylistsPage: View {
 
                 Color.clear.frame(height: RPMLayout.foot)
             }
-            // A folder is a new place, and a new place starts at the top. Without this, going
-            // from the middle of a long folder into a short one would leave the scroll
-            // position past the end of the short one.
-            .id(browse.at)
         }
         .scrollIndicators(.hidden)
         .refreshable { await onReread() }
+        // A folder is a new place, and a new place starts at the top: a new scroll for each
+        // folder. Without this, going from the middle of a long folder into a short one would
+        // leave the scroll position past the end of the short one.
+        .id(browse.at)
+        .transition(Self.folderFade)
     }
 
     // ── the covers ──
@@ -299,10 +320,11 @@ public struct PlaylistsPage: View {
             },
             header: { heads(browse) },
             footer: { footer(browse) })
+            .refreshable { await onReread() }
             // A folder is a new place, and a new place starts at the top, as in the rows
             // layout.
             .id(browse.at)
-            .refreshable { await onReread() }
+            .transition(Self.folderFade)
     }
 
     /// The allowed range of a tile width, whether the value comes from a gesture or from the
@@ -439,7 +461,8 @@ public struct PlaylistsPage: View {
     private func sleeve(_ row: PlaylistRow) -> some View {
         PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
                        edge: 44, corner: 6, mark: 16, covers: covers,
-                       framed: FramedList.of(row.set), markPicture: row.markPicture)
+                       framed: FramedList.of(row.set), markPicture: row.markPicture,
+                       folderRoom: row.folderRoom, roomSeed: row.id)
     }
 
     private func detail(_ row: PlaylistRow) -> String {
@@ -537,11 +560,19 @@ struct PlaylistSleeve: View {
     /// has one. See `PlaylistRow.markPicture`.
     var markPicture: UIImage? = nil
 
+    /// The room a folder of moods stands on, with its mark in the middle, or nil. See
+    /// ``FolderRoom``. It moves with ``roomDrifts``, as a list's room does.
+    var folderRoom: RoomDissolve? = nil
+
+    /// Which room it is, so two folders side by side do not show the same picture.
+    var roomSeed: String = ""
+
     @State private var cover: Cover?
 
     init(list: ListPicture? = nil, track: CloudTrack?, glyph: String, edge: CGFloat,
          corner: CGFloat, mark: CGFloat, covers: any CoverStore, framed: FramedList? = nil,
-         roomDrifts: Bool = false, markPicture: UIImage? = nil) {
+         roomDrifts: Bool = false, markPicture: UIImage? = nil,
+         folderRoom: RoomDissolve? = nil, roomSeed: String = "") {
         self.list = list
         self.track = track
         self.glyph = glyph
@@ -552,6 +583,8 @@ struct PlaylistSleeve: View {
         self.framed = framed
         self.roomDrifts = roomDrifts
         self.markPicture = markPicture
+        self.folderRoom = folderRoom
+        self.roomSeed = roomSeed
         // What the store already holds, so a list shown again has its squares on its first frame.
         _cover = State(initialValue: Self.held(list: list, track: track, edge: edge, covers: covers))
     }
@@ -581,6 +614,25 @@ struct PlaylistSleeve: View {
                 Sleeve(image: cover.image)
                     .clipShape(shape)
                     .transition(.opacity)
+            } else if framed == nil, let folderRoom, RoomView.works {
+                // A folder of moods: its room, and its mark in the middle, lit, so it reads on the
+                // colours.
+                RoomView(colours: folderRoom, sound: .still, foot: 1,
+                         running: roomDrifts, breathes: true, zero: .whenShown, seed: roomSeed)
+                    .clipShape(shape)
+
+                if let markPicture {
+                    Image(uiImage: markPicture)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: mark, height: mark)
+                        .shadow(color: .black.opacity(0.35), radius: 4)
+                } else {
+                    Text(glyph)
+                        .font(RPMFont.icon(mark))
+                        .foregroundStyle(RPMInk.white(0xF2 / 255))
+                        .shadow(color: .black.opacity(0.35), radius: 4)
+                }
             } else if framed == nil, let markPicture {
                 // Dimmed to about the weight of the glyphs beside it, as the Android app draws it.
                 Image(uiImage: markPicture)
