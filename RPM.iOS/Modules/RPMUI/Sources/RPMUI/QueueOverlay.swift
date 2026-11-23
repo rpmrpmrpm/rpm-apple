@@ -224,7 +224,7 @@ private struct QueuePanel: View {
                 .font(RPMFont.display(14))
                 .foregroundStyle(.white)
         }
-        .tint(RPMInk.white(0x88 / 255))
+        .rpmControlTint()
         .onChange(of: mixtapeAfter) { _, _ in Haptics.pick() }
         .padding(.horizontal, 18)
         .padding(.bottom, 8)

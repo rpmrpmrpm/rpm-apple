@@ -24,7 +24,7 @@ struct PlayerLookCard: View {
                     .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.white(0xB3 / 255))
             }
-            .tint(RPMInk.white(0x88 / 255))
+            .rpmControlTint()
             .onChange(of: bars) { _, _ in Haptics.pick() }
         }
     }

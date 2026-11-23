@@ -102,15 +102,20 @@ fileprivate extension EnvironmentValues {
 
 /// What a glass face draws on glass, and what the button and field faces draw before iOS 26: a
 /// flat translucent fill with the glass hairline, and a white veil while pressed.
+///
+/// The colour the user chose (``AppColour``) is a wash over the fill.
 private struct GlassFill<S: InsettableShape>: ViewModifier {
     let shape: S
     let fill: Color
     let pressed: Bool
 
+    @AppStorage(AppColour.key) private var colour = ""
+
     func body(content: Content) -> some View {
         content
             .background {
                 shape.fill(fill)
+                if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
                 if pressed { shape.fill(RPMInk.white(0x28 / 255)) }
             }
             .overlay { shape.strokeBorder(RPMInk.glassEdge, lineWidth: 1) }
@@ -131,6 +136,9 @@ public struct GlassCard: ViewModifier {
 
     @Environment(\.onGlass) private var onGlass
 
+    /// The colour the user chose for the glass. See ``AppColour``.
+    @AppStorage(AppColour.key) private var colour = ""
+
     public init(radius: CGFloat = 18) { self.radius = radius }
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
@@ -141,12 +149,14 @@ public struct GlassCard: ViewModifier {
         if onGlass {
             held.modifier(GlassFill(shape: shape, fill: RPMInk.ghostFace, pressed: false))
         } else if #available(iOS 26, *) {
-            held.glassEffect(.regular, in: shape)
+            held.glassEffect(.regular.tint(AppColour.colour(colour)?.opacity(AppColour.onGlass)),
+                             in: shape)
         } else {
             held
                 .background {
                     RPMFrost().clipShape(shape)
                     shape.fill(RPMInk.glassWash)
+                    if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
                 }
                 .overlay { shape.strokeBorder(RPMInk.cardBorder, lineWidth: 1) }
                 .clipShape(shape)
@@ -162,9 +172,23 @@ extension View {
     /// A settings section: a flat translucent panel with no border and no glass, as iOS 26 draws
     /// the section of a grouped list. Use it for content on a page. ``rpmGlassCard(radius:)`` is
     /// for what floats over a page.
+    ///
+    /// The colour the user chose (``AppColour``) is a light wash over the panel.
     public func rpmSection() -> some View {
-        background(RPMInk.sectionFill,
-                   in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        modifier(SectionFace())
+    }
+}
+
+private struct SectionFace: ViewModifier {
+    @AppStorage(AppColour.key) private var colour = ""
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+
+        return content.background {
+            shape.fill(RPMInk.sectionFill)
+            if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onSection)) }
+        }
     }
 }
 
@@ -235,6 +259,9 @@ public struct RPMGlassButton: ButtonStyle {
 
         @Environment(\.onGlass) private var onGlass
 
+        /// The colour the user chose for the glass. See ``AppColour``.
+        @AppStorage(AppColour.key) private var colour = ""
+
         private var fill: GlassFill<RoundedRectangle> {
             GlassFill(shape: shape, fill: weight == .primary ? RPMInk.primaryFace : RPMInk.ghostFace,
                       pressed: pressed)
@@ -246,9 +273,11 @@ public struct RPMGlassButton: ButtonStyle {
             if onGlass {
                 held.modifier(fill)
             } else if #available(iOS 26, *) {
+                let tint = AppColour.colour(colour)
                 held.glassEffect(weight == .primary
-                                     ? .regular.tint(RPMInk.primaryFace).interactive()
-                                     : .regular.interactive(),
+                                     ? .regular.tint(tint?.opacity(AppColour.onPill)
+                                                        ?? RPMInk.primaryFace).interactive()
+                                     : .regular.tint(tint?.opacity(AppColour.onGlass)).interactive(),
                                  in: shape)
             } else {
                 held.modifier(fill)
@@ -318,18 +347,24 @@ private struct GlassSurface<S: InsettableShape>: ViewModifier {
 
     @Environment(\.onGlass) private var onGlass
 
+    /// The colour the user chose for the glass. See ``AppColour``.
+    @AppStorage(AppColour.key) private var colour = ""
+
     func body(content: Content) -> some View {
         let held = content.environment(\.onGlass, true)
 
         if onGlass {
             held.modifier(GlassFill(shape: shape, fill: RPMInk.ghostFace, pressed: false))
         } else if #available(iOS 26, *) {
-            held.glassEffect(.regular.interactive(), in: shape)
+            held.glassEffect(.regular.tint(AppColour.colour(colour)?.opacity(AppColour.onGlass))
+                                 .interactive(),
+                             in: shape)
         } else {
             held.background {
                 ZStack {
                     RPMFrost()
                     shape.fill(RPMInk.glassWash)
+                    if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
                 }
                 .clipShape(shape)
                 .overlay { shape.strokeBorder(RPMInk.white(0x1A / 255), lineWidth: 1) }
@@ -728,6 +763,9 @@ public enum Glyph {
     /// Font Awesome's `tags`, for the genres view of the library.
     public static let genres = "\u{f02c}"
     public static let refresh = "\u{f2f1}"
+
+    /// A palette, for the card that chooses the colour of the app's glass.
+    public static let palette = "\u{f53f}"
 
     /// A tick, for the row that is already the current choice.
     public static let check = "\u{f00c}"

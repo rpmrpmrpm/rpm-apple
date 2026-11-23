@@ -10,11 +10,14 @@ import RPMStages
 /// The phone has nothing to set up that the desktop's wizard sets up (a folder, an import, an
 /// account to make). So it keeps the desktop's greeting and its look and layout steps, and ends with
 /// a song from the person's own collection, played in the player while its hints show the player
-/// round. The Android app shows the same welcome.
+/// round. The Android app shows the same welcome, without the language step and the look step's
+/// sliders and colours.
 ///
 /// - **Hello**: "Welcome to rpm!" on black, the drifting room coming up behind it, the greeting
 ///   turning through the app's languages every five seconds, as the desktop's does.
-/// - **Look**: the backdrops. The one tapped is behind the step at once.
+/// - **Language**: the app's language. The one tapped is used at once.
+/// - **Look**: the backdrops, how much they are dimmed and blurred, and the colour of the app's
+///   glass. Each change shows behind the step at once.
 /// - **Layout**: how the records open in the collection: the grid of covers, or the list with the
 ///   songs.
 /// - **Spin**: a song from the collection (``WelcomeSong``), and the key that plays it and opens
@@ -22,6 +25,10 @@ import RPMStages
 ///
 /// The steps carry the desktop's "Step 1 of 3" and its row of dots. Every touch stops at the
 /// welcome: the app under it is not in play yet.
+///
+/// **The step shown is kept for the scene, not by the view** (``page``). A new language builds the
+/// app's screens again, the welcome with them, and the welcome must open again on the language
+/// step and not on the greeting.
 public struct Welcome: View {
     private let covers: any CoverStore
     private let pick: () -> (album: CloudAlbum, at: Int)?
@@ -44,8 +51,8 @@ public struct Welcome: View {
         self.onDone = onDone
     }
 
-    /// The step shown: 0 is the greeting, then the look, the layout and the song.
-    @State private var page = 0
+    /// The step shown: 0 is the greeting, then the language, the look, the layout and the song.
+    @SceneStorage("welcome.page") private var page = 0
 
     /// The song the last step plays, with its record and its place on it.
     @State private var sample: Sample?
@@ -57,7 +64,7 @@ public struct Welcome: View {
     }
 
     /// How many numbered steps there are: the greeting is not one.
-    private var steps: Int { sample != nil ? 3 : 2 }
+    private var steps: Int { sample != nil ? 4 : 3 }
 
     public var body: some View {
         ZStack {
@@ -80,24 +87,37 @@ public struct Welcome: View {
                 case 0:
                     WelcomeHello(onContinue: { go(to: 1) })
                 case 1:
-                    WelcomeStep(at: 1, of: steps, title: Loc.get("Wizard_LookTitle"),
-                                line: Loc.get("Wizard_Phone_LookHint"), next: { go(to: 2) }) {
-                        WelcomeBackdrops()
+                    WelcomeStep(at: 1, of: steps, title: Loc.get("Wizard_Phone_LanguageTitle"),
+                                line: Loc.get("Wizard_Phone_LanguageHint"), next: { go(to: 2) }) {
+                        WelcomeLanguages()
                     }
                 case 2:
-                    WelcomeStep(at: 2, of: steps, title: Loc.get("Wizard_LayoutTitle"),
+                    WelcomeStep(at: 2, of: steps, title: Loc.get("Wizard_LookTitle"),
+                                line: Loc.get("Wizard_Phone_LookAllHint"), next: { go(to: 3) }) {
+                        VStack(alignment: .leading, spacing: 18) {
+                            WelcomeBackdrops()
+                            BackdropVeilSliders()
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(Loc.get("Settings_Colour")).rpmKicker()
+                                AppColourBubbles()
+                            }
+                        }
+                    }
+                case 3:
+                    WelcomeStep(at: 3, of: steps, title: Loc.get("Wizard_LayoutTitle"),
                                 line: Loc.get("Wizard_Phone_LayoutBody"),
-                                next: { if sample != nil { go(to: 3) } else { onDone() } },
+                                next: { if sample != nil { go(to: 4) } else { finish(onDone) } },
                                 nextLabel: sample == nil ? Loc.get("Wizard_Finish") : nil) {
                         WelcomeLayouts()
                     }
                 default:
                     if let sample {
-                        WelcomeStep(at: 3, of: steps, title: Loc.get("Wizard_Phone_PlayerTitle"),
+                        WelcomeStep(at: 4, of: steps, title: Loc.get("Wizard_Phone_PlayerTitle"),
                                     line: Loc.get("Wizard_Phone_PlayerBody"),
-                                    next: { onPlay(sample.album, sample.at) },
+                                    next: { finish { onPlay(sample.album, sample.at) } },
                                     nextLabel: Loc.get("Wizard_Phone_PlayerGo"),
-                                    skip: onDone) {
+                                    skip: { finish(onDone) }) {
                             WelcomeSample(album: sample.album, track: sample.track, covers: covers)
                         }
                     }
@@ -119,6 +139,13 @@ public struct Welcome: View {
     private func go(to next: Int) {
         Haptics.pick()
         withAnimation { page = next }
+    }
+
+    /// Ends the welcome. The step kept for the scene goes back to the greeting, so a welcome shown
+    /// again from the settings starts at the beginning.
+    private func finish(_ then: () -> Void) {
+        page = 0
+        then()
     }
 }
 
@@ -385,6 +412,34 @@ private struct WelcomeBackdrops: View {
             .padding(.vertical, 2)
         }
         .scrollClipDisabled()
+    }
+}
+
+/// The app's languages, each named in itself, with the phone's own first. The one tapped is used at
+/// once: the app shows itself again in it, the welcome too, on this step.
+private struct WelcomeLanguages: View {
+    @AppStorage(Loc.chosenKey) private var chosen = ""
+
+    var body: some View {
+        VStack(spacing: 10) {
+            row("", Loc.get("Settings_AppLanguagePhone"))
+            ForEach(Loc.offered, id: \.self) { code in
+                row(code, Loc.name(of: code))
+            }
+        }
+    }
+
+    private func row(_ code: String, _ said: String) -> some View {
+        let picked = (Loc.offered.contains(chosen) ? chosen : "") == code
+
+        return WelcomeChoice(picked: picked, onPick: { if !picked { Loc.choose(code) } }) {
+            Text(said)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+        }
     }
 }
 

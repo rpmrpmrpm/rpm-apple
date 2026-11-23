@@ -15,17 +15,64 @@ import Foundation
 /// A key with no translation renders as the key itself. This is intended, and it matches the
 /// desktop. A missing string should be visible where it is missing. Falling back to English would
 /// hide the gap, because four of the five locales would then show English without anyone noticing.
+///
+/// **The user can choose the app's language** (``chosenKey``), on the settings page and in the
+/// welcome. Without a choice the strings follow the phone's language, as the system picks it.
 public enum Loc {
     /// The bundle that holds the string table.
     ///
     /// `Bundle.module` is generated for each module. Inside a test it points at the test's bundle,
     /// which has no locales. Every lookup would then return the English fallback without any error.
     /// This property always points at the bundle that has the table.
-    static var table: Bundle { .module }
+    static var module: Bundle { .module }
+
+    /// The table the strings are read from: the chosen language's, or the phone's.
+    static var table: Bundle {
+        Chosen.shared.bundle(for: chosen, in: module) ?? module
+    }
+
+    /// The app's languages, as the desktop offers them (`AppLanguage.Offered`).
+    public static let offered = ["en", "fr", "es", "de", "zh-Hans"]
+
+    /// Where the user's choice of language is kept: one of ``offered``, or empty for the phone's.
+    public static let chosenKey = "app.language"
+
+    /// The language the user chose, or empty for the phone's. A stored code this build does not
+    /// offer counts as empty.
+    public static var chosen: String {
+        let stored = UserDefaults.standard.string(forKey: chosenKey) ?? ""
+        return offered.contains(stored) ? stored : ""
+    }
+
+    /// Keeps the user's choice: one of ``offered``, or empty for the phone's language.
+    ///
+    /// It also tells the system, so the parts of the app the system draws (a share sheet, the
+    /// keyboard's keys, the permission questions) follow from the next launch. The app's own text
+    /// changes at once: the app shows itself again in the new language.
+    public static func choose(_ code: String) {
+        let defaults = UserDefaults.standard
+        if offered.contains(code) {
+            defaults.set(code, forKey: chosenKey)
+            defaults.set([code], forKey: "AppleLanguages")
+        } else {
+            defaults.removeObject(forKey: chosenKey)
+            defaults.removeObject(forKey: "AppleLanguages")
+        }
+    }
+
+    /// A language's name in that language, as a language picker shows it: "Deutsch", "Français".
+    public static func name(of code: String) -> String {
+        let locale = Locale(identifier: code)
+        let said = locale.localizedString(forIdentifier: code) ?? code
+        return said.prefix(1).uppercased(with: locale) + said.dropFirst()
+    }
 
     /// The locale the strings come from, out of the five: `en`, `fr`, `es`, `de` or `zh-Hans`. Sent
     /// to the store, which names the lists it cuts in the same language.
-    public static var language: String { table.preferredLocalizations.first ?? "en" }
+    public static var language: String {
+        let chosen = self.chosen
+        return chosen.isEmpty ? (module.preferredLocalizations.first ?? "en") : chosen
+    }
 
     /// The string for a key, in the locale this phone is set to, out of the five locales.
     public static func get(_ key: String) -> String {
@@ -53,9 +100,35 @@ public enum Loc {
     /// in lower case (`zh-hans.lproj`), so both spellings are tried. A locale that is not in the
     /// bundle gives the phone's own string.
     public static func get(_ key: String, in locale: String) -> String {
-        let path = table.path(forResource: locale, ofType: "lproj")
-            ?? table.path(forResource: locale.lowercased(), ofType: "lproj")
-        guard let path, let bundle = Bundle(path: path) else { return get(key) }
+        guard let bundle = Chosen.shared.bundle(for: locale, in: module) else { return get(key) }
         return bundle.localizedString(forKey: key, value: key, table: nil)
+    }
+}
+
+/// The table of each language, opened once. A string is read many times on every screen, and
+/// opening a bundle from its folder each time would be slow.
+///
+/// It is read from any thread, so it holds a lock.
+private final class Chosen: @unchecked Sendable {
+    static let shared = Chosen()
+
+    private let lock = NSLock()
+    private var opened: [String: Bundle] = [:]
+
+    /// The table of `locale` inside `module`, or nil for an empty code or a language that is not
+    /// in the bundle. SwiftPM can write a locale's folder in lower case (`zh-hans.lproj`), so both
+    /// spellings are tried.
+    func bundle(for locale: String, in module: Bundle) -> Bundle? {
+        guard !locale.isEmpty else { return nil }
+
+        return lock.withLock {
+            if let already = opened[locale] { return already }
+
+            let path = module.path(forResource: locale, ofType: "lproj")
+                ?? module.path(forResource: locale.lowercased(), ofType: "lproj")
+            guard let path, let found = Bundle(path: path) else { return nil }
+            opened[locale] = found
+            return found
+        }
     }
 }

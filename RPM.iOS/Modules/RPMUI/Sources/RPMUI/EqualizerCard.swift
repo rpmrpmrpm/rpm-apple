@@ -30,7 +30,7 @@ struct EqualizerCard: View {
                         .font(RPMFont.display(13))
                         .foregroundStyle(RPMInk.white(0xB3 / 255))
                 }
-                .tint(RPMInk.white(0x88 / 255))
+                .rpmControlTint()
                 .onChange(of: eq.curve.on) { _, _ in Haptics.pick() }
 
                 HStack(spacing: 10) {
@@ -128,6 +128,9 @@ private struct EqFader: View {
     let label: String
     let onChange: (Double) -> Void
 
+    /// The colour the user chose for the controls. See ``AppColour``.
+    @AppStorage(AppColour.key) private var colour = ""
+
     /// The height of a fader: the desktop's 110 points plus room for the knob.
     private static let tall: CGFloat = 130
 
@@ -137,7 +140,9 @@ private struct EqFader: View {
     private static var most: Double { Equalizer.maxGain }
 
     var body: some View {
-        Canvas { context, size in
+        let lit = AppColour.colour(colour) ?? Color.white.opacity(0xCC / 255)
+
+        return Canvas { context, size in
             let inset = Self.knob
             let x = size.width / 2
             let span = size.height - 2 * inset
@@ -157,10 +162,10 @@ private struct EqFader: View {
             tick.addLine(to: CGPoint(x: x + 5, y: y(0)))
             context.stroke(tick, with: .color(track), lineWidth: 1)
 
-            var lit = Path()
-            lit.move(to: CGPoint(x: x, y: y(0)))
-            lit.addLine(to: CGPoint(x: x, y: y(db)))
-            context.stroke(lit, with: .color(Color.white.opacity(0xCC / 255)),
+            var raised = Path()
+            raised.move(to: CGPoint(x: x, y: y(0)))
+            raised.addLine(to: CGPoint(x: x, y: y(db)))
+            context.stroke(raised, with: .color(lit),
                            style: StrokeStyle(lineWidth: 2, lineCap: .round))
 
             let knob = CGRect(x: x - inset, y: y(db) - inset, width: inset * 2, height: inset * 2)

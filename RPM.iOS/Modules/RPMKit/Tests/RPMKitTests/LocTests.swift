@@ -34,7 +34,7 @@ struct LocTests {
     /// and the system's own matching is case-insensitive about a language tag. What is
     /// being asked here is whether the file is there, not how it is spelled.
     @Test func allFiveLocalesShipped() throws {
-        let shipped = Set(Loc.table.localizations.map { $0.lowercased() })
+        let shipped = Set(Loc.module.localizations.map { $0.lowercased() })
 
         for locale in ["en", "fr", "es", "de", "zh-Hans"] {
             #expect(shipped.contains(locale.lowercased()), "\(locale) is not in the bundle")
@@ -58,7 +58,7 @@ struct LocTests {
     }
 
     @Test func itIsTheSameTableTheDesktopReads() throws {
-        let french = try #require(Loc.table.path(forResource: "fr", ofType: "lproj"))
+        let french = try #require(Loc.module.path(forResource: "fr", ofType: "lproj"))
         let bundle = try #require(Bundle(path: french))
 
         #expect(bundle.localizedString(forKey: "AlbumSort_Artist", value: nil, table: nil)

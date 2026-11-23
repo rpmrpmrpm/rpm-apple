@@ -52,7 +52,7 @@ public struct FeedbackSheet: View {
 
                     if let screenshot, let picture = UIImage(data: screenshot) {
                         Toggle(isOn: $includesShot) { words(Loc.get("Feedback_Screenshot"), 13, 0xB3) }
-                            .tint(RPMInk.white(0x88 / 255))
+                            .rpmControlTint()
                         Image(uiImage: picture)
                             .resizable()
                             .scaledToFit()

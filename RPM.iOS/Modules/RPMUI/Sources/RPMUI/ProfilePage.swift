@@ -421,7 +421,7 @@ public struct ProfilePage: View {
                             .lineLimit(1)
                     }
                 }
-                .tint(RPMInk.white(0x88 / 255))
+                .rpmControlTint()
             }
         }
         .padding(.leading, 14)

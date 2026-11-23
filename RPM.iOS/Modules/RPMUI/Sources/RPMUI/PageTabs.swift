@@ -38,6 +38,9 @@ struct PageTabs<Choice: PageTab>: View {
     /// The tab the row is showing, as far as the motion has got: it follows ``mode`` on the spring.
     @State private var shown: Choice
 
+    /// The colour the user chose for the glass, which the pill takes. See ``AppColour``.
+    @AppStorage(AppColour.key) private var colour = ""
+
     init(_ mode: Binding<Choice>) {
         _mode = mode
         _shown = State(initialValue: Self.lastShown ?? mode.wrappedValue)
@@ -64,7 +67,7 @@ struct PageTabs<Choice: PageTab>: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(RPMInk.white(0x24 / 255))
+                    .fill(AppColour.colour(colour)?.opacity(AppColour.onPill) ?? RPMInk.white(0x24 / 255))
                     .frame(width: lit, height: Self.tall)
                     .offset(x: Self.unlit * at)
 

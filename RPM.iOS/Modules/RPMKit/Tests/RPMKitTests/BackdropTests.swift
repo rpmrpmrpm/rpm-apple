@@ -81,9 +81,17 @@ struct BackdropTests {
         #expect(!Backdrop.Choice.aero.isSupporters)
     }
 
-    /// The tiles follow the cases' order: Aero comes before Gold, which stays last.
-    @Test func aeroComesBeforeGold() {
-        #expect(Array(Backdrop.Choice.allCases.suffix(2)) == [.aero, .gold])
+    /// The tiles follow the cases' order: Gold, the supporter's, stays last.
+    @Test func goldStaysLast() {
+        #expect(Backdrop.Choice.allCases.last == .gold)
+    }
+
+    /// The phone's own two are kept and shown under their ids, for every account.
+    @Test func graphiteAndCocoaAreShownForEveryAccount() {
+        #expect(Backdrop.standing(stored: "graphite", gold: false) == .graphite)
+        #expect(Backdrop.standing(stored: "cocoa", gold: false) == .cocoa)
+        #expect(!Backdrop.Choice.graphite.isSupporters)
+        #expect(!Backdrop.Choice.cocoa.isSupporters)
     }
 
     @Test func everyChoiceHasItsOwnId() {

@@ -3,6 +3,7 @@ import UIKit
 import RPMUI
 import RPMLibrary
 import RPMSharedUI
+import RPMKit
 
 /// The entry point of the native Swift app.
 ///
@@ -15,9 +16,15 @@ struct RPMApp: App {
     /// for that and for background download wake-ups.
     @UIApplicationDelegateAdaptor(RPMDelegate.self) private var delegate
 
+    /// The language the user chose for the app (`Loc.chosenKey`). The screens read their words
+    /// when they are drawn, so a new choice builds them again. The model is kept, so the music
+    /// and the collection carry on.
+    @AppStorage(Loc.chosenKey) private var language = ""
+
     var body: some Scene {
         WindowGroup {
             RootView(model: delegate.model)
+                .id(language)
         }
     }
 }

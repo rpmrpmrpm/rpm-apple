@@ -40,6 +40,13 @@ public enum Backdrop {
         /// so the ground lays more black over it (`VinylGround`).
         case aero
 
+        /// Plain dark grey, with no picture. Only the phone has it.
+        case graphite
+
+        /// Rows of soft brown squares, lit from one side, like a bar of chocolate. Only the phone
+        /// has it.
+        case cocoa
+
         /// The same three records pressed in gold. The supporter's. The desktop stores its gold
         /// table under the same id.
         case gold
@@ -56,6 +63,8 @@ public enum Backdrop {
             case .pegasus: "Settings_BackgroundPegasus"
             case .sheetMusic: "Settings_BackgroundSheetMusic"
             case .aero: "Settings_BackgroundAero"
+            case .graphite: "Settings_BackgroundGraphite"
+            case .cocoa: "Settings_BackgroundCocoa"
             case .gold: "Settings_BackgroundGold"
             }
         }

@@ -212,9 +212,11 @@ public struct SettingsPage: View {
                     about
                     device
                     OpeningSoundCard()
+                    AppLanguageCard()
                     ArticleLanguageCard()
                 case .appearance:
                     backdrop
+                    AppColourCard()
                     PlayerLookCard()
                 case .playback:
                     playback
@@ -329,7 +331,7 @@ public struct SettingsPage: View {
                         .font(RPMFont.display(13))
                         .foregroundStyle(RPMInk.white(0xB3 / 255))
                 }
-                .tint(RPMInk.white(0x88 / 255))
+                .rpmControlTint()
                 .onChange(of: sharesListening.wrappedValue) { _, _ in Haptics.pick() }
             }
         }
@@ -484,7 +486,7 @@ public struct SettingsPage: View {
                     .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.white(0xB3 / 255))
             }
-            .tint(RPMInk.white(0x88 / 255))
+            .rpmControlTint()
             .disabled(!quota.supporter)
             .onChange(of: karaoke) { _, _ in Haptics.pick() }
 
@@ -577,7 +579,7 @@ public struct SettingsPage: View {
                         .font(RPMFont.display(13))
                         .foregroundStyle(RPMInk.white(0xB3 / 255))
                 }
-                .tint(RPMInk.white(0x88 / 255))
+                .rpmControlTint()
             }
         }
     }
@@ -633,7 +635,7 @@ public struct SettingsPage: View {
                     .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.white(0xB3 / 255))
             }
-            .tint(RPMInk.white(0x88 / 255))
+            .rpmControlTint()
         }
         .sheet(isPresented: $credits) {
             AboutPage(version: version) { credits = false }
@@ -659,6 +661,9 @@ public struct SettingsPage: View {
             }
             .scrollClipDisabled()
 
+            // Right under the backdrops, so the picture and how it is quietened are read together.
+            BackdropVeilSliders()
+
             // Under the backdrops: it changes the other kind of background, the photograph a
             // page stands on. See ``NightMode``.
             Toggle(isOn: $night) {
@@ -666,7 +671,7 @@ public struct SettingsPage: View {
                     .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.white(0xB3 / 255))
             }
-            .tint(RPMInk.white(0x88 / 255))
+            .rpmControlTint()
 
             // What spins for a record with no disc picture. See ``BlankDisc``.
             VStack(alignment: .leading, spacing: 6) {

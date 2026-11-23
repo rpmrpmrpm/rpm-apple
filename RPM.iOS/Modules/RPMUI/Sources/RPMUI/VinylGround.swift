@@ -20,6 +20,10 @@ import RPMArt
 /// behind smoked glass. Aero, a much lighter picture than the others, takes a heavier
 /// veil, so it ends about as dark as they do. See ``shade(_:)``.
 ///
+/// **The user can dim and blur the picture** on the Appearance settings, so text reads
+/// more easily on it (``BackdropVeil``). Both are added to the picture here, so every
+/// page gets them. They are off until the user moves them.
+///
 /// **There are two vinyl pressings, each with its own tile, and one is for supporters.**
 /// Vinyl is the blue one, for everybody. Gold is the same picture in a different colour:
 /// the same three records and the same lights in the same places, with the colour taken
@@ -65,6 +69,10 @@ public struct VinylGround: View {
     /// screen redraws when it changes.
     @AppStorage(Backdrop.key) private var chosen = ""
 
+    /// How much the user dims and blurs the picture, from 0 to 1. See ``BackdropVeil``.
+    @AppStorage(BackdropVeil.dimKey) private var dim = 0.0
+    @AppStorage(BackdropVeil.blurKey) private var blur = 0.0
+
     /// A picture given by the caller in place of the reader's choice: a profile page is drawn on
     /// its owner's choice, the same for everyone who opens it.
     private let fixed: Backdrop.Choice?
@@ -84,8 +92,14 @@ public struct VinylGround: View {
     ///
     /// 20 per cent for every picture but Aero. Aero is about twice as light as the others
     /// (a mean of 100 of 255, against 20 to 60), so it takes 45 per cent.
+    ///
+    /// Graphite takes none: it is a flat grey, chosen for that grey.
     static func shade(_ picture: Backdrop.Choice) -> Double {
-        picture == .aero ? 0.45 : 0x33 / 255
+        switch picture {
+        case .aero: 0.45
+        case .graphite: 0
+        default: 0x33 / 255
+        }
     }
 
     public var body: some View {
@@ -97,8 +111,11 @@ public struct VinylGround: View {
             let picture = fixed ?? Backdrop.standing(stored: chosen, gold: gold)
 
             Plate(picture: picture)
+                // Opaque, so the edges of the picture stay solid and do not fade into the
+                // ground under it.
+                .blur(radius: BackdropVeil.radius(blur), opaque: true)
 
-            Rectangle().fill(Color.black.opacity(Self.shade(picture)))
+            Rectangle().fill(Color.black.opacity(BackdropVeil.shade(Self.shade(picture), dim: dim)))
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
@@ -192,6 +209,8 @@ enum Vinyl {
         case .pegasus: "background-pegasus"
         case .sheetMusic: "background-sheet-music"
         case .aero: "background-aero"
+        case .graphite: "background-graphite"
+        case .cocoa: "background-cocoa"
         case .gold: "background-vinyl-gold"
         }
     }
@@ -208,6 +227,32 @@ enum Vinyl {
     private static func decode(_ named: String) -> UIImage? {
         guard let data = bytes(named) else { return nil }
         return UIImage(data: data)
+    }
+}
+
+/// How much the user dims and blurs the app's background, for text that reads more easily on
+/// it. Two sliders on the Appearance settings and in the welcome's look step write the values,
+/// from 0 (off) to 1 (the most). ``VinylGround`` reads them.
+public enum BackdropVeil {
+    public static let dimKey = "backdrop.dim"
+    public static let blurKey = "backdrop.blur"
+
+    /// The blur at the top of the slider, in points. Enough to turn any of the pictures into
+    /// soft light.
+    static let widestBlur: Double = 30
+
+    /// The extra black at the top of the slider. The picture still shows a little through it.
+    static let deepestDim: Double = 0.75
+
+    static func radius(_ blur: Double) -> Double {
+        min(max(blur, 0), 1) * widestBlur
+    }
+
+    /// The black laid over the picture: its own veil (`VinylGround.shade(_:)`), and the
+    /// user's dimming over what that veil leaves.
+    static func shade(_ own: Double, dim: Double) -> Double {
+        let extra = min(max(dim, 0), 1) * deepestDim
+        return own + (1 - own) * extra
     }
 }
 

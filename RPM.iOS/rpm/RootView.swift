@@ -63,14 +63,26 @@ struct RootView: View {
     }
 
     /// The tab shown. Written only by ``slide(to:)``.
-    @State private var shownTab: RPMTab = .home
+    @State private var shownTab: RPMTab = RootView.lastTab
 
     /// The tabs whose pages are still sliding off the screen. They are taken away when the slide
     /// ends.
     @State private var leavingTabs: Set<RPMTab> = []
 
     /// The tab shown before the last change: the side the new page comes in from.
-    @State private var cameFrom: RPMTab = .home
+    @State private var cameFrom: RPMTab = RootView.lastTab
+
+    /// Whether the model was started: once for the life of the app, however often the screens are
+    /// built.
+    @MainActor private static var started = false
+
+    /// Whether the crash reports were looked at, once for the life of the app.
+    @MainActor private static var diagnosing = false
+
+    /// The tab shown last, for as long as the app runs. The screens are built again when the user
+    /// chooses another language (see `RPMApp`), and they open on this tab and not on Home, so the
+    /// user stays on the settings where they made the choice.
+    @MainActor private static var lastTab: RPMTab = .home
 
     /// Counts the changes of tab, so a slide that ends after a newer one began leaves the pages of
     /// the newer one alone.
@@ -496,14 +508,24 @@ struct RootView: View {
         .environment(holds)
         // The equaliser, for its card on the settings page.
         .environment(model.equalizer)
+        // Once for the life of the app. The screens are built again when the user chooses another
+        // language (see `RPMApp`), and the model has already started by then.
         .task {
+            guard !Self.started else { return }
+            Self.started = true
+
             LaunchClock.mark("root appeared")
             MainActorWatch.start()
             openWhereTheScriptAsked()
             await model.start()
         }
-        // Decides the report scope, then sends or asks about the crashes that are waiting.
-        .task { await model.diagnostics.start() }
+        // Decides the report scope, then sends or asks about the crashes that are waiting. Once for
+        // the life of the app, as above.
+        .task {
+            guard !Self.diagnosing else { return }
+            Self.diagnosing = true
+            await model.diagnostics.start()
+        }
         // A shake of the phone opens Send feedback over whatever is on screen.
         .onReceive(NotificationCenter.default.publisher(for: .rpmShake)) { _ in openFeedback() }
         // The reader's own page and other people's pages rise over the app in one cover: someone else's page over
@@ -1202,6 +1224,8 @@ struct RootView: View {
 
         slides += 1
         let slide = slides
+
+        Self.lastTab = next
 
         // All in one animated change, so the page coming in is inserted with its slide.
         withAnimation(.easeInOut(duration: TabSlide.duration)) {
