@@ -18,6 +18,9 @@ let package = Package(
         .testTarget(
             name: "RPMLibraryTests",
             dependencies: ["RPMLibrary", "RPMKit"],
+            // Two seconds of a tone, E-AC-3 in an MPEG-4 file, so the check of a downloaded
+            // original is tested against real bytes.
+            resources: [.copy("Fixtures")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]

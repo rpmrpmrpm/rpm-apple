@@ -1,3 +1,4 @@
+import AudioToolbox
 import Foundation
 import Observation
 import RPMKit
@@ -14,6 +15,13 @@ import os
 /// which have a file; the session says which are in flight. ``pump()`` takes the difference
 /// whenever it is asked, so it is correct to call from anywhere and at any time: the network
 /// coming back, the app coming forward, a download finishing, the key being pressed.
+///
+/// **Only files this device decodes are kept.** An original is asked for only when the catalogue
+/// says it decodes here (``AudioLadder/asked(_:for:found:)``), and the catalogue can be silent: an
+/// E-AC-3 file in an `.m4a` with no codec text looks like AAC. So a downloaded original is checked
+/// before it is kept (``DownloadedFormat``). One that does not decode here is thrown away, noted in
+/// ``FoundUndecodable``, and asked for again as the AAC copy. Originals that are already on the
+/// phone are checked once in each run, by ``begin(for:)``.
 ///
 /// **Only stored objects are downloaded.** A rate the store has not made yet is signed as a
 /// live encode, and a live encode that stops part way still answers 200. So the track waits
@@ -78,6 +86,10 @@ public final class AlbumDownloads {
     private let make: @Sendable ([String], Int) async throws -> Void
     private let rate: @MainActor () -> Int
 
+    /// The tracks whose original this device has found it cannot decode. Read for the rate each
+    /// track is asked for, and written when a downloaded original turns out to be one of them.
+    private let found: FoundUndecodable
+
     /// Tracks with a transfer in the session, or being signed for one.
     private var inFlight: Set<String> = []
 
@@ -109,19 +121,23 @@ public final class AlbumDownloads {
     ///   - make: asks the store to make these tracks at a rate. Used when a sign answers with
     ///     a live encode, which a download never takes.
     ///   - rate: the rate setting, read at the start of each pass. Each track is asked for at
-    ///     ``AudioLadder/asked(_:for:)`` of it.
+    ///     ``AudioLadder/asked(_:for:found:)`` of it.
+    ///   - found: the tracks whose original this device cannot decode. The app uses the shared
+    ///     list, which the player writes to as well.
     public init(book: DownloadBook, reach: NetworkReach,
                 sign: @escaping @Sendable (String, AudioLadder.AskedRate) async throws
                     -> (url: URL, kilobits: Int, kind: StreamKind),
                 make: @escaping @Sendable ([String], Int) async throws -> Void,
-                rate: @escaping @MainActor () -> Int) {
+                rate: @escaping @MainActor () -> Int,
+                found: FoundUndecodable = .shared) {
         self.book = book
         self.reach = reach
         self.sign = sign
         self.make = make
         self.rate = rate
+        self.found = found
 
-        let relay = Relay(book: book)
+        let relay = Relay(book: book, found: found)
         self.relay = relay
 
         let config = URLSessionConfiguration.background(withIdentifier: Self.sessionName)
@@ -168,8 +184,38 @@ public final class AlbumDownloads {
             guard book.isWanted(said.rpmId) else { task.cancel(); continue }
             inFlight.insert(said.rpmId)
         }
+        await dropOriginalsThatDoNotDecode()
         redraw()
         await pump()
+    }
+
+    /// Throws away the downloaded originals that this device cannot decode, so the next pass asks
+    /// for their AAC copy. It covers files that are on the phone without having passed the check
+    /// in ``Relay``.
+    ///
+    /// Only files in an MPEG-4 container are opened: that is the one container ``PlaysHere``
+    /// lets through that can hold AC-3 or E-AC-3. The files are read away from the main actor.
+    func dropOriginalsThatDoNotDecode() async {
+        var files: [String: URL] = [:]
+        for track in book.albums.flatMap(\.tracks) where DownloadedFormat.mayHoldDolby(track) {
+            guard let copy = book.held(track.rpmId), copy.kilobits == AudioLadder.original
+            else { continue }
+            files[track.rpmId] = copy.file
+        }
+        guard !files.isEmpty else { return }
+
+        let originals = files
+        let refused: [String] = await Task.detached(priority: .utility) {
+            originals.compactMap { rpmId, file in
+                DownloadedFormat.isNotDecodedHere(file) ? rpmId : nil
+            }
+        }.value
+
+        for rpmId in refused {
+            found.note(rpmId)
+            book.discard(rpmId)
+            Self.log.notice("\(rpmId, privacy: .public) was downloaded in a format this device does not decode; its AAC copy is asked for")
+        }
     }
 
     // ── what the screens ask ──
@@ -490,12 +536,21 @@ public final class AlbumDownloads {
         let book: DownloadBook
         weak var owner: AlbumDownloads?
 
+        let found: FoundUndecodable
+
         /// Tracks whose file was put in place, by the task that brought it. Read when the
         /// same task says it has completed, which the session always says after the file.
         private var kept: [Int: Bool] = [:]
+
+        /// Tasks whose file was an original this device does not decode. Read when the task
+        /// says it has completed, like ``kept``.
+        private var refused: Set<Int> = []
         private let lock = NSLock()
 
-        init(book: DownloadBook) { self.book = book }
+        init(book: DownloadBook, found: FoundUndecodable) {
+            self.book = book
+            self.found = found
+        }
 
         /// A task names its track and the rate it was signed at, so a relaunched app knows
         /// both without anything held in memory.
@@ -515,10 +570,26 @@ public final class AlbumDownloads {
             // A 403 is an expired signature and a 404 a track gone from the store. Either
             // way the body is not the record, and it is not kept.
             let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
-            let good = (200...299).contains(status)
+            let answered = (200...299).contains(status)
+
+            // **An original that this device does not decode is not kept.** The catalogue said
+            // it decodes here, and the file says it does not (E-AC-3 in an `.m4a` with no codec
+            // text). It is noted, so the next pass asks for the AAC copy, and the attempt does
+            // not count against the track.
+            let undecodable = answered && said.kilobits == AudioLadder.original
+                && DownloadedFormat.isNotDecodedHere(location)
+            if undecodable {
+                try? FileManager.default.removeItem(at: location)
+                found.note(said.rpmId)
+            }
+
+            let good = answered && !undecodable
                 && book.keep(said.rpmId, from: location, kilobits: said.kilobits)
 
-            lock.withLock { kept[downloadTask.taskIdentifier] = good }
+            lock.withLock {
+                kept[downloadTask.taskIdentifier] = good
+                if undecodable { refused.insert(downloadTask.taskIdentifier) }
+            }
         }
 
         func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
@@ -537,18 +608,55 @@ public final class AlbumDownloads {
             guard let said = Self.read(task.taskDescription) else { return }
 
             let good = lock.withLock { kept.removeValue(forKey: task.taskIdentifier) } ?? false
+            let undecodable = lock.withLock { refused.remove(task.taskIdentifier) != nil }
 
-            // A cancel is somebody removing the album, not the track failing.
+            // A cancel is somebody removing the album, not the track failing. An original that
+            // does not decode here is not the track failing either: its copy is asked for next.
             let cancelled = (error as? URLError)?.code == .cancelled
             let rpmId = said.rpmId
 
             Task { @MainActor [weak owner] in
-                owner?.finished(rpmId, kept: good, counts: !cancelled)
+                owner?.finished(rpmId, kept: good, counts: !cancelled && !undecodable)
             }
         }
 
         func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
             Task { @MainActor [weak owner] in await owner?.sessionIsDone() }
         }
+    }
+}
+
+/// What a downloaded file holds, read from the file itself.
+///
+/// The catalogue's codec text decides which rate a track is asked for, and it can be missing. The
+/// file cannot be wrong about itself.
+enum DownloadedFormat {
+    /// Whether the file is AC-3 or E-AC-3, which this device does not decode. A file that cannot
+    /// be opened is not judged here, and the answer is no.
+    ///
+    /// The files have no extension, so the type is found from the bytes (the hint is 0).
+    static func isNotDecodedHere(_ file: URL) -> Bool {
+        var opened: AudioFileID?
+        guard AudioFileOpenURL(file as CFURL, .readPermission, 0, &opened) == noErr,
+              let opened
+        else { return false }
+        defer { AudioFileClose(opened) }
+
+        var format = AudioStreamBasicDescription()
+        var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
+        guard AudioFileGetProperty(opened, kAudioFilePropertyDataFormat, &size, &format) == noErr
+        else { return false }
+
+        return format.mFormatID == kAudioFormatAC3 || format.mFormatID == kAudioFormatEnhancedAC3
+    }
+
+    /// Whether a track's file is in an MPEG-4 container, the one container that ``PlaysHere``
+    /// lets through that can hold AC-3 or E-AC-3.
+    static func mayHoldDolby(_ track: CloudTrack) -> Bool {
+        let catalogued = track.tags?.extension.flatMap { $0.isEmpty ? nil : $0 }
+        let fromPath = track.relativePath.map { ($0 as NSString).pathExtension }
+        var ext = (catalogued ?? fromPath ?? "").lowercased()
+        if ext.hasPrefix(".") { ext.removeFirst() }
+        return ["m4a", "m4b", "mp4"].contains(ext)
     }
 }

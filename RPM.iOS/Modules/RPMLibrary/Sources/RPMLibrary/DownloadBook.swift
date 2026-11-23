@@ -208,6 +208,16 @@ public final class DownloadBook: @unchecked Sendable {
         }
     }
 
+    /// Deletes one track's file and keeps the track wanted, so it is missing again and the
+    /// downloader fetches it again. Used for a file this device cannot play.
+    public func discard(_ rpmId: String) {
+        lock.withLock {
+            guard held.copies.removeValue(forKey: rpmId) != nil else { return }
+            try? FileManager.default.removeItem(at: file(of: rpmId))
+            save()
+        }
+    }
+
     /// Removes everything from the phone. Used when signing out, because the files are
     /// this account's music.
     public func forgetAll() {
