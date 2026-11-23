@@ -520,10 +520,10 @@ public struct NowPlayingSheet: View {
                 RecordDisc(diameter: edge, halo: .round, spinning: false,
                            disc: player.current != nil ? BlankDisc.standIn() : nil)
             } else {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous)
                     .fill(Color.black.opacity(0x22 / 255))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous)
                             .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
                     }
             }
@@ -531,7 +531,7 @@ public struct NowPlayingSheet: View {
             if let art {
                 Sleeve(image: Image(decorative: art.image, scale: 1))
                     .frame(width: edge, height: edge)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous))
             } else if let station = player.station {
                 // The station's own logo, as the desktop app draws it here, inset so it sits ON the
                 // card and does not fill it. The logo is a square mark on its own background, not
@@ -559,9 +559,9 @@ public struct NowPlayingSheet: View {
                 }
                 // The background behind a transparent logo fills the card, so it is clipped to the
                 // card and the edge is drawn again over it.
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous)
                         .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
                 }
             }

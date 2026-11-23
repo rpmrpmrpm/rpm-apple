@@ -420,7 +420,7 @@ struct ArtistBox: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            CoverShape()
                 .fill(Color.black.opacity(0x22 / 255))
 
             ground
@@ -444,9 +444,9 @@ struct ArtistBox: View {
                 .padding(.horizontal, 10)
         }
         .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(CoverShape())
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            CoverShape()
                 .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
         }
         .contentShape(Rectangle())

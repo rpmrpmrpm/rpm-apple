@@ -272,3 +272,24 @@ enum CoverCorner {
         edge * share
     }
 }
+
+/// A cover's rounded rectangle for a card whose size the layout decides: a genre's portrait card,
+/// an artist's wide tile. The corner follows ``CoverCorner`` from the card's shorter side, so the
+/// card is as round as a cover of that size.
+struct CoverShape: InsettableShape {
+    private var inset: CGFloat = 0
+
+    init() {}
+
+    func path(in rect: CGRect) -> Path {
+        let radius = CoverCorner.radius(min(rect.width, rect.height))
+        return RoundedRectangle(cornerRadius: max(0, radius - inset), style: .continuous)
+            .path(in: rect.insetBy(dx: inset, dy: inset))
+    }
+
+    func inset(by amount: CGFloat) -> CoverShape {
+        var inner = self
+        inner.inset += amount
+        return inner
+    }
+}

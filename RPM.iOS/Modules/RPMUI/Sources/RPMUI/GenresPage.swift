@@ -93,7 +93,7 @@ private struct GenreCard: View {
     var lettering: Double = 30
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let shape = CoverShape()
 
         Color.clear
             .aspectRatio(3 / 4, contentMode: .fit)

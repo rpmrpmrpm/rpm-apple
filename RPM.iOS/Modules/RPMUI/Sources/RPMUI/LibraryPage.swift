@@ -842,7 +842,7 @@ public struct LibraryPage: View {
         entry(genre.name, Self.albumCount(genre.albums.count)) {
             GenrePicture(genre: genre.name)
                 .frame(width: 40, height: 40)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(40), style: .continuous))
         }
     }
 

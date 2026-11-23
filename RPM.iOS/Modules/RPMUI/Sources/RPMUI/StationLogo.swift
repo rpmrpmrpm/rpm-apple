@@ -23,7 +23,7 @@ struct StationLogo: View {
     static let edge: CGFloat = 40
 
     var body: some View {
-        let well = RoundedRectangle(cornerRadius: 6, style: .continuous)
+        let well = RoundedRectangle(cornerRadius: CoverCorner.radius(Self.edge), style: .continuous)
 
         return ZStack {
             well.fill(Color.black.opacity(0x22 / 255))

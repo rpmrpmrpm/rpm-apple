@@ -940,9 +940,9 @@ struct HomeFeatureCard: View {
         }
         .frame(width: HomeBannerMetrics.sleeve, height: HomeBannerMetrics.sleeve)
         .listFrame(framed, edge: HomeBannerMetrics.sleeve)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(HomeBannerMetrics.sleeve), style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: CoverCorner.radius(HomeBannerMetrics.sleeve), style: .continuous)
                 .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
         }
         // The cover is drawn on a photograph and not on a flat plate. The shadow and border keep

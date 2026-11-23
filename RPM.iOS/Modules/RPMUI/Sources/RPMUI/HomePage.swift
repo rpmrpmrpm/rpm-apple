@@ -940,7 +940,7 @@ struct HomePicksRow: View {
     /// transparent logo and a white square look correct. If the station has no logo, the radio
     /// mark is drawn.
     private func stationSquare(_ station: RadioStation) -> some View {
-        let well = RoundedRectangle(cornerRadius: 5, style: .continuous)
+        let well = RoundedRectangle(cornerRadius: CoverCorner.radius(Self.art), style: .continuous)
 
         return ZStack {
             well.fill(Color.black.opacity(0x22 / 255))

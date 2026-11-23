@@ -161,7 +161,7 @@ public struct MiniPlayer: View {
     /// over it, and the record glyph when there is no art.
     private var sleeve: some View {
         let edge: CGFloat = 40
-        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: CoverCorner.radius(edge), style: .continuous)
 
         return ZStack {
             shape.fill(Color.black.opacity(0x22 / 255))

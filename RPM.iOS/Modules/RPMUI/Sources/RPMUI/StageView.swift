@@ -703,10 +703,10 @@ public struct StageView: View {
     /// right and two records on one screen would be redundant.
     private var cover: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: CoverCorner.radius(Self.coverEdge), style: .continuous)
                 .fill(Color.black.opacity(0x22 / 255))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: CoverCorner.radius(Self.coverEdge), style: .continuous)
                         .strokeBorder(RPMInk.cardBorder, lineWidth: 1)
                 }
 
@@ -715,7 +715,7 @@ public struct StageView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: Self.coverEdge, height: Self.coverEdge)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: CoverCorner.radius(Self.coverEdge), style: .continuous))
             } else {
                 Text(Glyph.record)
                     .font(RPMFont.icon(22))
