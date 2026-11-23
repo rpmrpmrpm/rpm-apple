@@ -140,7 +140,7 @@ private struct EqFader: View {
     private static var most: Double { Equalizer.maxGain }
 
     var body: some View {
-        let lit = AppColour.colour(colour) ?? Color.white.opacity(0xCC / 255)
+        let lit = AppColour.shown(colour) ?? Color.white.opacity(0xCC / 255)
 
         return Canvas { context, size in
             let inset = Self.knob

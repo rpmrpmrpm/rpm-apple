@@ -6,6 +6,7 @@ import RPMLibrary
 import RPMAudio
 import RPMArt
 import RPMStages
+import RPMDesign
 
 /// What the menu at the top right of a playlist page offers.
 ///
@@ -308,6 +309,15 @@ public struct PlaylistPage: View {
             Button(Loc.get("Common_OK"), role: .cancel) {}
         }
         .task(id: title) { await dress() }
+        // The glass takes the list's colour while it is on screen.
+        .coloursGlass(glass)
+    }
+
+    /// The colour the list gives the glass: a generated list's own middle colour, as its frame and
+    /// room have, else the main colour of its cover. Nil for a list with neither.
+    private var glass: Color? {
+        if let framed = FramedList.of(showing) { return framed.look.trio.mid.color }
+        return wash?.colours.glass
     }
 
     // ── the menu ──

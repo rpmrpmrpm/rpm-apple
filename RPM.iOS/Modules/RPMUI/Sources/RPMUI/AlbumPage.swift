@@ -274,6 +274,8 @@ public struct AlbumPage: View {
             guard !Task.isCancelled else { return }
             pictures = (album.key, cover, disc)
         }
+        // The glass takes the main colour of the sleeve while the record is on screen.
+        .coloursGlass(cover?.colours.glass)
         .task(id: subject.id) { await AboutRead.read(subject, from: articles, into: $about) }
         .task(id: SimilarAsk(album: album.key, shelf: shelf.count)) { await readSimilar() }
         .task(id: album.key) {

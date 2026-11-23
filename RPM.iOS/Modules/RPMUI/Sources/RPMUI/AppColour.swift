@@ -1,5 +1,8 @@
 import SwiftUI
+import Observation
 import RPMKit
+import RPMArt
+import RPMDesign
 
 /// The colour the user gives the app's glass: the bubbles, the cards, the buttons, the switches and
 /// the sliders. It is chosen on the Appearance settings and in the welcome's look step.
@@ -13,6 +16,9 @@ import RPMKit
 ///
 /// It is stored as `#RRGGBB`, the badge's own form, under ``key``. Every face that takes the colour
 /// reads the key itself (`@AppStorage`), so a new choice shows everywhere at once.
+///
+/// **An album or a playlist on screen colours the glass with its cover** while it is shown
+/// (``PageColour``). That colour comes before the user's: see ``shown(_:)``.
 public enum AppColour {
     public static let key = "look.colour"
 
@@ -23,6 +29,13 @@ public enum AppColour {
     public static func colour(_ stored: String) -> Color? {
         guard let value = value(stored) else { return nil }
         return Color(rgb: value)
+    }
+
+    /// The colour the glass is drawn in now: the page's on screen (``PageColour``), else the
+    /// user's, else none. Every face reads this.
+    @MainActor
+    static func shown(_ stored: String) -> Color? {
+        PageColour.shared.current ?? colour(stored)
     }
 
     /// The stored colour as 0xRRGGBB, or nil for none.
@@ -45,7 +58,7 @@ private struct ControlColour: ViewModifier {
     @AppStorage(AppColour.key) private var stored = ""
 
     func body(content: Content) -> some View {
-        content.tint(AppColour.colour(stored) ?? RPMInk.white(0x88 / 255))
+        content.tint(AppColour.shown(stored) ?? RPMInk.white(0x88 / 255))
     }
 }
 
@@ -113,5 +126,65 @@ struct AppColourCard: View {
         SettingsCardFrame(Glyph.palette, Loc.get("Settings_Colour")) {
             AppColourBubbles()
         }
+    }
+}
+
+/// The colour of the album or playlist on screen, which the app's glass takes while it is shown:
+/// the main colour of its cover (``AppColour/shown(_:)``).
+///
+/// Each page that has one holds it while it is on screen (`coloursGlass(_:)`), and lets it go when
+/// it leaves. The last page to hold one wins, so a record opened from a playlist colours the glass
+/// with the record, and going back gives the playlist's colour again.
+@MainActor
+@Observable
+final class PageColour {
+    static let shared = PageColour()
+
+    private var held: [(page: UUID, colour: Color)] = []
+
+    /// The colour of the page shown last that has one, or nil.
+    var current: Color? { held.last?.colour }
+
+    /// Holds `colour` for `page`, last. Nil lets it go. Animated, so the glass changes colour
+    /// smoothly as a page comes in or its cover arrives.
+    func hold(_ colour: Color?, for page: UUID) {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            held.removeAll { $0.page == page }
+            if let colour { held.append((page, colour)) }
+        }
+    }
+
+    func release(_ page: UUID) {
+        hold(nil, for: page)
+    }
+}
+
+/// Holds a page's colour while the page is on screen. See ``PageColour``.
+private struct HoldsPageColour: ViewModifier {
+    let colour: Color?
+
+    /// This page, among the pages on screen.
+    @State private var page = UUID()
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { PageColour.shared.hold(colour, for: page) }
+            .onChange(of: colour) { _, now in PageColour.shared.hold(now, for: page) }
+            .onDisappear { PageColour.shared.release(page) }
+    }
+}
+
+extension View {
+    /// Colours the app's glass with `colour` while this page is on screen. See ``PageColour``.
+    func coloursGlass(_ colour: Color?) -> some View {
+        modifier(HoldsPageColour(colour: colour))
+    }
+}
+
+extension SleeveColours {
+    /// The colour a cover gives the glass: its main colour, lifted to the light a tint on dark glass
+    /// needs (``GlassInk``), else its most vivid one.
+    var glass: Color? {
+        (dominant ?? highlight).map { GlassInk($0).color }
     }
 }

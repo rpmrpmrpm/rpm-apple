@@ -115,7 +115,7 @@ private struct GlassFill<S: InsettableShape>: ViewModifier {
         content
             .background {
                 shape.fill(fill)
-                if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
+                if let tint = AppColour.shown(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
                 if pressed { shape.fill(RPMInk.white(0x28 / 255)) }
             }
             .overlay { shape.strokeBorder(RPMInk.glassEdge, lineWidth: 1) }
@@ -149,14 +149,14 @@ public struct GlassCard: ViewModifier {
         if onGlass {
             held.modifier(GlassFill(shape: shape, fill: RPMInk.ghostFace, pressed: false))
         } else if #available(iOS 26, *) {
-            held.glassEffect(.regular.tint(AppColour.colour(colour)?.opacity(AppColour.onGlass)),
+            held.glassEffect(.regular.tint(AppColour.shown(colour)?.opacity(AppColour.onGlass)),
                              in: shape)
         } else {
             held
                 .background {
                     RPMFrost().clipShape(shape)
                     shape.fill(RPMInk.glassWash)
-                    if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
+                    if let tint = AppColour.shown(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
                 }
                 .overlay { shape.strokeBorder(RPMInk.cardBorder, lineWidth: 1) }
                 .clipShape(shape)
@@ -187,7 +187,7 @@ private struct SectionFace: ViewModifier {
 
         return content.background {
             shape.fill(RPMInk.sectionFill)
-            if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onSection)) }
+            if let tint = AppColour.shown(colour) { shape.fill(tint.opacity(AppColour.onSection)) }
         }
     }
 }
@@ -273,7 +273,7 @@ public struct RPMGlassButton: ButtonStyle {
             if onGlass {
                 held.modifier(fill)
             } else if #available(iOS 26, *) {
-                let tint = AppColour.colour(colour)
+                let tint = AppColour.shown(colour)
                 held.glassEffect(weight == .primary
                                      ? .regular.tint(tint?.opacity(AppColour.onPill)
                                                         ?? RPMInk.primaryFace).interactive()
@@ -356,7 +356,7 @@ private struct GlassSurface<S: InsettableShape>: ViewModifier {
         if onGlass {
             held.modifier(GlassFill(shape: shape, fill: RPMInk.ghostFace, pressed: false))
         } else if #available(iOS 26, *) {
-            held.glassEffect(.regular.tint(AppColour.colour(colour)?.opacity(AppColour.onGlass))
+            held.glassEffect(.regular.tint(AppColour.shown(colour)?.opacity(AppColour.onGlass))
                                  .interactive(),
                              in: shape)
         } else {
@@ -364,7 +364,7 @@ private struct GlassSurface<S: InsettableShape>: ViewModifier {
                 ZStack {
                     RPMFrost()
                     shape.fill(RPMInk.glassWash)
-                    if let tint = AppColour.colour(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
+                    if let tint = AppColour.shown(colour) { shape.fill(tint.opacity(AppColour.onFill)) }
                 }
                 .clipShape(shape)
                 .overlay { shape.strokeBorder(RPMInk.white(0x1A / 255), lineWidth: 1) }

@@ -67,7 +67,7 @@ struct PageTabs<Choice: PageTab>: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(AppColour.colour(colour)?.opacity(AppColour.onPill) ?? RPMInk.white(0x24 / 255))
+                    .fill(AppColour.shown(colour)?.opacity(AppColour.onPill) ?? RPMInk.white(0x24 / 255))
                     .frame(width: lit, height: Self.tall)
                     .offset(x: Self.unlit * at)
 
