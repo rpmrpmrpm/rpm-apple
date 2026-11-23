@@ -46,23 +46,24 @@ public struct FramedList: Equatable {
     }
 }
 
-/// The room a folder of moods stands on, behind its mark.
-///
-/// One mood's folder is drawn in the colours of that mood's own list, the colours its frame has in
-/// the folder (``GeneratedListLook``), so the folder and what is in it look alike. The folder of all
-/// the moods is drawn in the app's own colours, the room's own blue (``RoomPalette/fallback``).
-/// Every other folder has no room.
-public enum FolderRoom {
-    public static func of(_ face: FolderFace) -> RoomDissolve? {
+extension FramedList {
+    /// The frame of one of the app's own folders, lettered with the folder's name, or nil for a
+    /// folder somebody made. A photograph goes behind its window (`PlaylistPhotos.folderCover`),
+    /// so the folder looks like a list of its own.
+    ///
+    /// One mood's folder wears the colours of that mood's list of the whole collection, so the
+    /// folder and what is in it look alike. The folder of the decades wears the 1980s'. The folder
+    /// of all the moods wears the app's own colours (``GeneratedListLook/app``).
+    public static func folder(_ face: FolderFace, name: String) -> FramedList? {
+        guard PlaylistFrame.has else { return nil }
+        let look: GeneratedListLook.Look?
         switch face {
-        case .moods:
-            return .still
-        case .mood(let kind):
-            guard let look = GeneratedListLook.of(kind: kind, genre: nil, decade: 0) else { return nil }
-            return FramedList(name: kind, look: look).room
-        case .plain, .decades:
-            return nil
+        case .plain: look = nil
+        case .moods: look = .app
+        case .decades: look = GeneratedListLook.of(kind: "Decade", genre: nil, decade: 1980)
+        case .mood(let kind): look = GeneratedListLook.of(kind: kind, genre: nil, decade: 0)
         }
+        return look.map { FramedList(name: name, look: $0) }
     }
 }
 

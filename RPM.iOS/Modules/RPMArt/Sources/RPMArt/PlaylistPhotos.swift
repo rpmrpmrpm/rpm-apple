@@ -42,8 +42,57 @@ public enum PlaylistPhotos {
                                               decade: cut.decade)?.tint
         else { return nil }
 
+        return compose(file, in: tint, edge: edge)
+    }
+
+    /// The photograph behind the frame of one of the app's own folders, washed in the folder's
+    /// colour, or nil for a folder somebody made. See ``folder(_:)``.
+    ///
+    /// Synchronous like ``cover(for:edge:)``, and run off the main actor in the same way.
+    public static func folderCover(_ face: FolderFace, edge: Int) -> CoverArt? {
+        guard edge > 0, let photo = folder(face) else { return nil }
+        return compose(photo.file, in: photo.tint, edge: edge)
+    }
+
+    /// The cover ``folderCover(_:edge:)`` has already composed at this size, or nil. No decode
+    /// and no draw, so a view can ask for it on its first frame.
+    public static func folderCoverInMemory(_ face: FolderFace, edge: Int) -> CoverArt? {
+        guard edge > 0, let photo = folder(face) else { return nil }
         let size = min(ArtworkStore.bucket(holding: edge), shippedEdge)
-        let key = Self.key(file, size)
+        return held.object(forKey: key(photo.file, size, photo.tint))?.art
+    }
+
+    /// Which photograph a folder of the app's own lists shows, and the colour it is washed in.
+    ///
+    /// - One mood's folder shows the photograph of that mood's list of the whole collection, in
+    ///   its colour, so the folder looks like the lists in it.
+    /// - The folder of the decades shows the photograph of the 1980s, a crate of records, in the
+    ///   colour of that list.
+    /// - The folder of all the moods shows the dance floor photograph in the app's own blue
+    ///   (``GeneratedListLook/app``), because it holds every mood.
+    static func folder(_ face: FolderFace) -> (file: String, tint: RGB)? {
+        let cut: GeneratedCut
+        switch face {
+        case .plain:
+            return nil
+        case .moods:
+            guard let file = files[GeneratedCut(kind: "Danceable", genre: nil, decade: 0)] else { return nil }
+            return (file, GeneratedListLook.app.tint)
+        case .decades:
+            cut = GeneratedCut(kind: "Decade", genre: nil, decade: 1980)
+        case .mood(let kind):
+            cut = GeneratedCut(kind: kind, genre: nil, decade: 0)
+        }
+        guard let file = files[cut],
+              let tint = GeneratedListLook.of(kind: cut.kind, genre: cut.genre, decade: cut.decade)?.tint
+        else { return nil }
+        return (file, tint)
+    }
+
+    /// The photograph in `file`, washed in `tint`, at the size asked for. Cached.
+    private static func compose(_ file: String, in tint: RGB, edge: Int) -> CoverArt? {
+        let size = min(ArtworkStore.bucket(holding: edge), shippedEdge)
+        let key = Self.key(file, size, tint)
 
         if let held = held.object(forKey: key) { return held.art }
 
@@ -63,11 +112,15 @@ public enum PlaylistPhotos {
     /// and no draw, so a view can ask for it on the main thread when it draws its first frame.
     public static func coverInMemory(for cut: GeneratedCut, edge: Int) -> CoverArt? {
         guard edge > 0, let file = files[cut] else { return nil }
-        return held.object(forKey: key(file, min(ArtworkStore.bucket(holding: edge), shippedEdge)))?.art
+        guard let tint = GeneratedListLook.of(kind: cut.kind, genre: cut.genre, decade: cut.decade)?.tint
+        else { return nil }
+        return held.object(forKey: key(file, min(ArtworkStore.bucket(holding: edge), shippedEdge), tint))?.art
     }
 
-    private static func key(_ file: String, _ size: Int) -> NSString {
-        "\(file)@\(size)" as NSString
+    /// The cache key: the file, the size and the colour it is washed in. The colour is part of it
+    /// because the folder of all the moods washes a list's photograph in another colour.
+    private static func key(_ file: String, _ size: Int, _ tint: RGB) -> NSString {
+        "\(file)@\(size)#\(tint.r).\(tint.g).\(tint.b)" as NSString
     }
 
     /// The photograph scaled to fill a square of `edge` pixels, centred, with `tint` laid over it.

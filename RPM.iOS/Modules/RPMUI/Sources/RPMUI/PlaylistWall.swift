@@ -155,7 +155,7 @@ struct PlaylistTile: View {
             PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
                            edge: art, mark: glyphSize, covers: covers,
                            framed: FramedList.of(row.set), markPicture: row.markPicture,
-                           folderRoom: row.folderRoom, roomSeed: row.id)
+                           folder: row.face, folderFrame: row.folderFrame)
 
             Spacer().frame(height: AlbumCaption.artGap)
 
@@ -218,9 +218,9 @@ extension PlaylistRow {
         face == .moods ? Self.moodsMark : nil
     }
 
-    /// The room behind the mark of a folder of moods, or nil. See ``FolderRoom``.
-    var folderRoom: RoomDissolve? {
-        face.flatMap(FolderRoom.of)
+    /// The frame of one of the app's own folders, or nil. See ``FramedList/folder(_:name:)``.
+    var folderFrame: FramedList? {
+        face.flatMap { FramedList.folder($0, name: title) }
     }
 
     /// Read once. Every moods folder row shows the same picture.

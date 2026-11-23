@@ -41,6 +41,20 @@ struct PlaylistPhotosTests {
         }
     }
 
+    /// Each of the app's own folders has a photograph behind its frame, and a folder somebody made
+    /// has none. The folder of all the moods washes the dance floor in the app's blue, so it is not
+    /// the dance floor list's own cover.
+    @Test func theAppsFoldersHaveAPhotograph() {
+        for face in [FolderFace.moods, .decades, .mood("Calm"), .mood("Danceable"), .mood("Sleep")] {
+            #expect(PlaylistPhotos.folderCover(face, edge: 200)?.image.width == 256, "\(face)")
+            #expect(PlaylistPhotos.folderCoverInMemory(face, edge: 200) != nil, "\(face)")
+        }
+        #expect(PlaylistPhotos.folderCover(.plain, edge: 200) == nil)
+        #expect(PlaylistPhotos.folder(.moods)?.tint == GeneratedListLook.app.tint)
+        #expect(PlaylistPhotos.folder(.mood("Danceable"))?.tint
+                == GeneratedListLook.of(kind: "Danceable", genre: nil, decade: 0)?.tint)
+    }
+
     /// Most generated lists have no photograph, and a kind this build does not know has none either.
     /// Both return nil, so the caller asks the store instead.
     @Test func aListWithNoEntryHasNoPhotograph() {

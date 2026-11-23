@@ -102,6 +102,11 @@ public struct Welcome: View {
                                 Text(Loc.get("Settings_Colour")).rpmKicker()
                                 AppColourBubbles()
                             }
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(Loc.get("Settings_CoverCorners")).rpmKicker()
+                                CoverCornerSlider()
+                            }
                         }
                     }
                 case 3:

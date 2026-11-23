@@ -4,6 +4,7 @@ import RPMStages
 import RPMSession
 import RPMKit
 import RPMLibrary
+import RPMArt
 
 /// The playlists tab: the playlists that the computer keeps in the cloud, its generated lists,
 /// and the marked songs. There is no row for the queue: the queue key on the player shows it.
@@ -462,7 +463,7 @@ public struct PlaylistsPage: View {
         PlaylistSleeve(list: row.picture, track: row.artSource, glyph: row.mark,
                        edge: 44, mark: 16, covers: covers,
                        framed: FramedList.of(row.set), markPicture: row.markPicture,
-                       folderRoom: row.folderRoom, roomSeed: row.id)
+                       folder: row.face, folderFrame: row.folderFrame)
     }
 
     private func detail(_ row: PlaylistRow) -> String {
@@ -562,19 +563,22 @@ struct PlaylistSleeve: View {
     /// has one. See `PlaylistRow.markPicture`.
     var markPicture: UIImage? = nil
 
-    /// The room a folder of moods stands on, with its mark in the middle, or nil. See
-    /// ``FolderRoom``. It moves with ``roomDrifts``, as a list's room does.
-    var folderRoom: RoomDissolve? = nil
+    /// Which of the app's own folders this is, or nil for every other row. See ``folderFrame``.
+    var folder: FolderFace? = nil
 
-    /// Which room it is, so two folders side by side do not show the same picture.
-    var roomSeed: String = ""
+    /// The frame of one of the app's own folders, or nil. The folder's photograph goes behind its
+    /// window (`PlaylistPhotos.folderCover`), and the two come in together.
+    var folderFrame: FramedList? = nil
 
     @State private var cover: Cover?
+
+    /// The folder's photograph, once it is composed.
+    @State private var folderArt: CoverArt?
 
     init(list: ListPicture? = nil, track: CloudTrack?, glyph: String, edge: CGFloat,
          mark: CGFloat, covers: any CoverStore, framed: FramedList? = nil,
          roomDrifts: Bool = false, markPicture: UIImage? = nil,
-         folderRoom: RoomDissolve? = nil, roomSeed: String = "") {
+         folder: FolderFace? = nil, folderFrame: FramedList? = nil) {
         self.list = list
         self.track = track
         self.glyph = glyph
@@ -584,10 +588,19 @@ struct PlaylistSleeve: View {
         self.framed = framed
         self.roomDrifts = roomDrifts
         self.markPicture = markPicture
-        self.folderRoom = folderRoom
-        self.roomSeed = roomSeed
+        self.folder = folder
+        self.folderFrame = folderFrame
         // What the store already holds, so a list shown again has its squares on its first frame.
         _cover = State(initialValue: Self.held(list: list, track: track, edge: edge, covers: covers))
+        _folderArt = State(initialValue: folder.flatMap {
+            PlaylistPhotos.folderCoverInMemory($0, edge: Self.pixels(edge))
+        })
+    }
+
+    /// The pixels a square of `edge` points is composed at. Three to a point, the most a phone
+    /// has, so one size serves every screen. The photographs are capped at their own size.
+    private static func pixels(_ edge: CGFloat) -> Int {
+        Int((edge * 3).rounded(.up))
     }
 
     /// The list's own picture the store holds, else its first record's sleeve.
@@ -615,24 +628,22 @@ struct PlaylistSleeve: View {
                 Sleeve(image: cover.image)
                     .clipShape(shape)
                     .transition(.opacity)
-            } else if framed == nil, let folderRoom, RoomView.works {
-                // A folder of moods: its room, and its mark in the middle, lit, so it reads on the
-                // colours.
-                RoomView(colours: folderRoom, sound: .still, foot: 1,
-                         running: roomDrifts, breathes: true, zero: .whenShown, seed: roomSeed)
-                    .clipShape(shape)
-
-                if let markPicture {
-                    Image(uiImage: markPicture)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: mark, height: mark)
-                        .shadow(color: .black.opacity(0.35), radius: 4)
-                } else {
-                    Text(glyph)
-                        .font(RPMFont.icon(mark))
-                        .foregroundStyle(RPMInk.white(0xF2 / 255))
-                        .shadow(color: .black.opacity(0.35), radius: 4)
+            } else if framed == nil, let folderFrame {
+                // One of the app's own folders: its photograph with its frame over it, as a list
+                // has. Both come in at once, when the photograph is ready, so the frame never
+                // shows over an empty window.
+                if let folderArt,
+                   let drawing = PlaylistFrame.image(name: folderFrame.name, look: folderFrame.look,
+                                                     edge: edge) {
+                    ZStack {
+                        Image(decorative: folderArt.image, scale: 1)
+                            .resizable()
+                            .scaledToFill()
+                        Image(uiImage: drawing)
+                            .resizable()
+                    }
+                    .frame(width: edge, height: edge)
+                    .transition(.opacity)
                 }
             } else if framed == nil, let markPicture {
                 // Dimmed to about the weight of the glyphs beside it, as the Android app draws it.
@@ -653,6 +664,18 @@ struct PlaylistSleeve: View {
         // rounded here with the rest.
         .clipShape(shape)
         .animation(.easeOut(duration: 0.2), value: cover != nil)
+        .animation(.easeOut(duration: 0.2), value: folderArt != nil)
+        // The photograph of one of the app's own folders, composed off the main actor. A folder
+        // somebody made has none.
+        .task(id: folder.map { "\($0)" + "\u{1}" + String(Self.pixels(edge)) } ?? "") {
+            guard let folder, folderFrame != nil else { return }
+            let pixels = Self.pixels(edge)
+            let art = await Task.detached(priority: .userInitiated) {
+                PlaylistPhotos.folderCover(folder, edge: pixels)
+            }.value
+            guard !Task.isCancelled else { return }
+            folderArt = art
+        }
         // **The list's own picture comes first, and the cover of the first record is the
         // fallback.** A playlist can have a cover that the user chose or the app drew, and
         // that is the correct picture. The cover of the record that the list starts with is

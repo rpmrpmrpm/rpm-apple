@@ -50,6 +50,22 @@ public enum GeneratedListLook {
         public let tint: RGB
     }
 
+    /// The app's own look: its blue, its cyan light and its violet shade, the colours the room has
+    /// with no record in it (`RoomPalette.fallback`). The folder of all the moods wears it, because
+    /// it holds every mood and so has no colour of one.
+    public static let app: Look = {
+        let trio = Trio(hot: RGB(0x05, 0xC7, 0xFF), mid: RGB(0x03, 0x71, 0xD0), deep: RGB(0x9E, 0x29, 0xB8))
+        let border = GeneratedListLook.toward(trio.mid, 0.25)
+
+        var text = trio.hot
+        for candidate in [trio.mid, trio.deep]
+        where GeneratedListLook.contrast(candidate, border) > GeneratedListLook.contrast(text, border) {
+            text = candidate
+        }
+
+        return Look(trio: trio, border: border, text: text, roomed: false, tint: trio.mid)
+    }()
+
     /// The look of the list that the computer keyed on these three fields.
     ///
     /// Nil where the kind is not one this build has a picture for. That happens on an older phone reading a
