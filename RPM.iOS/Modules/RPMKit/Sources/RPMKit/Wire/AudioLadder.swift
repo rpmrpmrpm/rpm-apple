@@ -125,24 +125,34 @@ public enum AudioLadder {
 
     /// The rate one track is asked for at the store.
     ///
-    /// **Only ``AudioLadder/asked(_:for:)`` makes one**, and every request for a track's address
-    /// takes one. So no request can ask for the original of a file without the check that this
-    /// device decodes it.
+    /// **Only ``AudioLadder/asked(_:for:found:)`` makes one**, and every request for a track's
+    /// address takes one. So no request can ask for the original of a file without the check that
+    /// this device decodes it.
     public struct AskedRate: Sendable, Equatable {
         public let kilobits: Int
 
         fileprivate init(_ kilobits: Int) { self.kilobits = kilobits }
+
+        /// Whether this asks for the original file and not a copy made by the store.
+        public var isTheOriginal: Bool { kilobits == AudioLadder.original }
     }
 
     /// The rate to ask the store for one track: the listener's setting, except for the original
-    /// of a file this device cannot decode (``PlaysHere``). That is asked for at the highest lossy
-    /// rate, an AAC copy that this device can decode.
+    /// of a file this device cannot decode. That is asked for at the highest lossy rate, an AAC
+    /// copy that this device can decode.
     ///
-    /// The store still caps a free account as it does for any rate. The answer depends only on
-    /// the setting and the track, so a cache keyed by the setting gives the same answer for the
-    /// same track.
-    public static func asked(_ setting: Int, for track: CloudTrack) -> AskedRate {
-        guard setting == original, !PlaysHere.decodes(track) else { return AskedRate(setting) }
+    /// A file does not decode here when the catalogue says so (``PlaysHere``), or when this device
+    /// was given the file and found so (`found`).
+    ///
+    /// The store still caps a free account as it does for any rate. **The answer can change for a
+    /// track while the app runs**, when `found` notes it. So a cache of addresses must be keyed by
+    /// this answer and not by the setting, or it hands back the original that did not decode.
+    public static func asked(_ setting: Int, for track: CloudTrack,
+                             found: FoundUndecodable = .shared) -> AskedRate {
+        guard setting == original else { return AskedRate(setting) }
+        guard found.contains(track.rpmId) || !PlaysHere.decodes(track) else {
+            return AskedRate(setting)
+        }
         return AskedRate(rates[rates.count - 1])
     }
 }

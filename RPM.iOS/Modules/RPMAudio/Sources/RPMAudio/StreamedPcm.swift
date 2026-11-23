@@ -28,6 +28,27 @@ public final class StreamedPcm: @unchecked Sendable {
 
         /// It opened and then said something that cannot be decoded.
         case undecodable
+
+        /// **This device does not decode the format, and more bytes will not change that.** The
+        /// format is AC-3 or E-AC-3 (Dolby Digital, Dolby Digital Plus), or a compressed format
+        /// that no converter here decodes, or a file whose header the parser cannot read. The
+        /// cloud's AAC copy of the same track does play, so the player asks for it. See
+        /// ``StreamedPcm/notDecodedHere``.
+        case notDecodedHere
+    }
+
+    /// Whether the stream turned out to be a format this device does not decode. It is set when
+    /// the header is read, before any packet is decoded, so ``ready`` never becomes true for such
+    /// a stream. ``take(_:)`` throws ``Trouble/notDecodedHere`` from then on.
+    public var notDecodedHere: Bool { gate.withLock { refused } }
+
+    /// See ``notDecodedHere``.
+    private var refused = false
+
+    /// Whether a format is AC-3 or E-AC-3. iOS and tvOS have no decoder for them that the
+    /// converter can use, so they are refused by name and not only when the converter fails.
+    static func isDolby(_ format: AudioFormatID) -> Bool {
+        format == kAudioFormatAC3 || format == kAudioFormatEnhancedAC3
     }
 
     /// The output format: deinterleaved float, the format that everything after this type
@@ -262,6 +283,9 @@ public final class StreamedPcm: @unchecked Sendable {
     public func take(_ data: Data) throws {
         guard !data.isEmpty else { return }
 
+        // Nothing more is parsed for a format that is not decoded here.
+        guard !gate.withLock({ refused }) else { throw Trouble.notDecodedHere }
+
         let parser = try gate.withLock { try opened() }
 
         // The flag is set once, on the first bytes after a jump. Setting it on every chunk
@@ -303,7 +327,26 @@ public final class StreamedPcm: @unchecked Sendable {
             if jumps == taken { mapping?.byte += Int64(data.count) }
         }
 
-        guard failed == noErr else { throw Trouble.unreadable }
+        // Set by ``learned(_:)`` during the parse, when the header named a format that is not
+        // decoded here.
+        if gate.withLock({ refused }) { throw Trouble.notDecodedHere }
+
+        guard failed == noErr else {
+            // **A header the parser cannot read at all is a file this device cannot open**, and
+            // that is a different thing from a stream that breaks part way. The AAC copy can be
+            // read, so it is refused in the same way as AC-3. After the header, a parse error is
+            // damaged bytes, and it stays ``Trouble/unreadable``.
+            let noHeader = gate.withLock { () -> Bool in
+                guard source == nil else { return false }
+                refused = true
+                return true
+            }
+            if noHeader {
+                Self.log.error("the parser could not read the header: \(Self.name(failed), privacy: .public)")
+                throw Trouble.notDecodedHere
+            }
+            throw Trouble.unreadable
+        }
     }
 
     /// The stream is over, and **why**. Data that is still held can still be read.
@@ -1038,6 +1081,8 @@ public final class StreamedPcm: @unchecked Sendable {
             parser, kAudioFileStreamProperty_DataFormat, &size, &asbd) == noErr
         else { return }
 
+        let named = asbd.mFormatID
+
         // HE-AAC reports only its AAC-LC base layer as the data format: half the sample
         // rate, no SBR (the top octave) and, for v2, mono. The format list has the full
         // format first. Most internet radio at 32 to 64 kbps is HE-AAC.
@@ -1049,6 +1094,17 @@ public final class StreamedPcm: @unchecked Sendable {
         // A message with only the format id would show that something about `flac` failed,
         // but not which step.
         let said = Self.describe(asbd)
+
+        // **AC-3 and E-AC-3 are refused here, from the bytes, whatever the catalogue said.** The
+        // player was given this file because the catalogue did not say it is Dolby (an `.m4a`
+        // with no codec text looks like AAC). Refused, the player asks for the AAC copy at once.
+        // Without this the decoder is never ready, and the track waits for the twenty seconds of
+        // an open that times out.
+        if Self.isDolby(named) || Self.isDolby(asbd.mFormatID) {
+            Self.log.notice("\(said, privacy: .public) is not decoded here")
+            gate.withLock { refused = true }
+            return
+        }
 
         // **The layout is required above two channels.** `AVAudioFormat` cannot build a
         // multichannel format without one and returns nil. Without it a 5.1 record cannot
@@ -1092,6 +1148,10 @@ public final class StreamedPcm: @unchecked Sendable {
 
         guard AudioConverterNew(&input, &decoded, &built) == noErr, let decoder = built else {
             Self.log.error("nothing here can decode \(said, privacy: .public)")
+
+            // A compressed format with no decoder here is refused like AC-3, so the player can
+            // ask for the AAC copy. PCM always has a converter, so it is not affected.
+            if asbd.mFormatID != kAudioFormatLinearPCM { gate.withLock { refused = true } }
             return
         }
 

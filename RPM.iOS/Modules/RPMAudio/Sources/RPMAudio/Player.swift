@@ -51,6 +51,11 @@ public final class Player {
     /// What rate to ask for. The store answers with what it can actually serve.
     public var kilobits: Int = 320
 
+    /// The tracks whose original this device has found it cannot decode. Read for every rate
+    /// asked for (``AudioLadder/asked(_:for:found:)``), and written by ``open(at:for:)`` when
+    /// the decoder refuses an original. See ``FoundUndecodable``.
+    private let found: FoundUndecodable
+
     /// The listener's levelling setting.
     ///
     /// **Held by the engine, not here.** The pump reads it for every block it levels,
@@ -118,7 +123,8 @@ public final class Player {
                 levelsClassical: Bool,
                 classical: @escaping ClassicalRecord,
                 cover: @escaping RoomCover,
-                urls: StreamUrlCache = StreamUrlCache()) {
+                urls: StreamUrlCache = StreamUrlCache(),
+                found: FoundUndecodable = .shared) {
         self.sound = PcmEngine(normalize: NormalizeContext(mode: levelling,
                                                            includeClassical: levelsClassical))
         self.classical = classical
@@ -129,6 +135,7 @@ public final class Player {
         self.reach = reach
         self.cover = cover
         self.urls = urls
+        self.found = found
 
         radio.actionAtItemEnd = .advance
 
@@ -3064,10 +3071,7 @@ public final class Player {
         // which is what was ASKED for. The two differ whenever the store has no
         // rendition at the asked rate, and the line is only useful if it can
         // be trusted.
-        playingKilobits = queue.indices.contains(at)
-            ? copies.copy(of: queue[at].rpmId)?.kilobits
-                ?? urls.known(queue[at].rpmId, rate: kilobits)?.kilobits
-            : nil
+        playingKilobits = queue.indices.contains(at) ? servedKilobits(of: queue[at]) : nil
 
         // What is reported about the level. The gain itself travels with the source into
         // the engine (see `loudness(of:)`), because the engine reaches the next track on
@@ -3075,6 +3079,17 @@ public final class Player {
         levelling = level(queue.indices.contains(at) ? queue[at] : nil)
 
         announce(current)
+    }
+
+    /// The rate a track is played at: its copy on the phone, or the address signed for it. A
+    /// downloaded original that does not decode here is streamed, so its copy does not count.
+    private func servedKilobits(of track: CloudTrack) -> Int? {
+        if let copy = copies.copy(of: track.rpmId),
+           copy.kilobits != AudioLadder.original || !found.contains(track.rpmId) {
+            return copy.kilobits
+        }
+        let asked = AudioLadder.asked(kilobits, for: track, found: found)
+        return urls.known(track.rpmId, rate: asked.kilobits)?.kilobits
     }
 
     // ── the two hops ──
@@ -3156,14 +3171,26 @@ public final class Player {
             let feed = TrackFeed()
             feeds[at] = feed
             feed.start(file: copy.file)
-            return await ready(feed, at: at, for: claim)
+
+            let opened = await ready(feed, at: at, for: claim)
+
+            // A downloaded original that this device does not decode (E-AC-3 in an `.m4a`) is
+            // streamed from the cloud's AAC copy instead, while there is a network.
+            guard case .failed = opened, feed.trouble == .notDecodedHere, reach.now.isOnline
+            else { return opened }
+
+            if copy.kilobits == AudioLadder.original { found.note(track.rpmId) }
         }
 
         // **A computer on the home network next**, while it is there. A feed that will not start
         // from it is reported and the track is signed from the cloud below, so the computer
         // going away costs a pause and not the track.
+        //
+        // Not for a track whose original this device has found it cannot decode: a computer
+        // serves the original file.
         nearbyFeeds[at] = nil
-        if let near = await nearby.address(of: track, on: shelves.shelf(of: track.rpmId)) {
+        if !found.contains(track.rpmId),
+           let near = await nearby.address(of: track, on: shelves.shelf(of: track.rpmId)) {
             guard holds(claim) else { return .abandoned }
 
             feeds[at]?.stop()
@@ -3178,31 +3205,66 @@ public final class Player {
             case .abandoned:
                 return .abandoned
             case .failed:
-                nearby.failed(near)
+                // The computer answered, and its file is a format this device does not decode.
+                // The computer is not at fault, so it is not reported. The cloud's AAC copy is
+                // asked for below.
+                if feed.trouble == .notDecodedHere {
+                    found.note(track.rpmId)
+                } else {
+                    nearby.failed(near)
+                }
             }
         }
 
+        let asked = AudioLadder.asked(kilobits, for: track, found: found)
+        let first = await openFromTheCloud(track, rate: asked, at: at, for: claim)
+
+        // **The safety net for a catalogue that did not say the file is Dolby.** The original was
+        // asked for, and the decoder found from its header that this device cannot decode it.
+        // The AAC copy of the same track is asked for at once, inside this same open: the
+        // listener sees no message, the track's retries are not used, and the look-ahead
+        // does the same for the next record. The track is noted in ``found``, so every later
+        // request for it (this session's plays, the look-ahead, a download) asks for the copy
+        // straight away. A copy that is refused too is a real failure, and it is reported.
+        guard first.refused, asked.isTheOriginal else { return first.opened }
+
+        found.note(track.rpmId)
+        Self.log.notice("\(track.rpmId, privacy: .public) does not decode here; its AAC copy is asked for")
+
+        guard holds(claim) else { return .abandoned }
+
+        let theCopy = AudioLadder.asked(kilobits, for: track, found: found)
+        return await openFromTheCloud(track, rate: theCopy, at: at, for: claim).opened
+    }
+
+    /// Signs `track` at `rate`, opens its feed at `at`, and waits for a header. `refused` says
+    /// that the decoder found the bytes are a format this device does not decode
+    /// (``TrackFeed/Trouble/notDecodedHere``).
+    private func openFromTheCloud(_ track: CloudTrack, rate: AudioLadder.AskedRate, at: Int,
+                                  for claim: Claim) async -> (opened: Opened, refused: Bool) {
         let signed: StreamUrlCache.Signed
         do {
-            signed = try await sign(track)
+            signed = try await sign(track, at: rate)
         } catch {
             // Nothing is said for a start that was abandoned on purpose: a record tapped while
             // another was still signing is not a fault, and a red sentence about it would
             // blame the user for changing their mind.
-            return holds(claim) ? .failed(PlaybackFailure.read(error)) : .abandoned
+            return (holds(claim) ? .failed(PlaybackFailure.read(error)) : .abandoned, false)
         }
 
         // Signed, and in the meantime somebody moved on. **The cheapest download to
         // stop is the one that never started**, so nothing is opened at all, and the slot
         // is left exactly as whoever holds the claim now has it.
-        guard holds(claim) else { return .abandoned }
+        guard holds(claim) else { return (.abandoned, false) }
 
         feeds[at]?.stop()
         let feed = TrackFeed()
         feeds[at] = feed
         feed.start(signed.url, kind: signed.kind)
 
-        return await ready(feed, at: at, for: claim)
+        let opened = await ready(feed, at: at, for: claim)
+        if case .failed = opened, feed.trouble == .notDecodedHere { return (opened, true) }
+        return (opened, false)
     }
 
     /// Waits for a feed to have a header, or gives it up.
@@ -3222,7 +3284,11 @@ public final class Player {
 
             if let why = feed.trouble {
                 letGo(feed, at: at)
-                return .failed(why == .refused(403) ? .signedIn : .store)
+                switch why {
+                case .refused(403): return .failed(.signedIn)
+                case .notDecodedHere: return .failed(.notPlayable)
+                case .refused, .dropped: return .failed(.store)
+                }
             }
 
             try? await Task.sleep(for: .milliseconds(25))
@@ -3247,16 +3313,20 @@ public final class Player {
     ///
     /// Never from one held since the queue was made: the store's signature expires,
     /// and a queue left paused overnight is a queue of dead addresses.
-    private func sign(_ track: CloudTrack) async throws -> StreamUrlCache.Signed {
-        // The cache is keyed by the setting and not by the rate asked for. That is safe because
-        // the rate asked for depends only on the setting and the track.
-        if let known = urls.known(track.rpmId, rate: kilobits) { return known }
+    ///
+    /// **The cache is keyed by the rate asked for, not by the setting.** The two differ for an
+    /// original this device does not decode, and the rate asked for changes while the app runs
+    /// when the decoder finds such a file (``found``). Keyed by the setting, the cache would hand
+    /// back the address of the original that was just refused.
+    private func sign(_ track: CloudTrack, at rate: AudioLadder.AskedRate) async throws
+        -> StreamUrlCache.Signed {
+        if let known = urls.known(track.rpmId, rate: rate.kilobits) { return known }
 
         let said = try await source.stream(shelves.shelf(of: track.rpmId), rpmId: track.rpmId,
-                                           rate: AudioLadder.asked(kilobits, for: track))
+                                           rate: rate)
         let signed = StreamUrlCache.Signed(
             url: said.url, kilobits: said.kilobits, kind: said.kind)
-        urls.note(track.rpmId, asked: kilobits, signed: signed)
+        urls.note(track.rpmId, asked: rate.kilobits, signed: signed)
         return signed
     }
 

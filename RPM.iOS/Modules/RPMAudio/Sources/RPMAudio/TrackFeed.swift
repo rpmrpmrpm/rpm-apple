@@ -18,6 +18,16 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
         /// a 403, which looks the same.
         case refused(Int)
         case dropped
+
+        /// The bytes are a format this device does not decode, for example E-AC-3 in an `.m4a`
+        /// (``StreamedPcm/Trouble/notDecodedHere``). The download stops at the header. It is not
+        /// a fault of the network or the store: the player asks for the track's AAC copy.
+        case notDecodedHere
+    }
+
+    /// The trouble to record when the decoder refused a piece of the bytes.
+    private static func trouble(of error: any Error) -> Trouble {
+        (error as? StreamedPcm.Trouble) == .notDecodedHere ? .notDecodedHere : .dropped
     }
 
     /// The decoded audio. It is available at once, so the engine can be given it before
@@ -373,7 +383,7 @@ public final class TrackFeed: NSObject, @unchecked Sendable {
                 do { try pcm.take(piece); return true }
                 catch {
                     Self.log.error("the copy on the phone is unreadable after \(self.received) bytes")
-                    gate.withLock { failure = .dropped }
+                    gate.withLock { failure = Self.trouble(of: error) }
                     pcm.finish(.theBytesWouldNotParse)
                     return false
                 }
@@ -453,7 +463,7 @@ extension TrackFeed: URLSessionDataDelegate {
             // The bytes cannot be opened by this phone. More data will not help, so the
             // download stops instead of downloading the rest.
             Self.log.error("stream unreadable after \(self.received) bytes")
-            gate.withLock { failure = .dropped }
+            gate.withLock { failure = Self.trouble(of: error) }
             pcm.finish(.theBytesWouldNotParse)
             dataTask.cancel()
         }

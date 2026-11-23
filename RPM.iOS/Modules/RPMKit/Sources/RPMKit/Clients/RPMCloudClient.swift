@@ -116,7 +116,7 @@ public struct RPMCloudClient: Sendable {
     /// end of the hour.
     ///
     /// The rate is an ``AudioLadder/AskedRate`` and not a number, so the original of a file this
-    /// device cannot decode is never asked for. See ``AudioLadder/asked(_:for:)``.
+    /// device cannot decode is never asked for. See ``AudioLadder/asked(_:for:found:)``.
     public func stream(
         _ shelf: CloudShelf, rpmId: String, rate: AudioLadder.AskedRate
     ) async throws -> (url: URL, kilobits: Int, kind: StreamKind) {

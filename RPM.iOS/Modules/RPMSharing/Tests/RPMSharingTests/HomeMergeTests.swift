@@ -39,4 +39,11 @@ import RPMKit
         #expect(!PeerFormats.playsHere(peer("6", "x.ape", codec: nil)))
         #expect(!PeerFormats.playsHere(peer("7", "noextension", codec: nil)))
     }
+
+    /// A computer can name Dolby in other words than the codec's four letters.
+    @Test func dolbyNamedInWordsPlaysFromTheCloud() {
+        #expect(!PeerFormats.playsHere(peer("1", "x.m4a", codec: "Dolby Digital Plus")))
+        #expect(!PeerFormats.playsHere(peer("2", "x.m4a", codec: "Enhanced AC-3")))
+        #expect(!PeerFormats.playsHere(peer("3", "x.mp4", codec: "E-AC-3")))
+    }
 }
