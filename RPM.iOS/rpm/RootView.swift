@@ -830,16 +830,20 @@ struct RootView: View {
             // **Home is built once and kept, under whichever tab is shown.** If it were rebuilt
             // each time, opening a record from it and returning would reset it: scrolled to the
             // top, on the first card, every row at its start. Kept, it stays where the user left
-            // it. While hidden, it receives no touches, is not read by VoiceOver, and its
-            // animated rooms stop (`onScreen`), so it costs no frames while another tab is shown.
+            // it. While another tab is shown, it receives no touches, is not read by VoiceOver,
+            // and its animated rooms stop (`onScreen`), so it costs no frames.
             //
             // Its rooms rest while it is not shown, and under the player.
+            //
+            // **The offset is the only thing that shows or hides it.** Off the screen it stands
+            // just past the edge, as every tab's page does (``TabSlide``), so it needs no opacity.
+            // Do not add an opacity or an `animation(nil, value:)` here. The home screen is a
+            // `NavigationStack`, which UIKit draws, and UIKit moves it with the animation that
+            // reaches the stack itself. An `animation(nil, value:)` written before the offset
+            // takes that animation away, and the page jumps off the screen instead of sliding.
+            // An opacity that changes in the slide's animation fades the page instead.
             home
                 .environment(\.roomsRest, tab != .home || playing.up)
-                .opacity(tab == .home || leavingTabs.contains(.home) ? 1 : 0)
-                // Shown at once when it slides in, and hidden only once it has slid out: the slide
-                // below is the only thing that moves it.
-                .animation(nil, value: shownTab)
                 .offset(x: TabSlide.place(of: RPMTab.home.place, shown: tab.place) * pageWidth)
                 .allowsHitTesting(tab == .home)
                 .accessibilityHidden(tab != .home)
