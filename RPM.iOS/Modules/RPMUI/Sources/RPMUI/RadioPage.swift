@@ -89,7 +89,6 @@ public struct RadioPage: View {
             // any phone without extra settings.
             RadioDial(stations: onTheDial, tuned: tuned, announced: announced, onTune: onTune)
                 .padding(.horizontal, RPMLayout.margin)
-                .padding(.top, 4)
 
             // The stations scroll under the filter row only, so the scroll edge ends at the
             // foot of the dial. If the list also scrolled under the dial, it would look as if
@@ -144,23 +143,31 @@ public struct RadioPage: View {
             StationSort.by(order, StationSieve(genre: genre).through(held)))
     }
 
+    /// One line: the back key, the title beside it, and the keys at the right, all centred on
+    /// the back key's line. There is no line under the title, so the dial starts close under it.
     private var header: some View {
         // The back key is to the left of the title, as inside a folder of the playlists tab.
-        HStack(alignment: .top, spacing: 0) {
+        HStack(spacing: 0) {
             if let onBack {
                 RPMBackKey(label: Loc.get("AddMusic_Back")) { Haptics.pick(); onBack() }
                     .padding(.trailing, RPMBackKey.besideTitle)
             }
 
-            PageHeading(Loc.get(onBack == nil ? "Rpm_Tab_Radio" : "Radio_TunerTitle"),
-                        line: Loc.get("Radio_Subtitle")) { keys }
+            PageTitle(Loc.get(onBack == nil ? "Rpm_Tab_Radio" : "Radio_TunerTitle"),
+                      trimsAllDescent: true)
+
+            Spacer(minLength: 8)
+
+            keys
         }
+        // As tall as the back key, so the key stays where every page's back key is.
+        .frame(height: 40)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, RPMLayout.margin)
         .padding(.trailing, 16)
         // No top padding: the SafeArea.Insets of the Uno head replace the ten points that its
         // markup asks for, so its headers start at the safe area. See `LibraryPage.header`.
-        .padding(.bottom, 8)
+        .padding(.bottom, 12)
     }
 
     /// The layout, the order and the saved stations, on one glass capsule as in the other
@@ -207,7 +214,8 @@ public struct RadioPage: View {
     /// On the desktop these share one row. A phone is not wide enough, so the box
     /// takes one line and the filters take the line under it.
     private var controls: some View {
-        VStack(spacing: 8) {
+        // The same gap between the dial, the search field and the two choosers.
+        VStack(spacing: 12) {
             TextField("", text: $asked,
                       prompt: Text(Loc.get("Radio_SearchPlaceholder")).foregroundStyle(RPMInk.white(0x77 / 255)))
                 .rpmField()
