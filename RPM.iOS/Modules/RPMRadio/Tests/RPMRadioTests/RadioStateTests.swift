@@ -12,6 +12,7 @@ struct RadioStateTests {
         private var _answers: [Result<RadioRepositoryClient.State, any Error>] = []
         private var _readings: [RadioRepositoryClient.Reading] = []
         private var _stamps: [String] = []
+        private var _cards: [String] = []
 
         func answer(_ result: Result<RadioRepositoryClient.State, any Error>) {
             lock.withLock { _answers.append(result) }
@@ -19,6 +20,8 @@ struct RadioStateTests {
 
         var readings: [RadioRepositoryClient.Reading] { lock.withLock { _readings } }
         var stamps: [String] { lock.withLock { _stamps } }
+        /// Each card picture asked for, as "uuid@stamp".
+        var cards: [String] { lock.withLock { _cards } }
 
         func state(_ reading: RadioRepositoryClient.Reading) async throws -> RadioRepositoryClient.State {
             let next = lock.withLock { () -> Result<RadioRepositoryClient.State, any Error> in
@@ -31,6 +34,11 @@ struct RadioStateTests {
         func logo(station uuid: String, stamp: String) async throws -> RadioRepositoryClient.Logo {
             lock.withLock { _stamps.append(stamp) }
             return .none
+        }
+
+        func card(station uuid: String, stamp: String) async throws -> Data? {
+            lock.withLock { _cards.append(uuid + "@" + stamp) }
+            return Data([1])
         }
     }
 
@@ -165,5 +173,23 @@ struct RadioStateTests {
         _ = try await state.logo(for: station)
 
         #expect(record.stamps == ["", "stamp-2"])
+    }
+
+    /// A card picture is asked for under the row the answer lists, which can be a folded one, at the
+    /// card stamp. A station the answer does not list is not asked for.
+    @Test func aCardPictureIsAskedForOnlyWhereTheAnswerListsOne() async throws {
+        let record = Record()
+        record.answer(.success(.init(logos: "", hidden: [], cards: ["NPO-RADIO-2"], cardStamp: "c-1")))
+        let state = RadioState(record: record)
+        var folded = RadioStation(uuid: "npo-2", name: "NPO 2", streamUrl: "https://a/npo2")
+        folded.alsoFiledAs = ["npo-radio-2"]
+
+        #expect(try await state.cardPicture(for: folded) == nil)
+        await state.refresh()
+
+        #expect(state.rules.cards.has(folded))
+        #expect(try await state.cardPicture(for: folded) == Data([1]))
+        #expect(try await state.cardPicture(for: station) == nil)
+        #expect(record.cards == ["npo-radio-2@c-1"])
     }
 }

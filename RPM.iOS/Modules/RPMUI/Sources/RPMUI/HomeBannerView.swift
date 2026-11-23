@@ -73,14 +73,41 @@ public struct HomeBannerView: View {
     /// banner is all stations, each there for its own reason (``RadioHome``).
     private let stationWords: ((RadioStation) -> StationWords)?
 
-    /// The words on a station's card. See ``stationWords``.
+    /// The words on a station's card, and its picture. See ``stationWords``.
     public struct StationWords {
         public let kicker: String
         public let line: String?
 
-        public init(kicker: String, line: String?) {
+        /// How many lines ``line`` may take: two for the station's description, which the admin
+        /// keeps to 80 characters, and one for anything else.
+        public let lines: Int
+
+        /// The card picture the admin chose for the station. The card shows it in place of its
+        /// room, as a record's card shows the artist's photograph. Nil where the station has none,
+        /// and the card stands on its room.
+        public let picture: StationPicture?
+
+        public init(kicker: String, line: String?, lines: Int = 1, picture: StationPicture? = nil) {
             self.kicker = kicker
             self.line = line
+            self.lines = lines
+            self.picture = picture
+        }
+    }
+
+    /// A station's card picture, read when the card asks for it.
+    public struct StationPicture {
+        /// Names the picture: the card reads it again when this changes, for example when the
+        /// admin replaces the picture.
+        public let key: String
+
+        /// Reads the picture, decoded with its longest edge at most the given number of pixels.
+        /// Nil where it could not be read.
+        public let load: @MainActor (Int) async -> CGImage?
+
+        public init(key: String, load: @escaping @MainActor (Int) async -> CGImage?) {
+            self.key = key
+            self.load = load
         }
     }
 
@@ -133,6 +160,9 @@ public struct HomeBannerView: View {
     @State private var roomZero = Date()
 
     @Environment(\.scenePhase) private var phase
+
+    /// For the size a station's card picture is read at, when it is warmed. See ``warm(width:)``.
+    @Environment(\.displayScale) private var displayScale
 
     /// The home page's scroll state, to know whether the page is at its top. Only
     /// ``ScrollReach/atTop`` is read here. It changes when the page leaves its top and when it
@@ -301,8 +331,8 @@ public struct HomeBannerView: View {
     /// **It runs one card at a time, at low priority**, so it does not slow the page. Both stores
     /// are actors off the main thread, and cutting the photograph is the only real work.
     ///
-    /// A station's card is not warmed: its cover is the station's logo, which the card fetches
-    /// itself and which is never a photograph.
+    /// A station's card is warmed only for its card picture, at the size the card reads it. Its
+    /// cover is the station's logo, which the card fetches itself.
     private func warm(width: Double) async {
         let scene = HomeFeatureCard.scene(width: width, overhang: overhang,
                                           statusBar: RPMSafeArea.top)
@@ -319,7 +349,10 @@ public struct HomeBannerView: View {
                 }
 
             case .radio:
-                continue
+                guard let station = stations[feature.key],
+                      let picture = stationWords?(station).picture else { continue }
+                _ = await picture.load(HomeFeatureCard.stationPictureEdge(
+                    width: width, plate: HomeBannerMetrics.height(above: overhang), scale: displayScale))
 
             default:
                 guard let album = albums[feature.key] else { continue }
@@ -371,13 +404,17 @@ public struct HomeBannerView: View {
             // The station played most on the listener's devices. It is drawn on a room like a
             // generated list, because a station has no artist to photograph. Its logo is the
             // cover. Pressing it tunes the station, as the desktop's card does.
+            //
+            // A station with a card picture from the admin shows the picture in place of the room,
+            // as a record's card shows its photograph. The room stays while the picture is read.
             if let station = stations[feature.key] {
                 let words = stationWords?(station)
                 HomeFeatureCard(kicker: words?.kicker ?? kicker(feature.kind), title: station.display,
                                 subtitle: words?.line, album: nil, artist: nil,
                                 list: nil, track: nil, glyph: Glyph.radio,
-                                room: true, live: live, onScreen: onScreen, mirror: mirror,
-                                station: station,
+                                room: words?.picture == nil, live: live, onScreen: onScreen, mirror: mirror,
+                                station: station, stationPicture: words?.picture,
+                                subtitleLines: words?.lines ?? 1,
                                 overhang: overhang, covers: covers, backdrops: backdrops,
                                 key: feature.key, onDressed: onDressed, onLooked: frontLooked,
                                 roomZero: roomZero)
@@ -494,6 +531,13 @@ struct HomeFeatureCard: View {
     /// The station this card tunes, when it is the radio card. Its logo is the cover.
     var station: RadioStation? = nil
 
+    /// The station's card picture, where the admin chose one. It takes the place of the artist's
+    /// photograph on a record's card: drawn, blurred and mirrored the same way.
+    var stationPicture: HomeBannerView.StationPicture? = nil
+
+    /// How many lines the subtitle may take. See ``HomeBannerView/StationWords/lines``.
+    var subtitleLines = 1
+
     /// How far the card reaches up behind the page's heading and the status bar. See
     /// ``HomeBannerView/overhang``.
     let overhang: Double
@@ -588,7 +632,7 @@ struct HomeFeatureCard: View {
                 .clipped()
             }
             .frame(width: width, height: plate, alignment: .top)
-            .task(id: width) {
+            .task(id: Fetching(width: width, stationPicture: stationPicture?.key)) {
                 await fetch(width: width)
             }
             .task(id: bakeAsk(width: width)) {
@@ -923,7 +967,7 @@ struct HomeFeatureCard: View {
                     Text(subtitle)
                         .font(.system(size: 13))
                         .foregroundStyle(RPMInk.white(0xD1 / 255))
-                        .lineLimit(1)
+                        .lineLimit(subtitleLines)
                 }
             }
             .shadow(color: .black.opacity(0.6), radius: 6, y: 1)
@@ -995,6 +1039,21 @@ struct HomeFeatureCard: View {
                                  at: CACurrentMediaTime())
         }
 
+        // A station's card picture, where the admin chose one, in place of a photograph. It is
+        // read at the card's size and fills the card from its middle.
+        if let stationPicture, width > 0 {
+            let found = await stationPicture.load(
+                Self.stationPictureEdge(width: width, plate: plate, scale: displayScale))
+            guard !Task.isCancelled else { return }
+            let lead = await Self.lead(of: found)
+            withAnimation(.easeOut(duration: 0.35)) {
+                picture = found
+                pictureLead = lead
+                looked = true
+            }
+            return
+        }
+
         // Nothing to look for: this is a list's card, or a record with no artist name. The result
         // is known and it is "none", so the card stays on the room.
         guard let backdrops, let artist, width > 0 else {
@@ -1013,21 +1072,39 @@ struct HomeFeatureCard: View {
         // BackdropStore.portrait.
         let found = await backdrops.portrait(artist: artist, album: album?.album, cutFor: scene)
 
-        // The photograph's colour, from a 48 pixel copy, off the main actor, as the artist page
-        // reads its own.
-        let lead: Color? = if let found {
-            await Task.detached(priority: .userInitiated) {
-                let read = Thumbnail.colours(of: found)
-                return GroundLead.of(glow: read.highlight, dominant: read.dominant)
-            }.value?.color
-        } else {
-            nil
-        }
+        let lead = await Self.lead(of: found)
 
         withAnimation(.easeOut(duration: 0.35)) {
             picture = found
             pictureLead = lead
             looked = true
         }
+    }
+}
+
+extension HomeFeatureCard {
+    /// What the card's fetch depends on: its width, and which station picture it shows.
+    struct Fetching: Hashable {
+        let width: Double
+        let stationPicture: String?
+    }
+
+    /// The photograph's colour, from a 48 pixel copy, off the main actor, as the artist page reads
+    /// its own. Nil without a photograph.
+    static func lead(of picture: CGImage?) async -> Color? {
+        guard let picture else { return nil }
+        return await Task.detached(priority: .userInitiated) {
+            let read = Thumbnail.colours(of: picture)
+            return GroundLead.of(glow: read.highlight, dominant: read.dominant)
+        }.value?.color
+    }
+
+    /// The longest edge, in pixels, that a station's card picture is read at for a card of this
+    /// size. The picture is 16:9 and fills the card, so on a card taller than 9/16 of its width
+    /// the picture's long side is the card's height times 16/9. Capped at 2048, the most a phone
+    /// screen needs.
+    static func stationPictureEdge(width: Double, plate: Double, scale: Double) -> Int {
+        let longest = max(width, plate * 16 / 9) * max(1, scale)
+        return Int(min(2048, longest.rounded(.up)))
     }
 }

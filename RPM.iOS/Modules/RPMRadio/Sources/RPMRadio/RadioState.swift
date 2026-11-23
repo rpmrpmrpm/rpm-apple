@@ -6,12 +6,14 @@ import RPMKit
 public protocol RadioRecord: Sendable {
     func state(_ reading: RadioRepositoryClient.Reading) async throws -> RadioRepositoryClient.State
     func logo(station uuid: String, stamp: String) async throws -> RadioRepositoryClient.Logo
+    func card(station uuid: String, stamp: String) async throws -> Data?
 }
 
 extension RadioRepositoryClient: RadioRecord {}
 
 /// What has been decided about radio stations since this copy last looked: which ones not to show,
-/// and whether any logo has changed. It matches the desktop's `RadioState`.
+/// whether any logo has changed, and which stations have a card picture. It matches the desktop's
+/// `RadioState`.
 ///
 /// **Why the phone has to be told.** The url cache keeps a station logo for thirty days, as the
 /// server asks. Without this state, a logo replaced in the admin would reach a phone that already
@@ -94,7 +96,10 @@ public final class RadioState {
                     edits[uuid.trimmingCharacters(in: .whitespaces).lowercased()] = edit
                 }
             }
-            let next = StationRules(hidden: named, edits: edits)
+            let cards = StationCards(
+                stations: Set(read.cards.map { $0.trimmingCharacters(in: .whitespaces).lowercased() }),
+                stamp: read.cardStamp)
+            let next = StationRules(hidden: named, edits: edits, cards: cards)
             if stamp != logoStamp { logoStamp = stamp }
             if next != rules { rules = next }
         } catch RPMError.offline {
@@ -110,5 +115,13 @@ public final class RadioState {
     /// This station's logo as rpm holds it, at the stamp in hand.
     public func logo(for station: RadioStation) async throws -> RadioRepositoryClient.Logo {
         try await record.logo(station: station.uuid, stamp: logoStamp)
+    }
+
+    /// This station's card picture as the admin uploaded it, at the stamp in hand, or nil where the
+    /// rules list none for it (``StationCards``). Nothing is asked for a station without one.
+    public func cardPicture(for station: RadioStation) async throws -> Data? {
+        let cards = rules.cards
+        guard let uuid = cards.uuid(of: station) else { return nil }
+        return try await record.card(station: uuid, stamp: cards.stamp)
     }
 }

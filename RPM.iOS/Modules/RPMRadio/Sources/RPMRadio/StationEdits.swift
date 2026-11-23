@@ -30,21 +30,25 @@ public struct StationEdit: Equatable, Hashable, Sendable {
     }
 }
 
-/// What the rpm API says about stations: the ones the admin hid, and the ones shown with a different
-/// title, tags or description, by lower-case uuid. The Android `StationRules`. Applied when a list is
+/// What the rpm API says about stations: the ones the admin hid, the ones shown with a different
+/// title, tags or description, by lower-case uuid, and the ones with a card picture. The Android
+/// `StationRules`. Applied when a list is
 /// drawn, never when an answer is stored: the rules can land after the answer.
 public struct StationRules: Equatable, Sendable {
     /// Lower-case uuids.
     public let hidden: Set<String>
     /// By lower-case uuid.
     public let edits: [String: StationEdit]
+    /// The stations with a card picture.
+    public let cards: StationCards
 
-    public init(hidden: Set<String>, edits: [String: StationEdit]) {
+    public init(hidden: Set<String>, edits: [String: StationEdit], cards: StationCards = .none) {
         self.hidden = hidden
         self.edits = edits
+        self.cards = cards
     }
 
-    /// Nothing hidden and nothing edited: the app before the first answer.
+    /// Nothing hidden, nothing edited and no card pictures: the app before the first answer.
     public static let none = StationRules(hidden: [], edits: [:])
 
     /// Hidden only when the station and every entry folded into it are hidden, as on the desktop.

@@ -94,4 +94,27 @@ struct RadioRepositoryClientTests {
 
         #expect(state == .init(logos: "", hidden: []))
     }
+
+    /// The card pictures the admin set: which stations have one, and the stamp for their address.
+    @Test func theStateListsTheCardPictures() async throws {
+        let body = #"{"logos":"","hidden":[],"cards":["a","b"],"cardStamp":"20261018120000"}"#
+        let state = try await repository(answering(200, Data(body.utf8))).state(.stored)
+
+        #expect(state.cards == ["a", "b"])
+        #expect(state.cardStamp == "20261018120000")
+    }
+
+    @Test func aCardPictureIsAskedForByTheStationWithItsStamp() async throws {
+        let seen = Box<URLRequest>()
+        let answer = try await repository(answering(200, Data([7, 8]), seen: seen))
+            .card(station: uuid, stamp: "20261018120000")
+
+        #expect(answer == Data([7, 8]))
+        #expect(seen.value?.url?.path == "/radio/card/96062a7e-0601-11e8-ae97-52543be04c81")
+        #expect(seen.value?.url?.query == "v=20261018120000")
+    }
+
+    @Test func aStationWithNoCardPictureIsAnAnswer() async throws {
+        #expect(try await repository(answering(404, Data())).card(station: uuid, stamp: "") == nil)
+    }
 }

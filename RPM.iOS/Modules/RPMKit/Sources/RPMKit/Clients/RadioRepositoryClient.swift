@@ -1,7 +1,7 @@
 import Foundation
 
-/// rpm's own record of the radio: the logo the API has chosen for each station, and what the admin
-/// has decided about stations. This is the phone's version of the desktop's `RadioLogoApi` and `RadioState`.
+/// rpm's own record of the radio: the logo the API has chosen for each station, the card picture the
+/// admin chose for some, and what the admin has decided about stations. This is the phone's version of the desktop's `RadioLogoApi` and `RadioState`.
 ///
 /// **Requests go through ``Transport``, like every other API call.** Each request therefore carries the
 /// app key (both endpoints are public reads, and they refuse a caller without it), waits for a network,
@@ -29,6 +29,15 @@ public struct RadioRepositoryClient: Sendable {
         /// edit page). Empty from an API that sends no edits.
         public let edits: [String: Edit]
 
+        /// The stations with a card picture: a 16:9 picture the admin chose for the station's card, served
+        /// at `radio/card/{uuid}` (see ``card(station:stamp:)``). Listed under every row of a station, as
+        /// edits are. Empty from an API that sends none.
+        public let cards: [String]
+
+        /// Changes whenever a card picture changes. It goes in the picture's address, as ``logos`` does
+        /// for a logo. Empty if no card picture was ever set.
+        public let cardStamp: String
+
         /// One station's edit as the API sends it; a nil value is the directory's own.
         public struct Edit: Decodable, Sendable, Equatable {
             public let name: String?
@@ -40,10 +49,13 @@ public struct RadioRepositoryClient: Sendable {
             }
         }
 
-        public init(logos: String, hidden: [String], edits: [String: Edit] = [:]) {
+        public init(logos: String, hidden: [String], edits: [String: Edit] = [:],
+                    cards: [String] = [], cardStamp: String = "") {
             self.logos = logos
             self.hidden = hidden
             self.edits = edits
+            self.cards = cards
+            self.cardStamp = cardStamp
         }
 
         public init(from decoder: any Decoder) throws {
@@ -52,9 +64,12 @@ public struct RadioRepositoryClient: Sendable {
             hidden = try c.decodeIfPresent([String].self, forKey: .hidden) ?? []
             // A malformed edits object is no edits, not a failed answer: the hidden list must still land.
             edits = (try? c.decodeIfPresent([String: Edit].self, forKey: .edits)) ?? [:]
+            // The same for the card pictures: without them the cards are drawn as before.
+            cards = (try? c.decodeIfPresent([String].self, forKey: .cards)) ?? []
+            cardStamp = (try? c.decodeIfPresent(String.self, forKey: .cardStamp)) ?? ""
         }
 
-        private enum CodingKeys: String, CodingKey { case logos, hidden, edits }
+        private enum CodingKeys: String, CodingKey { case logos, hidden, edits, cards, cardStamp }
     }
 
     /// Whether a stored answer may be used instead of asking the server.
@@ -108,6 +123,30 @@ public struct RadioRepositoryClient: Sendable {
         switch status {
         case 200..<300 where !data.isEmpty: return .found(data)
         case 404: return .none
+        default: throw RPMError.status(status)
+        }
+    }
+
+    /// A station's card picture as the API holds it: the bytes as the admin uploaded them, or nil where
+    /// the station has none (404). Ask only for a station that ``State/cards`` lists.
+    ///
+    /// - Parameter stamp: The ``State/cardStamp`` currently held. It goes in the address, as a logo's
+    ///   stamp does, so a changed picture is a new address that the url cache has not kept.
+    /// - Throws: When the server gave no answer about this station (offline, or a 5xx after the retries).
+    public func card(station uuid: String, stamp: String) async throws -> Data? {
+        // The uuid is about to become part of a path, so it is checked, as for a logo.
+        guard let id = UUID(uuidString: uuid) else { return nil }
+
+        var path = "radio/card/\(id.uuidString.lowercased())"
+        if !stamp.isEmpty {
+            path += "?v=" + (stamp.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "")
+        }
+
+        let (status, data) = try await transport.raw("GET", path, cache: .useProtocolCachePolicy)
+
+        switch status {
+        case 200..<300 where !data.isEmpty: return data
+        case 404: return nil
         default: throw RPMError.status(status)
         }
     }

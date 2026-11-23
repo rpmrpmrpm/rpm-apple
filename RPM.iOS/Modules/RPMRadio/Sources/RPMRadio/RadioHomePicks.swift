@@ -51,15 +51,21 @@ public enum RadioHomePicks {
 
     /// The banner: the stations heard most and the local stations, one of each in turn, heard
     /// first. When one list runs out, the other fills the banner.
+    ///
+    /// The stations that are `dressed` come first, from anywhere in either list, in that same
+    /// order; the others follow in that order. The radio home passes the stations with both a card
+    /// picture and a description from the admin, because their cards are the best looking ones.
     public static func banner(heard: [RadioStation], local: [RadioStation],
-                              most: Int = bannerMost) -> [StationPick] {
-        var picks = Picks(most: most)
+                              most: Int = bannerMost,
+                              dressed: (RadioStation) -> Bool = { _ in false }) -> [StationPick] {
+        var picks = Picks(most: .max)
         for at in 0..<max(heard.count, local.count) {
             if at < heard.count { picks.add(heard[at], .heard) }
             if at < local.count { picks.add(local[at], .local) }
-            if picks.full { break }
         }
-        return picks.list
+        let first = picks.list.filter { dressed($0.station) }
+        let rest = picks.list.filter { !dressed($0.station) }
+        return Array((first + rest).prefix(max(0, most)))
     }
 
     /// The quick selection: what the person pinned, in the order they pinned it, then their saved

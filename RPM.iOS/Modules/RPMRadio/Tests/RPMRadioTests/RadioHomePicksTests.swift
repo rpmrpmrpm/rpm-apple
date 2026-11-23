@@ -31,6 +31,18 @@ private func uuids(_ picks: [StationPick]) -> [String] { picks.map(\.station.uui
     #expect(banner[0].why == .heard)
 }
 
+/// The dressed stations come first, even from past the end of the plain banner, in the
+/// banner's own order; the rest follow in that order.
+@Test func theBannerPutsTheDressedStationsFirst() {
+    let heard = [station("h1"), station("h2"), station("h3"), station("h4")]
+    let local = [station("l1"), station("l2"), station("l3"), station("l4")]
+    let dressed: Set<String> = ["l2", "h4"]
+    let banner = RadioHomePicks.banner(heard: heard, local: local) { dressed.contains($0.uuid) }
+    #expect(uuids(banner) == ["l2", "h4", "h1", "l1", "h2", "h3"])
+    #expect(banner[0].why == .local)
+    #expect(banner[1].why == .heard)
+}
+
 @Test func aFoldedEntryCountsAsTheStationItIsFoldedInto() {
     let quick = RadioHomePicks.quick(pinned: [station("main", folded: ["other"])],
                                      saved: [station("other"), station("saved")],
