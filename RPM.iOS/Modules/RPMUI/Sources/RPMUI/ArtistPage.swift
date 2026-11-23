@@ -265,6 +265,10 @@ public struct ArtistPage: View {
     private var aboutThem: some View {
         if let article = about.article(for: subject) {
             CentredAboutText(article: article, column: aboutColumn, arrives: !aboutAtOpen)
+                // A tight dark outline close to the letters. The band's wider shadow is drawn
+                // round it as well (see ``band``), so the two layers add up. The text is smaller
+                // and dimmer than the name, so on a bright photograph it needs more than the name.
+                .shadow(color: .black.opacity(Self.aboutOutline), radius: Self.aboutOutlineReach)
                 .padding(.top, 10)
         }
     }
@@ -293,6 +297,12 @@ public struct ArtistPage: View {
     /// The space under the last line of writing: under the title, where it stands on the
     /// photograph's foot, and under the Wikipedia text when there is any.
     private static let writingFoot: Double = 14
+
+    /// How dark the Wikipedia text's own outline is, and how far it is feathered. It is a shadow
+    /// with no offset, like ``SwiftUI/View/feathered()``, but darker and a little tighter. See
+    /// ``aboutThem``.
+    private static let aboutOutline = 0.7
+    private static let aboutOutlineReach: CGFloat = 2.5
 
     /// Where the photograph's blur starts, as a fraction of the plate from the top.
     private static let blurFrom = 0.6

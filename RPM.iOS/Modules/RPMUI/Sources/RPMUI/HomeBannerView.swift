@@ -556,11 +556,8 @@ struct HomeFeatureCard: View {
                                    anchor: UnitPoint(x: 0.5, y: plate / (plate + mirror)),
                                    grows: live)
 
-                // The shade at the top, under the status bar and the page's title, so the clock
-                // and the title read on a light photograph. In both modes.
-                Self.topShade
-                    .frame(width: width, height: min(Self.topFade, plate))
-                    .allowsHitTesting(false)
+                // There is no shade at the top of the card. Home draws ``topShade`` over its
+                // scroller, fixed to the top of the screen, so it does not move with the card.
 
                 ZStack(alignment: .bottomLeading) {
                     Color.clear
@@ -873,12 +870,16 @@ struct HomeFeatureCard: View {
                 .init(color: .black.opacity(dayShade), location: 1)],
         startPoint: .top, endPoint: .bottom)
 
-    /// How far down the shade at the top of a card runs. The clock, the other status icons and
+    /// How far down the shade at the top of the screen runs. The clock, the other status icons and
     /// the page's title are white and stand on the card. On a light photograph they cannot be
     /// read without it.
     static let topFade: Double = 140
 
-    /// The shade at the top of a card: 0.45 black at the top, easing to clear at ``topFade``.
+    /// The shade at the top of the screen: 0.45 black at the top, easing to clear at ``topFade``.
+    ///
+    /// **Home draws it, not the card.** It is over the page's scroller and does not move when the
+    /// page scrolls or the strip turns, so the clock and the title always stand on it. See
+    /// `HomePage.topShade`.
     static let topShade = LinearGradient(
         stops: [.init(color: .black.opacity(0.45), location: 0),
                 .init(color: .black.opacity(0.45 * 0.55), location: 0.45),

@@ -453,6 +453,11 @@ public struct HomePage: View {
                 .padding(.bottom, RPMLayout.foot)
                 .coordinateSpace(.named(Self.page))
             }
+            // The shade under the status bar and the title. It is over the scroll and under the
+            // heading, and it does not move: see ``topShade``.
+            .overlay(alignment: .top) {
+                if !screen.strip.isEmpty { topShade }
+            }
             // **Over the scroll, and fixed while the page scrolls**, like every other page's
             // header. The banner runs up behind it at rest. Once the page is scrolled, the blur
             // that the scroller draws under the status bar also extends under the title.
@@ -491,6 +496,22 @@ public struct HomePage: View {
         static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
             value = max(value, nextValue())
         }
+    }
+
+    /// The shade at the top of the screen, so the clock, the other status icons and the title read
+    /// on a light photograph. It is drawn only when there is a banner.
+    ///
+    /// **It is fixed to the top of the screen**, over the scroll and outside its mask. The banner
+    /// and the rows move under it, and the shade stays where it is. At rest the banner's top is
+    /// at the top of the screen, so the shade covers the same part of the card as a shade drawn
+    /// on the card would. Its foot is clear, so it has no edge on the card or on the page's
+    /// ground. The scroll ignores the top safe area, so this starts at the top of the screen and
+    /// not under the status bar.
+    private var topShade: some View {
+        HomeFeatureCard.topShade
+            .frame(maxWidth: .infinity)
+            .frame(height: HomeFeatureCard.topFade)
+            .allowsHitTesting(false)
     }
 
     /// The page's title, with the same font, insets and line as every other page's title. The
