@@ -7886,6 +7886,15 @@
 /* Phone settings: what VoiceOver/TalkBack reads for the first colour bubble under Settings_Colour, which gives the buttons and cards the colour of the chosen background, like a theme. */
 "Settings_ColourTheme" = "Match the background";
 
+/* Playlists tab (iPhone and Android phone): the line under a folder's name on its tile or row, where a record shows its artist. */
+"Playlists_RowFolder" = "Folder";
+
+/* Playlists tab (iPhone and Android phone): the line under the name of a playlist somebody made, where a record shows its artist. {0} = the profile name of the person whose collection is shown: the user's own, or the person who shares it. Home_QuickPlaylist is shown when no name is known. */
+"Playlists_RowBy" = "Playlist by %1$@";
+
+/* Playlists tab (iPhone and Android phone): the line under the name of a generated mood list that is not cut to one genre (a whole mood, or a decade), where a record shows its artist. A list cut to one genre shows the genre instead. Singular of Genres_MoodPlaylists. */
+"Playlists_RowMood" = "Mood playlist";
+
 /* iPhone settings, Appearance: the title of the card with a slider that sets how round the corners of every album and playlist cover are, from square to round. */
 "Settings_CoverCorners" = "Cover corners";
 
