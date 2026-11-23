@@ -161,6 +161,31 @@ struct RootView: View {
     /// Whether the phone on its side shows the Modern player instead of the stage.
     private var sidewaysPlayer: Bool { onStage && landscapeStyle == .modern }
 
+    /// Whether the Modern player was on its side a moment ago. It stays true for ``turnSettles``
+    /// after the phone turns back upright. See ``pagesHidden``.
+    @State private var sidewaysLately = false
+
+    /// How long the system's animation of a turn takes, with a margin.
+    private static let turnSettles: Duration = .milliseconds(600)
+
+    /// **Whether the pages under the player are hidden: while the Modern player is on its side,
+    /// and while the phone turns back from it.**
+    ///
+    /// The pages are laid out again for the new size during the turn, and they slide and jump
+    /// while they do so. The player does not cover them all the way through the system's
+    /// animation, so without this they show around it and through it. Hidden, they are neither
+    /// seen nor drawn, and the player is the only thing that turns.
+    ///
+    /// On the way into landscape the value turns true in the same update as the size, because
+    /// ``sidewaysPlayer`` does. On the way back that is already false, so ``sidewaysLately``
+    /// keeps the pages hidden until the turn has finished, but only while the player is up and at
+    /// rest: a player that is put away or pulled down shows the page under it. A player put away
+    /// on its side leaves nothing under it until the phone is upright again, because the pages
+    /// are not drawn for landscape.
+    private var pagesHidden: Bool {
+        sidewaysPlayer || (sidewaysLately && playing.up && playing.putDown == 0)
+    }
+
     /// Which lists are open on the playlists tab. This stack is separate, so that a playlist
     /// pushed here is not still on screen after the user goes to the records.
     @State private var lists: [OpenList] = []
@@ -296,7 +321,18 @@ struct RootView: View {
                 waiting(Loc.get("Rpm_Library_Reading"))
 
             case .showing:
+                // See ``pagesHidden``. Nothing is animated in the hidden pages: they are laid out
+                // again for the new size in one step, and are already still when they are shown.
                 shell
+                    .opacity(pagesHidden ? 0 : 1)
+                    .allowsHitTesting(!pagesHidden)
+                    .accessibilityHidden(pagesHidden)
+                    .transaction { [hidden = pagesHidden] change in
+                        if hidden {
+                            change.animation = nil
+                            change.disablesAnimations = true
+                        }
+                    }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -467,8 +503,13 @@ struct RootView: View {
             // (`sidewaysPlayer`), and the stage is not shown. The player is raised if it was not
             // up, and it stays up when the phone turns back, so turning back shows the upright
             // player.
+            //
+            // **It is raised at once, without its slide from the foot of the screen.** The phone
+            // is turning, and a sheet that slides up during the turn shows the pages around it.
             if now && landscapeStyle == .modern {
-                playing.raise()
+                var atOnce = Transaction()
+                atOnce.disablesAnimations = true
+                withTransaction(atOnce) { playing.raise() }
                 withAnimation(.easeOut(duration: 0.25)) { staged = false }
                 return
             }
@@ -480,6 +521,17 @@ struct RootView: View {
             if now { playing.putAway() }
 
             withAnimation(.easeOut(duration: 0.25)) { staged = now }
+        }
+        // Keeps the pages hidden while the phone turns back from the Modern player. See
+        // ``pagesHidden``.
+        .task(id: sidewaysPlayer) {
+            guard !sidewaysPlayer else {
+                sidewaysLately = true
+                return
+            }
+            try? await Task.sleep(for: Self.turnSettles)
+            guard !Task.isCancelled else { return }
+            sidewaysLately = false
         }
         // **A Modern player put away on its side turns the phone back.** The pages under the
         // player are drawn for an upright phone. The player's menu puts it away to open the album

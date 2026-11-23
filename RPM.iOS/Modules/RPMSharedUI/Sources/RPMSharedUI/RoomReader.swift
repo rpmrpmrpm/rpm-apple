@@ -126,11 +126,17 @@ public final class RoomReader {
                     await MainActor.run {
                         guard let self else { return }
 
-                        // **Start from where the last transition ended**, which is where the picture
-                        // actually is. Do not start from the previous reading: a frame that arrived
-                        // late has already moved past it.
-                        self.ramp = RoomRamp(from: self.ramp.to, to: drawn,
-                                             at: folded, over: Self.beat)
+                        // **Start from where the picture is at this instant, and start now.** The
+                        // readings do not land exactly one beat apart: the loop wakes a little early
+                        // or late, and the hand-over waits for the main thread. A ramp that started
+                        // from the end of the last one would make the bars jump forward when a
+                        // reading lands early, and stand still when one lands late. A ramp that
+                        // started at the time of the fold would already be part of the way through
+                        // when it lands, so the bars would jump by that part. Read here, at the
+                        // moment of the hand-over, the drawn value never jumps.
+                        let landed = CACurrentMediaTime()
+                        self.ramp = RoomRamp(from: self.ramp.read(landed), to: drawn,
+                                             at: landed, over: Self.beat)
                     }
 
                     if RoomTally.on {

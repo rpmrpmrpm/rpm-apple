@@ -58,7 +58,9 @@ public struct RoomReading: Sendable, Equatable {
 /// but would be wrong: a bar drawn past what was measured overshoots every transient and
 /// shakes on every steady sound.
 public struct RoomRamp: Sendable {
-    /// Where the travel starts: the last reading, as it was left standing.
+    /// Where the travel starts: the room as it was drawn at the instant ``to`` landed. That is
+    /// the last reading when the travel before had finished, and a point on the way to it when
+    /// it had not.
     public let from: RoomReading
 
     /// ...and where it is headed: the reading that has just landed.

@@ -95,6 +95,9 @@ public struct NowPlayingSheet: View {
     /// that keeps running while nobody sees the picture only heats the phone.
     @State var room = RoomReader()
 
+    /// The spectrum beside the cover as it is drawn, smoothed by time. See ``RunFollower``.
+    @State var runShown = RunFollower()
+
     /// The colours of the station's square while a station is playing. See ``stationWears(_:)``.
     @State private var stationColours: SleeveColours?
 
@@ -110,7 +113,7 @@ public struct NowPlayingSheet: View {
     @State var showing = false
 
     /// Whether the room and the spectrum rest: set by the app while the music is paused. See
-    /// ``RPMSharedUI/PowerSaving`` for the lower rate while the phone saves power.
+    /// ``RPMSharedUI/PowerSaving`` for the room's lower rate while the phone saves power.
     @Environment(\.roomsRest) var roomsRest
 
     /// The y position of the bottom edge of the cover, in the sheet's own points. The room is
@@ -233,6 +236,14 @@ public struct NowPlayingSheet: View {
         // `NowPlayingSheet+Sideways.swift`.
         Group {
             if sideways { sidewaysLayout } else { upright }
+        }
+        // **The two layouts change over in one frame, with no fade.** The layout changes during
+        // the system's animation of the turn, and a change made then is animated with it. A fade
+        // would leave both layouts half transparent for the length of the turn, and the pages
+        // under the player would show through them.
+        .transaction(value: sideways) { change in
+            change.animation = nil
+            change.disablesAnimations = true
         }
         // Requested when the player is shown and again when the record changes. **Only while it
         // is shown**: normal listening sends no record name to any service.
@@ -389,9 +400,18 @@ public struct NowPlayingSheet: View {
         // so a 120 Hz screen draws 120 frames per second. The clock is paused when the sheet is
         // hidden, like the room behind it, because a clock that keeps running while nobody sees
         // the picture only heats the phone.
-        TimelineView(.animation(minimumInterval: PowerSaving.shared.frameGap,
-                                paused: !showing || roomsRest)) { _ in
-            SpectrumRunView(run: room.ramp.read(CACurrentMediaTime()).run,
+        //
+        // **Every frame of the display, also while the phone saves power.** A lower rate does not
+        // divide the display's rate evenly: 15 a second on a 60 Hz screen lands on every fourth
+        // or fifth frame, and the bars then move in steps of uneven length.
+        //
+        // **The ramp is not drawn as it is.** `runShown` follows it by the time since the last
+        // frame, so the bars' speed does not change at once forty times a second. See
+        // ``RunFollower``.
+        TimelineView(.animation(paused: !showing || roomsRest)) { _ in
+            let now = CACurrentMediaTime()
+
+            SpectrumRunView(run: runShown.follow(room.ramp.read(now).run, at: now),
                             side: edge * (player.isPlaying ? 1 : Self.pausedScale),
                             shift: flick, sides: .both,
                             tint: RGB(room.palette.tint), glow: RGB(room.palette.glow))
