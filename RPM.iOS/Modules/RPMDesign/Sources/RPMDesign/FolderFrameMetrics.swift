@@ -3,8 +3,9 @@ import CoreGraphics
 /// Where a folder's name goes on the folder frame (`FolderFrame.png`): centred in the black bar under
 /// the window, on one line.
 ///
-/// The drawing is 800 pixels square. Its window runs from 35 to 768 across and from 36 to 646 down,
-/// and the bar below the window runs from 647 to the bottom edge. Every number here is a share of the
+/// The drawing is 800 pixels square. Its window is the shape of a folder: 35 to 768 across, 104 to
+/// 646 down, with a tab at the top right from 582 to 768 across that reaches up to 36. The bar below
+/// the window runs from 647 to the bottom edge. Every number here is a share of the
 /// square, so the same rule sets the name at any size. The Android app reads the same numbers
 /// (`FolderFrameMetrics.kt`); change both together.
 public enum FolderFrameMetrics {

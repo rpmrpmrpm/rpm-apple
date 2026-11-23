@@ -6,9 +6,10 @@ import RPMDesign
 /// The frame on the cover of one of the app's own playlist folders, lettered with the folder's name.
 ///
 /// It is a different drawing from a list's frame (``PlaylistFrame``), so a folder does not look like
-/// one more list: a black square with a window cut out of it, and a bar under the window where the
-/// folder's name is set in the middle (``RPMDesign/FolderFrameMetrics``). The folder's photograph
-/// shows through the window (`PlaylistPhotos.folderCover`).
+/// one more list: a black square with a folder-shaped window cut out of it (a tab at the top right),
+/// and a bar under the window where the folder's name is set in the middle
+/// (``RPMDesign/FolderFrameMetrics``). The folder's photograph shows through the window
+/// (`PlaylistPhotos.folderCover`).
 ///
 /// The drawing is inked in the folder's two colours as a list's frame is: its black in the border
 /// colour, and the name in the lettering colour. The window stays transparent.
