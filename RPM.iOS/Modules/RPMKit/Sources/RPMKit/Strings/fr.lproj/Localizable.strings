@@ -6091,6 +6091,12 @@
 /* Android phone: title of the dialog that removes one downloaded album from the phone. Rpm_Download_RemoveQuestion says iPhone. */
 "Phone_Download_RemoveQuestion" = "Supprimer cet album de votre téléphone ? Il reste dans votre bibliothèque cloud.";
 
+/* Android phone: title of the dialog that removes one downloaded playlist from the phone. Songs that a downloaded album also holds stay on the phone. Rpm_Download_RemovePlaylistQuestion says iPhone. */
+"Phone_Download_RemovePlaylistQuestion" = "Retirer cette playlist de votre téléphone ? Elle reste dans votre bibliothèque cloud.";
+
+/* Android phone: title of the dialog that removes several downloads from the phone when playlists are among them. {0} = how many. Rpm_Downloads_RemoveMixedQuestion says iPhone. */
+"Phone_Downloads_RemoveMixedQuestion" = "Retirer %1$@ téléchargements de votre téléphone ? Ils restent dans votre bibliothèque cloud.";
+
 /* Heading of the downloads card on the iPhone profile tab, and of the downloads list. */
 "Rpm_Downloads_Title" = "Téléchargements";
 
