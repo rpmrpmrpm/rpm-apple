@@ -59,7 +59,7 @@ extension FramedList {
         let look: GeneratedListLook.Look?
         switch face {
         case .plain: look = nil
-        case .moods: look = .app
+        case .moods: look = GeneratedListLook.app
         case .decades: look = GeneratedListLook.of(kind: "Decade", genre: nil, decade: 1980)
         case .mood(let kind): look = GeneratedListLook.of(kind: kind, genre: nil, decade: 0)
         }
