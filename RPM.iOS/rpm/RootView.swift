@@ -264,24 +264,6 @@ struct RootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Start radio, on every song menu and home's radio entries. See `StartRadio`.
         .environment(\.startRadio, { [model] track in model.startRadio(track) })
-        // Asked before a tap replaces a queue that the user changed. It is on the root and not on
-        // each page, because a tap on every page reaches `AppModel.play`, and the player is an
-        // overlay here and not a system sheet that would hide a dialog presented under it.
-        .confirmationDialog(Loc.get("Rpm_Queue_DiscardTitle"),
-                            isPresented: Binding(get: { model.queueQuestion != nil },
-                                                 set: { if !$0 { model.queueQuestion = nil } }),
-                            titleVisibility: .visible,
-                            presenting: model.queueQuestion) { question in
-            Button(Loc.get("Rpm_Queue_Discard"), role: .destructive) {
-                Task { await model.answer(question.discard()) }
-            }
-            Button(Loc.get("Rpm_Queue_PlayNowKeep")) {
-                Task { await model.answer(question.keepQueue()) }
-            }
-            Button(Loc.get("Common_Cancel"), role: .cancel) {}
-        } message: { _ in
-            Text(Loc.get("Rpm_Queue_DiscardMessage"))
-        }
         // The wait mark fades out while the wall fades in, as in the Uno app
         // (`LibraryPage.ShowMark`), and the records do not replace the mark in one frame. The
         // library data arrives before the wall is on the screen, because the grid still has to
@@ -885,6 +867,25 @@ struct RootView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             RPMChrome(player: model.player, art: model.playingArt,
                       showing: Binding(get: { tab }, set: { tab = $0 })) { playing.raise() }
+                // Asked before a tap replaces a queue that the user changed. iOS points the
+                // dialog's arrow at the view it is attached to, so it is attached here: it opens
+                // above the mini player and leaves the song that is playing in sight. One dialog
+                // for the whole app, because a tap on every page reaches `AppModel.play`.
+                .confirmationDialog(Loc.get("Rpm_Queue_DiscardTitle"),
+                                    isPresented: Binding(get: { model.queueQuestion != nil },
+                                                         set: { if !$0 { model.queueQuestion = nil } }),
+                                    titleVisibility: .visible,
+                                    presenting: model.queueQuestion) { question in
+                    Button(Loc.get("Rpm_Queue_Discard"), role: .destructive) {
+                        Task { await model.answer(question.discard()) }
+                    }
+                    Button(Loc.get("Rpm_Queue_PlayNowKeep")) {
+                        Task { await model.answer(question.keepQueue()) }
+                    }
+                    Button(Loc.get("Common_Cancel"), role: .cancel) {}
+                } message: { _ in
+                    Text(Loc.get("Rpm_Queue_DiscardMessage"))
+                }
         }
         .onPreferenceChange(ChromeHeight.self) { chrome = $0 }
         // Which records can be played now, for every tile and row that is greyed. See

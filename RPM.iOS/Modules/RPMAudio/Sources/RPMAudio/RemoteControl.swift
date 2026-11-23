@@ -36,8 +36,8 @@ public final class RemoteControl {
     /// plays a song.
     private let songCovers: SongCovers
 
-    /// Whether an explicit song carries the E after its title on the lock screen
-    /// (``LockScreenTitle``). The phone marks; the TV does not, as on Android.
+    /// Whether an explicit song is flagged as explicit on the lock screen, which then draws the
+    /// system's E badge after its title. The phone marks; the TV does not, as on Android.
     private let marksExplicit: Bool
 
     public init(player: Player, reach: NetworkReach, songCovers: SongCovers,
@@ -385,9 +385,9 @@ public final class RemoteControl {
         }
 
         var info: [String: Any] = [
-            // An explicit song wears the E after its title here only. See `LockScreenTitle`.
-            MPMediaItemPropertyTitle: LockScreenTitle.of(track.title ?? "",
-                                                         explicit: marksExplicit && track.isExplicit),
+            // The title only. The E of an explicit song is the system's badge, from the flag below;
+            // a mark in the title as well would show the E twice.
+            MPMediaItemPropertyTitle: track.title ?? "",
             MPMediaItemPropertyArtist: track.artist ?? "",
             MPMediaItemPropertyAlbumTitle: track.album ?? "",
             MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue,
@@ -399,7 +399,8 @@ public final class RemoteControl {
             info[MPMediaItemPropertyPlaybackDuration] = player.duration.seconds
         }
 
-        // The system's own flag as well, for whatever reads it. Only the phone marks.
+        // The system's explicit flag: the lock screen, the notification and CarPlay draw their E
+        // badge from it. Only the phone marks.
         #if os(iOS)
         if marksExplicit && track.isExplicit { info[MPMediaItemPropertyIsExplicit] = true }
         #endif
