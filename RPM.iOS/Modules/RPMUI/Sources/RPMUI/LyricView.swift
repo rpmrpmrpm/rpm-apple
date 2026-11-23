@@ -119,7 +119,11 @@ struct LyricView: View {
 
             ScrollViewReader { hand in
                 ScrollView {
-                    LazyVStack(spacing: size * Self.leading) {
+                    // **Not lazy.** A lazy stack does not move the rows under a row whose height
+                    // changes with it: they jump when the change ends. A second voice that folds
+                    // must move the lines under it on every frame. A song is a few dozen lines,
+                    // so laying them all out costs little.
+                    VStack(spacing: size * Self.leading) {
                         ForEach(score.parts) { part in
                             row(part, of: score, at: at, size: size, heard: heard,
                                 voices: voices[part.id], now: now)
@@ -319,20 +323,27 @@ struct LyricView: View {
 
     /// The verse of a line: the whole line, or the line without its bracketed words where it has
     /// a second voice. The sung line lights letter by letter with karaoke.
+    ///
+    /// The plain line and the karaoke line change in one step, as on the Android phone. A
+    /// cross-fade showed both at once, and while a fold above moved the line the two copies were
+    /// drawn apart, so the line looked doubled.
     @ViewBuilder
     private func verse(_ text: String, split: LyricVoices.Split?, spans: [WordSpan],
                        sung: Bool) -> some View {
-        if sung && karaoke {
-            if let verse = split?.verse {
-                SweptLine(text: verse.text, spans: verse.spans, time: time,
-                          light: spans, letters: verse.letters)
+        Group {
+            if sung && karaoke {
+                if let verse = split?.verse {
+                    SweptLine(text: verse.text, spans: verse.spans, time: time,
+                              light: spans, letters: verse.letters)
+                } else {
+                    SweptLine(text: text, spans: spans, time: time)
+                }
             } else {
-                SweptLine(text: text, spans: spans, time: time)
+                Text(split?.verse.text ?? text)
+                    .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
             }
-        } else {
-            Text(split?.verse.text ?? text)
-                .foregroundStyle(sung ? Color.white : Color(white: 0xEA / 255))
         }
+        .transition(.identity)
     }
 
     /// The second voice of a line, on its smaller row: lit letter by letter as part of the whole
@@ -465,43 +476,51 @@ private struct Fold<Content: View>: View {
     let gap: CGFloat
     let content: () -> Content
 
-    /// Whether the content is kept after the row closes, while it folds away. It is dropped once the
+    /// How far the row is open, from 0 (closed) to 1 (open). Its height and its opacity both
+    /// follow it.
+    ///
+    /// **It is moved with its own `withAnimation`** when `open` changes, and not with an
+    /// `.animation(_:value:)` modifier. The change of `open` arrives in whatever transaction
+    /// redrew the lyrics (a wake, a player reading), and a modifier on a row was not applied:
+    /// the row lost its opacity and its height in one frame. An explicit animation of this view's
+    /// own state always eases.
+    @State private var amount: CGFloat
+
+    /// Whether the content is kept. It stays while the row folds away and is dropped once the
     /// fold is done, so a closed row holds no karaoke line that is drawn again on every frame.
     @State private var kept: Bool
 
-    /// The last value of `open`, read when the fold is done.
-    @State private var wanted: Bool
+    /// Counts the folds, so that only the last one to finish drops the content.
+    @State private var folds = 0
 
     init(open: Bool, gap: CGFloat, @ViewBuilder content: @escaping () -> Content) {
         self.open = open
         self.gap = gap
         self.content = content
+        _amount = State(initialValue: open ? 1 : 0)
         _kept = State(initialValue: open)
-        _wanted = State(initialValue: open)
     }
 
     var body: some View {
-        FoldLayout(amount: open ? 1 : 0) {
-            if open || kept {
+        FoldLayout(amount: amount) {
+            if kept {
                 content()
                     .padding(.top, gap)
                     .frame(maxWidth: .infinity)
-                    .opacity(open ? 1 : 0)
-                    // The content comes in as the row opens, so it fades in with the fold.
-                    .transition(.opacity)
+                    .opacity(Double(amount))
             }
         }
         .clipped()
-        .animation(LyricMotion.ease(LyricMotion.fold), value: open)
         .onChange(of: open) { _, now in
-            wanted = now
-            if now {
-                kept = true
-                return
-            }
-            Task {
-                try? await Task.sleep(for: .seconds(LyricMotion.fold + 0.05))
-                if !wanted { kept = false }
+            folds += 1
+            let fold = folds
+            // The content is there before the row opens, so it is uncovered as the row grows.
+            if now { kept = true }
+            withAnimation(LyricMotion.ease(LyricMotion.fold)) {
+                amount = now ? 1 : 0
+            } completion: {
+                guard folds == fold, !now else { return }
+                kept = false
             }
         }
     }
