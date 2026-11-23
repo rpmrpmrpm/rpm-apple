@@ -175,9 +175,32 @@ public struct SettingsPage: View {
         // The header stays fixed over the scroll view, as in the desktop app. It is the name of
         // the page, and the user should not have to scroll back to see it. Every other page
         // here is built the same way.
+        //
+        // The sections slide across under the header as the app's tabs do, in the order of the row
+        // (``SlidingPages``). The header and its row stay.
+        SlidingPages(section) { shown in sectionScroll(shown) }
+            .scrollsUnder {
+                VStack(spacing: 0) {
+                    header
+                    PageTabs($section)
+                }
+            }
+            .background { VinylGround() }
+            .overlay {
+                if deletingAccount {
+                    DeleteAccountSheet(email: email, commit: onDeleteAccount,
+                                       onClose: { deletingAccount = false })
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.18), value: deletingAccount)
+    }
+
+    /// One section's cards, in a scroll of its own, so each section opens at its top.
+    private func sectionScroll(_ shown: SettingsSection) -> some View {
         DissolvingScroll {
             VStack(alignment: .leading, spacing: 14) {
-                switch section {
+                switch shown {
                 case .general:
                     HintsCard()
                     about
@@ -204,25 +227,7 @@ public struct SettingsPage: View {
             .padding(.top, 4)
             .padding(.bottom, RPMLayout.foot)
         }
-        // A new scroll for each section, so each one opens at its top. The header is outside it
-        // and stays.
-        .id(section)
         .scrollIndicators(.hidden)
-        .scrollsUnder {
-            VStack(spacing: 0) {
-                header
-                PageTabs($section)
-            }
-        }
-        .background { VinylGround() }
-        .overlay {
-            if deletingAccount {
-                DeleteAccountSheet(email: email, commit: onDeleteAccount,
-                                   onClose: { deletingAccount = false })
-                    .transition(.opacity)
-            }
-        }
-        .animation(.easeOut(duration: 0.18), value: deletingAccount)
     }
 
     private var header: some View {

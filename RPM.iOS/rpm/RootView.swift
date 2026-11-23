@@ -820,9 +820,6 @@ struct RootView: View {
 
     // MARK: The app once there is something to show
 
-    /// How long one view of the library takes to fade into another.
-    private static let libraryFade: Double = 0.25
-
     /// A screen, the player and the tab bar. The player and the tab bar below the screen are one
     /// stack, because they move together.
     private var shell: some View {
@@ -956,18 +953,22 @@ struct RootView: View {
         }
     }
 
-    /// The library tab. Its four views fade into one another (``libraryFade``), and the row of views
-    /// under each header moves across the change (``LibraryModeTabs``).
+    /// The library tab. Its four views slide across one another in the order of the row of views,
+    /// as the tabs do (``SlidingPages``), and the row of views under each header moves across the
+    /// change (``LibraryModeTabs``).
     private var libraryTab: some View {
-        ZStack {
-            switch mode {
-            case .artists: artistsView
-            case .genres: genresView
-            case .playlists: playlistsView
-            case .albums: albumsView
-            }
+        SlidingPages(mode) { which in libraryView(which) }
+    }
+
+    /// One view of the library tab, with its own stack.
+    @ViewBuilder
+    private func libraryView(_ which: LibraryMode) -> some View {
+        switch which {
+        case .artists: artistsView
+        case .genres: genresView
+        case .playlists: playlistsView
+        case .albums: albumsView
         }
-        .animation(.easeInOut(duration: Self.libraryFade), value: mode)
     }
 
     /// This view has its own stack and its own path. Switching back to the records must

@@ -24,8 +24,12 @@ protocol PageTab: Hashable, CaseIterable where AllCases == [Self] {
 ///
 /// **Each library view draws its own row, so the row remembers where the last one stood**
 /// (``lastShown``). The row of the view that comes in starts at the tab the last row showed and
-/// moves from there, while the two views fade into one another. A row that started at its own
-/// tab would arrive already finished. Each kind of tab is remembered on its own.
+/// moves from there, while the two views slide across (``SlidingPages``). A row that started at
+/// its own tab would arrive already finished. Each kind of tab is remembered on its own.
+///
+/// **A row writes where it stands when it appears and when it goes away, and not when the choice
+/// changes.** The view that slides in is built after the change, while the row that is leaving is
+/// still on the screen. If that row wrote the new choice, the new row would start at it.
 struct PageTabs<Choice: PageTab>: View {
     @Binding private var mode: Choice
 
@@ -81,9 +85,9 @@ struct PageTabs<Choice: PageTab>: View {
             if shown != mode { withAnimation(Self.motion) { shown = mode } }
         }
         .onChange(of: mode) { _, now in
-            Self.lastShown = now
             withAnimation(Self.motion) { shown = now }
         }
+        .onDisappear { Self.lastShown = mode }
     }
 
     /// One tab: its mark, and its name while it is open. The name is clipped by the tab as the tab
