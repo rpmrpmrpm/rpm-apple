@@ -174,6 +174,22 @@ struct AlbumDownloadsTests {
         #expect(await store.asked.count == 2)
     }
 
+    /// Each track says where it stands, for the marks on the rows: the tracks of an album the
+    /// store is still making are preparing, and a track nobody asked for is absent.
+    @Test func eachTrackOfAnAlbumThatIsPreparingSaysSo() async {
+        let downloads = downloads()
+        downloads.download(album("a", ["t1", "t2"]))
+        await until { downloads.track("t1") == .preparing && downloads.track("t2") == .preparing }
+
+        #expect(downloads.track("t1") == .preparing)
+        #expect(downloads.track("t2") == .preparing)
+        #expect(downloads.track("t9") == .absent)
+
+        downloads.remove(["a"])
+        #expect(downloads.track("t1") == .absent)
+        #expect(downloads.coming.isEmpty)
+    }
+
     // ── playlists ──
 
     private func playlist(_ id: String, _ ids: [String], missing: Int = 0,

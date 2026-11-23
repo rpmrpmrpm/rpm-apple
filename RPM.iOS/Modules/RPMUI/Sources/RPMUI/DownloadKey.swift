@@ -17,13 +17,21 @@ public struct DownloadKey {
     /// differ: they name a playlist and not an album.
     public let isPlaylist: Bool
 
+    /// Where one of the page's songs stands on the phone, by its id: what the mark at the end of
+    /// its row is made from (``TrackDownloadMark``). The app passes
+    /// ``AlbumDownloads/track(_:)``. Read in the mark's own view, so only the marks are drawn
+    /// again while a song arrives, not the whole page.
+    public let track: (String) -> TrackDownload
+
     public init(standing: AlbumDownloads.Standing?,
                 onDownload: @escaping () -> Void, onRemove: @escaping () -> Void,
-                isPlaylist: Bool = false) {
+                isPlaylist: Bool = false,
+                track: @escaping (String) -> TrackDownload = { _ in .absent }) {
         self.standing = standing
         self.onDownload = onDownload
         self.onRemove = onRemove
         self.isPlaylist = isPlaylist
+        self.track = track
     }
 }
 
@@ -153,5 +161,99 @@ private struct Bare: ButtonStyle {
         } else {
             RPMGlassButton(.ghost, radius: 14, height: 50).makeBody(configuration: configuration)
         }
+    }
+}
+
+/// The small mark at the end of a song's row on an album page or a playlist page: what the page's
+/// download key cannot say about one song. See ``TrackDownloadMark`` for which mark a row shows.
+///
+/// It is drawn over the row's own trailing margin and takes no room in the row, so a mark that
+/// comes or goes never moves the title or the length. Nothing is drawn where there is no key (a
+/// borrowed shelf, the queue, the favourite songs) or no mark.
+struct RowDownloadMark: View {
+    let key: DownloadKey?
+    let rpmId: String
+
+    /// The side of the mark: about the size of the length's figures beside it.
+    static let edge: CGFloat = 11
+
+    /// The room the mark is centred in: the row's trailing margin.
+    static let room: CGFloat = 20
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        // The song's state is read here and not in the row, so a song that moves on draws this
+        // mark again and not the row or the page.
+        if let key, let mark = TrackDownloadMark.of(page: key.standing, track: key.track(rpmId)) {
+            face(mark)
+                .frame(width: Self.edge, height: Self.edge)
+                .frame(width: Self.room)
+                .accessibilityElement()
+                .accessibilityLabel(label(mark))
+                .accessibilityValue(value(mark))
+        }
+    }
+
+    @ViewBuilder
+    private func face(_ mark: TrackDownloadMark) -> some View {
+        switch mark {
+        case .waiting:
+            Circle().stroke(RPMInk.white(0x55 / 255), lineWidth: 1.2)
+
+        case .preparing:
+            // Nothing is transferring, so there is no progress to show. A quarter arc turns, as on
+            // the key. It follows the clock and is not a repeating animation, so rebuilding the
+            // row cannot leave it running or stop it.
+            ZStack {
+                Circle().stroke(RPMInk.white(0x33 / 255), lineWidth: 1.5)
+                TimelineView(.animation(paused: reduceMotion)) { time in
+                    let turn = time.date.timeIntervalSinceReferenceDate
+                        .truncatingRemainder(dividingBy: 1)
+                    Circle()
+                        .trim(from: 0, to: 0.25)
+                        .stroke(RPMInk.white(0xB3 / 255),
+                                style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                        .rotationEffect(.degrees(reduceMotion ? -90 : turn * 360))
+                }
+            }
+
+        case .arriving(let fraction):
+            ZStack {
+                Circle().stroke(RPMInk.white(0x33 / 255), lineWidth: 1.5)
+                Circle()
+                    .trim(from: 0, to: max(0.03, min(1, fraction)))
+                    .stroke(RPMInk.white(0xB3 / 255),
+                            style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeOut(duration: 0.3), value: fraction)
+            }
+
+        case .done:
+            Text(Glyph.downloaded).font(RPMFont.icon(Self.edge))
+                .foregroundStyle(RPMInk.white(0x77 / 255))
+                .fixedSize()
+
+        case .stuck:
+            Text(Glyph.stuck).font(RPMFont.icon(Self.edge))
+                .foregroundStyle(RPMInk.white(0xB3 / 255))
+                .fixedSize()
+        }
+    }
+
+    private func label(_ mark: TrackDownloadMark) -> String {
+        switch mark {
+        case .waiting: Loc.get("Cloud_StateQueued")
+        case .preparing: Loc.get("Rpm_Downloads_Preparing")
+        case .arriving: Loc.get("CloudChip_StageRestoring")
+        case .done: Loc.get("Rpm_Download_OnPhone")
+        case .stuck: Loc.get("CloudChip_StageFailedRestore")
+        }
+    }
+
+    /// How much of a song that is arriving has come, as a percentage in the reader's own format.
+    private func value(_ mark: TrackDownloadMark) -> Text {
+        guard case .arriving(let fraction) = mark else { return Text(verbatim: "") }
+        return Text(min(1, max(0, fraction)), format: .percent.precision(.fractionLength(0)))
     }
 }

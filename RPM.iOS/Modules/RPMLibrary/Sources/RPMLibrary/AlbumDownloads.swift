@@ -85,6 +85,10 @@ public final class AlbumDownloads {
     /// playlist counts for its own record.
     public private(set) var onPhone: Set<String> = []
 
+    /// Where each wanted track without a file stands, redrawn with ``shown``. What the rows of a
+    /// page that is downloading read, through ``track(_:)``. A track with a file is not here.
+    public private(set) var coming: [String: TrackDownload] = [:]
+
     private let reach: NetworkReach
     private let sign: @Sendable (String, AudioLadder.AskedRate) async throws
         -> (url: URL, kilobits: Int, kind: StreamKind)
@@ -236,6 +240,16 @@ public final class AlbumDownloads {
     public func isOnPhone(_ rpmId: String) -> Bool {
         _ = shown
         return book.held(rpmId) != nil
+    }
+
+    /// Where one track stands on the phone, whichever album or playlist asked for it. What a row
+    /// on an album page or a playlist page reads for its mark (``TrackDownloadMark``).
+    ///
+    /// ``coming`` is read first, as ``isOnPhone(_:)`` reads ``shown``: a view that asks this is
+    /// drawn again when the track moves on, lands or is removed.
+    public func track(_ rpmId: String) -> TrackDownload {
+        if let state = coming[rpmId] { return state }
+        return isOnPhone(rpmId) ? .onPhone : .absent
     }
 
     /// The albums and playlists asked for, newest first, with what each takes on the phone. A
@@ -579,6 +593,7 @@ public final class AlbumDownloads {
     private func redraw() {
         var next: [String: Standing] = [:]
         var some: Set<String> = []
+        var tracks: [String: TrackDownload] = [:]
 
         for album in book.albums {
             guard let (have, of) = book.count(of: album.key) else { continue }
@@ -594,6 +609,8 @@ public final class AlbumDownloads {
             if have == of { next[album.key] = .onPhone; continue }
 
             let left = album.tracks.map(\.rpmId).filter { book.held($0) == nil }
+            for rpmId in left where tracks[rpmId] == nil { tracks[rpmId] = trackState(rpmId) }
+
             let trying = left.contains {
                 inFlight.contains($0) || (goes[$0] ?? 0) < Self.mostGoes
             }
@@ -612,6 +629,16 @@ public final class AlbumDownloads {
 
         if next != shown { shown = next }
         if some != onPhone { onPhone = some }
+        if tracks != coming { coming = tracks }
+    }
+
+    /// Where one wanted track without a file stands. A transfer under way comes first: a track
+    /// that is arriving is not waiting for anything else.
+    private func trackState(_ rpmId: String) -> TrackDownload {
+        if inFlight.contains(rpmId) { return .arriving(fraction: partial[rpmId] ?? 0) }
+        if (goes[rpmId] ?? 0) >= Self.mostGoes { return .stuck }
+        if making.isWaiting(rpmId) { return .preparing }
+        return .waiting
     }
 
     // ── the session's delegate ──

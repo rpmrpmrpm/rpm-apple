@@ -1607,7 +1607,8 @@ struct RootView: View {
         return DownloadKey(standing: standing,
                            onDownload: { model.downloads.download(set) },
                            onRemove: { model.downloads.remove([key]) },
-                           isPlaylist: true)
+                           isPlaylist: true,
+                           track: { model.downloads.track($0) })
     }
 
     /// What the menu of a playlist page offers. See ``PlaylistMenu``.
@@ -1869,7 +1870,8 @@ struct RootView: View {
                   download: model.viewing.isOwn && !StarterTracks.isStarter(album)
                       ? DownloadKey(standing: model.downloads.standing(of: album.key),
                                     onDownload: { model.downloads.download(album) },
-                                    onRemove: { model.downloads.remove([album.key]) })
+                                    onRemove: { model.downloads.remove([album.key]) },
+                                    track: { model.downloads.track($0) })
                       : nil,
                   canPlay: { model.reading.isOnline || model.downloads.isOnPhone($0.rpmId)
                                  || StarterTracks.isStarter($0.rpmId) },

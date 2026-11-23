@@ -757,6 +757,9 @@ public struct PlaylistPage: View {
         .padding(.leading, 8)
         .padding(.trailing, 20)
         .frame(minHeight: 56)
+        // What the download key cannot say about this one song, in the trailing margin, where
+        // it moves nothing. See ``RowDownloadMark``.
+        .overlay(alignment: .trailing) { RowDownloadMark(key: download, rpmId: track.rpmId) }
         .contentShape(Rectangle())
         // A swipe makes the cell narrower, but this row keeps its width. See
         // ``View/keepsItsWidth()``.
