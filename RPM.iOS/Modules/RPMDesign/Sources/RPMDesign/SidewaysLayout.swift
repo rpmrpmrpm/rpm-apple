@@ -13,6 +13,10 @@ import CoreGraphics
 /// past the safe area is moved in by the difference only. The column's two edges are each held inside
 /// on their own, and the spectrum is cut at the edge instead of moving the cover.
 ///
+/// **The cover sits further in than in the Android app's drawing** (``coverX``): on an iPhone on its
+/// side the sensor housing takes the left edge, so the cover is moved right, and the spectrum with it,
+/// so the bars on its left are not cut by the housing.
+///
 /// The player's pieces are given whole frames: the words (the title, the artist and the heart), the
 /// needle (the seek bar and the clocks), the transport and the capsule. The title's line, the heart,
 /// the seek line and the clocks' line inside them follow from the pieces' own layout in the upright
@@ -93,8 +97,8 @@ public struct SidewaysLayout: Sendable, Equatable {
         let side = width / height < Self.narrow ? min(tall, width * Self.coverOfWidth) : tall
         cover = Self.around(width * Self.coverX, height * Self.coverY, side, side).inside(safe)
 
-        let runLeft = max(width * Self.runLeft, safe.minX)
-        let runRight = min(width * Self.runRight, safe.maxX)
+        let runLeft = max(cover.midX - width * Self.runReach, safe.minX)
+        let runRight = min(cover.midX + width * Self.runReach, safe.maxX)
         spectrum = CGRect(x: runLeft, y: cover.minY, width: runRight - runLeft, height: cover.height)
         let reach = max(cover.midX - runLeft, runRight - cover.midX)
         spectrumReach = CGRect(x: cover.midX - reach, y: cover.minY, width: reach * 2, height: cover.height)
@@ -141,14 +145,14 @@ public struct SidewaysLayout: Sendable, Equatable {
     public static let drawnHeight: CGFloat = 390
 
     // The places, as shares of the full width (x, left, right) or height (y, line, top).
-    static let coverX: CGFloat = 0.233
+    static let coverX: CGFloat = 0.2954
     static let coverY: CGFloat = 0.5035
     static let coverOfHeight: CGFloat = 0.667
     /// Below this width to height, the cover keeps to ``coverOfWidth`` of the width.
     static let narrow: CGFloat = 1.8
     static let coverOfWidth: CGFloat = 0.42
-    static let runLeft: CGFloat = 0.004
-    static let runRight: CGFloat = 0.4625
+    /// How far the spectrum runs out from the cover's middle on each side.
+    static let runReach: CGFloat = 0.22925
     static let columnLeft: CGFloat = 0.557
     static let columnRight: CGFloat = 0.961
     /// The top of the title's capitals.

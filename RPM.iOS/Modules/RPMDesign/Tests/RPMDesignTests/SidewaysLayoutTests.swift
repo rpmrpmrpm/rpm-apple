@@ -26,16 +26,16 @@ struct SidewaysLayoutTests {
         let s = laid.scale
 
         // The cover: two thirds of the height, square.
-        #expect(near(0.079, laid.cover.minX / w))
+        #expect(near(0.2954 - 0.667 * h / w / 2, laid.cover.minX / w))
         #expect(near(0.170, laid.cover.minY / h))
         #expect(near(0.837, laid.cover.maxY / h))
         #expect(abs(laid.cover.width - laid.cover.height) < 0.001)
-        #expect(near(0.233, laid.cover.midX / w))
+        #expect(near(0.2954, laid.cover.midX / w))
 
-        // The spectrum runs from near the left edge, past the cover, to short of the middle, on the
-        // cover's rows, and with nothing in the way it is even about the cover.
-        #expect(near(0.004, laid.spectrum.minX / w))
-        #expect(near(0.4625, laid.spectrum.maxX / w))
+        // The spectrum runs out from the cover the same way on both sides, on the cover's rows, and
+        // with nothing in the way it is even about the cover.
+        #expect(near(0.2954 - 0.22925, laid.spectrum.minX / w))
+        #expect(near(0.2954 + 0.22925, laid.spectrum.maxX / w))
         #expect(laid.spectrum.minY == laid.cover.minY)
         #expect(laid.spectrum.height == laid.cover.height)
         #expect(abs(laid.spectrumReach.midX - laid.cover.midX) < 0.001)
@@ -105,9 +105,9 @@ struct SidewaysLayoutTests {
         for frame in frames {
             #expect(safe.insetBy(dx: -0.001, dy: -0.001).contains(frame))
         }
-        // The spectrum is cut at the edge; the cover stays where it was, and the spectrum is still
-        // drawn even about it.
-        #expect(abs(laid.spectrum.minX - 47) < 0.001)
+        // The cover is far enough in that its spectrum clears the housing; the cover stays where it
+        // was, and the spectrum is drawn even about it.
+        #expect(laid.spectrum.minX >= 47)
         #expect(laid.cover == Self.iphone.cover)
         #expect(abs(laid.spectrumReach.midX - laid.cover.midX) < 0.001)
         // The column's right edge, the cast key and the capsule move in by the difference only.
@@ -125,7 +125,7 @@ struct SidewaysLayoutTests {
         let laid = SidewaysLayout(width: 600, height: 400,
                                   safe: CGRect(x: 0, y: 0, width: 600, height: 400))
         #expect(abs(laid.cover.width - 0.42 * 600) < 0.001)
-        #expect(abs(laid.cover.midX - 0.233 * 600) < 0.001)
+        #expect(abs(laid.cover.midX - 0.2954 * 600) < 0.001)
         #expect(laid.cover.maxX < laid.column.minX)
     }
 }
