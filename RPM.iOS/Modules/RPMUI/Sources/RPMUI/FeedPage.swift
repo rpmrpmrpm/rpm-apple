@@ -63,6 +63,10 @@ public struct FeedPage: View {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     rows
                 }
+                // The first answer fades in over the waiting wheel, so the page does not change at
+                // once some time after it has slid in. A later read, such as a pull to refresh,
+                // changes the rows without this.
+                .animation(.easeOut(duration: 0.25), value: settled)
                 .padding(.horizontal, RPMLayout.margin)
                 .padding(.top, 4)
                 .padding(.bottom, RPMLayout.foot)
@@ -98,12 +102,18 @@ public struct FeedPage: View {
         .padding(.bottom, 10)
     }
 
+    /// Whether the first read has ended, with the posts or with trouble.
+    private var settled: Bool { answered || trouble != nil }
+
     @ViewBuilder
     private var rows: some View {
         if let trouble {
             quiet(trouble)
         } else if answered && items.isEmpty {
             quiet(Loc.get("Rpm_Feed_Empty"))
+        } else if !answered && items.isEmpty {
+            // The first read is not answered yet. The wheel stands where the posts will be.
+            ProgressView().tint(.white).frame(maxWidth: .infinity).padding(.vertical, 16)
         } else {
             ForEach(items) { item in
                 switch item {

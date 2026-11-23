@@ -1197,7 +1197,9 @@ struct RootView: View {
                 }
         } else {
             // Keyed on the account: the tab can be shown before the sign-in has finished,
-            // and the pages are made for the account once it is known.
+            // and the pages are made for the account once it is known. A tab change makes them
+            // before the slide (``slide(to:)``); this covers the app opening on this tab and an
+            // account that is not known yet.
             Color.clear.task(id: model.who?.userId) { makeOwnPage() }
         }
     }
@@ -1271,6 +1273,12 @@ struct RootView: View {
         let slide = slides
 
         Self.lastTab = next
+
+        // The Feed tab's model is made on the tab's first visit. It is made here, before the slide,
+        // so the Feed page is built in the slide's own change and comes in with it, as the other
+        // pages do. Made from the tab's empty page (``feedTab``), it would arrive after the slide
+        // had started, outside the slide's change, and appear at once.
+        if next == .feed { makeOwnPage() }
 
         // All in one animated change, so the page coming in is inserted with its slide.
         withAnimation(.easeInOut(duration: TabSlide.duration)) {
