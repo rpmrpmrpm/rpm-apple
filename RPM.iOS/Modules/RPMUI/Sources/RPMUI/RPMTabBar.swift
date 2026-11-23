@@ -41,15 +41,22 @@ public enum RPMTab: String, CaseIterable, Sendable {
 public struct RPMTabBar: View {
     @Binding private var showing: RPMTab
 
+    /// Called for a tap on the tab that is already shown. The binding does not change then, so
+    /// the tap is passed on here: the app takes the tab back to its first page.
+    private let onAgain: (RPMTab) -> Void
+
     /// Shared by the tabs so the selection pill slides from the old tab to the new one.
     @Namespace private var pill
 
-    public init(showing: Binding<RPMTab>) { self._showing = showing }
+    public init(showing: Binding<RPMTab>, onAgain: @escaping (RPMTab) -> Void) {
+        self._showing = showing
+        self.onAgain = onAgain
+    }
 
     public var body: some View {
         HStack(spacing: 0) {
             ForEach(RPMTab.allCases, id: \.self) { tab in
-                Button { showing = tab } label: { face(tab) }
+                Button { tapped(tab) } label: { face(tab) }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
                     .coachTarget(tab.coachTarget)
@@ -61,6 +68,14 @@ public struct RPMTabBar: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showing)
         .padding(4)
         .rpmGlass(Capsule())
+    }
+
+    private func tapped(_ tab: RPMTab) {
+        if tab == showing {
+            onAgain(tab)
+        } else {
+            showing = tab
+        }
     }
 
     private func face(_ tab: RPMTab) -> some View {

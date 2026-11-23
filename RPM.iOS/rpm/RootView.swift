@@ -79,6 +79,10 @@ struct RootView: View {
     /// The width the tabs' pages slide across, measured on the shell.
     @State private var pageWidth: CGFloat = 0
 
+    /// Counts the taps on the Settings key while the settings are shown. Each one puts the section
+    /// shown back at its top. See ``backToFirstPage(of:)``.
+    @State private var settingsTops = 0
+
     /// Whether the music has been paused for a moment. The player's room and spectrum rest then
     /// (``SwiftUI/EnvironmentValues/roomsRest``): a still picture redrawn on every frame of the
     /// display only heats the phone.
@@ -867,7 +871,9 @@ struct RootView: View {
         // band of background over the bar on every screen outside a navigation stack.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             RPMChrome(player: model.player, art: model.playingArt,
-                      showing: Binding(get: { tab }, set: { tab = $0 })) { playing.raise() }
+                      showing: Binding(get: { tab }, set: { tab = $0 }),
+                      onAgain: { backToFirstPage(of: $0) },
+                      onOpen: { playing.raise() })
                 // Asked before a tap replaces a queue that the user changed. iOS points the
                 // dialog's arrow at the view it is attached to, so it is attached here: it opens
                 // above the mini player and leaves the song that is playing in sight. One dialog
@@ -1147,7 +1153,8 @@ struct RootView: View {
                                           set: { model.diagnostics.sendsCrashReports = $0 }),
                     onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil,
                     sharesListening: Binding(get: { model.sharesListening },
-                                             set: { on in Task { await model.setSharesListening(on) } }))
+                                             set: { on in Task { await model.setSharesListening(on) } }),
+                    backToTop: settingsTops)
             .task { await model.readCacheSize() }
             .task { await model.readSharing() }
             .footRoom(chrome, .underTheChrome)
@@ -1189,6 +1196,32 @@ struct RootView: View {
         } completion: {
             guard slides == slide else { return }
             leavingTabs = []
+        }
+    }
+
+    /// A tap on the key of the tab that is already shown: the tab goes back to its first page. The
+    /// stack of the tab is emptied, and the stack pops back to its first page as the back key does.
+    ///
+    /// On the library tab only the stack of the view shown is emptied. The other views keep theirs,
+    /// as they do when the user switches views. The radio and the Feed tab push no pages of their
+    /// own: a person's page and a review rise over the whole app, tab bar included. The settings
+    /// have no pages either, so the section shown goes back to its top.
+    private func backToFirstPage(of which: RPMTab) {
+        switch which {
+        case .home: homePath = []
+        case .library: backToFirstPageOfLibrary()
+        case .radio, .feed: break
+        case .settings: settingsTops += 1
+        }
+    }
+
+    /// Empties the stack of the library view shown. See ``backToFirstPage(of:)``.
+    private func backToFirstPageOfLibrary() {
+        switch mode {
+        case .albums: opened = []
+        case .artists: browsing = []
+        case .genres: genrePath = []
+        case .playlists: lists = []
         }
     }
 

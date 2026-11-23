@@ -109,6 +109,10 @@ public struct SettingsPage: View {
     /// Whether the profile shows what is playing. Nil hides the switch.
     private let sharesListening: Binding<Bool>?
 
+    /// Raised by one each time the Settings key in the tab bar is tapped while this page is shown.
+    /// The section shown is then built again, so it is back at its top.
+    private let backToTop: Int
+
     /// The section that is shown. It is saved, so the page opens on the section used last.
     @AppStorage(SettingsSection.key) private var section: SettingsSection = .general
 
@@ -137,7 +141,8 @@ public struct SettingsPage: View {
                 onSupport: @escaping () -> Void,
                 crashReports: Binding<Bool>,
                 onFeedback: (() -> Void)?,
-                sharesListening: Binding<Bool>? = nil) {
+                sharesListening: Binding<Bool>? = nil,
+                backToTop: Int = 0) {
         self.name = name
         self.email = email
         self.quota = quota
@@ -158,6 +163,7 @@ public struct SettingsPage: View {
         self.crashReports = crashReports
         self.onFeedback = onFeedback
         self.sharesListening = sharesListening
+        self.backToTop = backToTop
     }
 
     /// The bit rates that this account may choose between.
@@ -228,6 +234,8 @@ public struct SettingsPage: View {
             .padding(.bottom, RPMLayout.foot)
         }
         .scrollIndicators(.hidden)
+        // A new scroll, at its top, for each tap on the tab that is already shown.
+        .id(backToTop)
     }
 
     private var header: some View {

@@ -14,11 +14,16 @@ public struct RPMChrome: View {
 
     @Binding private var showing: RPMTab
 
+    /// Called for a tap on the tab that is already shown. See ``RPMTabBar``.
+    private let onAgain: (RPMTab) -> Void
+
     public init(player: Player, art: CoverArt?, showing: Binding<RPMTab>,
+                onAgain: @escaping (RPMTab) -> Void,
                 onOpen: @escaping () -> Void) {
         self.player = player
         self.art = art
         self._showing = showing
+        self.onAgain = onAgain
         self.onOpen = onOpen
     }
 
@@ -30,7 +35,7 @@ public struct RPMChrome: View {
                     .coachTarget(.miniPlayer)
             }
 
-            RPMTabBar(showing: $showing)
+            RPMTabBar(showing: $showing, onAgain: onAgain)
         }
         .padding(.horizontal, Self.edge)
         // The shapes stand `gapBelow` above the bottom edge of the screen. This is inside the
