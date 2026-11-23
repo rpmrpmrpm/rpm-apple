@@ -408,7 +408,14 @@ public struct HomePage: View {
                                            onOpen: onOpen, onOpenList: onOpenList,
                                            onTune: onTune,
                                            onReady: onReady,
-                                           onDressed: { dress = $0 })
+                                           onDressed: { dress = $0 },
+                                           // A station's card as the radio home draws it: the
+                                           // admin's card picture and description.
+                                           stationWords: { station in
+                                               HomeBannerView.StationWords.card(
+                                                   station, kicker: Loc.get("Rpm_Tab_Radio"),
+                                                   state: radioState)
+                                           })
                                 // Where it ends on the page, for the ground. See ``leadRange``.
                                 .onGeometryChange(for: Double.self) {
                                     $0.frame(in: .named(Self.page)).maxY

@@ -268,15 +268,11 @@ public struct RadioHome: View {
                            onReady: {},
                            onDressed: { dress = $0 },
                            stationWords: { station in
-                               // The admin's description where there is one, on up to two
-                               // lines, else the genre and the country.
-                               let described = station.edit?.description
-                               return HomeBannerView.StationWords(
+                               HomeBannerView.StationWords.card(
+                                   station,
                                    kicker: Loc.get(shown.why[station.uuid] == .local
                                                    ? "Radio_HomeNearYou" : "Radio_HomeOnRepeat"),
-                                   line: described ?? Self.shortLine(station),
-                                   lines: described == nil ? 1 : 2,
-                                   picture: cardPicture(station))
+                                   state: radioState)
                            })
         } else {
             // Nothing runs up behind the heading, so this takes the room the banner would take.
@@ -345,35 +341,6 @@ public struct RadioHome: View {
                 .frame(maxWidth: .infinity)
         }
     }
-
-    /// The card picture the admin chose for `station`, read through ``RadioState`` and decoded off
-    /// the main actor at the size the card asks for. Nil where the rules list none for it.
-    private func cardPicture(_ station: RadioStation) -> HomeBannerView.StationPicture? {
-        let cards = radioState.rules.cards
-        guard let uuid = cards.uuid(of: station) else { return nil }
-        let state = radioState
-        let key = uuid + "|" + cards.stamp
-        return HomeBannerView.StationPicture(key: key) { edge in
-            let kept = key + "|" + String(edge)
-            if let held = Self.decoded[kept] { return held }
-            guard let data = try? await state.cardPicture(for: station) else { return nil }
-            let image = await Task.detached(priority: .userInitiated) {
-                Thumbnail.of(data, edge: edge)
-            }.value
-            if let image {
-                if Self.decoded.count >= Self.decodedMost { Self.decoded.removeAll() }
-                Self.decoded[kept] = image
-            }
-            return image
-        }
-    }
-
-    /// The card pictures decoded so far, by station, stamp and size, so a card that is built again
-    /// as the banner turns does not read and decode its picture again.
-    @MainActor private static var decoded: [String: CGImage] = [:]
-
-    /// How many decoded card pictures are kept: twice as many as the banner has cards.
-    private static let decodedMost = RadioHomePicks.bannerMost * 2
 
     /// Example: "Jazz · Netherlands". The station's first genre and its country, either of them,
     /// or nil with neither.
