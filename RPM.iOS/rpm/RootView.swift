@@ -962,10 +962,10 @@ struct RootView: View {
     /// The library tab. Its four views slide across one another in the order of the row of views,
     /// as the tabs do (``SlidingPages``).
     ///
-    /// A view at its first page is held, as the settings page is: its header and its row of views
-    /// stay where they are, the pill in the row moves to the new view, and only what is under the
-    /// row slides. A view with a page pushed on its stack slides whole, because the pushed page
-    /// has no row. Held views draw no ground of their own, so the tab draws one behind them.
+    /// A view at its first page is held, as the settings page is: its row of views stays where it
+    /// is, the pill in the row moves to the new view, and the header and what is under the row
+    /// slide. A view with a page pushed on its stack slides whole, because the pushed page has no
+    /// row. Held views draw no ground of their own, so the tab draws one behind them.
     private var libraryTab: some View {
         SlidingPages(mode, holding: { atFirstPage($0) }) { which in libraryView(which) }
             .groundBehindHeldPages()

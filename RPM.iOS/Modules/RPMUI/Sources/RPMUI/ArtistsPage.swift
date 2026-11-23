@@ -103,7 +103,8 @@ public struct ArtistsPage: View {
             }
             .remembersSearch(asked, searching: searching)
             .frame(maxHeight: .infinity)
-            // Only this part slides when the library's view changes. See ``SlidingPages``.
+            // This part and the header slide when the library's view changes, and the row of
+            // views stays. See ``SlidingPages``.
             .slidesWhenHeld()
             .scrollsUnder {
                 VStack(spacing: 0) {

@@ -13,14 +13,19 @@ import RPMDesign
 /// in a ``PageTabs`` row, a link from the player, a script. The settings page's sections slide
 /// whole. The library's views are held (`holding`), as described below.
 ///
-/// **A held page stands still, and only the part under its header slides.** Each library view
-/// draws its own header and its own ``PageTabs`` row, inside its own `NavigationStack`. A view
-/// that `holding` names is not moved. The part under its header moves instead
-/// (`slidesWhenHeld()`). The header of the view that leaves fades out while the new one fades in
-/// (`headerWhenHeld()`). The new row replaces the old one at once, in the same place
-/// (`rowWhenHeld()`). So the row seems to stay and its pill moves across, as on the settings page,
-/// where one header and one row stand over all the sections. A view with a page pushed on its
-/// stack is not held and slides whole, because the pushed page has no row.
+/// **A held page stands still, and everything on it except its row of tabs slides.** Each library
+/// view draws its own header and its own ``PageTabs`` row, inside its own `NavigationStack`. A
+/// view that `holding` names is not moved. Its header (`headerWhenHeld()`) and the part under its
+/// row (`slidesWhenHeld()`) move instead. The new row replaces the old one at once, in the same
+/// place (`rowWhenHeld()`). So the row seems to stay and its pill moves across, as on the settings
+/// page, where one row stands over all the sections. A view with a page pushed on its stack is not
+/// held and slides whole, because the pushed page has no row.
+///
+/// **A held page that comes in is placed before it moves.** Its header and content move by a
+/// value that is passed down through the environment into its `NavigationStack`. A stack that is
+/// built inside an animation shows its content at the end of the motion at once. So the page is
+/// first put on the screen without animation, just past the edge, and the slide starts a moment
+/// later (``slide(to:)``).
 ///
 /// **Held pages stand on top of each other, so they cannot paint a ground of their own.** One
 /// ground is drawn behind all of them (`groundBehindHeldPages()`), and each page leaves its own
@@ -44,6 +49,9 @@ public struct SlidingPages<Choice: Hashable & CaseIterable, Page: View>: View {
 
     /// The pages still sliding off the screen. They are taken away when the slide ends.
     @State private var leaving: Set<Choice> = []
+
+    /// A page that is placed just past the edge and waits to slide in. See the notes on the type.
+    @State private var arriving: Choice?
 
     /// Counts the changes, so a slide that ends after a newer one began leaves the pages of the
     /// newer one alone.
@@ -91,19 +99,19 @@ public struct SlidingPages<Choice: Hashable & CaseIterable, Page: View>: View {
         let held = holds(which)
         let away = TabSlide.place(of: place(which), shown: place(current)) * width
 
-        // The header and the row of a held page give way only to those of a held page that comes
-        // in. A page that comes in whole covers them as it comes.
+        // The row of a held page gives way only to the row of a held page that comes in. A page
+        // that comes in whole covers it as it comes.
         let shows = !held || which == current || !holds(current)
         let behind = mayHold
 
         return page(which)
-            .modifier(SlideMotion(shift: held ? away : 0, presence: shows ? 1 : 0))
+            .modifier(SlideMotion(shift: held ? away : 0))
             .transformEnvironment(\.pageSlide) { slide in
                 slide.rowShows = shows
                 slide.groundBehind = behind
             }
             .offset(x: held ? 0 : away)
-            .transition(entering(which, held: held))
+            .transition(entering(which))
             // The page shown is in front, so a page that comes in whole covers the header of a
             // held page that leaves.
             .zIndex(which == current ? 1 : 0)
@@ -111,13 +119,12 @@ public struct SlidingPages<Choice: Hashable & CaseIterable, Page: View>: View {
             .accessibilityHidden(which != current)
     }
 
-    /// How a page comes in: from the side away from the page it replaces. A held page does not
-    /// move: the part under its header comes in from that side, and its header fades in.
-    private func entering(_ which: Choice, held: Bool) -> AnyTransition {
+    /// How a page comes in: from the side away from the page it replaces. Where pages may be held,
+    /// a page is placed first and then moved (``slide(to:)``), so it needs no transition.
+    private func entering(_ which: Choice) -> AnyTransition {
+        guard !mayHold else { return .identity }
         let from = TabSlide.entry(from: place(cameFrom), to: place(which)) * width
-        guard held else { return AnyTransition.offset(x: from) }
-        return AnyTransition.modifier(active: SlideMotion(shift: from, presence: 0),
-                                      identity: SlideMotion(shift: 0, presence: 1))
+        return AnyTransition.offset(x: from)
     }
 
     /// Whether pages may be held here: a `holding` was given, and the system can make a
@@ -132,9 +139,10 @@ public struct SlidingPages<Choice: Hashable & CaseIterable, Page: View>: View {
         return holding(which)
     }
 
-    /// The pages on the screen: the one shown, and those still sliding away. In their order.
+    /// The pages on the screen: the one shown, those still sliding away, and one waiting to slide
+    /// in. In their order.
     private var onScreen: [Choice] {
-        Choice.allCases.filter { $0 == current || leaving.contains($0) }
+        Choice.allCases.filter { $0 == current || $0 == arriving || leaving.contains($0) }
     }
 
     /// The place of a page in the order, counted from the first.
@@ -144,17 +152,42 @@ public struct SlidingPages<Choice: Hashable & CaseIterable, Page: View>: View {
 
     /// Shows `next`, sliding both pages the whole width. The page left behind stays until the
     /// slide ends.
+    ///
+    /// Where pages may be held, `next` is first placed just past the edge without animation, and
+    /// slides in on a later frame. See the notes on the type.
     private func slide(to next: Choice) {
         guard next != current else { return }
 
         slides += 1
         let slide = slides
 
-        // All in one animated change, so the page coming in is inserted with its slide.
+        guard mayHold else {
+            // All in one animated change, so the page coming in is inserted with its slide.
+            move(to: next, slide: slide)
+            return
+        }
+
+        var still = Transaction()
+        still.disablesAnimations = true
+        withTransaction(still) { arriving = next }
+
+        Task { @MainActor in
+            // About two frames, so the stack of the page that comes in has drawn its content once,
+            // in its place past the edge.
+            try? await Task.sleep(for: .milliseconds(34))
+            guard slides == slide else { return }
+            move(to: next, slide: slide)
+        }
+    }
+
+    /// The animated part of a slide: `next` becomes the page shown, and the page shown before
+    /// leaves.
+    private func move(to next: Choice, slide: Int) {
         withAnimation(.easeInOut(duration: TabSlide.duration)) {
             cameFrom = current
             leaving.insert(current)
             current = next
+            arriving = nil
         } completion: {
             guard slides == slide else { return }
             leaving = []
@@ -178,11 +211,8 @@ enum HeldPages {
 /// What a page inside ``SlidingPages`` is told about the slide. Outside one, the defaults hold:
 /// nothing moves and everything shows.
 struct PageSlide: Equatable {
-    /// How far the part under the header of a held page stands from its place, in points.
+    /// How far the header and the content of a held page stand from their place, in points.
     var shift: CGFloat = 0
-
-    /// How much of the header shows: 1 all of it, 0 none.
-    var presence: Double = 1
 
     /// Whether the row of tabs under the header shows.
     var rowShows = true
@@ -202,32 +232,25 @@ extension EnvironmentValues {
     }
 }
 
-/// Adds `shift` to how far a held page's content stands from its place, and takes `presence` of
-/// its header. It is the page's place in the slide, and also the transition of a held page that
-/// comes in, so the two add up.
+/// Adds `shift` to how far a held page's header and content stand from their place: the page's
+/// place in the slide.
 ///
-/// It is animatable, so the content follows the slide on every frame. The content is inside the
-/// page's `NavigationStack`, where the slide's own offset cannot reach it.
+/// It is animatable, so the header and the content follow the slide on every frame. They are
+/// inside the page's `NavigationStack`, where the slide's own offset cannot reach them.
 private struct SlideMotion: ViewModifier, Animatable {
     var shift: CGFloat
-    var presence: Double
 
     /// `nonisolated` because `Animatable` is. See `SpectrumRunView.animatableData`.
-    nonisolated var animatableData: AnimatablePair<CGFloat, Double> {
-        get { AnimatablePair(shift, presence) }
-        set {
-            shift = newValue.first
-            presence = newValue.second
-        }
+    nonisolated var animatableData: CGFloat {
+        get { shift }
+        set { shift = newValue }
     }
 
     func body(content: Content) -> some View {
         let moved = self.shift
-        let shown = self.presence
 
         return content.transformEnvironment(\.pageSlide) { slide in
             slide.shift += moved
-            slide.presence *= shown
         }
     }
 }
@@ -249,9 +272,9 @@ extension View {
     }
 
     /// A page's header, with anything that opens under it, such as the search field. In a held
-    /// page that leaves, it fades out, and in one that comes in, it fades in.
+    /// page it slides with the content, and only the row under it stays.
     @MainActor func headerWhenHeld() -> some View {
-        modifier(HeldHeader())
+        modifier(HeldContent())
     }
 
     /// A page's ``PageTabs`` row. In a held page that leaves, it is hidden at once, because the
@@ -273,14 +296,6 @@ private struct HeldContent: ViewModifier {
 
     func body(content: Content) -> some View {
         content.offset(x: slide.shift)
-    }
-}
-
-private struct HeldHeader: ViewModifier {
-    @Environment(\.pageSlide) private var slide
-
-    func body(content: Content) -> some View {
-        content.opacity(slide.presence)
     }
 }
 

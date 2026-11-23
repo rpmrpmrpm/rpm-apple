@@ -220,7 +220,8 @@ public struct LibraryPage: View {
                 }
             }
             .frame(maxHeight: .infinity)
-            // Only this part slides when the library's view changes. See ``SlidingPages``.
+            // This part and the header slide when the library's view changes, and the row of
+            // views stays. See ``SlidingPages``.
             .slidesWhenHeld()
             .scrollsUnder {
                 // While the search is open the heading and the views fade away, and the field rises
