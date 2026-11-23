@@ -7886,6 +7886,21 @@
 /* Phone settings: what VoiceOver/TalkBack reads for the first colour bubble under Settings_Colour, which gives the buttons and cards the colour of the chosen background, like a theme. */
 "Settings_ColourTheme" = "Assortie à l’arrière-plan";
 
+/* Phone settings, Appearance: the title of the card that chooses how the player looks when the phone is turned on its side (landscape). */
+"Settings_LandscapePlayer" = "Lecteur à l’horizontale";
+
+/* Phone settings, under Settings_LandscapePlayer: one line that says what the choice is for. */
+"Settings_LandscapePlayerHint" = "L’apparence du lecteur quand vous tournez votre téléphone à l’horizontale.";
+
+/* Phone settings, Settings_LandscapePlayer: the choice that keeps the full-screen stage with its visualisers. */
+"Settings_LandscapeClassic" = "Classique";
+
+/* Phone settings, Settings_LandscapePlayer: the choice that shows the cover on the left and the title, progress and keys on the right, over the moving room. */
+"Settings_LandscapeModern" = "Moderne";
+
+/* Phone player on its side: the name of the visualiser that is the app's own moving room of coloured blobs (metaballs), as Tv_RoomStyleLava names it on the TV. */
+"Rpm_Stage_Room" = "Lava";
+
 /* Playlists tab (iPhone and Android phone): the line under a folder's name on its tile or row, where a record shows its artist. */
 "Playlists_RowFolder" = "Dossier";
 
