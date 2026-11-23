@@ -111,7 +111,7 @@ private struct GenreCard: View {
                         .frame(height: lettering)
 
                     Text(albumCount(albums))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(RPMFont.text(12, weight: .medium))
                         .foregroundStyle(RPMInk.white(0xCC / 255))
                 }
                 .padding(12)

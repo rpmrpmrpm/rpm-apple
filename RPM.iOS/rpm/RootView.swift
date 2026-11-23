@@ -2131,7 +2131,7 @@ struct RootView: View {
         VStack(spacing: 18) {
             RecordSpinner(diameter: 120)
             if let what {
-                Text(what).font(.footnote).foregroundStyle(.secondary)
+                Text(what).font(RPMFont.display(13)).foregroundStyle(.secondary)
             }
             LaunchReadout()
         }

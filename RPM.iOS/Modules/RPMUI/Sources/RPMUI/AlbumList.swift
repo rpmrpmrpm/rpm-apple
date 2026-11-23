@@ -250,7 +250,7 @@ struct LetterRail: View {
             VStack(spacing: 0) {
                 ForEach(letters, id: \.self) { letter in
                     Text(String(letter))
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(RPMFont.text(10, weight: .semibold))
                         .foregroundStyle(ink(letter))
                         .frame(width: Self.width, height: step)
                 }

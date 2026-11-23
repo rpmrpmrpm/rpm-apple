@@ -59,7 +59,7 @@ struct SignInView: View {
                         .frame(width: 150, height: 150 / RPMWordmark.aspect)
 
                     Text(Loc.get(signingUp == nil ? "Rpm_SignIn_Subtitle" : "SignUp_Subtitle"))
-                        .font(.system(size: 15))
+                        .font(RPMFont.display(15))
                         .foregroundStyle(RPMInk.white(0xCC / 255))
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: 320)
@@ -75,7 +75,7 @@ struct SignInView: View {
                         // code flow (accounts auth/forgot-password and auth/reset-password,
                         // which email a code-only reset).
                         Text(Loc.get("Login_NewHere"))
-                            .font(.system(size: 13))
+                            .font(RPMFont.display(13))
                             .foregroundStyle(
                                 Color(red: 0xCC / 255, green: 0xDD / 255, blue: 0xEE / 255)
                                     .opacity(0xAA / 255))
@@ -133,19 +133,19 @@ struct SignInView: View {
 
             if let trouble = model.trouble {
                 Text(trouble)
-                    .font(.system(size: 13))
+                    .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.red)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if let notice = model.notice {
                 Text(notice)
-                    .font(.system(size: 13))
+                    .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.white(0xCC / 255))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else if let waiting {
                 Text(waiting)
-                    .font(.system(size: 13))
+                    .font(RPMFont.display(13))
                     .foregroundStyle(RPMInk.white(0xCC / 255))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -185,7 +185,7 @@ struct SignInView: View {
         HStack(spacing: 10) {
             line
             Text(Loc.get("Login_Or"))
-                .font(.system(size: 12))
+                .font(RPMFont.display(12))
                 .foregroundStyle(RPMInk.white(0x88 / 255))
             line
         }

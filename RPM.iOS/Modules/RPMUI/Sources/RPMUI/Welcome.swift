@@ -331,7 +331,7 @@ private struct WelcomeStep<Content: View>: View {
                 if let skip {
                     Button(action: skip) {
                         Text(Loc.get("Wizard_SkipForNow"))
-                            .font(.system(size: 14))
+                            .font(RPMFont.display(14))
                             .foregroundStyle(RPMInk.white(0xB3 / 255))
                             .padding(10)
                             .contentShape(Rectangle())
@@ -407,7 +407,7 @@ private struct WelcomeBackdrops: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                             Text(Loc.get(choice.nameKey))
-                                .font(.system(size: 13, weight: .medium))
+                                .font(RPMFont.text(13, weight: .medium))
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
@@ -442,7 +442,7 @@ private struct WelcomeLanguages: View {
 
         return WelcomeChoice(picked: picked, onPick: { if !picked { Loc.choose(code) } }) {
             Text(said)
-                .font(.system(size: 16, weight: .semibold))
+                .font(RPMFont.text(16, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
@@ -468,11 +468,11 @@ private struct WelcomeLayouts: View {
 
                         VStack(alignment: .leading, spacing: 3) {
                             Text(choice.label)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(RPMFont.text(16, weight: .semibold))
                                 .foregroundStyle(.white)
 
                             Text(Loc.get(choice == .grid ? "Wizard_LayoutWallDesc" : "Wizard_LayoutListDesc"))
-                                .font(.system(size: 12.5))
+                                .font(RPMFont.display(12.5))
                                 .foregroundStyle(RPMInk.white(0x8C / 255))
                                 .fixedSize(horizontal: false, vertical: true)
                         }

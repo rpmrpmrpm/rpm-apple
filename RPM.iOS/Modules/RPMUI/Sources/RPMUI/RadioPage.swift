@@ -416,7 +416,7 @@ public struct RadioPage: View {
             Spacer().frame(height: AlbumCaption.artGap)
 
             Text(station.display)
-                .font(.system(size: caption.album, weight: .medium))
+                .font(RPMFont.text(caption.album, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)

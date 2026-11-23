@@ -116,7 +116,7 @@ struct TabFace<Mark: View>: View {
         // The system font and not Cabin, to match the Uno app's tab labels, which use the system
         // font.
         let named = Text(label)
-            .font(.system(size: layout == .stacked ? 10 : 12, weight: lit ? .semibold : .regular))
+            .font(RPMFont.text(layout == .stacked ? 10 : 12, weight: lit ? .semibold : .regular))
             .foregroundStyle(lit ? .white : RPMInk.white(0x80 / 255))
             .lineLimit(1)
 

@@ -318,7 +318,7 @@ public struct RadioHome: View {
 
             if picks.isEmpty {
                 Text(Loc.get("Radio_HomeQuickEmpty"))
-                    .font(.system(size: 13))
+                    .font(RPMFont.display(13))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, RPMLayout.margin)
             } else {
@@ -412,11 +412,11 @@ private struct StationPanels: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(pick.station.display)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(RPMFont.text(14, weight: .medium))
                         .lineLimit(1)
 
                     Text(Self.kindLine(pick))
-                        .font(.system(size: 12))
+                        .font(RPMFont.display(12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -487,12 +487,12 @@ private struct StationShelf: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(station.display)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(RPMFont.text(12, weight: .medium))
                     .lineLimit(1)
 
                 if let line = RadioHome.shortLine(station) {
                     Text(line)
-                        .font(.system(size: 11))
+                        .font(RPMFont.display(11))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }

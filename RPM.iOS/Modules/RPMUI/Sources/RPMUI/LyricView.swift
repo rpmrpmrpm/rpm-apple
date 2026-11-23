@@ -227,11 +227,11 @@ struct LyricView: View {
         VStack(spacing: 18) {
             VStack(spacing: 5) {
                 Text(player.current?.title ?? "")
-                    .font(.system(size: size, weight: .semibold))
+                    .font(RPMFont.text(size, weight: .semibold))
                     .foregroundStyle(.white)
 
                 Text(player.current?.artist ?? "")
-                    .font(.system(size: size * 0.82, weight: .medium))
+                    .font(RPMFont.text(size * 0.82, weight: .medium))
                     .foregroundStyle(Color(white: 0xEA / 255).opacity(0.66))
             }
             .multilineTextAlignment(.center)
@@ -318,7 +318,7 @@ struct LyricView: View {
                 // **The same weight on every line, sung or not.** A heavier weight makes
                 // the text wider, so a bolder sung line would wrap again and move every
                 // line under it. Only the brightness shows which line is sung.
-                .font(.system(size: size, weight: .semibold))
+                .font(RPMFont.text(size, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
@@ -368,7 +368,7 @@ struct LyricView: View {
                     .transition(.identity)
             }
         }
-        .font(.system(size: size * LyricVoices.scale, weight: .semibold))
+        .font(RPMFont.text(size * LyricVoices.scale, weight: .semibold))
     }
 
     /// A backing line (``LyricScore/Aside``) under the line it goes with: shown while it is sung
@@ -387,7 +387,7 @@ struct LyricView: View {
                     Text(row.text).foregroundStyle(Color.white)
                 }
             }
-            .font(.system(size: size * LyricVoices.scale, weight: .semibold))
+            .font(RPMFont.text(size * LyricVoices.scale, weight: .semibold))
         }
     }
 

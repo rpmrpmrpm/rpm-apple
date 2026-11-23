@@ -965,7 +965,7 @@ struct HomeFeatureCard: View {
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.system(size: 13))
+                        .font(RPMFont.display(13))
                         .foregroundStyle(RPMInk.white(0xD1 / 255))
                         .lineLimit(subtitleLines)
                 }

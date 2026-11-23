@@ -237,7 +237,7 @@ public struct RPMGlassButton: ButtonStyle {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
 
         return configuration.label
-            .font(.system(size: size, weight: .semibold))
+            .font(RPMFont.text(size, weight: .semibold))
             .foregroundStyle(ink)
             // The glass stays lit and only the label greys out. This is the desktop's rule: a
             // disabled button that goes dark looks like a hole in the card.
@@ -398,7 +398,7 @@ extension View {
     /// which looks like spaced-out text beside a title that is not. The same applies to
     /// `RPMFont.headerTracking`.
     public func rpmKicker() -> some View {
-        font(.system(size: 11, weight: .semibold))
+        font(RPMFont.text(11, weight: .semibold))
             .tracking(0)
             .foregroundStyle(RPMInk.white(0x88 / 255))
             // The artist page's soft outline, where it asks for it. See ``TextFeatherKey``.
@@ -444,7 +444,7 @@ public struct RPMFieldStyle: ViewModifier {
 
     public func body(content: Content) -> some View {
         content
-            .font(.system(size: 15))
+            .font(RPMFont.display(15))
             .foregroundStyle(Color.white)
             .padding(.horizontal, 14)
             .frame(height: 44)
@@ -511,6 +511,17 @@ public enum RPMFont {
     /// The body and display face. `Cabin`, the desktop's own.
     public static func display(_ size: CGFloat) -> Font { face(.cabinMedium, size) }
     public static func displayBold(_ size: CGFloat) -> Font { face(.cabinBold, size) }
+
+    /// The body face for a size and a weight given as for the system face: `Cabin Medium`, and
+    /// `Cabin Bold` from semibold up. The app ships Cabin in these two weights only. Every text in
+    /// the app is set in Cabin; a script that Cabin does not have, such as Chinese, falls back to
+    /// the system face letter by letter.
+    public static func text(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        switch weight {
+        case .semibold, .bold, .heavy, .black: return displayBold(size)
+        default: return display(size)
+        }
+    }
 
     /// The tab and page titles. `Thiamine RPM` draws its capitals at 0.247 of the em, against
     /// 0.70 for Cabin. The same size number is therefore nearly three times smaller in it, so
@@ -612,6 +623,18 @@ public enum RPMFont {
     /// The registered name of the body face that ``display(_:)`` draws, for text that is measured
     /// before it is drawn: see ``CentredAboutText``. Nil where the face did not load.
     static var mediumFace: String? { name(of: .cabinMedium) }
+
+    /// Sets Cabin on the controls that SwiftUI draws with UIKit, where a `.font` does not reach:
+    /// the segmented pickers. The menus that open from a `Menu` are the system's own and keep the
+    /// system face. Called once, as the app starts.
+    @MainActor
+    public static func dressUIKit() {
+        let segments = UISegmentedControl.appearance()
+        segments.setTitleTextAttributes([.font: displayFace(13)], for: .normal)
+        let bold = name(of: .cabinBold).flatMap { UIFont(name: $0, size: 13) }
+            ?? .systemFont(ofSize: 13, weight: .semibold)
+        segments.setTitleTextAttributes([.font: bold], for: .selected)
+    }
 
     /// The body face as a UIKit font, for text that UIKit lays out (``WrappedText``).
     static func displayFace(_ size: CGFloat) -> UIFont {

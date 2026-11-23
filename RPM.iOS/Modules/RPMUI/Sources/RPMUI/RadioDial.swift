@@ -106,12 +106,12 @@ public struct RadioDial: View {
         HStack(alignment: .center, spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(under?.display ?? Loc.get("Rpm_Radio_DialEmpty"))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(RPMFont.text(14, weight: .semibold))
                     .foregroundStyle(RPMInk.white(0xF2 / 255))
                     .lineLimit(1)
 
                 Text(line)
-                    .font(.system(size: 11.5))
+                    .font(RPMFont.display(11.5))
                     .foregroundStyle(RPMInk.white(0x99 / 255))
                     .lineLimit(1)
             }
@@ -124,7 +124,7 @@ public struct RadioDial: View {
             // sign is what the card is printed in anyway.
             if let under {
                 Text(StationSign.of(under.display))
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(RPMFont.text(11, weight: .semibold))
                     .tracking(1)
                     .foregroundStyle(Self.cyan)
                     .padding(.horizontal, 7)
@@ -182,7 +182,7 @@ public struct RadioDial: View {
 
                 var caption = context.resolve(
                     Text(mark.caption)
-                        .font(.system(size: DialCard.nameSize, weight: .medium))
+                        .font(RPMFont.text(DialCard.nameSize, weight: .medium))
                         .foregroundColor(lit ? Self.cyan : Self.labelInk.opacity(0.85)))
                 caption.shading = .color(lit ? Self.cyan : Self.labelInk.opacity(0.85))
 

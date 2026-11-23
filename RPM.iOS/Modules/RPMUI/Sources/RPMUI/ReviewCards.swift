@@ -75,7 +75,7 @@ struct ReviewCard<Author: View>: View {
                 Spacer()
                 Button(action: onRead) {
                     Text(Loc.get("Rpm_Profile_ReadReview"))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(RPMFont.text(14, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.vertical, 8)
                         .contentShape(Rectangle())
@@ -120,7 +120,7 @@ struct ReviewHead: View {
         let review = shown.review
         VStack(alignment: .leading, spacing: 0) {
             Text(shown.albumTitle)
-                .font(.system(size: 17, weight: .semibold))
+                .font(RPMFont.text(17, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(2)
             Text(shown.albumYear > 0 ? "\(shown.albumArtist), \(shown.albumYear)" : shown.albumArtist)
@@ -207,7 +207,7 @@ struct Byline: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(name)
-                .font(.system(size: 14, weight: .semibold))
+                .font(RPMFont.text(14, weight: .semibold))
                 .foregroundStyle(gold ? RPMInk.gold : .white)
                 .lineLimit(1)
             Text(written(millis))

@@ -177,7 +177,7 @@ public struct MiniPlayer: View {
                 // call sign is drawn instead.
                 StationFace(station: station, edge: edge, inset: 3, onWearing: { _ in }) {
                     Text(StationSign.of(station.display))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(RPMFont.text(11, weight: .semibold))
                         .tracking(0.5)
                         .foregroundStyle(RPMInk.white(0xAA / 255))
                 }

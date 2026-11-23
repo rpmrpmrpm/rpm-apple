@@ -20,7 +20,7 @@ struct PersonPicture: View {
             Circle().fill(RPMInk.white(0x26 / 255))
 
             Text(initial)
-                .font(.system(size: size * 0.42, weight: .semibold))
+                .font(RPMFont.text(size * 0.42, weight: .semibold))
                 .foregroundStyle(RPMInk.white(0xDD / 255))
 
             if let url {

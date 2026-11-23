@@ -25,7 +25,7 @@ struct SupporterMark: View {
 
             if !word.isEmpty {
                 Text(word)
-                    .font(.system(size: 10))
+                    .font(RPMFont.display(10))
             }
         }
         .foregroundStyle(SupporterMetal.ink)

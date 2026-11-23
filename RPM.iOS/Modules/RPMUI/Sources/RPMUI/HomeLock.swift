@@ -22,7 +22,7 @@ struct HomeLock: View {
                 .font(RPMFont.displayBold(26))
 
             Text(line)
-                .font(.system(size: 14))
+                .font(RPMFont.display(14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)
@@ -58,7 +58,7 @@ struct HomeLock: View {
             .frame(width: 220, height: 4)
 
             Text(Loc.get("HomeLock_Progress", gate.have, gate.want))
-                .font(.system(size: 12))
+                .font(RPMFont.display(12))
                 .foregroundStyle(.secondary)
         }
         .padding(.top, 6)

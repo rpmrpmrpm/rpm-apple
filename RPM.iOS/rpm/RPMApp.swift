@@ -24,6 +24,8 @@ struct RPMApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: delegate.model)
+                // Cabin for every text that does not choose its own face. See `RPMFont.text`.
+                .font(RPMFont.display(17))
                 .id(language)
         }
     }
@@ -45,6 +47,7 @@ final class RPMDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil)
         -> Bool {
         CrashWatch.install(arrived: { [model] in Task { await model.diagnostics.crashArrived() } })
+        RPMFont.dressUIKit()
         return true
     }
 

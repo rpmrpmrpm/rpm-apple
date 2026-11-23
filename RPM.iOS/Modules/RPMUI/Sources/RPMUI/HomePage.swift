@@ -652,7 +652,7 @@ struct HomeListsRow: View {
                                     }
 
                                 Text(name)
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(RPMFont.text(12, weight: .medium))
                                     .lineLimit(1)
                             }
                             .frame(width: HomeRowView.art, alignment: .leading)
@@ -923,12 +923,12 @@ struct HomePicksRow: View {
 
                         VStack(alignment: .leading, spacing: 1) {
                             Text(station.display)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(RPMFont.text(14, weight: .medium))
                                 .lineLimit(1)
 
                             // The kind of entry, with the same text as the desktop.
                             Text(Loc.get("Home_QuickStation"))
-                                .font(.system(size: 12))
+                                .font(RPMFont.display(12))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
@@ -984,12 +984,12 @@ struct HomePicksRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 MarkedTitle(title, explicit: explicit, edge: 13)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(RPMFont.text(14, weight: .medium))
                     .lineLimit(1)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(RPMFont.display(12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }

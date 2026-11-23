@@ -160,7 +160,7 @@ public struct DownloadsPage: View {
         HStack(spacing: 12) {
             if selecting {
                 Image(systemName: picked.contains(row.id) ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
+                    .font(RPMFont.display(20))
                     .foregroundStyle(picked.contains(row.id) ? Color.white : RPMInk.white(0x55 / 255))
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }

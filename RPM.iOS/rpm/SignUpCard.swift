@@ -106,7 +106,7 @@ struct SignUpCard: View {
                 .rpmField()
 
             Text(Loc.get("SignUp_PasswordRule"))
-                .font(.system(size: 12))
+                .font(RPMFont.display(12))
                 .foregroundStyle(RPMInk.white(0x77 / 255))
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -116,7 +116,7 @@ struct SignUpCard: View {
     private var codeFace: some View {
         VStack(spacing: 14) {
             Text(Loc.get("SignUp_CodeSent", email))
-                .font(.system(size: 13))
+                .font(RPMFont.display(13))
                 .foregroundStyle(RPMInk.white(0xCC / 255))
                 .multilineTextAlignment(.center)
 
@@ -124,19 +124,19 @@ struct SignUpCard: View {
                 .textContentType(.oneTimeCode)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
-                .font(.system(size: 18, weight: .medium).monospacedDigit())
+                .font(RPMFont.text(18, weight: .medium).monospacedDigit())
                 .focused($editing, equals: .code)
                 .rpmField()
 
             Button(Loc.get("SignUp_Resend")) { Task { await resend() } }
-                .font(.system(size: 13))
+                .font(RPMFont.display(13))
                 .foregroundStyle(RPMInk.white(0xCC / 255))
         }
     }
 
     private func said(_ line: String, colour: Color) -> some View {
         Text(line)
-            .font(.system(size: 13))
+            .font(RPMFont.display(13))
             .foregroundStyle(colour)
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)

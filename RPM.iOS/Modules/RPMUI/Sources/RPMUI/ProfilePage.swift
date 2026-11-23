@@ -357,7 +357,7 @@ public struct ProfilePage: View {
                 .overlay(alignment: .topTrailing) {
                     if isOwn && unread > 0 {
                         Text(unread > 99 ? "99+" : "\(unread)")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(RPMFont.text(11, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 5)
                             .frame(minWidth: 18, minHeight: 18)

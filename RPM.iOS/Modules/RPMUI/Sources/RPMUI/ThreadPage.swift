@@ -111,7 +111,7 @@ public struct ThreadPage: View {
                     .onTapGesture { actions.onOpenPerson(post.ownerId) }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(post.authorShown)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(RPMFont.text(15, weight: .semibold))
                         .foregroundStyle(post.authorSupporter || ownerSupporter ? RPMInk.gold : .white)
                     Text(written(post.createdAt))
                         .font(RPMFont.display(11))

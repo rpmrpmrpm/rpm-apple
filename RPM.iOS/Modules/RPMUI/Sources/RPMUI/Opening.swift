@@ -47,7 +47,7 @@ public struct Opening: View {
                 .frame(width: Self.wide, height: Self.high)
 
             Text(reading ?? " ")
-                .font(.footnote)
+                .font(RPMFont.display(13))
                 .foregroundStyle(.secondary)
                 .opacity(reading == nil ? 0 : 1)
                 .animation(.easeOut(duration: 0.3), value: reading)

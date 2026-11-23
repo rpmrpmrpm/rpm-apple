@@ -181,7 +181,7 @@ struct CoachHint: View {
     private var bubble: some View {
         VStack(alignment: .trailing, spacing: 8) {
             Text(Loc.get(mark.words))
-                .font(.system(size: 13.5))
+                .font(RPMFont.display(13.5))
                 .lineSpacing(4)
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
@@ -201,7 +201,7 @@ struct CoachHint: View {
             Button(action: onNext) {
                 HStack(spacing: 7) {
                     Text(Loc.get("Coach_Next"))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(RPMFont.text(14, weight: .semibold))
                     Text(Glyph.into)
                         .font(RPMFont.icon(10))
                 }

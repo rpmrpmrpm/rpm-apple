@@ -74,7 +74,7 @@ struct SearchHistoryList: View {
                     Text(Loc.get("Rpm_Search_Recent")).rpmKicker()
                     Spacer()
                     Button(Loc.get("Rpm_Search_ClearRecent")) { stored = "" }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(RPMFont.text(13, weight: .semibold))
                         .foregroundStyle(RPMInk.white(0xB8 / 255))
                         .buttonStyle(.plain)
                         .padding(.vertical, 10)

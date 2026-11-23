@@ -112,7 +112,7 @@ struct PageTabs<Choice: PageTab>: View {
 
                 // The system font and not Cabin, as the tab bar's names.
                 Text(choice.label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(RPMFont.text(12, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .padding(.leading, 6)

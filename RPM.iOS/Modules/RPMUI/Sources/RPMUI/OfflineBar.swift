@@ -28,7 +28,7 @@ public struct OfflineBar: View {
                 VStack(spacing: 2) {
                     HStack(spacing: 8) {
                         Image(systemName: "wifi.slash")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(RPMFont.text(12, weight: .semibold))
 
                         Text(Loc.get("Rpm_Net_Offline"))
                             .font(RPMFont.display(13))

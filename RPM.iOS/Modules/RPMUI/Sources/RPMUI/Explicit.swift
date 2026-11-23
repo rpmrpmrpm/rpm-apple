@@ -17,7 +17,7 @@ struct ExplicitMark: View {
 
     var body: some View {
         Text(verbatim: "E")
-            .font(.system(size: edge * 9 / 14, weight: .bold))
+            .font(RPMFont.text(edge * 9 / 14, weight: .bold))
             .foregroundStyle(RPMInk.ground)
             .frame(width: edge, height: edge)
             .background(RoundedRectangle(cornerRadius: edge * 3 / 14).fill(RPMInk.white(0xAA / 255)))

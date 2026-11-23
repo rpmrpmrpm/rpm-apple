@@ -610,7 +610,7 @@ public struct NowPlayingSheet: View {
                             .foregroundStyle(RPMInk.white(0x3A / 255))
 
                         Text(StationSign.of(station.display))
-                            .font(.system(size: 34, weight: .semibold))
+                            .font(RPMFont.text(34, weight: .semibold))
                             .tracking(4)
                             .foregroundStyle(RPMInk.cyan.opacity(0.85))
                     }

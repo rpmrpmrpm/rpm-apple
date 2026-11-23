@@ -162,7 +162,7 @@ public struct ReviewsWall: View {
                 // there is one, but that is one fetch per row on a page whose purpose is the
                 // record above it.
                 Text(face.review.authorDeleted ? "?" : initial(face.review.authorName))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(RPMFont.text(14, weight: .semibold))
                     .foregroundStyle(RPMInk.white(0xDD / 255))
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(RPMInk.white(0x26 / 255)))
@@ -170,7 +170,7 @@ public struct ReviewsWall: View {
                 VStack(alignment: .leading, spacing: 3) {
                     // A supporter's name is in gold.
                     Text(face.review.authorShown)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(RPMFont.text(14, weight: .semibold))
                         .foregroundStyle(face.review.authorSupporter ? RPMInk.gold : .white)
                         .lineLimit(1)
                         // The name opens the author's page. A deleted account has no page.

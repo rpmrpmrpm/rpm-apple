@@ -16,7 +16,7 @@ struct AdsBadge: View {
                 .fill(RPMInk.white(0x8C / 255))
 
             Text("AD")
-                .font(.system(size: 9, weight: .bold))
+                .font(RPMFont.text(9, weight: .bold))
                 .blendMode(.destinationOut)
         }
         .compositingGroup()

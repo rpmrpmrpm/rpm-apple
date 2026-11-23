@@ -169,7 +169,7 @@ struct PlaylistTile: View {
             Spacer().frame(height: AlbumCaption.artGap)
 
             Text(row.title)
-                .font(.system(size: caption.album, weight: .medium))
+                .font(RPMFont.text(caption.album, weight: .medium))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .frame(width: art, height: caption.albumLine)
@@ -178,7 +178,7 @@ struct PlaylistTile: View {
 
             // The record's artist line: the same size and the same quiet colour.
             Text(line)
-                .font(.system(size: caption.artist))
+                .font(RPMFont.display(caption.artist))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .frame(width: art, height: caption.artistLine)

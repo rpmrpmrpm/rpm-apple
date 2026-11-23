@@ -142,7 +142,7 @@ public struct ArtistWallSection: View {
         return HStack(alignment: .top, spacing: 10) {
             // The letter their name starts with, as on the album page's reviews.
             Text(initial(entry))
-                .font(.system(size: 14, weight: .semibold))
+                .font(RPMFont.text(14, weight: .semibold))
                 .foregroundStyle(RPMInk.white(0xDD / 255))
                 .frame(width: 32, height: 32)
                 .background(Circle().fill(RPMInk.white(0x26 / 255)))
@@ -151,7 +151,7 @@ public struct ArtistWallSection: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     // A supporter's name is in gold.
                     Text(entry.authorShown)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(RPMFont.text(14, weight: .semibold))
                         .foregroundStyle(entry.authorSupporter ? RPMInk.gold : .white)
                         .lineLimit(1)
                         // The name opens the author's page. A deleted account has no page.
