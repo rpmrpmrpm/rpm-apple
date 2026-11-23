@@ -6073,6 +6073,21 @@
 /* Title of the dialog that removes one downloaded album from the iPhone. */
 "Rpm_Download_RemoveQuestion" = "Remove this album from your iPhone? It stays in your cloud library.";
 
+/* iPhone: title of the dialog that stops a playlist download. */
+"Rpm_Download_StopPlaylistQuestion" = "Stop downloading this playlist?";
+
+/* iPhone: title of the dialog that removes one downloaded playlist from the phone. Songs that a downloaded album also holds stay on the phone. */
+"Rpm_Download_RemovePlaylistQuestion" = "Remove this playlist from your iPhone? It stays in your cloud library.";
+
+/* iPhone downloads, when the only download is one playlist, with the space it uses, e.g. '1 playlist (240 MB)'. {0} = the size. */
+"Rpm_Downloads_SummaryOnePlaylist" = "1 playlist (%1$@)";
+
+/* iPhone downloads, when playlists are among them: how many albums and playlists in all, then the space they use, e.g. '14 downloads (3.2 GB)'. {0} = count, {1} = size. */
+"Rpm_Downloads_SummaryMixed" = "%1$@ downloads (%2$@)";
+
+/* iPhone: title of the dialog that removes several downloads from the phone when playlists are among them. {0} = how many. */
+"Rpm_Downloads_RemoveMixedQuestion" = "Remove %1$@ downloads from your iPhone? They stay in your cloud library.";
+
 /* Android phone: title of the dialog that removes one downloaded album from the phone. Rpm_Download_RemoveQuestion says iPhone. */
 "Phone_Download_RemoveQuestion" = "Remove this album from your phone? It stays in your cloud library.";
 
