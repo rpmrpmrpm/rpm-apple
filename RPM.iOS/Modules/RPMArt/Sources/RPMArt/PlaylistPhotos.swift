@@ -42,7 +42,7 @@ public enum PlaylistPhotos {
                                               decade: cut.decade)?.tint
         else { return nil }
 
-        return compose(file, in: tint, edge: edge)
+        return compose(file, in: tint, edge: edge, from: "PlaylistPhotos")
     }
 
     /// The photograph behind the frame of one of the app's own folders, washed in the folder's
@@ -51,7 +51,7 @@ public enum PlaylistPhotos {
     /// Synchronous like ``cover(for:edge:)``, and run off the main actor in the same way.
     public static func folderCover(_ face: FolderFace, edge: Int) -> CoverArt? {
         guard edge > 0, let photo = folder(face) else { return nil }
-        return compose(photo.file, in: photo.tint, edge: edge)
+        return compose(photo.file, in: photo.tint, edge: edge, from: "FolderPhotos")
     }
 
     /// The cover ``folderCover(_:edge:)`` has already composed at this size, or nil. No decode
@@ -64,40 +64,41 @@ public enum PlaylistPhotos {
 
     /// Which photograph a folder of the app's own lists shows, and the colour it is washed in.
     ///
-    /// - One mood's folder shows the photograph of that mood's list of the whole collection, in
-    ///   its colour, so the folder looks like the lists in it.
-    /// - The folder of the decades shows the photograph of the 1980s, a crate of records, in the
-    ///   colour of that list.
-    /// - The folder of all the moods shows the dance floor photograph in the app's own blue
-    ///   (``GeneratedListLook/app``), because it holds every mood.
+    /// Each folder has a photograph of its own (``folderFiles``, from `scripts/folder-photos.json`),
+    /// never one of the lists' photographs, so a folder does not look like one more list. It is
+    /// washed in the folder's colour: a mood's folder in the colour of that mood's list of the whole
+    /// collection, the decades in the 1980s' colour, and the folder of all the moods in the app's
+    /// own blue (``GeneratedListLook/app``), because it holds every mood.
     static func folder(_ face: FolderFace) -> (file: String, tint: RGB)? {
-        let cut: GeneratedCut
+        let key: String
+        let tint: RGB?
         switch face {
         case .plain:
             return nil
         case .moods:
-            guard let file = files[GeneratedCut(kind: "Danceable", genre: nil, decade: 0)] else { return nil }
-            return (file, GeneratedListLook.app.tint)
+            key = "moods"
+            tint = GeneratedListLook.app.tint
         case .decades:
-            cut = GeneratedCut(kind: "Decade", genre: nil, decade: 1980)
+            key = "decades"
+            tint = GeneratedListLook.of(kind: "Decade", genre: nil, decade: 1980)?.tint
         case .mood(let kind):
-            cut = GeneratedCut(kind: kind, genre: nil, decade: 0)
+            key = "mood:" + kind
+            tint = GeneratedListLook.of(kind: kind, genre: nil, decade: 0)?.tint
         }
-        guard let file = files[cut],
-              let tint = GeneratedListLook.of(kind: cut.kind, genre: cut.genre, decade: cut.decade)?.tint
-        else { return nil }
+        guard let file = folderFiles[key], let tint else { return nil }
         return (file, tint)
     }
 
-    /// The photograph in `file`, washed in `tint`, at the size asked for. Cached.
-    private static func compose(_ file: String, in tint: RGB, edge: Int) -> CoverArt? {
+    /// The photograph in `file` in the bundle's `folder`, washed in `tint`, at the size asked for.
+    /// Cached.
+    private static func compose(_ file: String, in tint: RGB, edge: Int, from folder: String) -> CoverArt? {
         let size = min(ArtworkStore.bucket(holding: edge), shippedEdge)
         let key = Self.key(file, size, tint)
 
         if let held = held.object(forKey: key) { return held.art }
 
         guard let url = Bundle.module.url(forResource: file, withExtension: nil,
-                                          subdirectory: "PlaylistPhotos"),
+                                          subdirectory: folder),
               let data = try? Data(contentsOf: url),
               let photo = Thumbnail.of(data, edge: size),
               let washed = washed(photo, in: tint, edge: size)

@@ -19,10 +19,11 @@ let package = Package(
             dependencies: ["RPMKit", "RPMLibrary", "RPMDesign"],
             // The generated playlist photographs, written by scripts/gen_playlist_photos_phone.py.
             // They are copied, not processed, so the folder keeps its name in the bundle and
-            // `PlaylistPhotos` can find it.
+            // `PlaylistPhotos` can find it. The folder photographs, written by
+            // scripts/gen_folder_photos.py, are copied in the same way.
             // cd-blank.png is the plain CD that stands in for a record with no disc picture
             // (`BlankDisc`). It is the desktop's `Assets/cd-blank.png`.
-            resources: [.copy("PlaylistPhotos"), .copy("cd-blank.png")],
+            resources: [.copy("PlaylistPhotos"), .copy("FolderPhotos"), .copy("cd-blank.png")],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(

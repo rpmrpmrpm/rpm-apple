@@ -42,9 +42,14 @@ struct PlaylistPhotosTests {
     }
 
     /// Each of the app's own folders has a photograph behind its frame, and a folder somebody made
-    /// has none. The folder of all the moods washes the dance floor in the app's blue, so it is not
-    /// the dance floor list's own cover.
+    /// has none. No folder wears a list's photograph: the folder holds those lists. The folder of
+    /// all the moods is washed in the app's blue.
     @Test func theAppsFoldersHaveAPhotograph() {
+        let listFiles = Set(PlaylistPhotos.files.values)
+        for (key, file) in PlaylistPhotos.folderFiles {
+            #expect(!listFiles.contains(file), "\(key)")
+        }
+
         for face in [FolderFace.moods, .decades, .mood("Calm"), .mood("Danceable"), .mood("Sleep")] {
             #expect(PlaylistPhotos.folderCover(face, edge: 200)?.image.width == 256, "\(face)")
             #expect(PlaylistPhotos.folderCoverInMemory(face, edge: 200) != nil, "\(face)")

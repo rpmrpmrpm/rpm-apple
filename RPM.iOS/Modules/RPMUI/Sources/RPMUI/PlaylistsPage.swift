@@ -629,12 +629,12 @@ struct PlaylistSleeve: View {
                     .clipShape(shape)
                     .transition(.opacity)
             } else if framed == nil, let folderFrame {
-                // One of the app's own folders: its photograph with its frame over it, as a list
-                // has. Both come in at once, when the photograph is ready, so the frame never
-                // shows over an empty window.
+                // One of the app's own folders: its photograph with the folder frame over it,
+                // the name in the bar under the window. Both come in at once, when the photograph
+                // is ready, so the frame never shows over an empty window.
                 if let folderArt,
-                   let drawing = PlaylistFrame.image(name: folderFrame.name, look: folderFrame.look,
-                                                     edge: edge) {
+                   let drawing = FolderFrame.image(name: folderFrame.name, look: folderFrame.look,
+                                                   edge: edge) {
                     ZStack {
                         Image(decorative: folderArt.image, scale: 1)
                             .resizable()

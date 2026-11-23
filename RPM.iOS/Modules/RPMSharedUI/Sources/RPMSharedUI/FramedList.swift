@@ -47,15 +47,15 @@ public struct FramedList: Equatable {
 }
 
 extension FramedList {
-    /// The frame of one of the app's own folders, lettered with the folder's name, or nil for a
-    /// folder somebody made. A photograph goes behind its window (`PlaylistPhotos.folderCover`),
-    /// so the folder looks like a list of its own.
+    /// The name and inks of one of the app's own folders, for its frame (``FolderFrame``), or nil
+    /// for a folder somebody made. A photograph of its own goes behind the frame's window
+    /// (`PlaylistPhotos.folderCover`).
     ///
     /// One mood's folder wears the colours of that mood's list of the whole collection, so the
     /// folder and what is in it look alike. The folder of the decades wears the 1980s'. The folder
     /// of all the moods wears the app's own colours (``GeneratedListLook/app``).
     public static func folder(_ face: FolderFace, name: String) -> FramedList? {
-        guard PlaylistFrame.has else { return nil }
+        guard FolderFrame.has else { return nil }
         let look: GeneratedListLook.Look?
         switch face {
         case .plain: look = nil
