@@ -126,6 +126,9 @@ public struct SettingsPage: View {
     /// it here changes the whole app and not only this card. See ``VinylGround``.
     @AppStorage(Backdrop.key) private var backdropId = ""
 
+    /// The glass colour. Choosing a background sets it back to the background's own colour.
+    @AppStorage(AppColour.key) private var glassColour = ""
+
     public init(name: String, email: String, quota: CloudQuota?,
                 onWifi: Binding<Int>, onCellular: Binding<Int>, onDownload: Binding<Int>,
                 levelling: Binding<NormalizeMode>,
@@ -732,6 +735,7 @@ public struct SettingsPage: View {
                 onSupport()
             } else {
                 backdropId = choice.rawValue
+                glassColour = ""
             }
         } label: {
             VStack(spacing: 6) {

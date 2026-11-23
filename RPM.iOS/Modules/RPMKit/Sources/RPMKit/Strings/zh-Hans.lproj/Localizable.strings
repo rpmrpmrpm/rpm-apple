@@ -7883,6 +7883,9 @@
 /* iPhone settings: what VoiceOver reads for the first colour bubble under Settings_Colour, which keeps the app's own white glass. */
 "Settings_ColourNone" = "无颜色";
 
+/* Phone settings: what VoiceOver/TalkBack reads for the first colour bubble under Settings_Colour, which gives the buttons and cards the colour of the chosen background, like a theme. */
+"Settings_ColourTheme" = "与背景相配";
+
 /* iPhone settings, Appearance: the title of the card with a slider that sets how round the corners of every album and playlist cover are, from square to round. */
 "Settings_CoverCorners" = "封面圆角";
 

@@ -387,6 +387,9 @@ private struct WelcomeBackdrops: View {
     /// The same key every page's ground reads (``VinylGround``).
     @AppStorage(Backdrop.key) private var backdropId = ""
 
+    /// The glass colour. Choosing a background sets it back to the background's own colour.
+    @AppStorage(AppColour.key) private var glassColour = ""
+
     private static let tileWide: Double = 104
     private static let tileTall: Double = 186
 
@@ -397,7 +400,7 @@ private struct WelcomeBackdrops: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(Backdrop.Choice.allCases.filter { !$0.isSupporters || gold }, id: \.self) { choice in
-                    WelcomeChoice(picked: choice == standing, onPick: { backdropId = choice.rawValue }) {
+                    WelcomeChoice(picked: choice == standing, onPick: { backdropId = choice.rawValue; glassColour = "" }) {
                         VStack(spacing: 8) {
                             BackdropTile(choice: choice, width: Self.tileWide, height: Self.tileTall)
                                 .frame(width: Self.tileWide, height: Self.tileTall)

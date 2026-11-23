@@ -119,6 +119,13 @@ public struct VinylGround: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
+        // The glass takes the background's colour (``BackdropTheme``). A ground that shows a
+        // fixed picture, such as a profile's, is not the app's background and does not count.
+        .onChange(of: chosen, initial: true) { _, now in
+            guard fixed == nil else { return }
+            let picture = Backdrop.standing(stored: now, gold: gold)
+            if BackdropTheme.shared.picture != picture { BackdropTheme.shared.picture = picture }
+        }
     }
 }
 
