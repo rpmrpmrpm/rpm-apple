@@ -173,4 +173,90 @@ struct AlbumDownloadsTests {
         #expect(await store.signed.count == 2)
         #expect(await store.asked.count == 2)
     }
+
+    // ── playlists ──
+
+    private func playlist(_ id: String, _ ids: [String], missing: Int = 0,
+                          shelf: CloudShelf = .own) -> PlaylistSet {
+        PlaylistSet(id: id, name: id,
+                    tracks: ids.map { CloudTrack(rpmId: $0, title: $0, album: "x") },
+                    missing: missing, folder: [], stamp: 0, shelf: shelf, origin: .stored)
+    }
+
+    /// The tracks the book holds for a downloaded playlist, or nil when it is not downloaded.
+    private func held(_ id: String) -> [String]? {
+        book.albums.first { $0.key == DownloadBook.playlistKey(id) }?.tracks.map(\.rpmId)
+    }
+
+    /// A playlist is kept in its own order, each track once, and without the starter tracks,
+    /// which are in the app already.
+    @Test func aPlaylistIsKeptWithEachTrackOnceAndNoStarterTracks() {
+        let starter = StarterTracks.prefix + "moonlight"
+        let entry = AlbumDownloads.entry(for: playlist("p1", ["t2", starter, "t1", "t2"]))
+
+        #expect(entry.key == DownloadBook.playlistKey("p1"))
+        #expect(entry.tracks.map(\.rpmId) == ["t2", "t1"])
+    }
+
+    @Test func aPlaylistIsDownloadedUnderItsOwnKey() async {
+        let downloads = downloads()
+        downloads.download(playlist("p1", ["t1", "t2"]))
+        await until { await !self.store.asked.isEmpty }
+
+        #expect(await store.asked.first?.rpmIds == ["t1", "t2"])
+        #expect(downloads.standing(of: DownloadBook.playlistKey("p1"))
+            == .downloading(have: 0, of: 2, fraction: 0, preparing: true))
+        #expect(downloads.list.map { $0.album.key } == [DownloadBook.playlistKey("p1")])
+    }
+
+    /// **Removing a playlist leaves the tracks an album still holds.** They stay wanted, so the
+    /// album goes on downloading them.
+    @Test func removingAPlaylistLeavesTheTracksOfADownloadedAlbum() async {
+        let downloads = downloads()
+        downloads.download(album("a", ["t1"]))
+        downloads.download(playlist("p1", ["t1", "t2"]))
+
+        downloads.remove([DownloadBook.playlistKey("p1")])
+
+        #expect(downloads.standing(of: DownloadBook.playlistKey("p1")) == nil)
+        #expect(downloads.standing(of: "a") != nil)
+        #expect(book.isWanted("t1"))
+        #expect(!book.isWanted("t2"))
+    }
+
+    /// A downloaded playlist follows its list: songs added are wanted, songs taken out are not.
+    @Test func aDownloadedPlaylistFollowsItsList() {
+        let downloads = downloads()
+        downloads.download(playlist("p1", ["t1", "t2"]))
+
+        downloads.follow([playlist("p1", ["t1", "t3"]), playlist("p2", ["t9"])])
+
+        #expect(held("p1") == ["t1", "t3"])
+        #expect(held("p2") == nil, "a list that was not downloaded is not started")
+        #expect(!book.isWanted("t2"))
+        #expect(book.isWanted("t3"))
+    }
+
+    /// **A list with songs this phone cannot resolve only gains songs.** They can be out of
+    /// sight for a moment, while the listing is read again, and their files must stay.
+    @Test func aListWithUnresolvedSongsOnlyGainsSongs() {
+        let downloads = downloads()
+        downloads.download(playlist("p1", ["t1", "t2"]))
+
+        downloads.follow([playlist("p1", [], missing: 2)])
+        #expect(held("p1") == ["t1", "t2"])
+
+        downloads.follow([playlist("p1", ["t3"], missing: 2)])
+        #expect(held("p1") == ["t3", "t1", "t2"])
+    }
+
+    /// Another account's list with the same id is not this account's download.
+    @Test func anotherAccountsListIsNotFollowed() {
+        let downloads = downloads()
+        downloads.download(playlist("p1", ["t1"]))
+
+        downloads.follow([playlist("p1", ["t5"], shelf: .of("u2"))])
+
+        #expect(held("p1") == ["t1"])
+    }
 }

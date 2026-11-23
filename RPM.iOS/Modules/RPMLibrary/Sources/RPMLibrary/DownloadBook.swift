@@ -21,6 +21,10 @@ import RPMKit
 /// for an album that was just removed is thrown away, and a removal after a download
 /// deletes the file it finds.
 ///
+/// **A playlist is kept as an album is**, under a key of its own (``playlistKey(_:)``), with its
+/// tracks as they were when it was asked for. The two can share tracks. A track has one file,
+/// and that file stays while any album or playlist that holds the track is still asked for.
+///
 /// The data is stored under Application Support and excluded from backup. The files are
 /// copies of what is in the cloud, so iCloud does not need to hold them. The system must
 /// not purge them the way it purges caches.
@@ -37,7 +41,21 @@ public final class DownloadBook: @unchecked Sendable {
         public var asAlbum: CloudAlbum {
             CloudAlbum(key: key, album: album, artist: artist, tracks: tracks)
         }
+
+        /// Whether this is a playlist and not a record. See ``DownloadBook/playlistKey(_:)``.
+        public var isPlaylist: Bool { DownloadBook.isPlaylistKey(key) }
     }
+
+    /// The key a playlist is kept under, from its cloud id.
+    ///
+    /// It cannot be the key of a record: a record's key (``AlbumGrouping/key(for:)``) starts
+    /// with `folder:` or `tags:`.
+    public static func playlistKey(_ id: String) -> String { playlistPrefix + id }
+
+    /// Whether a key is one that ``playlistKey(_:)`` made.
+    public static func isPlaylistKey(_ key: String) -> Bool { key.hasPrefix(playlistPrefix) }
+
+    private static let playlistPrefix = "playlist:"
 
     public struct Copy: Codable, Sendable, Equatable {
         public let kilobits: Int
@@ -59,7 +77,8 @@ public final class DownloadBook: @unchecked Sendable {
     private let manifestFile: URL
     private var held = Manifest()
 
-    /// Which album each wanted track belongs to. Rebuilt whenever ``held`` changes.
+    /// For each wanted track, one of the albums or playlists that holds it. Only whether a
+    /// track has an entry here matters. Rebuilt whenever ``held`` changes.
     private var owner: [String: String] = [:]
 
     public init(root: URL) {
@@ -126,17 +145,28 @@ public final class DownloadBook: @unchecked Sendable {
         }
     }
 
+    /// Everything the files take up on the phone. A track held by an album and a playlist has
+    /// one file, and it is counted once.
+    public var totalBytes: Int64 {
+        lock.withLock { held.copies.values.reduce(0) { $0 + $1.bytes } }
+    }
+
     /// Every track that is wanted and has no file yet, in the order the albums were asked
     /// for and each album's own order. What the downloader works down.
     public var missing: [String] { missingTracks.map(\.rpmId) }
 
     /// The same tracks as ``missing``, as they were when their album was asked for. The
     /// downloader reads each one's file type from them, to choose the rate to ask for.
+    ///
+    /// **Each track is listed once**, where it first appears. A track can be in an album and a
+    /// playlist, or twice in one playlist, and it has one file. Listed twice, it would be
+    /// signed and transferred twice.
     public var missingTracks: [CloudTrack] {
         lock.withLock {
-            held.albums.values.sorted { $0.asked < $1.asked }
+            var seen = Set<String>()
+            return held.albums.values.sorted { $0.asked < $1.asked }
                 .flatMap(\.tracks)
-                .filter { held.copies[$0.rpmId] == nil }
+                .filter { held.copies[$0.rpmId] == nil && seen.insert($0.rpmId).inserted }
         }
     }
 
@@ -164,6 +194,9 @@ public final class DownloadBook: @unchecked Sendable {
     /// Takes albums off the phone. Their files are deleted now. Anything still downloading
     /// for them is thrown away when it arrives, because it is not wanted any more.
     ///
+    /// **A track that another album or playlist still holds keeps its file**, and it is not in
+    /// the answer.
+    ///
     /// - Returns: the tracks that stopped being wanted, so whoever is downloading them can
     ///   stop.
     @discardableResult
@@ -176,7 +209,7 @@ public final class DownloadBook: @unchecked Sendable {
             }
             reconcile()
             save()
-            return gone
+            return gone.filter { owner[$0] == nil }
         }
     }
 

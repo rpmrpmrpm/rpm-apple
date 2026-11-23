@@ -133,6 +133,11 @@ public struct PlaylistPage: View {
     /// two cases need different answers. See ``TrackActions/UpNext``.
     private let upNext: TrackActions.UpNext
 
+    /// The download key beside Play, or nil where there is none to offer: the queue, the
+    /// favourite songs, the songs played lately, and another account's playlist. See
+    /// ``DownloadKey``.
+    private let download: DownloadKey?
+
     public init(title: String, tracks: [CloudTrack], missing: Int,
                 covers: any CoverStore, isQueue: Bool, look: QueueLook,
                 canReorder: Bool = false,
@@ -151,7 +156,8 @@ public struct PlaylistPage: View {
                 isTrackMine: @escaping (CloudTrack) -> Bool,
                 onMarkTrack: @escaping (CloudTrack, Bool) -> Void = { _, _ in },
                 onFile: @escaping (CloudTrack) -> Void = { _ in },
-                upNext: TrackActions.UpNext) {
+                upNext: TrackActions.UpNext,
+                download: DownloadKey? = nil) {
         self.title = title
         self.tracks = tracks
         self.missing = missing
@@ -176,6 +182,7 @@ public struct PlaylistPage: View {
         self.onMarkTrack = onMarkTrack
         self.onFile = onFile
         self.upNext = upNext
+        self.download = download
     }
 
     /// Whether the panel that picks songs is shown.
@@ -599,8 +606,9 @@ public struct PlaylistPage: View {
                        framed: FramedList.of(showing), roomDrifts: phase == .active)
     }
 
-    /// The round keys, as on the album page: Shuffle, then Play in the middle in a glass circle.
-    /// The place on Play's other side is kept empty, so Play stays in the middle of the page.
+    /// The round keys, as on the album page: Shuffle, then Play in the middle in a glass circle,
+    /// then the download key (``DownloadButton``). A list with no download key keeps its place
+    /// empty, so Play stays in the middle of the page.
     ///
     /// **The queue has no Play**, because what is in it is already playing, or there is nothing
     /// to play. It has Shuffle and Rearrange; a playlist has Rearrange in its menu.
@@ -639,7 +647,11 @@ public struct PlaylistPage: View {
                 .disabled(empty)
                 .opacity(empty ? 0.4 : 1)
 
-                Color.clear.frame(width: 56, height: 50)
+                if let download {
+                    DownloadButton(key: download, bare: true)
+                } else {
+                    Color.clear.frame(width: 56, height: 50)
+                }
             }
         }
         .frame(maxWidth: .infinity)

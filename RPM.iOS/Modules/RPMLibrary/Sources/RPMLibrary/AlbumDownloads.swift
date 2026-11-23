@@ -6,6 +6,10 @@ import os
 
 /// Downloads albums to the phone so they play without a network.
 ///
+/// **Playlists are downloaded by the same machinery.** A playlist is kept in the book as an album
+/// under ``DownloadBook/playlistKey(_:)``, so it has a ``Standing`` and a row in ``list`` like any
+/// record. See the `download` that takes a ``PlaylistSet``, and ``follow(_:)``.
+///
 /// **A background `URLSession` does the hard parts.** The
 /// system carries on with the transfers while the app is suspended or has been closed, waits
 /// for a network when there is none, and picks up again on its own when one comes back. The
@@ -77,7 +81,8 @@ public final class AlbumDownloads {
     public private(set) var shown: [String: Standing] = [:]
 
     /// The keys of albums that have at least one track on the phone. What decides which
-    /// records are greyed on the wall while offline.
+    /// records are greyed on the wall while offline. A track that is on the phone for a
+    /// playlist counts for its own record.
     public private(set) var onPhone: Set<String> = []
 
     private let reach: NetworkReach
@@ -233,7 +238,8 @@ public final class AlbumDownloads {
         return book.held(rpmId) != nil
     }
 
-    /// The albums asked for, newest first, with what each takes on the phone.
+    /// The albums and playlists asked for, newest first, with what each takes on the phone. A
+    /// playlist's key is a ``DownloadBook/playlistKey(_:)``.
     public var list: [(album: CloudAlbum, bytes: Int64, standing: Standing)] {
         _ = shown
         return book.albums.compactMap { album in
@@ -242,10 +248,11 @@ public final class AlbumDownloads {
         }
     }
 
-    /// Everything the downloads take on the phone.
+    /// Everything the downloads take on the phone. A track that an album and a playlist share
+    /// is counted once, because it has one file.
     public var bytes: Int64 {
         _ = shown
-        return book.albums.reduce(0) { $0 + book.bytes(of: $1.key) }
+        return book.totalBytes
     }
 
     // ── what the keys do ──
@@ -254,6 +261,74 @@ public final class AlbumDownloads {
     /// (``StarterTracks``) is in the app already, and the cloud has nothing to download for it.
     public func download(_ album: CloudAlbum) {
         guard !StarterTracks.isStarter(album) else { return }
+        want(album)
+    }
+
+    /// Downloads every track of a playlist, or tries again for one that is stuck. Its standing
+    /// is read under ``DownloadBook/playlistKey(_:)`` of its id. A list with nothing to download
+    /// (see ``entry(for:)``) is not asked for.
+    public func download(_ list: PlaylistSet) {
+        let entry = Self.entry(for: list)
+        guard !entry.tracks.isEmpty else { return }
+        want(entry)
+    }
+
+    /// What a playlist is kept as in the book: its tracks in its own order, each one once,
+    /// without the starter tracks (``StarterTracks``), which are in the app already.
+    public nonisolated static func entry(for list: PlaylistSet) -> CloudAlbum {
+        var seen = Set<String>()
+        let tracks = list.tracks.filter {
+            !StarterTracks.isStarter($0.rpmId) && seen.insert($0.rpmId).inserted
+        }
+        return CloudAlbum(key: DownloadBook.playlistKey(list.id), album: list.name,
+                          artist: "", tracks: tracks)
+    }
+
+    /// Keeps each downloaded playlist the same as its list: a song added to the list is
+    /// downloaded, and a song taken out of it leaves the phone, unless an album or another
+    /// playlist still holds it. Called whenever the playlists change.
+    ///
+    /// Only lists on this account's own shelf are followed. A downloaded playlist that is not in
+    /// `lists` is left as it is: a borrowed shelf shows another account's lists, and the lists
+    /// can be missing while they are read.
+    ///
+    /// **A list with songs this phone cannot resolve** (``PlaylistSet/missing``) **only gains
+    /// songs.** Its songs can be unresolved for a moment, for example while the listing is read
+    /// again, and the files of a song that is only out of sight must not be deleted.
+    public func follow(_ lists: [PlaylistSet]) {
+        var kept: [String: DownloadBook.Album] = [:]
+        for album in book.albums where album.isPlaylist { kept[album.key] = album }
+        guard !kept.isEmpty else { return }
+
+        var before = Set<String>()
+        var changed = false
+
+        for list in lists where list.shelf.isOwn {
+            let now = Self.entry(for: list)
+            guard let was = kept[now.key] else { continue }
+
+            var tracks = now.tracks
+            if list.missing > 0 {
+                let ids = Set(tracks.map(\.rpmId))
+                tracks += was.tracks.filter { !ids.contains($0.rpmId) }
+            }
+            guard tracks.map(\.rpmId) != was.tracks.map(\.rpmId) || now.album != was.album
+            else { continue }
+
+            before.formUnion(was.tracks.map(\.rpmId))
+            book.want(CloudAlbum(key: now.key, album: now.album, artist: now.artist,
+                                 tracks: tracks))
+            changed = true
+        }
+
+        guard changed else { return }
+        stop(before.filter { !book.isWanted($0) })
+        redraw()
+        Task { await pump() }
+    }
+
+    /// Asks for an album or a playlist, with a fresh set of goes for each of its tracks.
+    private func want(_ album: CloudAlbum) {
         book.want(album)
         for track in album.tracks { goes[track.rpmId] = nil }
         making.forget(album.tracks.map(\.rpmId))
@@ -261,10 +336,18 @@ public final class AlbumDownloads {
         Task { await pump() }
     }
 
-    /// Takes albums off the phone, and stops whatever was still coming for them.
+    /// Takes albums or playlists off the phone, and stops whatever was still coming for them.
+    /// A track that another album or playlist still holds stays, and its transfer goes on
+    /// (see ``DownloadBook/drop(_:)``).
     public func remove(_ keys: Set<String>) {
-        let gone = book.drop(keys)
-        guard !gone.isEmpty else { redraw(); return }
+        stop(book.drop(keys))
+        redraw()
+    }
+
+    /// Forgets what is known about tracks that nothing wants any more, and cancels their
+    /// transfers.
+    private func stop(_ gone: Set<String>) {
+        guard !gone.isEmpty else { return }
 
         for rpmId in gone {
             partial[rpmId] = nil
@@ -279,7 +362,6 @@ public final class AlbumDownloads {
                 }
             }
         }
-        redraw()
     }
 
     /// Signing out: every file goes, and every transfer stops.
@@ -500,7 +582,14 @@ public final class AlbumDownloads {
 
         for album in book.albums {
             guard let (have, of) = book.count(of: album.key) else { continue }
-            if have > 0 { some.insert(album.key) }
+            if album.isPlaylist {
+                // A playlist is not on the wall. The records its tracks are from are.
+                for track in album.tracks where book.held(track.rpmId) != nil {
+                    some.insert(AlbumGrouping.key(for: track))
+                }
+            } else if have > 0 {
+                some.insert(album.key)
+            }
 
             if have == of { next[album.key] = .onPhone; continue }
 

@@ -87,8 +87,8 @@ public struct SettingsPage: View {
 
     private let cached: Int64
 
-    /// How many albums are downloaded to this phone, and what they take.
-    private let downloaded: (albums: Int, bytes: Int64)
+    /// How many albums and playlists are downloaded to this phone, and what they take.
+    private let downloaded: (albums: Int, playlists: Int, bytes: Int64)
     private let onDownloads: () -> Void
 
     private let version: String
@@ -132,7 +132,7 @@ public struct SettingsPage: View {
                 levelsClassical: Binding<Bool>,
                 reach: Reach,
                 cached: Int64,
-                downloaded: (albums: Int, bytes: Int64),
+                downloaded: (albums: Int, playlists: Int, bytes: Int64),
                 onDownloads: @escaping () -> Void,
                 version: String,
                 onClearCache: @escaping () -> Void,
@@ -383,14 +383,12 @@ public struct SettingsPage: View {
 
     // ── on this phone ──
 
-    /// The albums kept on the phone for listening offline, and the way to the list of them.
+    /// The albums and playlists kept on the phone for listening offline, and the way to the list
+    /// of them.
     private var downloads: some View {
         card(Glyph.download, Loc.get("Rpm_Downloads_Title")) {
-            Text(downloaded.albums == 0
-                 ? Loc.get("Rpm_Downloads_None")
-                 : downloaded.albums == 1
-                    ? Loc.get("Rpm_Downloads_SummaryOne", bytes(downloaded.bytes))
-                    : Loc.get("Rpm_Downloads_Summary", downloaded.albums, bytes(downloaded.bytes)))
+            Text(DownloadsPage.summary(albums: downloaded.albums, playlists: downloaded.playlists,
+                                       bytes: downloaded.bytes))
                 .font(RPMFont.display(17))
                 .foregroundStyle(.white)
 

@@ -693,6 +693,11 @@ struct RootView: View {
             guard !online, model.standing == .showing else { return }
             showWhatPlaysOffline()
         }
+        // A downloaded playlist follows its list: a song added on the computer or on this phone is
+        // downloaded, and a song taken out leaves the phone. See `AlbumDownloads.follow(_:)`.
+        .onChange(of: model.playlists, initial: true) { _, lists in
+            model.downloads.follow(lists)
+        }
         // Debug only. See `AppModel.start()`. The key is not known until the library has loaded,
         // so it cannot be read with the other script values.
         .onChange(of: model.openedByScript) { if let key = $1 { opened = [.album(key)] } }
@@ -1226,7 +1231,7 @@ struct RootView: View {
                                              set: { model.levelsClassical = $0 }),
                     reach: model.reading,
                     cached: model.cachedBytes,
-                    downloaded: (model.downloads.list.count, model.downloads.bytes),
+                    downloaded: downloadedCount,
                     onDownloads: { showingDownloads = true },
                     version: model.version,
                     onClearCache: { Task { await model.clearCache() } },
@@ -1244,14 +1249,32 @@ struct RootView: View {
             .footRoom(chrome, .underTheChrome)
             .sheet(isPresented: $showingDownloads) {
                 DownloadsPage(
-                    rows: model.downloads.list.map {
-                        DownloadsPage.Row(album: $0.album, bytes: $0.bytes,
-                                          standing: $0.standing)
-                    },
+                    rows: downloadRows,
                     covers: covers,
                     onRemove: { model.downloads.remove($0) },
-                    onClose: { showingDownloads = false })
+                    onClose: { showingDownloads = false },
+                    total: model.downloads.bytes)
             }
+    }
+
+    /// How many albums and playlists are downloaded, and what they take, for the Downloads card.
+    private var downloadedCount: (albums: Int, playlists: Int, bytes: Int64) {
+        let list = model.downloads.list
+        let playlists = list.filter { DownloadBook.isPlaylistKey($0.album.key) }.count
+        return (list.count - playlists, playlists, model.downloads.bytes)
+    }
+
+    /// The rows of the downloads page. A downloaded playlist is given its list, for its picture,
+    /// when the list is among the playlists on the screen.
+    private var downloadRows: [DownloadsPage.Row] {
+        var lists: [String: PlaylistSet] = [:]
+        for set in model.playlists where set.shelf.isOwn {
+            lists[DownloadBook.playlistKey(set.id)] = set
+        }
+        return model.downloads.list.map {
+            DownloadsPage.Row(album: $0.album, bytes: $0.bytes, standing: $0.standing,
+                              list: lists[$0.album.key])
+        }
     }
 
     /// The tabs other than home whose pages are on the screen: the one shown, and those still
@@ -1534,6 +1557,7 @@ struct RootView: View {
                      // the same as `adding`, which is nil for exactly the lists that have a frame.
                      showing: set,
                      menu: menu(for: set),
+                     download: downloadKey(for: set),
                      back: back)
             } else {
                 // The playlist was removed while the page was open. There is nothing to draw
@@ -1543,11 +1567,35 @@ struct RootView: View {
         }
     }
 
+    /// The download key of a playlist page, as the album page has one.
+    ///
+    /// Only for a list on the user's own shelf: a download is signed as one of this account's
+    /// tracks. None for a list with nothing to download (no songs, or only starter tracks), unless
+    /// it is downloaded already and can still be removed.
+    private func downloadKey(for set: PlaylistSet) -> DownloadKey? {
+        guard set.shelf.isOwn else { return nil }
+        let key = DownloadBook.playlistKey(set.id)
+        let standing = model.downloads.standing(of: key)
+        guard standing != nil || !AlbumDownloads.entry(for: set).tracks.isEmpty else { return nil }
+        return DownloadKey(standing: standing,
+                           onDownload: { model.downloads.download(set) },
+                           onRemove: { model.downloads.remove([key]) },
+                           isPlaylist: true)
+    }
+
     /// What the menu of a playlist page offers. See ``PlaylistMenu``.
     private func menu(for set: PlaylistSet) -> PlaylistMenu {
         if set.isWritable {
             return .own(onRename: { await model.renamePlaylist(set, to: $0) },
-                        onDelete: { await model.deletePlaylist(set) })
+                        onDelete: {
+                            // A deleted list's download goes with it. Its songs stay on the
+                            // phone where an album or another playlist holds them.
+                            let failed = await model.deletePlaylist(set)
+                            if failed == nil {
+                                model.downloads.remove([DownloadBook.playlistKey(set.id)])
+                            }
+                            return failed
+                        })
         }
 
         if set.origin == .generated {
@@ -1565,11 +1613,15 @@ struct RootView: View {
 
     /// A list whose order this phone does not control: a stored playlist, or the marked songs.
     /// Songs can still be added to a stored playlist, which is what `adding` is for.
+    ///
+    /// - Parameter download: the download key beside Play, or nil for a list that has none, such
+    ///   as the marked songs. See ``downloadKey(for:)``.
     private func list(_ title: String, _ tracks: [CloudTrack], missing: Int,
                       adding: PlaylistSet?,
                       picture: ListPicture?,
                       showing: PlaylistSet?,
                       menu: PlaylistMenu,
+                      download: DownloadKey? = nil,
                       back: @escaping () -> Void) -> some View {
         PlaylistPage(title: title, tracks: tracks, missing: missing,
                      covers: covers, isQueue: false, look: .whole,
@@ -1603,7 +1655,8 @@ struct RootView: View {
                      isTrackMine: { model.isTrackMine($0) },
                      onMarkTrack: { track, on in Task { await model.mark(track, on) } },
                      onFile: { model.filing = $0 },
-                     upNext: .send { model.playNext($0) })
+                     upNext: .send { model.playNext($0) },
+                     download: download)
     }
 
     /// One step on the albums or the artists stack: a record or an artist. What either page opens

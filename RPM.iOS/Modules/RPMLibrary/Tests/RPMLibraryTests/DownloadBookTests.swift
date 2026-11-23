@@ -106,6 +106,66 @@ struct DownloadBookTests {
         #expect(book.albums.map(\.key) == ["b", "a"], "the list is newest first")
     }
 
+    // ── albums and playlists that share tracks ──
+
+    /// **A track that an album and a playlist share keeps its file until both are removed**, and
+    /// removing the first does not name it as gone, so its transfer is not stopped.
+    @Test func aSharedTrackStaysUntilEverythingThatHoldsItIsRemoved() throws {
+        let book = DownloadBook(root: root)
+        let list = DownloadBook.playlistKey("p1")
+        book.want(album("a", ["t1", "t2"]))
+        book.want(album(list, ["t2", "t3"]))
+        book.keep("t2", from: try arrived(), kilobits: 320)
+        let file = try #require(book.held("t2")?.file)
+
+        #expect(book.drop([list]) == ["t3"])
+        #expect(book.held("t2") != nil)
+        #expect(FileManager.default.fileExists(atPath: file.path))
+        #expect(book.count(of: "a")! == (1, 2))
+
+        #expect(book.drop(["a"]) == ["t1", "t2"])
+        #expect(book.held("t2") == nil)
+        #expect(!FileManager.default.fileExists(atPath: file.path))
+    }
+
+    /// The same, the other way round: removing the album leaves the playlist's copy.
+    @Test func removingTheAlbumLeavesThePlaylistItsTrack() throws {
+        let book = DownloadBook(root: root)
+        let list = DownloadBook.playlistKey("p1")
+        book.want(album("a", ["t1"]))
+        book.want(album(list, ["t1"]))
+        book.keep("t1", from: try arrived(), kilobits: 320)
+
+        #expect(book.drop(["a"]).isEmpty)
+        #expect(book.count(of: list)! == (1, 1))
+        #expect(book.isWanted("t1"))
+    }
+
+    /// A track held twice is fetched once: it is listed once in what is missing, and its file is
+    /// counted once in the total.
+    @Test func aSharedTrackIsFetchedAndCountedOnce() throws {
+        let book = DownloadBook(root: root)
+        book.want(album("a", ["t1", "t2"]), at: Date(timeIntervalSince1970: 100))
+        book.want(album(DownloadBook.playlistKey("p1"), ["t2", "t1", "t3", "t3"]),
+                  at: Date(timeIntervalSince1970: 200))
+
+        #expect(book.missing == ["t1", "t2", "t3"])
+
+        book.keep("t1", from: try arrived(1000), kilobits: 320)
+        book.keep("t2", from: try arrived(500), kilobits: 320)
+        #expect(book.missing == ["t3"])
+        #expect(book.totalBytes == 1500)
+        #expect(book.bytes(of: "a") == 1500)
+    }
+
+    @Test func aPlaylistKeyIsNeverARecordKey() {
+        let list = DownloadBook.playlistKey("p1")
+        #expect(DownloadBook.isPlaylistKey(list))
+        #expect(!DownloadBook.isPlaylistKey(AlbumGrouping.key(for: CloudTrack(rpmId: "t1", title: "t1", album: "a"))))
+        #expect(!DownloadBook.isPlaylistKey(AlbumGrouping.key(relativePath: "playlist:x/y.flac",
+                                                               albumArtist: nil, artist: nil, album: nil)))
+    }
+
     @Test func forgettingEverythingLeavesNothing() throws {
         let book = DownloadBook(root: root)
         book.want(album("a", ["t1"]))

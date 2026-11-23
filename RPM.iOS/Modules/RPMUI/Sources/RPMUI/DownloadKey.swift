@@ -2,8 +2,8 @@ import SwiftUI
 import RPMKit
 import RPMLibrary
 
-/// The data for the download key on an album page: the album's state on this phone, and the two
-/// actions the person can take.
+/// The data for the download key on an album page or a playlist page: the album's or the list's
+/// state on this phone, and the two actions the person can take.
 ///
 /// The key is nil on a borrowed shelf, and not a key that does nothing. A download is signed as
 /// the account's own track, and another person's record is not one.
@@ -13,11 +13,17 @@ public struct DownloadKey {
     public let onDownload: () -> Void
     public let onRemove: () -> Void
 
+    /// Whether the key is on a playlist page. Only the questions before a stop or a removal
+    /// differ: they name a playlist and not an album.
+    public let isPlaylist: Bool
+
     public init(standing: AlbumDownloads.Standing?,
-                onDownload: @escaping () -> Void, onRemove: @escaping () -> Void) {
+                onDownload: @escaping () -> Void, onRemove: @escaping () -> Void,
+                isPlaylist: Bool = false) {
         self.standing = standing
         self.onDownload = onDownload
         self.onRemove = onRemove
+        self.isPlaylist = isPlaylist
     }
 }
 
@@ -117,8 +123,12 @@ struct DownloadButton: View {
     }
 
     private var question: String {
-        if case .downloading = key.standing { return Loc.get("Rpm_Download_StopQuestion") }
-        return Loc.get("Rpm_Download_RemoveQuestion")
+        if case .downloading = key.standing {
+            return key.isPlaylist ? Loc.get("Rpm_Download_StopPlaylistQuestion")
+                                  : Loc.get("Rpm_Download_StopQuestion")
+        }
+        return key.isPlaylist ? Loc.get("Rpm_Download_RemovePlaylistQuestion")
+                              : Loc.get("Rpm_Download_RemoveQuestion")
     }
 
     private var action: String {

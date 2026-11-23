@@ -1,8 +1,9 @@
 import SwiftUI
+import RPMSharedUI
 import RPMKit
 import RPMLibrary
 
-/// The albums downloaded to this phone, and the way to remove them.
+/// The albums and playlists downloaded to this phone, and the way to remove them.
 ///
 /// It is shown as a sheet from the Downloads card on ``SettingsPage``, like ``AboutPage``. The
 /// profile tab is not inside a `NavigationStack`, because a stack paints its own opaque
@@ -10,20 +11,33 @@ import RPMLibrary
 ///
 /// One album is removed with a swipe. Several are removed with Select, which shows a tick beside
 /// each row and a Remove key under the list. Select all is there because clearing the phone
-/// before a trip is the usual reason to open this page.
+/// before a trip is the usual reason to open this page. A downloaded playlist is a row like an
+/// album, so this page shows everything the downloads take.
 public struct DownloadsPage: View {
-    /// One row: the record, the space it uses on the phone, and its download state.
+    /// One row: the record or the playlist, the space it uses on the phone, and its download
+    /// state.
     public struct Row: Identifiable {
+        /// The record, or the playlist as the book keeps it (``AlbumDownloads/entry(for:)``).
         public let album: CloudAlbum
         public let bytes: Int64
         public let standing: AlbumDownloads.Standing
 
+        /// The playlist this row is, for its picture. Nil for a record, and for a downloaded
+        /// playlist that is not among the lists on the screen: that row shows the sleeve of its
+        /// first record.
+        public let list: PlaylistSet?
+
         public var id: String { album.key }
 
-        public init(album: CloudAlbum, bytes: Int64, standing: AlbumDownloads.Standing) {
+        /// Whether the row is a playlist and not a record.
+        public var isPlaylist: Bool { DownloadBook.isPlaylistKey(album.key) }
+
+        public init(album: CloudAlbum, bytes: Int64, standing: AlbumDownloads.Standing,
+                    list: PlaylistSet? = nil) {
             self.album = album
             self.bytes = bytes
             self.standing = standing
+            self.list = list
         }
     }
 
@@ -32,16 +46,23 @@ public struct DownloadsPage: View {
     private let onRemove: (Set<String>) -> Void
     private let onClose: () -> Void
 
+    /// The space every download takes, for the line at the top (``AlbumDownloads/bytes``). A track
+    /// that an album and a playlist share is in both rows' sizes and counted once here. Nil adds
+    /// up the rows.
+    private let total: Int64?
+
     @State private var selecting = false
     @State private var picked: Set<String> = []
     @State private var asking = false
 
     public init(rows: [Row], covers: any CoverStore,
-                onRemove: @escaping (Set<String>) -> Void, onClose: @escaping () -> Void) {
+                onRemove: @escaping (Set<String>) -> Void, onClose: @escaping () -> Void,
+                total: Int64? = nil) {
         self.rows = rows
         self.covers = covers
         self.onRemove = onRemove
         self.onClose = onClose
+        self.total = total
     }
 
     public var body: some View {
@@ -144,15 +165,24 @@ public struct DownloadsPage: View {
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
 
-            RowSleeve(album: row.album, covers: covers)
+            if row.isPlaylist {
+                // The list's own picture, as on the playlists tab, else its first record's sleeve.
+                PlaylistSleeve(list: row.list?.picture, track: row.album.tracks.first,
+                               glyph: Glyph.playlists, edge: 48, mark: 16, covers: covers,
+                               framed: FramedList.of(row.list))
+            } else {
+                RowSleeve(album: row.album, covers: covers)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
-                MarkedTitle(row.album.album, explicit: row.album.isExplicit)
+                MarkedTitle(row.album.album, explicit: !row.isPlaylist && row.album.isExplicit)
                     .font(RPMFont.display(15))
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
-                Text(row.album.artist)
+                // A playlist has no artist of its own. Its kind is shown in that place, as on
+                // home's quick selection.
+                Text(row.isPlaylist ? Loc.get("Home_QuickPlaylist") : row.album.artist)
                     .font(RPMFont.display(12))
                     .foregroundStyle(RPMInk.white(0x88 / 255))
                     .lineLimit(1)
@@ -207,15 +237,37 @@ public struct DownloadsPage: View {
     // ── text ──
 
     private var summary: String {
-        let total = rows.reduce(Int64(0)) { $0 + $1.bytes }
-        return rows.count == 1
-            ? Loc.get("Rpm_Downloads_SummaryOne", Self.size(total))
-            : Loc.get("Rpm_Downloads_Summary", rows.count, Self.size(total))
+        let playlists = rows.filter(\.isPlaylist).count
+        return Self.summary(albums: rows.count - playlists, playlists: playlists,
+                            bytes: total ?? rows.reduce(Int64(0)) { $0 + $1.bytes })
+    }
+
+    /// How many albums and playlists are downloaded, and the space they use. Read on this page
+    /// and on the Downloads card on ``SettingsPage``. With no downloads at all it is the card's
+    /// "none" line.
+    ///
+    /// Only albums: the album count. One playlist alone: that it is one playlist. Any other mix:
+    /// how many downloads there are.
+    static func summary(albums: Int, playlists: Int, bytes: Int64) -> String {
+        let size = Self.size(bytes)
+        if albums + playlists == 0 { return Loc.get("Rpm_Downloads_None") }
+        if playlists == 0 {
+            return albums == 1 ? Loc.get("Rpm_Downloads_SummaryOne", size)
+                               : Loc.get("Rpm_Downloads_Summary", albums, size)
+        }
+        if albums == 0 && playlists == 1 { return Loc.get("Rpm_Downloads_SummaryOnePlaylist", size) }
+        return Loc.get("Rpm_Downloads_SummaryMixed", albums + playlists, size)
     }
 
     private var question: String {
-        picked.count == 1 ? Loc.get("Rpm_Download_RemoveQuestion")
-                          : Loc.get("Rpm_Downloads_RemoveQuestion", picked.count)
+        let chosen = rows.filter { picked.contains($0.id) }
+        let playlists = chosen.filter(\.isPlaylist).count
+        if chosen.count == 1 {
+            return playlists == 1 ? Loc.get("Rpm_Download_RemovePlaylistQuestion")
+                                  : Loc.get("Rpm_Download_RemoveQuestion")
+        }
+        return playlists == 0 ? Loc.get("Rpm_Downloads_RemoveQuestion", chosen.count)
+                              : Loc.get("Rpm_Downloads_RemoveMixedQuestion", chosen.count)
     }
 
     private func state(_ row: Row) -> String {
