@@ -157,7 +157,7 @@ public struct NowPlayingSheet: View {
     private var flick: CGFloat = 0
 
     /// The name of the room the sound is going to, or nil for the phone itself.
-    private let playingOn: String?
+    let playingOn: String?
 
     /// The speaker picker, built by the owner of the speakers. Nil when casting is not offered,
     /// and then the key is not shown on the sheet.
@@ -382,7 +382,7 @@ public struct NowPlayingSheet: View {
     /// is drawn a tenth smaller when playback stops, and a spectrum that kept the playing size
     /// would be separated from the cover. The Uno phone app gives its room the same rectangle for
     /// the same reason (`PushCover`).
-    private var spectrum: some View {
+    func spectrum(edge: CGFloat) -> some View {
         // **Drawn at the screen's refresh rate, measured at the reader's rate.** A new spectrum
         // arrives forty times a second, because that is what the shortest analysis window
         // detects. This clock asks `RoomRamp` for the spectrum at the moment each frame is drawn,
@@ -392,7 +392,7 @@ public struct NowPlayingSheet: View {
         TimelineView(.animation(minimumInterval: PowerSaving.shared.frameGap,
                                 paused: !showing || roomsRest)) { _ in
             SpectrumRunView(run: room.ramp.read(CACurrentMediaTime()).run,
-                            side: Self.sleeveEdge * (player.isPlaying ? 1 : Self.pausedScale),
+                            side: edge * (player.isPlaying ? 1 : Self.pausedScale),
                             shift: flick, sides: .both,
                             tint: RGB(room.palette.tint), glow: RGB(room.palette.glow))
                 // The same two animations as the cover, repeated exactly. The spectrum is
@@ -484,7 +484,7 @@ public struct NowPlayingSheet: View {
             // already on the grip, and a key with square corners inside a corner that is being
             // rounded would look inconsistent.
             .overlay(alignment: .trailing) {
-                speakerKey
+                speakerKey(scale: 1, margin: 12)
                     .opacity(1 - pull.putDown)
                     .allowsHitTesting(pull.putDown == 0)
             }
@@ -496,8 +496,11 @@ public struct NowPlayingSheet: View {
     /// "Playing on Kitchen" in the status line over the seek bar, where buffering and errors are
     /// also shown, and a name beside the key would show the same information twice. See
     /// `PlayerNeedle`.
+    ///
+    /// `scale` sizes it, for the player on its side (``SidewaysLayout/scale``), and `margin` is the
+    /// room after it.
     @ViewBuilder
-    var speakerKey: some View {
+    func speakerKey(scale s: CGFloat, margin: CGFloat) -> some View {
         if onSpeakers != nil {
             Button { showingSpeakers = true } label: {
                 // The Cast mark and not a speaker glyph, as in the Uno phone app and the desktop
@@ -506,12 +509,12 @@ public struct NowPlayingSheet: View {
                 // and the colour changes to white. The Uno phone app draws the same two states.
                 CastMark(live: playingOn != nil)
                     .fill(playingOn == nil ? RPMInk.white(0xB8 / 255) : .white)
-                    .frame(width: 17, height: 17)
+                    .frame(width: 17 * s, height: 17 * s)
             }
             // The same key as in the Uno phone app: 40 by 40 points, 12 points from the edge.
-            .buttonStyle(RPMGlassKey(edge: 40))
+            .buttonStyle(RPMGlassKey(edge: 40 * s))
             .coachTarget(.playerSpeakers)
-            .padding(.trailing, 12)
+            .padding(.trailing, margin)
             .accessibilityLabel(playingOn.map { Loc.get("Rpm_Cast_Playing", $0) }
                                 ?? Loc.get("Rpm_Cast_PlayOn"))
         }
@@ -530,27 +533,26 @@ public struct NowPlayingSheet: View {
     /// size and stays centred, so the centre line that the spectrum is mirrored about is still
     /// the cover's.
     var cover: some View {
-        sleeve
+        sleeve(edge: Self.sleeveEdge)
             .coachTarget(.playerCover)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 // The setting can turn the moving bars off. The room behind the sheet stays.
-                if bars { spectrum }
+                if bars { spectrum(edge: Self.sleeveEdge) }
             }
     }
 
     /// Whether the bars beside the cover move with the music. See ``PlayerBars``.
-    @AppStorage(PlayerBars.key) private var bars = PlayerBars.initial
+    @AppStorage(PlayerBars.key) var bars = PlayerBars.initial
 
     /// The cover, square and centred. It has full size while the record is playing and is drawn a
     /// tenth smaller when paused, so a stopped record is a smaller object on the screen and the
     /// room around it becomes more visible.
     ///
-    /// A swipe across it goes to the next track or the previous one.
-    private var sleeve: some View {
-        let edge = Self.sleeveEdge
-
-        return ZStack {
+    /// A swipe across it goes to the next track or the previous one. `edge` is its side: 260 points
+    /// upright, and the layout's on its side.
+    func sleeve(edge: CGFloat) -> some View {
+        ZStack {
 
             // No cover and no card: show the record disc, not spinning. A record without a cover
             // wears the plain CD, unless the listener chose the vinyl (``BlankDisc``). **Nothing
@@ -646,13 +648,7 @@ public struct NowPlayingSheet: View {
 
     var chrome: some View {
         VStack(spacing: 4) {
-            // The title, the artist and the heart key are all about the RECORD. While the lyrics
-            // are shown, the lyrics are the content, and two sets of text over one room would
-            // force the user to choose which to read.
-            words
-                .opacity(lyricsUp ? 0 : 1)
-                .allowsHitTesting(!lyricsUp)
-                .animation(.easeOut(duration: 0.25), value: lyricsUp)
+            wordsShown(scale: 1)
 
             // The bar, the clocks and the bit rate are in a separate view. The position changes
             // four times a second, and every view that reads it is rebuilt that often. See
@@ -660,30 +656,42 @@ public struct NowPlayingSheet: View {
             // which makes it flicker.
             PlayerNeedle(player: player, playingOn: playingOn)
 
-            transport
-            below
+            transport(scale: 1)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+            below(scale: 1)
+                .padding(.top, 2)
         }
         .padding(.horizontal, 24)
         .padding(.top, 8)
         .padding(.bottom, 10)
     }
 
+    /// The words, hidden while the lyrics show. The title, the artist and the heart key are all
+    /// about the RECORD. While the lyrics are shown, the lyrics are the content, and two sets of
+    /// text over one room would force the user to choose which to read.
+    func wordsShown(scale s: CGFloat) -> some View {
+        words(scale: s)
+            .opacity(lyricsUp ? 0 : 1)
+            .allowsHitTesting(!lyricsUp)
+            .animation(.easeOut(duration: 0.25), value: lyricsUp)
+    }
+
     /// Title and artist, with the heart key beside them. The heart is about the **record** and
     /// not about how it is played. Apple's player puts it in the same place for the same reason.
-    private var words: some View {
-        HStack(alignment: .top, spacing: 8) {
+    /// `scale` sizes all of it, for the player on its side (``SidewaysLayout/scale``).
+    private func words(scale s: CGFloat) -> some View {
+        HStack(alignment: .top, spacing: 8 * s) {
             // A tap on either line opens the album page, the same as the menu item. It is
             // disabled when the menu item is missing: for a station, or an album that the
             // library does not have.
             Button { pull.putAway(); onAlbum?() } label: {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 2 * s) {
                     // Both lines scroll when they do not fit, as in the desktop app. A title that
                     // ends in an ellipsis cannot be read in full.
-                    // Larger on the side, where the text has half the screen to itself.
-                    Marquee(title, font: RPMFont.displayBold(sideways ? 26 : 22),
-                            height: sideways ? 32 : 28, ink: .white)
+                    Marquee(title, font: RPMFont.displayBold(22 * s), height: 28 * s, ink: .white)
 
-                    Marquee(said, font: RPMFont.display(sideways ? 17 : 15), height: sideways ? 22 : 20,
+                    Marquee(said, font: RPMFont.display(15 * s), height: 20 * s,
                             ink: RPMInk.white(0xB3 / 255))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -696,14 +704,14 @@ public struct NowPlayingSheet: View {
             // The heart is filled or hollow, and never changes colour.
             Button { onMark(!marked) } label: {
                 Text(Glyph.heart)
-                    .font(marked ? RPMFont.icon(15) : RPMFont.iconOutline(15))
+                    .font(marked ? RPMFont.icon(15 * s) : RPMFont.iconOutline(15 * s))
                     .foregroundStyle(RPMInk.white(0xE6 / 255))
-                    .frame(width: 40, height: 40)
+                    .frame(width: 40 * s, height: 40 * s)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .coachTarget(.playerHeart, shown: canMark)
-            .padding(.trailing, -12)
+            .padding(.trailing, -12 * s)
             // A station is not a song, so it cannot be marked as a favourite. The key is hidden and
             // not greyed out, because a heart that cannot be pressed raises the question of what
             // it would do.
@@ -830,10 +838,10 @@ public struct NowPlayingSheet: View {
 
     /// The play key is in the exact centre of the screen, where a thumb can find it without
     /// looking, with the previous and next keys on either side. Nothing else is in this row: stop
-    /// is a hold of the play key, not a separate key.
-    private var transport: some View {
-        HStack(spacing: 24) {
-            key(Glyph.backward, 22) { Task { await player.previous() } }
+    /// is a hold of the play key, not a separate key. `scale` sizes the keys and their gaps.
+    func transport(scale s: CGFloat) -> some View {
+        HStack(spacing: 24 * s) {
+            key(Glyph.backward, 22 * s, edge: 56 * s) { Task { await player.previous() } }
                 .opacity(player.onTheRadio ? 0.3 : 1)
                 .disabled(player.onTheRadio)
 
@@ -846,11 +854,11 @@ public struct NowPlayingSheet: View {
             // action. Pause keeps the position, but stop removes the record: it empties the
             // queue, so the app has nothing playing, the strip at the bottom is removed, and this
             // screen closes. See ``playKey`` for the hold and `Player.stop` for what it does.
-            BusyKey(busy: player.isBusy, ring: 24) {
+            BusyKey(busy: player.isBusy, ring: 24 * s) {
                 Text(playGlyph)
-                    .font(RPMFont.icon(26))
+                    .font(RPMFont.icon(26 * s))
                     .foregroundStyle(.white)
-                    .frame(width: 68, height: 68)
+                    .frame(width: 68 * s, height: 68 * s)
                     .contentShape(Circle())
                     .gesture(playKey, including: hasSomethingOn ? .gesture : .none)
                     // The key is a `Text` and not a `Button`, so the traits and both actions are
@@ -863,12 +871,10 @@ public struct NowPlayingSheet: View {
                     }
             }
 
-            key(Glyph.forward, 22) { Task { await player.next() } }
+            key(Glyph.forward, 22 * s, edge: 56 * s) { Task { await player.next() } }
                 .opacity(player.hasNext ? 1 : 0.3)
                 .disabled(!player.hasNext)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
     }
 
     /// The row under the transport.
@@ -878,11 +884,11 @@ public struct NowPlayingSheet: View {
     /// the row has the lyrics key, the queue key and the menu.
     ///
     /// The three share one glass capsule, the same group as the library's search and sort keys,
-    /// with the same 40-point square keys inside it.
-    private var below: some View {
+    /// with the same 40-point square keys inside it. `scale` sizes them.
+    func below(scale s: CGFloat) -> some View {
         HStack(spacing: 0) {
             // First in the row, as in the Uno phone app: the lyrics, then what comes next.
-            small("\u{f4ad}") {
+            small("\u{f4ad}", scale: s) {
                 Haptics.pick()
                 showingLyrics.toggle()
             }
@@ -895,7 +901,7 @@ public struct NowPlayingSheet: View {
             .opacity(lyrics.isSynced || lookingUpLyrics ? 1 : 0.35)
             .disabled(!lyrics.isSynced)
 
-            small("\u{f03a}") {
+            small("\u{f03a}", scale: s) {
                 Haptics.pick()
                 queue.raise()
             }
@@ -924,9 +930,9 @@ public struct NowPlayingSheet: View {
                 sleepTimerItem
             } label: {
                 Text(Glyph.more)
-                    .font(RPMFont.icon(16))
+                    .font(RPMFont.icon(16 * s))
                     .foregroundStyle(RPMInk.white(0x99 / 255))
-                    .frame(width: 40, height: 40)
+                    .frame(width: 40 * s, height: 40 * s)
                     .contentShape(Rectangle())
             }
             .coachTarget(.playerMenu)
@@ -936,7 +942,6 @@ public struct NowPlayingSheet: View {
         }
         .rpmGlassGroup()
         .frame(maxWidth: .infinity)
-        .padding(.top, 2)
     }
 
     /// The sleep timer in the menu: the options while it is off, and the drawer with the time left
@@ -976,24 +981,25 @@ public struct NowPlayingSheet: View {
         player.setSleepTimer(choice)
     }
 
-    private func small(_ glyph: String, _ press: @escaping () -> Void) -> some View {
+    private func small(_ glyph: String, scale s: CGFloat,
+                       _ press: @escaping () -> Void) -> some View {
         Button(action: press) {
             Text(glyph)
-                .font(RPMFont.icon(16))
+                .font(RPMFont.icon(16 * s))
                 .foregroundStyle(RPMInk.white(0x99 / 255))
-                .frame(width: 40, height: 40)
+                .frame(width: 40 * s, height: 40 * s)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
-    private func key(_ glyph: String, _ size: CGFloat,
+    private func key(_ glyph: String, _ size: CGFloat, edge: CGFloat,
                      _ press: @escaping () -> Void) -> some View {
         Button(action: press) {
             Text(glyph)
                 .font(RPMFont.icon(size))
                 .foregroundStyle(RPMInk.white(0xB8 / 255))
-                .frame(width: 56, height: 56)
+                .frame(width: edge, height: edge)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

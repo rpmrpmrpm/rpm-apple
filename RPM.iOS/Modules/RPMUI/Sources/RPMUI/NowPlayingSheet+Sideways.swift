@@ -2,6 +2,7 @@ import SwiftUI
 import RPMKit
 import RPMSharedUI
 import RPMStages
+import RPMDesign
 
 /// The player on its side, in the Modern style (``LandscapePlayer/modern``).
 ///
@@ -11,34 +12,51 @@ import RPMStages
 /// the lyrics, queue and menu keys. They behave the same way because they are the same views. Only
 /// the layout and the background are here.
 ///
-/// - The left half holds the cover, centred, with the spectrum in the margins beside it.
-/// - The right half holds the text and the keys, centred as one block.
+/// - The left holds the cover, with the spectrum beside it.
+/// - The right holds the text and the keys, in one column.
 /// - The top right holds the cast key and, to its left, the visualiser key.
 /// - Behind all of it is the room, or the look chosen with the visualiser key, darker towards the
 ///   right so the text can be read.
+///
+/// **Each is put where the drawing has it, from the screen's size** (``SidewaysLayout``), and the
+/// pieces are sized by the screen's height. Nothing is put outside the safe area.
 extension NowPlayingSheet {
-    /// The widest the column of text and keys grows, on a phone with a lot of room on its side.
-    private static let sidewaysColumn: CGFloat = 460
-
     var sidewaysLayout: some View {
-        HStack(spacing: 0) {
-            // The lyrics take the place of the cover here too, as in the upright player.
-            ZStack {
+        GeometryReader { geo in
+            let insets = geo.safeAreaInsets
+            let laid = SidewaysLayout(
+                width: geo.size.width + insets.leading + insets.trailing,
+                height: geo.size.height + insets.top + insets.bottom,
+                safe: CGRect(x: insets.leading, y: insets.top,
+                             width: geo.size.width, height: geo.size.height))
+            let s = laid.scale
+
+            ZStack(alignment: .topLeading) {
+                // The lyrics take the place of the cover here too, as in the upright player.
                 if lyricsUp {
                     LyricView(sheet: lyrics, player: player, karaoke: karaoke, measured: measured)
+                        .placed(laid.lyrics, in: laid)
+                        .transition(.opacity)
                 } else {
-                    cover
+                    sidewaysCover(laid)
+                        .transition(.opacity)
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .transition(.opacity)
 
-            chrome
-                .frame(maxWidth: Self.sidewaysColumn)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                wordsShown(scale: s)
+                    .placed(laid.words, in: laid)
+                // See ``chrome`` for why the bar is a view of its own.
+                PlayerNeedle(player: player, playingOn: playingOn, scale: s)
+                    .placed(laid.needle, in: laid)
+                transport(scale: s)
+                    .placed(laid.transport, in: laid)
+                below(scale: s)
+                    .placed(laid.capsule, in: laid)
+
+                sidewaysKeys(laid)
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
         }
         .animation(.easeOut(duration: 0.25), value: lyricsUp)
-        .overlay(alignment: .topTrailing) { sidewaysKeys }
         // The background is a modifier and not a sibling in a stack, for the reason given on the
         // upright player: a sibling that ignores the safe area would make the whole stack extend
         // under the sensor housing.
@@ -51,17 +69,45 @@ extension NowPlayingSheet {
         }
     }
 
-    /// The keys for the screen and not for the music, at the top right: the visualiser key, then
-    /// the cast key in the corner, where the upright player has it.
-    private var sidewaysKeys: some View {
-        HStack(spacing: 10) {
-            visualKey
-                // The cast key brings its own margin. Without it, this key takes the corner.
-                .padding(.trailing, onSpeakers == nil ? 12 : 0)
+    /// The cover at its place, with the spectrum across its span.
+    ///
+    /// The spectrum is drawn centred on the cover, in a span made even about it, and cut where the
+    /// layout's span stops at the safe area: the cover does not move for that.
+    private func sidewaysCover(_ laid: SidewaysLayout) -> some View {
+        let reach = laid.spectrumReach
+        let run = laid.spectrum
 
-            speakerKey
+        return ZStack(alignment: .topLeading) {
+            // The setting can turn the moving bars off. The room behind the sheet stays.
+            if bars {
+                spectrum(edge: laid.cover.width)
+                    .frame(width: reach.width, height: reach.height)
+                    .mask {
+                        Rectangle()
+                            .frame(width: run.width, height: run.height)
+                            .position(x: run.midX - reach.minX, y: run.midY - reach.minY)
+                    }
+                    .placed(reach, in: laid)
+            }
+
+            sleeve(edge: laid.cover.width)
+                .coachTarget(.playerCover)
+                .placed(laid.cover, in: laid)
         }
-        .padding(.top, 8)
+    }
+
+    /// The keys for the screen and not for the music, at the top right: the visualiser key, then
+    /// the cast key in the corner, where the upright player has it. Without the cast key, the
+    /// visualiser key takes the corner.
+    @ViewBuilder
+    private func sidewaysKeys(_ laid: SidewaysLayout) -> some View {
+        visualKey(scale: laid.scale)
+            .placed(onSpeakers == nil ? laid.cast : laid.visual, in: laid)
+
+        if onSpeakers != nil {
+            speakerKey(scale: laid.scale, margin: 0)
+                .placed(laid.cast, in: laid)
+        }
     }
 
     /// The look chosen with the visualiser key, or nil for the room.
@@ -71,7 +117,7 @@ extension NowPlayingSheet {
     ///
     /// A system menu and not the stage's panel: the panel is a full screen of its own, and here
     /// the choice only changes the background of a screen that stays in use.
-    private var visualKey: some View {
+    private func visualKey(scale s: CGFloat) -> some View {
         Menu {
             Picker(Loc.get("Rpm_Stage_Visualiser"), selection: $visual) {
                 Text(Loc.get("Rpm_Stage_Room")).tag(LandscapeVisual.room)
@@ -83,11 +129,11 @@ extension NowPlayingSheet {
         } label: {
             // The stage's own visualiser glyph, lit while a look is drawn instead of the room.
             Text(StageLook.ribbon.glyph)
-                .font(RPMFont.icon(15))
+                .font(RPMFont.icon(15 * s))
                 .foregroundStyle(sidewaysLook == nil ? RPMInk.white(0xB8 / 255) : .white)
                 // The glass that ``RPMGlassKey`` draws, on the label: a menu is not a button and
                 // takes no button style.
-                .frame(width: 40, height: 40)
+                .frame(width: 40 * s, height: 40 * s)
                 .contentShape(Circle())
                 .rpmGlass(Circle())
         }
@@ -134,5 +180,14 @@ extension NowPlayingSheet {
         } else {
             fallbackGround
         }
+    }
+}
+
+private extension View {
+    /// Puts this view at `frame`, which is on the whole screen, in a view that starts at the safe
+    /// area's top leading corner.
+    func placed(_ frame: CGRect, in laid: SidewaysLayout) -> some View {
+        self.frame(width: frame.width, height: frame.height)
+            .position(x: frame.midX - laid.safe.minX, y: frame.midY - laid.safe.minY)
     }
 }

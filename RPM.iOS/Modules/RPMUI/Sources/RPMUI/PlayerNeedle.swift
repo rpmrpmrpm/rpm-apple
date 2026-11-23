@@ -26,12 +26,16 @@ struct PlayerNeedle: View {
     /// that column, so there it is aligned with the text above, like everything else.
     var liveLine: HorizontalAlignment = .center
 
+    /// The bar's, the clocks' and the gaps' sizes against their own, for the player on its side,
+    /// whose pieces are sized by the screen (``SidewaysLayout/scale``).
+    var scale: CGFloat = 1
+
     /// The position of the finger while it is on the bar, in seconds. It is held here and not in
     /// the sheet, for the reason given in the type's description.
     @State private var scrubbing: Double?
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 4 * scale) {
             seek
 
             // Elapsed time on the left. Time LEFT on the right, counting down, as other
@@ -50,7 +54,7 @@ struct PlayerNeedle: View {
                          ? "-" + clock(player.duration.seconds - shown) : "")
                 }
             }
-            .font(RPMFont.display(11))
+            .font(RPMFont.display(11 * scale))
             .foregroundStyle(RPMInk.white(0x88 / 255))
             .frame(maxWidth: .infinity,
                    alignment: player.onTheRadio ? Alignment(horizontal: liveLine, vertical: .center)
@@ -68,7 +72,7 @@ struct PlayerNeedle: View {
             if player.onTheRadio {
                 // Nothing to scrub. A live track cannot be moved through, so it gets no bar
                 // that the user could drag and see jump back.
-                Color.clear.frame(height: 20).padding(.top, 6)
+                Color.clear.frame(height: 20 * scale).padding(.top, 6 * scale)
             } else {
                 scrubber
             }
@@ -91,12 +95,12 @@ struct PlayerNeedle: View {
             ?? (player.isBusy ? Loc.get("Rpm_Playback_Buffering") : nil)
             ?? playingOn.map({ Loc.get("Rpm_Cast_Playing", $0) }) {
             Text(said)
-                .font(RPMFont.display(11))
+                .font(RPMFont.display(11 * scale))
                 .foregroundStyle(RPMInk.white(0x88 / 255))
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(maxWidth: 240, alignment: .trailing)
-                .offset(y: -8)
+                .frame(maxWidth: 240 * scale, alignment: .trailing)
+                .offset(y: -8 * scale)
         }
     }
 
@@ -110,7 +114,7 @@ struct PlayerNeedle: View {
         if !player.onTheRadio, let kilobits = player.playingKilobits {
             Text(kilobits == AudioLadder.original ? Loc.get("Rpm_Playback_Original")
                                                  : Loc.get("Rpm_Profile_QualityKbps", kilobits))
-                .font(RPMFont.display(11))
+                .font(RPMFont.display(11 * scale))
                 .foregroundStyle(RPMInk.white(0x55 / 255))
         }
     }
@@ -121,15 +125,15 @@ struct PlayerNeedle: View {
             let played = width * progress
 
             ZStack(alignment: .leading) {
-                Capsule().fill(RPMInk.white(0x2E / 255)).frame(height: 3)
-                Capsule().fill(Color.white).frame(width: played, height: 3)
+                Capsule().fill(RPMInk.white(0x2E / 255)).frame(height: 3 * scale)
+                Capsule().fill(Color.white).frame(width: played, height: 3 * scale)
 
                 Capsule()
                     .fill(Color.white)
-                    .frame(width: 2, height: 14)
-                    .offset(x: max(0, played - 1))
+                    .frame(width: 2 * scale, height: 14 * scale)
+                    .offset(x: max(0, played - scale))
             }
-            .frame(height: 20)
+            .frame(height: 20 * scale)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -143,8 +147,8 @@ struct PlayerNeedle: View {
                         scrubbing = nil
                     })
         }
-        .frame(height: 20)
-        .padding(.top, 6)
+        .frame(height: 20 * scale)
+        .padding(.top, 6 * scale)
         .disabled(player.duration <= .zero)
     }
 
