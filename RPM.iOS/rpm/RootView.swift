@@ -960,10 +960,25 @@ struct RootView: View {
     }
 
     /// The library tab. Its four views slide across one another in the order of the row of views,
-    /// as the tabs do (``SlidingPages``), and the row of views under each header moves across the
-    /// change (``LibraryModeTabs``).
+    /// as the tabs do (``SlidingPages``).
+    ///
+    /// A view at its first page is held, as the settings page is: its header and its row of views
+    /// stay where they are, the pill in the row moves to the new view, and only what is under the
+    /// row slides. A view with a page pushed on its stack slides whole, because the pushed page
+    /// has no row. Held views draw no ground of their own, so the tab draws one behind them.
     private var libraryTab: some View {
-        SlidingPages(mode) { which in libraryView(which) }
+        SlidingPages(mode, holding: { atFirstPage($0) }) { which in libraryView(which) }
+            .groundBehindHeldPages()
+    }
+
+    /// Whether the stack of a library view shows its first page, with nothing pushed on it.
+    private func atFirstPage(_ which: LibraryMode) -> Bool {
+        switch which {
+        case .albums: return opened.isEmpty
+        case .artists: return browsing.isEmpty
+        case .genres: return genrePath.isEmpty
+        case .playlists: return lists.isEmpty
+        }
     }
 
     /// One view of the library tab, with its own stack.

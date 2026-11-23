@@ -159,14 +159,16 @@ public struct GenresPage: View {
                 }
             }
             .frame(maxHeight: .infinity)
+            // Only this part slides when the library's view changes. See ``SlidingPages``.
+            .slidesWhenHeld()
             .scrollsUnder {
                 VStack(spacing: 0) {
-                    header
-                    LibraryModeTabs($mode)
+                    header.headerWhenHeld()
+                    LibraryModeTabs($mode).rowWhenHeld()
                 }
             }
         }
-        .background { VinylGround() }
+        .groundUnlessHeld()
     }
 
     private var header: some View {

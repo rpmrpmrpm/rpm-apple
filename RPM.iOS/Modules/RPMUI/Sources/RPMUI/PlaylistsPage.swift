@@ -131,14 +131,16 @@ public struct PlaylistsPage: View {
                 }
             }
             .frame(maxHeight: .infinity)
+            // Only this part slides when the library's view changes. See ``SlidingPages``.
+            .slidesWhenHeld()
             .scrollsUnder {
                 VStack(spacing: 0) {
-                    header(browse)
-                    LibraryModeTabs($mode)
+                    header(browse).headerWhenHeld()
+                    LibraryModeTabs($mode).rowWhenHeld()
                 }
             }
         }
-        .background { VinylGround() }
+        .groundUnlessHeld()
         .overlay {
             if let folder = making {
                 NewPlaylistSheet(

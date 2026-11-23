@@ -103,15 +103,21 @@ public struct ArtistsPage: View {
             }
             .remembersSearch(asked, searching: searching)
             .frame(maxHeight: .infinity)
+            // Only this part slides when the library's view changes. See ``SlidingPages``.
+            .slidesWhenHeld()
             .scrollsUnder {
                 VStack(spacing: 0) {
-                    header.zIndex(1)
-                    if searching { field }
-                    LibraryModeTabs($mode)
+                    VStack(spacing: 0) {
+                        header.zIndex(1)
+                        if searching { field }
+                    }
+                    .headerWhenHeld()
+
+                    LibraryModeTabs($mode).rowWhenHeld()
                 }
             }
         }
-        .background { VinylGround() }
+        .groundUnlessHeld()
     }
 
     // ── the header ──

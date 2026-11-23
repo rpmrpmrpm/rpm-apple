@@ -220,17 +220,23 @@ public struct LibraryPage: View {
                 }
             }
             .frame(maxHeight: .infinity)
+            // Only this part slides when the library's view changes. See ``SlidingPages``.
+            .slidesWhenHeld()
             .scrollsUnder {
                 // While the search is open the heading and the views fade away, and the field rises
                 // into their place. They come back only when the search is closed with its cross.
                 VStack(spacing: 0) {
-                    if !searching { header.transition(.opacity) }
-                    if searching { field }
-                    if !searching { LibraryModeTabs($mode).transition(.opacity) }
+                    VStack(spacing: 0) {
+                        if !searching { header.transition(.opacity) }
+                        if searching { field }
+                    }
+                    .headerWhenHeld()
+
+                    if !searching { LibraryModeTabs($mode).rowWhenHeld().transition(.opacity) }
                 }
             }
         }
-        .background { VinylGround() }
+        .groundUnlessHeld()
         .remembersSearch(asked, searching: searching)
         // **A keystroke does not start a search.** Searching the whole library on every
         // letter would make the interface stutter while the user types. This waits for

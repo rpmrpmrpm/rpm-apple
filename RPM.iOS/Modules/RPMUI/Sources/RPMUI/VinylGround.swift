@@ -43,6 +43,10 @@ import RPMArt
 /// `NavigationStack` paints an opaque background over whatever is behind it, so a ground
 /// placed under the whole app would never be seen. The image is decoded once and shared,
 /// so drawing it on four pages costs four draws and one decoded picture.
+///
+/// The first pages of the library's views are the exception on iOS 18 and later: they clear
+/// their stack's background and stand on one ground drawn behind all four. See
+/// `groundUnlessHeld()` in `SlidingPages.swift`.
 @MainActor
 public struct VinylGround: View {
     /// Which pressing this ground is. It is read when the view is created, not when it

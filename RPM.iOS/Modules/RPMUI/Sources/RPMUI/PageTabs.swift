@@ -24,8 +24,10 @@ protocol PageTab: Hashable, CaseIterable where AllCases == [Self] {
 ///
 /// **Each library view draws its own row, so the row remembers where the last one stood**
 /// (``lastShown``). The row of the view that comes in starts at the tab the last row showed and
-/// moves from there, while the two views slide across (``SlidingPages``). A row that started at
-/// its own tab would arrive already finished. Each kind of tab is remembered on its own.
+/// moves from there. The views are held while they change (``SlidingPages``): the new row takes
+/// the place of the old one at once, so the row seems to stay and only its pill moves, as on the
+/// settings page. A row that started at its own tab would arrive already finished. Each kind of
+/// tab is remembered on its own.
 ///
 /// **A row writes where it stands when it appears and when it goes away, and not when the choice
 /// changes.** The view that slides in is built after the change, while the row that is leaving is
