@@ -561,6 +561,22 @@ public enum RPMFont {
         loaded.descenderStart(said, size: size)
     }
 
+    /// A title cut into the parts the title face draws and the parts it has no letters for, such
+    /// as Chinese. See ``HeaderRun``. A title the face draws whole is one run.
+    public static func headerRuns(_ said: String, size: CGFloat = 96) -> [HeaderRun] {
+        loaded.runs(said, size: size)
+    }
+
+    /// How tall the ink of an ideograph stands, as a share of the title face's capital height.
+    ///
+    /// **Not the same point size.** Thiamine's capitals are a quarter of the em, and an ideograph
+    /// fills most of its em. A fallback face at the title's point size draws a Chinese title about
+    /// three times too big. A square ideograph looks larger than a capital of the same height, but
+    /// a lowercase title such as "settings" also reaches below the baseline, so the ideograph is
+    /// made a little taller than the capitals. It still fits in the title's line box. Android's
+    /// `IDEOGRAPH_OVER_CAPITAL` (HeaderText.kt) is the same value.
+    static let ideographOverCapital: CGFloat = 1.15
+
     /// Font Awesome, solid and hollow. They are two separate faces, which is how a heart can show
     /// filled or empty without a change of colour, size or place.
     public static func icon(_ size: CGFloat) -> Font { face(.solid, size) }
@@ -621,9 +637,19 @@ public enum RPMFont {
         private let lock = NSLock()
         private var known: [Face: String?] = [:]
 
-        /// Measured words, by what was measured and at what size. A title is measured on every
-        /// pass of its header's body, and the answer for one word never changes.
-        private var measured: [String: CGFloat] = [:]
+        /// Measured words, by size and word. A title is measured on every pass of its header's
+        /// body, and the answer for one word never changes.
+        private var inks: [String: Ink] = [:]
+
+        /// Titles cut into runs (``HeaderRun``), by size and word.
+        private var cut: [String: [HeaderRun]] = [:]
+
+        /// What a word's ink does below the baseline. See ``measure(_:size:name:)``.
+        private struct Ink {
+            let start: CGFloat
+            let end: CGFloat
+            let slack: CGFloat
+        }
 
         func name(of face: Face) -> String? {
             lock.withLock { name(of: face, locked: true) }
@@ -642,62 +668,77 @@ public enum RPMFont {
 
         /// The part of the face's descent that this word does not reach into.
         ///
-        /// `useGlyphPathBounds` asks for the ink and not the line box. That is the whole point:
-        /// the line box has the same depth for every word.
+        /// The ink is measured and not the line box. That is the whole point: the line box has
+        /// the same depth for every word.
         func descentSlack(_ said: String, size: CGFloat) -> CGFloat {
-            lock.withLock {
-                let asked = "\(size)|\(said)"
-                if let already = measured[asked] { return already }
-
-                let answer = Self.slack(said, size: size, name: name(of: .thiamine, locked: true))
-                measured[asked] = answer
-                return answer
-            }
+            ink(said, size: size).slack
         }
 
         func descenderEnd(_ said: String, size: CGFloat) -> CGFloat {
-            descender(said, size: size).end
+            ink(said, size: size).end
         }
 
         func descenderStart(_ said: String, size: CGFloat) -> CGFloat {
-            descender(said, size: size).start
+            ink(said, size: size).start
         }
 
-        /// Both edges of the descenders, measured together and kept under two keys.
-        private func descender(_ said: String, size: CGFloat) -> (start: CGFloat, end: CGFloat) {
-            lock.withLock {
-                let (startKey, endKey) = ("start|\(size)|\(said)", "end|\(size)|\(said)")
-                if let start = measured[startKey], let end = measured[endKey] {
-                    return (start: start, end: end)
-                }
+        func runs(_ said: String, size: CGFloat) -> [HeaderRun] {
+            lock.withLock { runs(said, size: size, locked: true) }
+        }
 
-                let answer = Self.descenders(said, size: size, name: name(of: .thiamine, locked: true))
-                measured[startKey] = answer.start
-                measured[endKey] = answer.end
+        /// - Parameter locked: see ``name(of:locked:)``.
+        private func runs(_ said: String, size: CGFloat, locked: Bool) -> [HeaderRun] {
+            let asked = "\(size)|\(said)"
+            if let already = cut[asked] { return already }
+
+            let answer = Self.split(said, size: size, name: name(of: .thiamine, locked: true))
+            cut[asked] = answer
+            return answer
+        }
+
+        /// What a title's ink does below the baseline, measured once for each word and size.
+        private func ink(_ said: String, size: CGFloat) -> Ink {
+            lock.withLock {
+                let asked = "\(size)|\(said)"
+                if let already = inks[asked] { return already }
+
+                let answer = Self.measure(runs(said, size: size, locked: true), size: size,
+                                          name: name(of: .thiamine, locked: true))
+                inks[asked] = answer
                 return answer
             }
         }
 
-        /// The left-hand edge of the ink of the first glyph whose ink goes below the baseline, and
-        /// the right-hand edge of the ink of the last one. Both are zero for a word with no
-        /// descender. The font of each run is used, so a letter drawn from a fallback face is
-        /// measured in that face.
-        private static func descenders(_ said: String, size: CGFloat,
-                                       name: String?) -> (start: CGFloat, end: CGFloat) {
-            guard let name else { return (0, 0) }
+        /// The ink of a title below the baseline: how deep it goes, and the left-hand edge of the
+        /// first glyph that goes below the baseline and the right-hand edge of the last one.
+        ///
+        /// Each glyph is measured in the font that Core Text draws it with, so a letter from a
+        /// fallback face is measured in that face. A run that is lifted (``HeaderRun/lift``) is
+        /// measured where it is drawn.
+        private static func measure(_ runs: [HeaderRun], size: CGFloat, name: String?) -> Ink {
+            guard let name else { return Ink(start: 0, end: 0, slack: 0) }
 
             let font = CTFontCreateWithName(name as CFString, size, nil)
-            let line = CTLineCreateWithAttributedString(
-                NSAttributedString(string: said, attributes: [.font: font]))
+            let liftKey = NSAttributedString.Key(liftName)
+            let text = NSMutableAttributedString()
+            for run in runs {
+                text.append(NSAttributedString(string: run.text, attributes: [
+                    .font: CTFontCreateWithName(name as CFString, run.size, nil),
+                    liftKey: NSNumber(value: Double(run.lift)),
+                ]))
+            }
+            let line = CTLineCreateWithAttributedString(text)
 
             var start: CGFloat = .infinity
             var end: CGFloat = 0
+            var depth: CGFloat = 0
             for run in CTLineGetGlyphRuns(line) as? [CTRun] ?? [] {
                 let count = CTRunGetGlyphCount(run)
                 guard count > 0 else { continue }
 
                 let attributes = CTRunGetAttributes(run) as NSDictionary
                 let runFont = attributes[kCTFontAttributeName] as! CTFont? ?? font
+                let lift = CGFloat((attributes[liftName] as? NSNumber)?.doubleValue ?? 0)
 
                 var glyphs = [CGGlyph](repeating: 0, count: count)
                 var positions = [CGPoint](repeating: .zero, count: count)
@@ -706,25 +747,103 @@ public enum RPMFont {
                 CTRunGetPositions(run, CFRange(location: 0, length: count), &positions)
                 CTFontGetBoundingRectsForGlyphs(runFont, .horizontal, glyphs, &ink, count)
 
-                // Half a point below the baseline, so a round letter that dips slightly under it
-                // is not counted as a descender.
-                for i in 0..<count where ink[i].minY < -0.5 {
-                    start = min(start, positions[i].x + ink[i].minX)
-                    end = max(end, positions[i].x + ink[i].maxX)
+                for i in 0..<count where !ink[i].isEmpty {
+                    let bottom = ink[i].minY + lift
+                    depth = max(depth, -bottom)
+
+                    // Half a point below the baseline, so a round letter that dips slightly under
+                    // it is not counted as a descender.
+                    if bottom < -0.5 {
+                        start = min(start, positions[i].x + ink[i].minX)
+                        end = max(end, positions[i].x + ink[i].maxX)
+                    }
                 }
             }
-            return start.isFinite ? (max(0, start), end) : (0, 0)
+            return Ink(start: start.isFinite ? max(0, start) : 0, end: start.isFinite ? end : 0,
+                       slack: max(0, CTFontGetDescent(font) - depth))
         }
 
-        private static func slack(_ said: String, size: CGFloat, name: String?) -> CGFloat {
-            guard let name else { return 0 }
+        /// The attribute that carries a run's lift into the measured line.
+        private static let liftName = "RPMHeaderLift"
+
+        /// The title cut into the letters the face has and the letters it lacks. A space stays in
+        /// the run it is in. The text is composed first, so an accent typed as a separate mark is
+        /// looked up as the one letter the face has.
+        private static func split(_ said: String, size: CGFloat, name: String?) -> [HeaderRun] {
+            let whole = [HeaderRun(text: said, size: size, lift: 0, inTitleFace: true)]
+            guard let name, !said.isEmpty else { return whole }
 
             let font = CTFontCreateWithName(name as CFString, size, nil)
-            let line = CTLineCreateWithAttributedString(
-                NSAttributedString(string: said, attributes: [.font: font]))
-            let ink = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+            var parts: [(text: String, has: Bool)] = []
+            for letter in said.precomposedStringWithCanonicalMapping {
+                let has = letter.isWhitespace || Self.has(font, letter)
+                if let last = parts.last, last.has == has || letter.isWhitespace {
+                    parts[parts.count - 1].text.append(letter)
+                } else {
+                    parts.append((text: String(letter), has: has))
+                }
+            }
+            guard parts.contains(where: { !$0.has }) else { return whole }
 
-            return max(0, CTFontGetDescent(font) - max(0, -ink.minY))
+            let capital = CTFontGetCapHeight(font)
+            return parts.map { part in
+                part.has ? HeaderRun(text: part.text, size: size, lift: 0, inTitleFace: true)
+                         : Self.standIn(part.text, font: font, size: size, capital: capital)
+            }
+        }
+
+        /// Whether the face itself has this letter. Core Text does not fall back here.
+        private static func has(_ font: CTFont, _ letter: Character) -> Bool {
+            let units = Array(String(letter).utf16)
+            var glyphs = [CGGlyph](repeating: 0, count: units.count)
+            return CTFontGetGlyphsForCharacters(font, units, &glyphs, units.count)
+        }
+
+        /// A run that the title face lacks, sized for the face Core Text draws it with.
+        ///
+        /// Ideographs are sized by the ink of a plain one, and lifted so it stands on the
+        /// baseline (see ``RPMFont/ideographOverCapital``). Other scripts are sized so the
+        /// stand-in face's capitals are as tall as the title face's.
+        private static func standIn(_ text: String, font: CTFont, size: CGFloat,
+                                    capital: CGFloat) -> HeaderRun {
+            let line = CTLineCreateWithAttributedString(
+                NSAttributedString(string: text, attributes: [.font: font]))
+            let first = (CTLineGetGlyphRuns(line) as? [CTRun])?.first
+            let drawn = first.map { CTRunGetAttributes($0) as NSDictionary }
+                .flatMap { $0[kCTFontAttributeName] as! CTFont? } ?? font
+
+            if text.unicodeScalars.contains(where: isIdeographic), let ink = ideographInk(drawn) {
+                let scale = capital * RPMFont.ideographOverCapital / ink.height
+                return HeaderRun(text: text, size: size * scale, lift: -ink.minY * scale,
+                                 inTitleFace: false)
+            }
+
+            let theirs = CTFontGetCapHeight(drawn)
+            let scale = theirs > 0 ? capital / theirs : 1
+            return HeaderRun(text: text, size: size * scale, lift: 0, inTitleFace: false)
+        }
+
+        /// The ink of the ideograph for "country", a plain square one, in this face. Nil when the
+        /// face does not have it.
+        private static func ideographInk(_ font: CTFont) -> CGRect? {
+            var unit: UniChar = 0x56FD
+            var glyph: CGGlyph = 0
+            guard CTFontGetGlyphsForCharacters(font, &unit, &glyph, 1) else { return nil }
+
+            var ink = CGRect.zero
+            CTFontGetBoundingRectsForGlyphs(font, .horizontal, &glyph, &ink, 1)
+            return ink.height > 0 ? ink : nil
+        }
+
+        /// Han, kana, Hangul and the full-width forms: the scripts drawn as square ideographs.
+        private static func isIdeographic(_ scalar: Unicode.Scalar) -> Bool {
+            switch scalar.value {
+            case 0x2E80...0x9FFF, 0xAC00...0xD7AF, 0xF900...0xFAFF, 0xFF00...0xFFEF,
+                 0x20000...0x3FFFF:
+                return true
+            default:
+                return false
+            }
         }
 
         private static func register(_ face: Face) -> String? {

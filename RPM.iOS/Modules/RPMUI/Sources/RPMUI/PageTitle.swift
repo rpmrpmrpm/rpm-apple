@@ -28,13 +28,89 @@ public struct PageTitle: View {
     public static let subtitleGap: Double = 6
 
     public var body: some View {
-        Text(said)
-            .font(RPMFont.header())
-            .tracking(RPMFont.headerTracking())
+        HeaderText(said)
             .foregroundStyle(.white)
-            .lineLimit(1)
             .padding(.bottom, -(trimsAllDescent ? RPMFont.headerDescentSlack("")
                                                 : RPMFont.headerDescentSlack(said)))
+    }
+}
+
+/// One part of a title, in the title face or in the face that stands in for it.
+///
+/// Thiamine has Latin letters only. For a letter it lacks, such as Chinese, Core Text falls back to
+/// another face. That face is drawn at its own ``size``, so its ink is as tall as the title face's
+/// letters and not as tall as the title's point size asks, and it is raised by ``lift`` points so
+/// an ideograph stands on the baseline. See ``RPMFont/headerRuns(_:size:)``.
+public struct HeaderRun: Sendable, Hashable {
+    public let text: String
+    public let size: CGFloat
+    public let lift: CGFloat
+    public let inTitleFace: Bool
+}
+
+/// A title in the title face, on one line, with the letters the face lacks drawn at their own
+/// size (``HeaderRun``).
+///
+/// **The line box is the title face's own.** A title with a run in another face is laid out in
+/// the box that a title of Latin letters has, with the same baseline, so a Chinese page title is
+/// as tall as an English one and the pages under it do not move.
+struct HeaderText: View {
+    private let said: String
+    private let size: CGFloat
+
+    init(_ said: String, size: CGFloat = 96) {
+        self.said = said
+        self.size = size
+    }
+
+    var body: some View {
+        let runs = RPMFont.headerRuns(said, size: size)
+        if runs.allSatisfy(\.inTitleFace) {
+            Text(said)
+                .font(RPMFont.header(size))
+                .tracking(RPMFont.headerTracking(size))
+                .lineLimit(1)
+        } else {
+            TitleFaceLine {
+                // The title face's line box, measured from a letter of its own and not drawn.
+                Text(verbatim: "x")
+                    .font(RPMFont.header(size))
+                    .opacity(0)
+                    .accessibilityHidden(true)
+
+                runs.reduce(Text(verbatim: "")) { text, run in
+                    text + Text(verbatim: run.text)
+                        .font(RPMFont.header(run.size))
+                        .baselineOffset(run.lift)
+                }
+                .tracking(RPMFont.headerTracking(size))
+                .lineLimit(1)
+            }
+        }
+    }
+}
+
+/// Lays out the second view (a title) with its baseline on the baseline of the first (a letter in
+/// the title face), and is as tall as the first. See ``HeaderText``.
+private struct TitleFaceLine: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard subviews.count == 2 else { return .zero }
+        let box = subviews[0].sizeThatFits(.unspecified)
+        let title = subviews[1].sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        return CGSize(width: title.width, height: box.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews,
+                       cache: inout ()) {
+        guard subviews.count == 2 else { return }
+        let box = subviews[0].dimensions(in: .unspecified)
+        let room = ProposedViewSize(width: bounds.width, height: nil)
+        let title = subviews[1].dimensions(in: room)
+
+        subviews[0].place(at: bounds.origin, anchor: .topLeading, proposal: .unspecified)
+        subviews[1].place(at: CGPoint(x: bounds.minX,
+                                      y: bounds.minY + box[.lastTextBaseline] - title[.lastTextBaseline]),
+                          anchor: .topLeading, proposal: room)
     }
 }
 
