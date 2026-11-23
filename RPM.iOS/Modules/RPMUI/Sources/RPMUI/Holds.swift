@@ -1,16 +1,17 @@
 import SwiftUI
 import RPMKit
 import RPMLibrary
+import RPMRadio
 
 /// What a long press offers beyond a song's own menu: what the person put on home's Quick
-/// selection, the playlists they pinned to the top of the playlists tab, and play next for a
-/// record.
+/// selection, the playlists they pinned to the top of the playlists tab, play next for a record,
+/// and, on a station, a pin to the radio home's Quick selection and the saved stations.
 ///
 /// One for the app, made by the root and handed down in the environment. Every view that offers
 /// these reads it there (`@Environment(Holds.self)`, optional), so a view drawn without one, in a
 /// preview or on another head, offers nothing extra rather than stopping the app.
 ///
-/// Both lists are kept in the standard user defaults under the keys the Android phone uses.
+/// The lists are kept in the standard user defaults under the keys the Android phone uses.
 @MainActor
 @Observable
 public final class Holds {
@@ -21,8 +22,23 @@ public final class Holds {
     /// pinned.
     public private(set) var pinned: [String]
 
+    /// The stations pinned to the radio home's Quick selection, in the order they were pinned.
+    ///
+    /// **Each is kept whole**, as a saved station is, so it is shown and plays when the directory
+    /// does not answer. It is kept as the directory files it: the folded entries, the shown name
+    /// and the admin's edit are not saved (``RadioStation``'s coding leaves them out) and are
+    /// worked out again when it is drawn.
+    public private(set) var pinnedStations: [RadioStation]
+
     /// Puts a record's songs after the song that is playing, as play next does for one song.
     private let playNextRecord: @MainActor (CloudAlbum) -> Void
+
+    /// The saved stations the radio shows, and whether they may change here. On a shared
+    /// collection they are its owner's and are never changed (``SavedStations``).
+    private let savedStations: @MainActor () -> SavedStations
+
+    /// Saves a station, or takes it out of the saved stations.
+    private let toggleSaved: @MainActor (RadioStation) -> Void
 
     private let store: UserDefaults
 
@@ -32,12 +48,28 @@ public final class Holds {
     /// Where the pinned playlists are kept.
     public static let pinnedKey = "playlists.pinned"
 
+    /// Where the pinned stations are kept, as JSON.
+    public static let pinnedStationsKey = "radio.pinned"
+
+    /// The most stations the person can pin: the radio home's Quick selection shows sixteen lines
+    /// in all (``RadioHomePicks/quickMost``).
+    public static let pinnedStationsMost = RadioHomePicks.quickMost
+
+    /// - Parameters:
+    ///   - savedStations: the saved stations the radio shows. Read when a station's menu is drawn.
+    ///   - toggleSaved: saves a station or unsaves it. Called only where `savedStations` may
+    ///     change.
     public init(store: UserDefaults = .standard,
-                playNext: @escaping @MainActor (CloudAlbum) -> Void) {
+                playNext: @escaping @MainActor (CloudAlbum) -> Void,
+                savedStations: @escaping @MainActor () -> SavedStations = { .reading },
+                toggleSaved: @escaping @MainActor (RadioStation) -> Void = { _ in }) {
         self.store = store
         self.playNextRecord = playNext
+        self.savedStations = savedStations
+        self.toggleSaved = toggleSaved
         quickAdded = store.stringArray(forKey: Self.quickKey) ?? []
         pinned = store.stringArray(forKey: Self.pinnedKey) ?? []
+        pinnedStations = Self.readStations(store.data(forKey: Self.pinnedStationsKey))
     }
 
     // ── Quick selection ──
@@ -60,6 +92,42 @@ public final class Holds {
     public func togglePin(_ id: String) {
         pinned = isPinned(id) ? pinned.filter { $0 != id } : pinned.filter { $0 != id } + [id]
         store.set(pinned, forKey: Self.pinnedKey)
+    }
+
+    // ── a station ──
+
+    /// Whether `station` is pinned, by its uuid or one of the entries folded into it.
+    public func isPinned(_ station: RadioStation) -> Bool {
+        pinnedStations.contains { station.isFiled(as: $0.uuid) }
+    }
+
+    /// Pins `station` after the others, or unpins it. At most ``pinnedStationsMost``: the oldest
+    /// pin goes first.
+    public func pinStation(_ station: RadioStation, _ on: Bool) {
+        let others = pinnedStations.filter { !station.isFiled(as: $0.uuid) }
+        var kept = station
+        kept.shownName = nil
+        kept.otherLogos = []
+        kept.alsoFiledAs = []
+        kept.edit = nil
+        pinnedStations = on ? Array((others + [kept]).suffix(Self.pinnedStationsMost)) : others
+        if let data = try? JSONEncoder().encode(pinnedStations) {
+            store.set(data, forKey: Self.pinnedStationsKey)
+        }
+    }
+
+    /// The saved stations, read now. See ``savedStations``.
+    func saved() -> SavedStations { savedStations() }
+
+    /// Saves `station` or unsaves it, where the saved stations may change.
+    func toggleSave(_ station: RadioStation) {
+        guard savedStations().mayChange else { return }
+        toggleSaved(station)
+    }
+
+    private static func readStations(_ data: Data?) -> [RadioStation] {
+        guard let data else { return [] }
+        return (try? JSONDecoder().decode([RadioStation].self, from: data)) ?? []
     }
 
     // ── a record ──
@@ -147,7 +215,49 @@ private struct ListHold: ViewModifier {
     }
 }
 
+/// The long-press menu on a station, wherever one is shown on the radio tab: pin it to the radio
+/// home's Quick selection or unpin it, and save it or take it out of the saved stations. Saving is
+/// offered only for the person's own saved stations: on a shared collection they are the owner's.
+private struct StationHold: ViewModifier {
+    let station: RadioStation
+
+    @Environment(Holds.self) private var holds: Holds?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let holds {
+            content.contextMenu {
+                let pinned = holds.isPinned(station)
+                Button {
+                    Haptics.commit()
+                    holds.pinStation(station, !pinned)
+                } label: {
+                    Label(Loc.get(pinned ? "Radio_Unpin" : "Radio_Pin"),
+                          systemImage: pinned ? "pin.slash" : "pin")
+                }
+
+                let saved = holds.saved()
+                if saved.mayChange {
+                    let isSaved = saved.stations.contains { station.isFiled(as: $0.uuid) }
+                    Button {
+                        Haptics.commit()
+                        holds.toggleSave(station)
+                    } label: {
+                        Label(Loc.get(isSaved ? "Radio_Unsave" : "Radio_Save"),
+                              systemImage: isSaved ? "heart.slash" : "heart")
+                    }
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
 extension View {
+    /// The long-press menu on a station. See ``Holds``.
+    func stationHold(_ station: RadioStation) -> some View { modifier(StationHold(station: station)) }
+
     /// The long-press menu on a record. See ``Holds``.
     func albumHold(_ album: CloudAlbum) -> some View { modifier(AlbumHold(album: album)) }
 

@@ -6,6 +6,8 @@ import RPMLibrary
 import RPMArt
 import RPMAudio
 import RPMKit
+import RPMRadio
+import RPMSession
 
 /// What the app opens on.
 struct RootView: View {
@@ -15,9 +17,14 @@ struct RootView: View {
     @MainActor
     init(model: AppModel) {
         _model = State(initialValue: model)
-        // Play next on a record puts its songs after the song playing, as on one song.
+        // Play next on a record puts its songs after the song playing, as on one song. A station's
+        // menu saves it as its heart does, and only where the hearts may change it.
         _holds = State(initialValue: Holds(playNext: { [model] album in
             model.player.insertNext(album.tracks)
+        }, savedStations: { [model] in
+            model.savedStations
+        }, toggleSaved: { [model] station in
+            model.save(station)
         }))
     }
 
@@ -220,6 +227,14 @@ struct RootView: View {
     /// needs a pass over every credit in the collection, and a tab is discarded each time the user
     /// leaves it. See `ReadArtists`.
     @State private var readArtists = ReadArtists()
+
+    /// What is open on top of the radio tab's home: the tuner. The radio tab's own stack, so the
+    /// tuner slides in over the home and back out to it, as a record does on home.
+    @State private var radioPath: [RadioStep] = []
+
+    enum RadioStep: Hashable {
+        case tuner
+    }
 
     /// The genres wall, built once for each library. See ``ReadGenres``.
     @State private var readGenres = ReadGenres()
@@ -1115,8 +1130,42 @@ struct RootView: View {
         .task { await model.showPlaylists() }
     }
 
-    /// The radio tab.
+    /// The radio tab: its home, and the tuner opened from it on the tab's own stack.
     private var radioTab: some View {
+        NavigationStack(path: $radioPath) {
+            radioHome
+                .toolbar(.hidden, for: .navigationBar)
+                .footRoom(chrome, .insideAStack)
+                .navigationDestination(for: RadioStep.self) { _ in
+                    tuner.footRoom(chrome, .insideAStack)
+                }
+        }
+        // Run each time the radio is shown and when another library is opened, so that
+        // a shared library's saved stations are its owner's current stations.
+        .task(id: [model.who?.userId ?? "", model.viewing.ownerId]) {
+            await model.readSharedStations()
+        }
+    }
+
+    /// The radio tab's first page. See ``RadioHome``.
+    private var radioHome: some View {
+        RadioHome(heard: model.radioShelves.heard, local: model.radioShelves.local,
+                  popular: model.radioShelves.popular, saved: model.savedStations,
+                  covers: covers,
+                  onScreen: tab == .radio && radioPath.isEmpty,
+                  stationsOf: { await model.radioShelves.stations(of: $0) },
+                  onTune: { model.tune($0) },
+                  onOpenTuner: { radioPath.append(.tuner) })
+            // Each time the home is shown: what is out of date is read again, and the rules on
+            // which stations are hidden, at most once an hour.
+            .task {
+                model.radioShelves.refresh()
+                await model.radioState.refresh()
+            }
+    }
+
+    /// The tuner: the dial, the search and the full list of stations. See ``RadioPage``.
+    private var tuner: some View {
         RadioPage(stations: model.stations, saved: model.savedStations,
                   countries: model.countries,
                   tuned: model.player.station?.uuid,
@@ -1126,13 +1175,9 @@ struct RootView: View {
                       await model.searchStations(asked, genre: genre, country: country)
                   },
                   onTune: { model.tune($0) },
-                  onSave: { model.save($0) })
-            .footRoom(chrome, .underTheChrome)
-            // Run each time the radio is shown and when another library is opened, so that
-            // a shared library's saved stations are its owner's current stations.
-            .task(id: [model.who?.userId ?? "", model.viewing.ownerId]) {
-                await model.readSharedStations()
-            }
+                  onSave: { model.save($0) },
+                  onBack: { radioPath.removeLast() })
+            .toolbar(.hidden, for: .navigationBar)
     }
 
     /// The feed tab.
@@ -1242,14 +1287,16 @@ struct RootView: View {
     /// stack of the tab is emptied, and the stack pops back to its first page as the back key does.
     ///
     /// On the library tab only the stack of the view shown is emptied. The other views keep theirs,
-    /// as they do when the user switches views. The radio and the Feed tab push no pages of their
-    /// own: a person's page and a review rise over the whole app, tab bar included. The settings
-    /// have no pages either, so the section shown goes back to its top.
+    /// as they do when the user switches views. The radio tab goes back from the tuner to its home.
+    /// The Feed tab pushes no pages of its own: a person's page and a review rise over the whole
+    /// app, tab bar included. The settings have no pages either, so the section shown goes back to
+    /// its top.
     private func backToFirstPage(of which: RPMTab) {
         switch which {
         case .home: homePath = []
         case .library: backToFirstPageOfLibrary()
-        case .radio, .feed: break
+        case .radio: radioPath = []
+        case .feed: break
         case .settings: settingsTops += 1
         }
     }

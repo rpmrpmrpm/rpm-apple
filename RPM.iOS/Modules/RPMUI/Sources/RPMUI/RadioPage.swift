@@ -4,7 +4,8 @@ import RPMSession
 import RPMRadio
 import RPMKit
 
-/// Internet radio: the desktop app's pane, sized for a phone.
+/// The tuner, opened from the radio tab's home (``RadioHome``): the desktop app's radio pane,
+/// sized for a phone.
 ///
 /// This is the phone version of `RPM.Mobile/Presentation/RadioPage.xaml`. It shows the dial,
 /// then the stations that the dial can reach. **The two are views of one thing**: whatever is
@@ -29,6 +30,10 @@ public struct RadioPage: View {
     private let onSave: (RadioStation) -> Void
     private let countries: [RadioFacet]
 
+    /// Puts the page away, back to the radio home. The page then has a back key beside its title,
+    /// and is titled as the tuner. Nil, and the page is titled as the radio, with no back key.
+    private let onBack: (() -> Void)?
+
     /// What the page is doing, when it is not simply showing stations: the state of the read that
     /// this page waits for. The TV app shares it; see `RPMSession`.
     public typealias Standing = DirectoryStanding
@@ -37,7 +42,9 @@ public struct RadioPage: View {
                 tuned: String?, announced: String, standing: Standing,
                 onSearch: @escaping (String, String?, String?) async -> Void,
                 onTune: @escaping (RadioStation) -> Void,
-                onSave: @escaping (RadioStation) -> Void) {
+                onSave: @escaping (RadioStation) -> Void,
+                onBack: (() -> Void)? = nil) {
+        self.onBack = onBack
         self.stations = stations
         self.saved = saved
         self.countries = countries
@@ -130,10 +137,18 @@ public struct RadioPage: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: PageTitle.subtitleGap) {
-            PageTitle(Loc.get("Rpm_Tab_Radio"))
+        // The back key is to the left of the title, as inside a folder of the playlists tab.
+        HStack(alignment: .top, spacing: 0) {
+            if let onBack {
+                RPMBackKey(label: Loc.get("AddMusic_Back")) { Haptics.pick(); onBack() }
+                    .padding(.trailing, RPMBackKey.besideTitle)
+            }
 
-            Text(Loc.get("Radio_Subtitle")).rpmKicker()
+            VStack(alignment: .leading, spacing: PageTitle.subtitleGap) {
+                PageTitle(Loc.get(onBack == nil ? "Rpm_Tab_Radio" : "Radio_TunerTitle"))
+
+                Text(Loc.get("Radio_Subtitle")).rpmKicker()
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, RPMLayout.margin)
@@ -293,6 +308,8 @@ public struct RadioPage: View {
                     ForEach(showing) { station in
                         Button { onTune(station) } label: { row(station) }
                             .buttonStyle(RowPress())
+                            // Pin it to the radio home's Quick selection, or save it.
+                            .stationHold(station)
                     }
                     Color.clear.frame(height: RPMLayout.foot)
                 }

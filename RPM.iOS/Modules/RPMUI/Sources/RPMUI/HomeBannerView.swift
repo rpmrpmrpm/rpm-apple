@@ -68,6 +68,22 @@ public struct HomeBannerView: View {
     private let stations: [String: RadioStation]
     private let onTune: (RadioStation) -> Void
 
+    /// What a station's card says: why it is there, and the line under its name. Nil on home,
+    /// where a station's card says it is the radio. The radio tab's home passes it, because its
+    /// banner is all stations, each there for its own reason (``RadioHome``).
+    private let stationWords: ((RadioStation) -> StationWords)?
+
+    /// The words on a station's card. See ``stationWords``.
+    public struct StationWords {
+        public let kicker: String
+        public let line: String?
+
+        public init(kicker: String, line: String?) {
+            self.kicker = kicker
+            self.line = line
+        }
+    }
+
     /// How far the card reaches ABOVE the place where the page's rows begin: the status bar and
     /// the page's heading, which the picture runs up behind.
     ///
@@ -131,8 +147,10 @@ public struct HomeBannerView: View {
                 onOpenList: @escaping (String) -> Void,
                 onTune: @escaping (RadioStation) -> Void,
                 onReady: @escaping () -> Void,
-                onDressed: ((BannerDress) -> Void)? = nil) {
+                onDressed: ((BannerDress) -> Void)? = nil,
+                stationWords: ((RadioStation) -> StationWords)? = nil) {
         self.onReady = onReady
+        self.stationWords = stationWords
         self.stations = stations
         self.onTune = onTune
         self.strip = strip
@@ -354,8 +372,9 @@ public struct HomeBannerView: View {
             // generated list, because a station has no artist to photograph. Its logo is the
             // cover. Pressing it tunes the station, as the desktop's card does.
             if let station = stations[feature.key] {
-                HomeFeatureCard(kicker: kicker(feature.kind), title: station.display,
-                                subtitle: nil, album: nil, artist: nil,
+                let words = stationWords?(station)
+                HomeFeatureCard(kicker: words?.kicker ?? kicker(feature.kind), title: station.display,
+                                subtitle: words?.line, album: nil, artist: nil,
                                 list: nil, track: nil, glyph: Glyph.radio,
                                 room: true, live: live, onScreen: onScreen, mirror: mirror,
                                 station: station,

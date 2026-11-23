@@ -93,6 +93,10 @@ final class AppModel {
     /// The station directory.
     let radio: StationSearch
 
+    /// The lists the radio tab's home is built from: the local stations, the world's most played
+    /// stations, the stations heard most and a genre's stations. See ``RadioShelves``.
+    let radioShelves: RadioShelves
+
     /// What is playing, with both of its pictures, and the lock screen kept in step with it.
     let record: NowPlayingRecord
 
@@ -348,6 +352,8 @@ final class AppModel {
         words = LyricsLookup(lrclib: LrcLibClient(reach: reach), cloud: cloud)
         radio = StationSearch(directory: RadioBrowserClient(reach: reach),
                               radioState: RadioState(record: RadioRepositoryClient(transport: transport)))
+        // The same directory client as the tuner's, so both share its list of mirrors.
+        radioShelves = RadioShelves(directory: radio.directory, listens: radioListens)
 
         // Made before the player, which asks its classical marks about every track it hands over.
         session = LibrarySession(auth: auth, cloud: cloud, community: community,
