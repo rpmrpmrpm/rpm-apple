@@ -161,7 +161,8 @@ struct PlayerScreen: View {
         }
         .task(id: model.player.current?.rpmId) {
             let track = model.player.current
-            await model.words.read(track, on: model.session.shelves.shelf(of: track?.rpmId))
+            await model.words.read(track, on: model.session.shelves.shelf(of: track?.rpmId),
+                                   explicit: track.map { model.session.isExplicitRecord($0) } ?? false)
         }
         // More opens the artist's page. The photograph and text are prepared before the user asks.
         .task(id: model.player.current?.artist) {

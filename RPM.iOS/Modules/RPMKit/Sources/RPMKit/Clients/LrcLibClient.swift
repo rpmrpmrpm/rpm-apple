@@ -13,6 +13,11 @@ import Foundation
 /// fallback runs only when that finds nothing. A search result is used only if its length is close enough
 /// for the words to line up.
 ///
+/// **An explicit record is the exception.** LRCLIB often holds a clean sheet and an explicit sheet for
+/// one song, and the exact lookup cannot tell them apart. For a record marked explicit, the exact answer
+/// and every search candidate within the slack are compared, and ``ExplicitLyrics/pick(exact:found:)``
+/// keeps the uncensored one.
+///
 /// **Everything here is optional.** No path throws. Every failure gives the same result, which is no sheet.
 /// Examples are no network, no match, or words without timings. A screen handles all of them the same way.
 public struct LrcLibClient: Sendable {
@@ -41,12 +46,18 @@ public struct LrcLibClient: Sendable {
     ///
     /// - Parameter duration: The record's length in seconds. Zero or less skips the exact lookup and
     ///   widens the fallback. A stream with no known length needs that.
+    /// - Parameter explicit: The record is marked explicit, by its own flag or its album's. The
+    ///   uncensored sheet is then preferred (``ExplicitLyrics``).
     public func sheet(artist: String?, title: String?, album: String?,
-                      duration: Double) async -> LyricSheet {
+                      duration: Double, explicit: Bool = false) async -> LyricSheet {
         // The title is the one thing that cannot be guessed. An artist can be missing for a loose file,
         // and the search still finds the track. A track with no title cannot be looked up at all.
         guard let title, !title.trimmingCharacters(in: .whitespaces).isEmpty else {
             return .empty
+        }
+
+        if explicit {
+            return await uncensored(artist: artist, title: title, album: album, duration: duration)
         }
 
         if duration > 0 {
@@ -55,6 +66,36 @@ public struct LrcLibClient: Sendable {
         }
 
         return await search(artist: artist, title: title, duration: duration)
+    }
+
+    /// The sheet for an explicit record. Both lookups are made, and the exact answer and every search
+    /// candidate within the slack go to ``ExplicitLyrics/pick(exact:found:)``. With no candidate at all
+    /// this is no sheet: the ordinary path, given the same two answers, would find nothing either.
+    private func uncensored(artist: String?, title: String, album: String?,
+                            duration: Double) async -> LyricSheet {
+        var exact = LyricSheet.empty
+        if duration > 0 {
+            exact = await get(artist: artist, title: title, album: album, duration: duration)
+        }
+
+        var found: [LyricSheet] = []
+        let path = "search?track_name=\(escaped(title))&artist_name=\(escaped(artist))"
+        if let json = await ask(path),
+           let candidates = try? JSONSerialization.jsonObject(with: json) as? [[String: Any]] {
+            for candidate in candidates where Self.fits(candidate, duration: duration) {
+                let sheet = Self.read(candidate)
+                if sheet.isSynced { found.append(sheet) }
+            }
+        }
+
+        return ExplicitLyrics.pick(exact: exact, found: found)
+    }
+
+    /// Whether a search candidate's length is within ``slack`` of the record's. A candidate that does not
+    /// state a length, or a record with no known length, fits.
+    private static func fits(_ candidate: [String: Any], duration: Double) -> Bool {
+        guard duration > 0, let theirs = candidate["duration"] as? Double else { return true }
+        return abs(theirs - duration) <= slack
     }
 
     /// The exact lookup, by name and length together. Its result can be trusted outright.
@@ -76,12 +117,7 @@ public struct LrcLibClient: Sendable {
               let candidates = try? JSONSerialization.jsonObject(with: json) as? [[String: Any]]
         else { return .empty }
 
-        for candidate in candidates {
-            if duration > 0, let theirs = candidate["duration"] as? Double,
-               abs(theirs - duration) > Self.slack {
-                continue
-            }
-
+        for candidate in candidates where Self.fits(candidate, duration: duration) {
             let sheet = Self.read(candidate)
             if sheet.isSynced { return sheet }
         }

@@ -49,8 +49,10 @@ public final class LyricsLookup {
     }
 
     /// Reads the words for `track`, once. `shelf` is the collection the track is on: the cloud
-    /// keeps a chosen sheet under the account that owns the track.
-    public func read(_ track: CloudTrack?, on shelf: CloudShelf = .own) async {
+    /// keeps a chosen sheet under the account that owns the track. `explicit` says the record is
+    /// marked explicit (``LibrarySession/isExplicitRecord(_:)``); the track's own flag counts too.
+    /// LRCLIB's uncensored sheet is then preferred (``ExplicitLyrics``).
+    public func read(_ track: CloudTrack?, on shelf: CloudShelf = .own, explicit: Bool = false) async {
         // Use the catalogue length, not the player's. LRCLIB matches on length, and the player
         // reports 0 until the track has started.
         let seconds = track?.duration.seconds ?? 0
@@ -62,7 +64,8 @@ public final class LyricsLookup {
             return
         }
 
-        let key = "\(track.rpmId)|\(shelf.ownerId)|\(track.artist ?? "")|\(title)|\(track.album ?? "")|\(Int(seconds))"
+        let marked = explicit || track.isExplicit
+        let key = "\(track.rpmId)|\(shelf.ownerId)|\(track.artist ?? "")|\(title)|\(track.album ?? "")|\(Int(seconds))|\(marked)"
         guard key != asked else { return }
 
         // Set before the await. A second call while the first is still waiting then does not
@@ -82,7 +85,7 @@ public final class LyricsLookup {
         guard asked == key else { return }
         if !found.isSynced {
             found = await lrclib.sheet(artist: track.artist, title: title,
-                                       album: track.album, duration: seconds)
+                                       album: track.album, duration: seconds, explicit: marked)
         }
 
         // The record changed while the lookup was running. Drop this answer.
@@ -92,10 +95,11 @@ public final class LyricsLookup {
         looking = false
     }
 
-    /// The sheet ``read(_:on:)`` would find for `track`: the owner's chosen sheet, else LRCLIB's
-    /// for the same names and length. It changes nothing here. The iPhone uses it to have the
-    /// words of the next song measured before that song starts, against the sheet it will show.
-    public func find(_ track: CloudTrack, on shelf: CloudShelf = .own) async -> LyricSheet {
+    /// The sheet ``read(_:on:explicit:)`` would find for `track`: the owner's chosen sheet, else
+    /// LRCLIB's for the same names and length. It changes nothing here. The iPhone uses it to have
+    /// the words of the next song measured before that song starts, against the sheet it will show.
+    public func find(_ track: CloudTrack, on shelf: CloudShelf = .own,
+                     explicit: Bool = false) async -> LyricSheet {
         guard let title = track.title, !title.isEmpty else { return .empty }
 
         if let cloud, !track.rpmId.isEmpty, !StarterTracks.isStarter(track.rpmId),
@@ -104,6 +108,7 @@ public final class LyricsLookup {
             if chosen.isSynced { return chosen }
         }
         return await lrclib.sheet(artist: track.artist, title: title,
-                                  album: track.album, duration: track.duration.seconds)
+                                  album: track.album, duration: track.duration.seconds,
+                                  explicit: explicit || track.isExplicit)
     }
 }

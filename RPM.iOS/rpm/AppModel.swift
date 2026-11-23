@@ -1133,7 +1133,9 @@ final class AppModel {
 
     /// Reads the words for what is playing, once. The player screen asks for it while it is shown.
     func readLyrics() async {
-        await words.read(player.current, on: shelves.shelf(of: player.current?.rpmId))
+        let track = player.current
+        await words.read(track, on: shelves.shelf(of: track?.rpmId),
+                         explicit: track.map { session.isExplicitRecord($0) } ?? false)
     }
 
     // ── karaoke ──
@@ -1219,7 +1221,7 @@ final class AppModel {
     /// Asks the cloud to measure the words of the song after the one playing, while this one
     /// plays, so its karaoke is ready when it starts: the transcoder needs about half a minute for
     /// a song, longer than many songs take to reach their first line. The sheet is found the way the
-    /// lyrics lookup will find it when the song starts (``LyricsLookup/find(_:on:)``), so the
+    /// lyrics lookup will find it when the song starts (``LyricsLookup/find(_:on:explicit:)``), so the
     /// measured lines match it. Each song is asked about once for the life of the app. Only the
     /// person's own songs: the cloud measures nobody else's.
     ///
@@ -1237,7 +1239,7 @@ final class AppModel {
         else { return }
         warmed.insert(rpmId)
 
-        let sheet = await words.find(next, on: shelf)
+        let sheet = await words.find(next, on: shelf, explicit: session.isExplicitRecord(next))
         // A look cut short is tried again the next time the player is open.
         guard !Task.isCancelled else { warmed.remove(rpmId); return }
         guard sheet.isSynced else { return }

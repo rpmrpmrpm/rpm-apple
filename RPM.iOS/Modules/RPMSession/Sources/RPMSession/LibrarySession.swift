@@ -108,6 +108,16 @@ public final class LibrarySession {
     /// The records on the wall, for the shelf in ``viewing``.
     public private(set) var albums: [CloudAlbum] = []
 
+    /// Whether `track` shows the E, or the record it is on does (``CloudAlbum/isExplicit``). The
+    /// lyrics lookup then prefers the uncensored sheet (``LyricsLookup/read(_:on:explicit:)``).
+    /// Only the records on the wall are looked at, so a track of another shelf counts by its own
+    /// flag.
+    public func isExplicitRecord(_ track: CloudTrack) -> Bool {
+        if track.isExplicit { return true }
+        let key = AlbumGrouping.key(for: track)
+        return albums.first(where: { $0.key == key })?.isExplicit ?? false
+    }
+
     /// The state of the wall. Switching to another person's shelf empties the wall while it loads.
     /// An empty array would look like an empty library, so the state is kept separately.
     public private(set) var wallStanding: ReadStanding = .reading
