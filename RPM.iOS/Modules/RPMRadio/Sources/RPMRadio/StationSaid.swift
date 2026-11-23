@@ -12,7 +12,7 @@ public enum StationSaid: Hashable, Sendable {
     /// The announcement as it reads under the station's name, or nil when there is nothing to print:
     /// blank, the end of an ad break, or only the station's own name.
     public static func of(_ announced: String?, station: String) -> StationSaid? {
-        let text = announced?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let text = repaired(announced ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !RadioAds.isBreakOver(text) else { return nil }
         if RadioAds.isAdBreak(text) { return .adBreak }
 
@@ -23,6 +23,20 @@ public enum StationSaid: Hashable, Sendable {
         let (artist, title) = IcyTitle.split(spoken)
         guard let title, !title.isEmpty else { return nil }
         return .song(artist: artist, title: title)
+    }
+
+    /// The announcement with a common station fault undone: text the station had already turned
+    /// into UTF-8 once, read as Windows-1252 and turned into UTF-8 again, so "TIËSTO" arrives as
+    /// "TIÃ‹STO". The Android app's `Icy.repaired` does the same.
+    ///
+    /// Only text with the fault's mark ("Ã", "Â" or "â€") is tried, and only a result that is whole
+    /// UTF-8 is kept, so correct text such as "Beyoncé" or "Ã la carte" is never changed.
+    public static func repaired(_ text: String) -> String {
+        guard text.contains("Ã") || text.contains("Â") || text.contains("â€") else { return text }
+        guard let bytes = text.data(using: .windowsCP1252, allowLossyConversion: false),
+              let fixed = String(data: bytes, encoding: .utf8)
+        else { return text }
+        return fixed
     }
 
     /// The song's title, or nil for an ad break.
