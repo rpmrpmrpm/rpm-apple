@@ -3889,7 +3889,7 @@
 /* Supporter window: closes the benefit list. */
 "Supporter_PerkMore" = "以及未来的更多功能……";
 
-/* Storage-full window: closes it without doing anything. */
+/* Storage-full window: closes it without doing anything. Also the phone welcome's support step: goes on without becoming a supporter. */
 "Supporter_Later" = "暂不";
 
 /* Title of the window shown when a supporter-only feature is used by an account that is not one. */
@@ -5866,10 +5866,10 @@
 /* Setup wizard step 3, under the album count. */
 "Wizard_DoneTracks" = "收藏中有 %1$@ 首曲目";
 
-/* Setup wizard step 3, heading over the supporter pitch. */
+/* Setup wizard step 3, heading over the supporter pitch. Also the heading of the phone welcome's support step. */
 "Wizard_SupportTitle" = "请考虑支持 rpm";
 
-/* Setup wizard step 3, the supporter pitch. */
+/* Setup wizard step 3, the supporter pitch. Also the line under the heading of the phone welcome's support step. */
 "Wizard_SupportPitch" = "rpm 由一个热爱音乐的小团队打造，我们相信收藏并拥有属于自己的音乐。支持者让 rpm 得以持续：他们承担托管费用，并帮助我们开发新功能。";
 
 /* Setup wizard step 3, the button that finishes without becoming a supporter. */

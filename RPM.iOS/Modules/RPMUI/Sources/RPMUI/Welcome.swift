@@ -1,5 +1,7 @@
+import StoreKit
 import SwiftUI
 import RPMSharedUI
+import RPMDesign
 import RPMKit
 import RPMLibrary
 import RPMStages
@@ -20,6 +22,9 @@ import RPMStages
 ///   glass. Each change shows behind the step at once.
 /// - **Layout**: how the records open in the collection: the grid of covers, or the list with the
 ///   songs.
+/// - **Support**: for an account that does not support rpm, the desktop's supporter ask (its last
+///   setup step): why to support rpm, what supporters get, and the key that opens the
+///   subscription sheet (``SupporterSheet``).
 /// - **Spin**: a song from the collection (``WelcomeSong``), and the key that plays it and opens
 ///   the player.
 ///
@@ -29,33 +34,70 @@ import RPMStages
 /// **The step shown is kept for the scene, not by the view** (``page``). A new language builds the
 /// app's screens again, the welcome with them, and the welcome must open again on the language
 /// step and not on the greeting.
+///
+/// **Which steps there are is read on every draw** (``WelcomeSteps``), not fixed when the welcome
+/// opens. The account's standing can arrive after the welcome has opened, and a purchase on the
+/// support step ends the ask while that step is on screen. A page that is no longer among the steps
+/// shows the next one that is.
 public struct Welcome: View {
     private let covers: any CoverStore
     private let pick: () -> (album: CloudAlbum, at: Int)?
+    private let support: Support?
     private let onPlay: (CloudAlbum, Int) -> Void
     private let onDone: () -> Void
 
+    /// What the support step needs: the account a purchase is for, and what to do with a purchase.
+    public struct Support {
+        /// The signed-in account's id, put on every purchase (`appAccountToken`).
+        public let account: UUID
+
+        /// Sends a purchase to the accounts service and says how it answered.
+        public let purchase: (VerificationResult<StoreKit.Transaction>) async -> SupporterPost?
+
+        /// The subscription sheet has closed, after a purchase or not. The app sends the App Store
+        /// subscription to the accounts service then, which also covers Restore.
+        public let closed: () -> Void
+
+        public init(account: UUID,
+                    purchase: @escaping (VerificationResult<StoreKit.Transaction>) async -> SupporterPost?,
+                    closed: @escaping () -> Void) {
+            self.account = account
+            self.purchase = purchase
+            self.closed = closed
+        }
+    }
+
     /// - Parameters:
     ///   - pick: chooses the song the last step plays. Asked once, when the welcome appears. Nil
-    ///     leaves that step out, and the layout step ends the welcome.
+    ///     leaves that step out, and the step before it ends the welcome.
+    ///   - support: the supporter ask. Nil leaves the support step out: for an account that already
+    ///     supports rpm, and while the account's standing is not known, because asking a supporter
+    ///     to support rpm tells them something that is not true.
     ///   - onPlay: plays the song (its record, from its place) and opens the player. The welcome is
     ///     over then.
     ///   - onDone: ends the welcome without playing.
     public init(covers: any CoverStore,
                 pick: @escaping () -> (album: CloudAlbum, at: Int)?,
+                support: Support?,
                 onPlay: @escaping (CloudAlbum, Int) -> Void,
                 onDone: @escaping () -> Void) {
         self.covers = covers
         self.pick = pick
+        self.support = support
         self.onPlay = onPlay
         self.onDone = onDone
     }
 
-    /// The step shown: 0 is the greeting, then the language, the look, the layout and the song.
-    @SceneStorage("welcome.page") private var page = 0
+    private typealias Page = WelcomePage
+
+    /// The page asked for. See ``shown`` for the page on screen.
+    @SceneStorage("welcome.page") private var page: Page = .hello
 
     /// The song the last step plays, with its record and its place on it.
     @State private var sample: Sample?
+
+    /// Whether the subscription sheet is up, over the support step.
+    @State private var subscribing = false
 
     private struct Sample {
         let album: CloudAlbum
@@ -63,15 +105,24 @@ public struct Welcome: View {
         var track: CloudTrack { album.tracks[at] }
     }
 
-    /// How many numbered steps there are: the greeting is not one.
-    private var steps: Int { sample != nil ? 4 : 3 }
+    /// The numbered steps there are now.
+    private var steps: WelcomeSteps { WelcomeSteps(asks: support != nil, hasSong: sample != nil) }
+
+    /// The page on screen. Nil when no step is left after the one asked for, for the moment before
+    /// the welcome ends.
+    private var shown: Page? { steps.shown(for: page) }
+
+    private func step(after page: Page) -> Page? { steps.after(page) }
+
+    /// "Step 2 of 4" for `page`.
+    private func number(_ page: Page) -> Int { steps.number(of: page) }
 
     public var body: some View {
         ZStack {
             // The ground: the drifting room for the greeting, the chosen backdrop for the steps after
             // it.
             ZStack {
-                if page == 0 {
+                if shown == .hello {
                     HelloRoom()
                         .transition(.opacity)
                 } else {
@@ -79,21 +130,21 @@ public struct Welcome: View {
                         .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.7), value: page == 0)
+            .animation(.easeInOut(duration: 0.7), value: shown == .hello)
             .ignoresSafeArea()
 
             ZStack {
-                switch page {
-                case 0:
-                    WelcomeHello(onContinue: { go(to: 1) })
-                case 1:
-                    WelcomeStep(at: 1, of: steps, title: Loc.get("Wizard_Phone_LanguageTitle"),
-                                line: Loc.get("Wizard_Phone_LanguageHint"), next: { go(to: 2) }) {
+                switch shown {
+                case .hello?:
+                    WelcomeHello(onContinue: { go(to: .language) })
+                case .language?:
+                    WelcomeStep(at: number(.language), of: steps.steps.count, title: Loc.get("Wizard_Phone_LanguageTitle"),
+                                line: Loc.get("Wizard_Phone_LanguageHint"), next: { forward(from: .language) }) {
                         WelcomeLanguages()
                     }
-                case 2:
-                    WelcomeStep(at: 2, of: steps, title: Loc.get("Wizard_LookTitle"),
-                                line: Loc.get("Wizard_Phone_LookAllHint"), next: { go(to: 3) }) {
+                case .look?:
+                    WelcomeStep(at: number(.look), of: steps.steps.count, title: Loc.get("Wizard_LookTitle"),
+                                line: Loc.get("Wizard_Phone_LookAllHint"), next: { forward(from: .look) }) {
                         VStack(alignment: .leading, spacing: 18) {
                             WelcomeBackdrops()
                             BackdropVeilSliders()
@@ -109,16 +160,26 @@ public struct Welcome: View {
                             }
                         }
                     }
-                case 3:
-                    WelcomeStep(at: 3, of: steps, title: Loc.get("Wizard_LayoutTitle"),
+                case .layout?:
+                    WelcomeStep(at: number(.layout), of: steps.steps.count, title: Loc.get("Wizard_LayoutTitle"),
                                 line: Loc.get("Wizard_Phone_LayoutBody"),
-                                next: { if sample != nil { go(to: 4) } else { finish(onDone) } },
-                                nextLabel: sample == nil ? Loc.get("Wizard_Finish") : nil) {
+                                next: { forward(from: .layout) },
+                                nextLabel: step(after: .layout) == nil ? Loc.get("Wizard_Finish") : nil) {
                         WelcomeLayouts()
                     }
-                default:
+                case .support?:
+                    WelcomeStep(at: number(.support), of: steps.steps.count, title: Loc.get("Wizard_SupportTitle"),
+                                line: Loc.get("Wizard_SupportPitch"),
+                                next: { subscribing = true },
+                                nextLabel: Loc.get("Cloud_BecomeSupporter"),
+                                nextGlyph: Glyph.heart,
+                                skip: { forward(from: .support) },
+                                skipLabel: Loc.get("Supporter_Later")) {
+                        WelcomePerks()
+                    }
+                case .spin?:
                     if let sample {
-                        WelcomeStep(at: 4, of: steps, title: Loc.get("Wizard_Phone_PlayerTitle"),
+                        WelcomeStep(at: number(.spin), of: steps.steps.count, title: Loc.get("Wizard_Phone_PlayerTitle"),
                                     line: Loc.get("Wizard_Phone_PlayerBody"),
                                     next: { finish { onPlay(sample.album, sample.at) } },
                                     nextLabel: Loc.get("Wizard_Phone_PlayerGo"),
@@ -126,9 +187,11 @@ public struct Welcome: View {
                             WelcomeSample(album: sample.album, track: sample.track, covers: covers)
                         }
                     }
+                case nil:
+                    Color.clear
                 }
             }
-            .id(page)
+            .id(shown)
             .transition(AnyTransition.asymmetric(
                 insertion: AnyTransition.opacity.animation(.easeOut(duration: 0.28).delay(0.17)),
                 removal: AnyTransition.opacity.animation(.easeIn(duration: 0.17))))
@@ -138,18 +201,43 @@ public struct Welcome: View {
         .contentShape(Rectangle())
         .onAppear {
             if sample == nil, let chosen = pick() { sample = Sample(album: chosen.album, at: chosen.at) }
+            #if DEBUG
+            // Opens on one page, for looking at it in the simulator, which takes no taps. The app
+            // shows the welcome again for this switch (`AppModel`). Debug builds only.
+            if let name = ProcessInfo.processInfo.environment["RPM_WELCOME_PAGE"],
+               let asked = Page.named(name) {
+                page = asked
+            }
+            #endif
         }
+        // The ask has ended while its step is on screen: a purchase was confirmed, so the account
+        // supports rpm now. The welcome goes on to the next step, or ends when there is none.
+        .onChange(of: support != nil) { _, asks in
+            if !asks && page == .support { forward(from: .support) }
+        }
+        #if os(iOS)
+        .sheet(isPresented: $subscribing, onDismiss: { support?.closed() }) {
+            if let support {
+                SupporterSheet(account: support.account, onPurchase: support.purchase)
+            }
+        }
+        #endif
     }
 
-    private func go(to next: Int) {
+    private func go(to next: Page) {
         Haptics.pick()
         withAnimation { page = next }
+    }
+
+    /// Goes on from `page` to the next step, or ends the welcome when it was the last.
+    private func forward(from page: Page) {
+        if let next = step(after: page) { go(to: next) } else { finish(onDone) }
     }
 
     /// Ends the welcome. The step kept for the scene goes back to the greeting, so a welcome shown
     /// again from the settings starts at the beginning.
     private func finish(_ then: () -> Void) {
-        page = 0
+        page = .hello
         then()
     }
 }
@@ -273,11 +361,18 @@ private struct WelcomeStep<Content: View>: View {
     let line: String
     let next: () -> Void
     let nextLabel: String?
+
+    /// A glyph before the words on the key that goes on, such as the supporter's heart.
+    let nextGlyph: String?
     let skip: (() -> Void)?
+
+    /// The words on the skip key. "Skip for now" when nil.
+    let skipLabel: String?
     let content: () -> Content
 
     init(at: Int, of: Int, title: String, line: String, next: @escaping () -> Void,
-         nextLabel: String? = nil, skip: (() -> Void)? = nil,
+         nextLabel: String? = nil, nextGlyph: String? = nil,
+         skip: (() -> Void)? = nil, skipLabel: String? = nil,
          @ViewBuilder content: @escaping () -> Content) {
         self.at = at
         self.of = of
@@ -285,7 +380,9 @@ private struct WelcomeStep<Content: View>: View {
         self.line = line
         self.next = next
         self.nextLabel = nextLabel
+        self.nextGlyph = nextGlyph
         self.skip = skip
+        self.skipLabel = skipLabel
         self.content = content
     }
 
@@ -316,35 +413,69 @@ private struct WelcomeStep<Content: View>: View {
             }
             .scrollIndicators(.hidden)
 
-            HStack(spacing: 10) {
-                // The desktop's dots: lit up to the step showing.
-                HStack(spacing: 9) {
-                    ForEach(1...max(1, of), id: \.self) { dot in
-                        Circle()
-                            .fill(dot <= at ? accent : RPMInk.white(0x38 / 255))
-                            .frame(width: 9, height: 9)
+            // A step with a skip key has two keys with long words ("Play and show me around"). A
+            // phone is too narrow for both beside the dots, and the words would wrap onto three
+            // lines. So the dots stand on their own row, the key that goes on takes the width, and
+            // the skip key is under it.
+            if let skip {
+                VStack(alignment: .leading, spacing: 14) {
+                    dots
+
+                    VStack(spacing: 4) {
+                        nextKey(stretches: true)
+
+                        Button(action: skip) {
+                            Text(skipLabel ?? Loc.get("Wizard_SkipForNow"))
+                                .font(RPMFont.display(14))
+                                .foregroundStyle(RPMInk.white(0xB3 / 255))
+                                .padding(10)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityHidden(true)
+                .padding(.horizontal, 24)
+                .padding(.top, 18)
+                .padding(.bottom, 8)
+            } else {
+                HStack(spacing: 10) {
+                    dots
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                if let skip {
-                    Button(action: skip) {
-                        Text(Loc.get("Wizard_SkipForNow"))
-                            .font(RPMFont.display(14))
-                            .foregroundStyle(RPMInk.white(0xB3 / 255))
-                            .padding(10)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    nextKey(stretches: false)
                 }
-
-                Button(nextLabel ?? Loc.get("Wizard_Next"), action: next)
-                    .buttonStyle(RPMGlassButton(.primary, stretches: false, inset: 22))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 18)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 18)
         }
+    }
+
+    /// The desktop's dots: lit up to the step showing.
+    private var dots: some View {
+        HStack(spacing: 9) {
+            ForEach(1...max(1, of), id: \.self) { dot in
+                Circle()
+                    .fill(dot <= at ? accent : RPMInk.white(0x38 / 255))
+                    .frame(width: 9, height: 9)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// The key that goes on.
+    private func nextKey(stretches: Bool) -> some View {
+        Button(action: next) {
+            HStack(spacing: 8) {
+                if let nextGlyph {
+                    Text(nextGlyph).font(RPMFont.icon(12))
+                }
+                Text(nextLabel ?? Loc.get("Wizard_Next"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .buttonStyle(RPMGlassButton(.primary, stretches: stretches, inset: 22))
     }
 }
 
@@ -482,6 +613,41 @@ private struct WelcomeLayouts: View {
                 }
             }
         }
+    }
+}
+
+/// What supporters get, on the support step: the desktop's card on its last setup step, one column
+/// for the phone's width. Each perk's glyph carries its colour (``SupporterPerk``).
+private struct WelcomePerks: View {
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+
+        VStack(alignment: .leading, spacing: 12) {
+            Text(Loc.get("Supporter_OfferTitle").uppercased())
+                .rpmKicker()
+
+            ForEach(SupporterPerk.all, id: \.key) { perk in
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text(perk.glyph)
+                        .font(RPMFont.icon(15))
+                        .foregroundStyle(perk.gold ? RPMInk.gold : accent)
+                        .frame(width: 30, alignment: .leading)
+
+                    Text(Loc.get(perk.key))
+                        .font(RPMFont.display(15))
+                        .foregroundStyle(RPMInk.white(0xCC / 255))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Text(Loc.get("Supporter_PerkMore"))
+                .font(RPMFont.display(13))
+                .foregroundStyle(RPMInk.white(0x6B / 255))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background { shape.fill(RPMInk.white(0x13 / 255)) }
+        .overlay { shape.strokeBorder(RPMInk.white(0x2B / 255), lineWidth: 1) }
     }
 }
 

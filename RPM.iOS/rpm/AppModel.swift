@@ -870,6 +870,12 @@ final class AppModel {
         Task { await self.syncSupport() }
 
         #if DEBUG
+        // The welcome again, on the page `RPM_WELCOME_PAGE` names (see `Welcome`). Debug builds only;
+        // see `start()`.
+        if ProcessInfo.processInfo.environment["RPM_WELCOME_PAGE"] != nil {
+            FirstRun.shared.replay()
+        }
+
         // A collection shared with this account, by its owner's name or id, for looking at somebody
         // else's records. The picker needs a finger, and the simulator has none. First, so the
         // switches below read the opened collection. Debug builds only; see `start()`.

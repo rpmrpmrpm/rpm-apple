@@ -55,12 +55,6 @@ public struct SupporterSheet: View {
         .preferredColorScheme(.dark)
     }
 
-    /// The same list of what supporters get as the Android TV set-up and the desktop.
-    private static let perks = [
-        "Supporter_PerkStorage", "Supporter_PerkBitrate", "Supporter_PerkRecognition", "Supporter_PerkDj",
-        "Supporter_PerkKaraoke", "Supporter_PerkBackdrop", "Supporter_PerkBadge", "Supporter_PerkCommunity",
-    ]
-
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(Loc.get("Cloud_BecomeSupporter"))
@@ -71,7 +65,7 @@ public struct SupporterSheet: View {
                 .foregroundStyle(RPMInk.white(0xCC / 255))
 
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(Self.perks, id: \.self) { key in
+                ForEach(SupporterPerk.all.map(\.key), id: \.self) { key in
                     HStack(spacing: 10) {
                         Text(Glyph.check)
                             .font(RPMFont.icon(12))

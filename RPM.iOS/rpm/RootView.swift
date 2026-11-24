@@ -426,6 +426,7 @@ struct RootView: View {
             if welcomeDue {
                 Welcome(covers: covers,
                         pick: { welcomeSong() },
+                        support: welcomeSupport,
                         onPlay: { album, at in
                             FirstRun.shared.finishWelcome()
                             Task { await model.play(album, from: at, tapped: .song) }
@@ -747,6 +748,16 @@ struct RootView: View {
         FirstRun.shared.welcomed && model.standing == .showing && model.viewing.isOwn
             && !covering && !opening && !staged && !onStage && !model.pickingLibrary
             && model.filing == nil
+    }
+
+    /// The welcome's supporter ask: for an account the quota says does not pay (a closed beta tester
+    /// included, as on the settings page). Nil while the quota is not known, so a supporter is never
+    /// asked because the quota has not arrived.
+    private var welcomeSupport: Welcome.Support? {
+        guard model.quota?.supporterOffer == .become, let account = model.supporterAccount else { return nil }
+        return Welcome.Support(account: account,
+                               purchase: { await model.purchased($0) },
+                               closed: { Task { await model.syncSupport() } })
     }
 
     /// The song the welcome plays: see ``WelcomeSong``. Only what can be played now: offline, a

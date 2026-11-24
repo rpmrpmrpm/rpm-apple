@@ -1000,6 +1000,13 @@ public enum Glyph {
 
     public static let cloud = "\u{f0c2}"
 
+    /// The glyphs of what supporters get that are not used elsewhere. See ``SupporterPerk``.
+    public static let waveform = "\u{f8f1}"
+    public static let fingerprint = "\u{f577}"
+    public static let sliders = "\u{f1de}"
+    public static let microphone = "\u{f130}"
+    public static let people = "\u{f0c0}"
+
     /// A picture, for the card that chooses the app's background.
     public static let picture = "\u{f03e}"
     public static let speaker = "\u{f028}"
