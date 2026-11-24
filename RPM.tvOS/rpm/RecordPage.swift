@@ -16,7 +16,8 @@ enum RecordOf {
 }
 
 /// The record page, and the list page, which is the same page (the desktop's Record and
-/// RecordList): the sleeve with the record half out of it and turning, the names, the keys and
+/// RecordList): the sleeve with the record half out of it and turning (a list's picture alone,
+/// with no disc), the names, the keys and
 /// what the encyclopedias say on the left; the tracks on the right. The room behind is lit from
 /// the sleeve.
 ///
@@ -142,14 +143,18 @@ struct RecordPage: View {
     private var left: some View {
         VStack(spacing: 18) {
             ZStack {
-                RecordDisc(diameter: 400 * 0.96, halo: .cast, spinning: model.player.isPlaying && isPlayingHere,
-                           hue: hue, label: label?.image, disc: disc)
-                    .offset(x: out ? 400 * 0.312 : 0)
+                // A record slides its disc out of the sleeve. A list is not a record and has no disc:
+                // its framed picture stands alone, in the middle of the column.
+                if isAlbum {
+                    RecordDisc(diameter: 400 * 0.96, halo: .cast, spinning: model.player.isPlaying && isPlayingHere,
+                               hue: hue, label: label?.image, disc: disc)
+                        .offset(x: out ? 400 * 0.312 : 0)
+                }
                 // No shadow of its own, as on the desktop: the record casts one, the sleeve none.
                 sleeve
             }
             .frame(width: 400, height: 400)
-            .offset(x: -60)
+            .offset(x: isAlbum ? -60 : 0)
 
             Text(title)
                 .font(.tv(44, .bold))
