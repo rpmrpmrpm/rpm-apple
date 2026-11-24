@@ -130,3 +130,42 @@ import RPMKit
         #expect(ReadArtists().artists(of: other, in: AlbumWall.group(rows)).isEmpty)
     }
 }
+
+/// The artist wall is built once for each library, however often it is asked for.
+@Suite struct ReadArtistsCacheTests {
+
+    private func row(_ id: String, _ folder: String, artist: String) -> CloudTrack {
+        CloudTrack(rpmId: id, relativePath: "\(folder)/\(id).flac", title: id,
+                   artist: artist, tags: CloudTrackTags())
+    }
+
+    private var library: [CloudAlbum] {
+        AlbumWall.group([row("a1", "ABBA/Arrival", artist: "ABBA"),
+                         row("b1", "Blur/Parklife", artist: "Blur")])
+    }
+
+    @Test func askingAgainDoesNotBuildAgain() {
+        let read = ReadArtists()
+        let albums = library
+
+        for _ in 0..<20 { _ = read.artists(albums) }
+
+        #expect(read.builds == 1)
+    }
+
+    /// **A library read again, equal to the last one, is compared once and not on every pass.**
+    /// A refresh places an equal library in new storage. The cache keeps that storage, so the
+    /// next question compares two arrays that share storage, which costs nothing.
+    @Test func anEqualLibraryInNewStorageIsComparedOnlyOnce() {
+        let read = ReadArtists()
+        let albums = library
+        let first = read.artists(albums)
+
+        let again = albums.map { $0 }
+        #expect(!read.asked.sharesStorage(with: again), "the test needs a copy in new storage")
+
+        #expect(read.artists(again) == first)
+        #expect(read.builds == 1)
+        #expect(read.asked.sharesStorage(with: again), "the cache still holds the old storage")
+    }
+}

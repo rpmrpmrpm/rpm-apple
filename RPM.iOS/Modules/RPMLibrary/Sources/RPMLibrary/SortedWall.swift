@@ -15,7 +15,8 @@ import RPMKit
 /// So the result is kept, and it is returned again whenever the question is the same.
 /// The question is the library and the order. Comparing two libraries is fast because two
 /// Swift arrays that share storage compare in constant time. A view receives the same
-/// array on each pass while nothing has changed.
+/// array on each pass while nothing has changed. An equal library in new storage is
+/// compared once and then kept in place of the old one; see ``AskedLibrary``.
 ///
 /// **Held by the app shell and passed to the page. It is not a global.** A tab is created
 /// when the user opens it and discarded when they leave. A cache owned by the page would
@@ -29,7 +30,8 @@ public final class SortedWall {
     /// cache could stop working and no test would notice.
     public private(set) var sorts = 0
 
-    private var asked: [CloudAlbum] = []
+    /// The library last asked about. Internal so a test can check which storage it holds.
+    private(set) var asked = AskedLibrary()
     private var ordering: AlbumOrdering?
     private var answer: [CloudAlbum] = []
 
@@ -37,9 +39,9 @@ public final class SortedWall {
 
     /// The albums in `ordering`, sorted from whatever order they arrive in.
     public func wall(_ albums: [CloudAlbum], in ordering: AlbumOrdering) -> [CloudAlbum] {
-        if self.ordering == ordering, asked == albums { return answer }
+        if self.ordering == ordering, asked.isStill(albums) { return answer }
 
-        asked = albums
+        asked.replace(with: albums)
         self.ordering = ordering
         sorts += 1
 

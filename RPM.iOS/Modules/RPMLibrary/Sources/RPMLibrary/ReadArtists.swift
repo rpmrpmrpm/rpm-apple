@@ -14,7 +14,9 @@ import RPMKit
 /// So the result is kept, and it is returned again whenever the question is the same.
 /// The question is the library. Comparing two libraries is cheap, because two Swift
 /// arrays that share storage compare in constant time. A view receives the same
-/// array on each pass while the library has not changed.
+/// array on each pass while the library has not changed. An equal library in new
+/// storage is compared once and then kept in place of the old one; see
+/// ``AskedLibrary``.
 ///
 /// The object is held by the app shell and passed to the page. It must not be a
 /// global. A tab is created when the user opens it and discarded when they leave. A
@@ -25,7 +27,8 @@ public final class ReadArtists {
     /// asked for and how often it is built shows the cache is working.
     public private(set) var builds = 0
 
-    private var asked: [CloudAlbum] = []
+    /// The library last asked about. Internal so a test can check which storage it holds.
+    private(set) var asked = AskedLibrary()
     private var wall: [ArtistWallItem] = []
     private var byKey: [String: CloudAlbum] = [:]
 
@@ -156,9 +159,9 @@ public final class ReadArtists {
     }
 
     private func settle(_ albums: [CloudAlbum]) {
-        guard asked != albums else { return }
+        guard !asked.isStill(albums) else { return }
 
-        asked = albums
+        asked.replace(with: albums)
         builds += 1
         wall = ArtistWall.build(ArtistWall.rows(albums))
         byKey = Dictionary(albums.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })

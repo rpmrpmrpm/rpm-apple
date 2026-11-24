@@ -86,4 +86,21 @@ struct SortedWallTests {
     @Test func anEmptyShelfIsAnEmptyWall() {
         #expect(SortedWall().wall([], in: .artist).isEmpty)
     }
+
+    /// **A library read again, equal to the last one, is compared once and not on every pass.**
+    /// A refresh places an equal library in new storage. The wall keeps that storage, so the next
+    /// question compares two arrays that share storage, which costs nothing.
+    @Test func anEqualLibraryInNewStorageIsComparedOnlyOnce() {
+        let wall = SortedWall()
+        let first = wall.wall(shelf, in: .artist)
+
+        let again = shelf.map { $0 }
+        #expect(!wall.asked.sharesStorage(with: again), "the test needs a copy in new storage")
+
+        let second = wall.wall(again, in: .artist)
+
+        #expect(wall.sorts == 1)
+        #expect(second == first)
+        #expect(wall.asked.sharesStorage(with: again), "the wall still holds the old storage")
+    }
 }

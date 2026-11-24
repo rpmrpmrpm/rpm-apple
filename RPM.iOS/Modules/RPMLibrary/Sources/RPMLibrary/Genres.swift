@@ -218,7 +218,9 @@ public final class ReadGenres {
     /// How many times the wall has been built. Tests use this to check that the wall is cached.
     public private(set) var builds = 0
 
-    private var asked: [CloudAlbum] = []
+    /// The library last asked about. Internal so a test can check which storage it holds. See
+    /// ``AskedLibrary`` for why an equal library is kept too.
+    private(set) var asked = AskedLibrary()
     private var wall: [GenreWallItem] = []
 
     /// The page for one genre, kept beside the wall it came from. The page is asked for on
@@ -231,8 +233,8 @@ public final class ReadGenres {
 
     /// The wall for this library.
     public func genres(_ albums: [CloudAlbum]) -> [GenreWallItem] {
-        if albums != asked || builds == 0 {
-            asked = albums
+        if !asked.isStill(albums) || builds == 0 {
+            asked.replace(with: albums)
             wall = GenreWall.build(albums)
             builds += 1
             whose = nil

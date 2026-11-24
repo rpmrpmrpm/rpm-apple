@@ -160,6 +160,21 @@ private func album(_ key: String, _ genres: [String?]) -> CloudAlbum {
         _ = read.genres(albums + [album("b", ["Jazz"])])
         #expect(read.builds == 2)
     }
+
+    /// A library read again, equal to the last one, is not built again. The wall keeps the new
+    /// storage, so the next question costs no comparison. See ``AskedLibrary``.
+    @Test func anEqualLibraryInNewStorageIsComparedOnlyOnce() {
+        let read = ReadGenres()
+        let albums = [album("a", ["Rock"]), album("b", ["Jazz"])]
+        let first = read.genres(albums)
+
+        let again = albums.map { $0 }
+        #expect(!read.asked.sharesStorage(with: again), "the test needs a copy in new storage")
+
+        #expect(read.genres(again) == first)
+        #expect(read.builds == 1)
+        #expect(read.asked.sharesStorage(with: again), "the wall still holds the old storage")
+    }
 }
 
 /// Mirrors the `Related` cases in `RPM.Core.Tests/GenresTests.cs`.
