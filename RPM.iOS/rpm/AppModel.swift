@@ -1,5 +1,6 @@
 import Foundation
 import os
+import StoreKit
 import SwiftUI
 import RPMKit
 import RPMLibrary
@@ -25,6 +26,12 @@ final class AppModel {
 
     let auth: AuthClient
     let cloud: RPMCloudClient
+
+    /// The App Store subscription and the accounts service. See ``SupporterStore``.
+    let supporters: SupporterStore
+
+    /// Listens for App Store transactions for the life of the app. Started once by ``start()``.
+    private var supporterUpdates: Task<Void, Never>?
 
     /// The covers of the songs stations announce: for the mini player, the player and the lock
     /// screen.
@@ -179,9 +186,6 @@ final class AppModel {
         return "\(short) (\(build))"
     }
 
-    /// Where a user goes to become a supporter.
-    static let becomeSupporter = RpmSite.becomeSupporter
-
     /// What the account may choose between. It comes from the quota that the meter already
     /// fetches, because the phone has no supporter service to ask.
     var offer: AudioLadder.RateOffer {
@@ -330,6 +334,8 @@ final class AppModel {
 
         let transport = Transport(base: Self.api, tokens: auth, reach: reach)
         cloud = RPMCloudClient(transport: transport)
+        supporters = SupporterStore(client: SupporterClient(
+            transport: Transport(base: Self.accounts, tokens: auth, reach: reach)))
         songCovers = SongCovers(cloud: cloud)
         community = RPMCommunityClient(transport: transport)
         listening = ListeningShare(community: community)
@@ -556,12 +562,55 @@ final class AppModel {
                                      appropriateFor: nil, create: true)
     }
 
+    // ── supporting rpm ──
+
+    /// The signed-in account's id, for the App Store purchase. Nil when signed out.
+    var supporterAccount: UUID? { who.flatMap { UUID(uuidString: $0.userId) } }
+
+    /// A line for the supporter card after a sync: the subscription on this Apple Account belongs to
+    /// another rpm account. Nil when there is nothing to say.
+    private(set) var supporterNote: String?
+
+    /// Sends the App Store subscription this phone holds to the accounts service: after sign-in, on
+    /// return to the foreground, and when the subscription sheet closes (which covers Restore).
+    func syncSupport() async {
+        guard who != nil else { return }
+        let said = await supporters.sync { [weak self] answer in await self?.supportConfirmed(answer, bought: false) }
+        supporterNote = SupporterStore.noteKey(for: said).map { Loc.get($0) }
+    }
+
+    /// Sends a purchase made in the subscription sheet, and says how the service answered.
+    func purchased(_ result: VerificationResult<StoreKit.Transaction>) async -> SupporterPost? {
+        let said = await supporters.send(result)
+        if case .confirmed(let answer)? = said { await supportConfirmed(answer, bought: true) }
+        return said
+    }
+
+    /// The accounts service took a purchase. The cloud API keeps the account's standing per access
+    /// token for a minute, so a new token is asked for first and the quota is then read fresh. After a
+    /// sync that is skipped when the quota already says the same, so the sync on every launch costs
+    /// nothing; after a purchase in the sheet it is never skipped. The gold ground follows at the next
+    /// launch (``GroundRule/nextLaunch``).
+    /// - Parameter bought: the purchase was made in the sheet just now.
+    private func supportConfirmed(_ answer: SupporterAnswer, bought: Bool) async {
+        if !bought, let quota, quota.wearsMark == (answer.grSupporter && !answer.grTester),
+           quota.store == answer.grSupporterStore { return }
+        await auth.refreshNow()
+        await readQuota(.nextLaunch)
+    }
+
     // ── the way in ──
 
     func start() async {
         sayWhichBuildThisIs()
         await auth.load()
         followSessionsEndedByServer()
+
+        // From launch, signed in or not: StoreKit delivers renewals, refunds and Ask to Buy
+        // approvals here, and a transaction that cannot be sent yet stays unfinished.
+        if supporterUpdates == nil {
+            supporterUpdates = await supporters.listen { [weak self] answer in await self?.supportConfirmed(answer, bought: false) }
+        }
 
         #if DEBUG
         // A way to open the app already signed in, so that a script can look at screens.
@@ -817,6 +866,8 @@ final class AppModel {
         // This is after the quota, because what the account may ask for comes from the quota. It
         // also runs when the quota read failed, so that the rate then follows the network alone.
         settleTheRate()
+
+        Task { await self.syncSupport() }
 
         #if DEBUG
         // A collection shared with this account, by its owner's name or id, for looking at somebody

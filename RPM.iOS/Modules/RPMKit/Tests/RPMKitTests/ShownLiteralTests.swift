@@ -27,8 +27,11 @@ import Testing
             + found.joined(separator: "\n")))
 }
 
-/// The rule itself, on small cases, so a change to it is seen here first.
-@Test(arguments: [
+/// One line of source, whether it is a returned value, and the literals the rule must report in it.
+/// The cases are typed here: a list of untyped tuples is too much for the type checker in `@Test`.
+typealias LiteralCase = (line: String, returning: Bool, expected: [String])
+
+private let literalCases: [LiteralCase] = [
     (#"Text("x").accessibilityLabel(on ? Loc.get("A_B") : "Add to favourites")"#, false, ["Add to favourites"]),
     (#"    trouble = "That station seems offline.""#, false, ["That station seems offline."]),
     (#"        return n == 1 ? "1 track" : "\(n) tracks""#, true, ["1 track", #"\(n) tracks"#]),
@@ -41,9 +44,14 @@ import Testing
     (#"Text("\(Loc.get("About_Version", v))  ·  © \(year) rpm.")"#, false, []),
     (#"Text(Loc.get(marked ? "Track_UnsetFavorite" : "Track_SetFavorite"))"#, false, []),
     (#"log.error("could not play \(name)")"#, false, []),
-])
-func aLiteralIsReportedWhereItCanOnlyBeOnItsWayToTheScreen(line: String, returning: Bool, expected: [String]) {
-    #expect(ShownLiteral.literals(in: line, returning: returning, messageSet: true) == expected)
+    (#"        case "Calm": return "\u{f52d}"           // feather"#, true, []),
+    (#"        case "Happy", "Glad": return "Feeling good""#, true, ["Feeling good"]),
+]
+
+/// The rule itself, on small cases, so a change to it is seen here first.
+@Test(arguments: literalCases)
+func aLiteralIsReportedWhereItCanOnlyBeOnItsWayToTheScreen(_ item: LiteralCase) {
+    #expect(ShownLiteral.literals(in: item.line, returning: item.returning, messageSet: true) == item.expected)
 }
 
 /// The view layer is found from the folders below `RPM.iOS`, so a checkout inside a folder named `rpm` does
@@ -131,7 +139,8 @@ enum ShownLiteral {
     static func literals(in code: String, returning: Bool, messageSet: Bool) -> [String] {
         guard !code.isEmpty, !matches(logged, code) else { return [] }
 
-        let bare = replace(keyed, in: code, with: "Loc.get(_")
+        // A `case "Calm":` label is compared with a value that comes in; it is never shown.
+        let bare = replace(caseLabel, in: replace(keyed, in: code, with: "Loc.get(_"), with: "case _:")
         var read: [String] = []
         if matches(showsText, bare) || returning {
             read = all(literal, in: bare)
@@ -200,6 +209,8 @@ enum ShownLiteral {
     private static let keyed = try! NSRegularExpression(
         pattern: #"Loc\.get\(\s*"[A-Za-z0-9_]+"|verbatim:\s*"(?:[^"\\]|\\.)*""#)
     private static let idLike = try! NSRegularExpression(pattern: #"[a-z0-9_.\-/:|?&=%#]*"#)
+    private static let caseLabel = try! NSRegularExpression(
+        pattern: #"\bcase\s+"(?:[^"\\]|\\.)*"(?:\s*,\s*"(?:[^"\\]|\\.)*")*\s*:"#)
     private static let logged = try! NSRegularExpression(
         pattern: #"\b(?:log|logger|Logger|os_log|print|debugPrint|assert|assertionFailure|precondition|preconditionFailure|fatalError|say|signpost)\b\s*[.(]"#)
     private static let messageAssignment = try! NSRegularExpression(

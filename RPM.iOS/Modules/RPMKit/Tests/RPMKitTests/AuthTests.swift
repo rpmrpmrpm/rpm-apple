@@ -120,6 +120,36 @@ private let loginBody = #"""
     #expect(asked.value == nil, "a valid token was refreshed anyway")
 }
 
+/// After a purchase the cloud API must read the account again, and it keeps its answer per
+/// access token for a minute. A new token is a new read, so the phone asks for one at once.
+@Test func refreshNowAsksForANewTokenEvenWhenTheOldOneIsGood() async throws {
+    let store = MemoryStore()
+    try await stored(store, session(access: "good", expiresIn: 3600))
+
+    let client = auth(replying(200, #"""
+    {"userId":"u1","email":"a@example.com","displayName":"Placeholder",
+     "accessToken":"fresh","refreshToken":"ref2","expiresIn":3600}
+    """#), store)
+    await client.load()
+
+    await client.refreshNow()
+
+    #expect(try await client.accessToken() == "fresh")
+}
+
+@Test func refreshNowThatCannotReachTheServiceKeepsTheSession() async throws {
+    let store = MemoryStore()
+    try await stored(store, session(access: "good", expiresIn: 3600))
+
+    let client = auth(replying(503, "{}"), store)
+    await client.load()
+
+    await client.refreshNow()
+
+    #expect(try await client.accessToken() == "good")
+    #expect(await client.isSignedIn)
+}
+
 /// A session with nothing to refresh with is not a session to throw away. It is
 /// handed back as it is and the call fails on its own terms.
 @Test func aSessionWithNoRefreshTokenIsNotRefreshed() async throws {

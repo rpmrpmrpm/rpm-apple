@@ -373,6 +373,19 @@ public actor AuthClient: TokenSource {
             return session.accessToken
         }
 
+        return await refreshed(session)
+    }
+
+    /// Asks for a new access token now, even when the one held is still good. After a purchase the
+    /// cloud API must read the account again, and it keeps its answer per access token for a minute;
+    /// a new token is read fresh. A refresh that cannot be sent keeps the session as it is.
+    public func refreshNow() async {
+        guard let session = stored else { return }
+        _ = await refreshed(session)
+    }
+
+    /// Refreshes the session's token, once for every caller that asks at the same time.
+    private func refreshed(_ session: Session) async -> String? {
         // With no refresh token there is nothing to refresh with. Keep the session and return its access token.
         // The call then fails on its own terms.
         guard !session.refreshToken.isEmpty else { return session.accessToken }

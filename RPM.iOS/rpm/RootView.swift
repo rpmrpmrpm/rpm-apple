@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 import RPMSharedUI
 import RPMUI
@@ -228,6 +229,10 @@ struct RootView: View {
 
     /// Whether the list of downloaded albums is up, over the settings tab.
     @State private var showingDownloads = false
+
+    /// The subscription sheet (``SupporterSheet``) and the App Store's own page for the subscription.
+    @State private var showingSupport = false
+    @State private var managingSubscription = false
 
     /// The open Send feedback sheet, with the screenshot taken just before it opened.
     @State private var feedback: FeedbackShot?
@@ -633,6 +638,9 @@ struct RootView: View {
             // Also read the play history, for the same reason as the playlists: it can change on
             // the computer as well as on the phone.
             Task { await model.syncPlays() }
+
+            // A renewal, a refund or a purchase on another device can happen while the app is away.
+            Task { await model.syncSupport() }
         }
         // **The wait mark is also shown over a switch to another collection**, for as long as the
         // model reports that the collection is arriving, plus half a second for the banner's first
@@ -1397,7 +1405,9 @@ struct RootView: View {
                     onClearCache: { Task { await model.clearCache() } },
                     onSignOut: { Task { await model.signOut() } },
                     onDeleteAccount: { await model.deleteAccount(confirmEmail: model.who?.email ?? "") },
-                    onSupport: { openUrl(AppModel.becomeSupporter) },
+                    onSupport: { showingSupport = true },
+                    onManageSubscription: { managingSubscription = true },
+                    supporterNote: model.supporterNote,
                     crashReports: Binding(get: { model.diagnostics.sendsCrashReports },
                                           set: { model.diagnostics.sendsCrashReports = $0 }),
                     onFeedback: model.diagnostics.offersFeedback ? { openFeedback() } : nil,
@@ -1407,6 +1417,12 @@ struct RootView: View {
             .task { await model.readCacheSize() }
             .task { await model.readSharing() }
             .footRoom(chrome, .underTheChrome)
+            .sheet(isPresented: $showingSupport, onDismiss: { Task { await model.syncSupport() } }) {
+                if let account = model.supporterAccount {
+                    SupporterSheet(account: account, onPurchase: { await model.purchased($0) })
+                }
+            }
+            .manageSubscriptionsSheet(isPresented: $managingSubscription)
             .sheet(isPresented: $showingDownloads) {
                 DownloadsPage(
                     rows: downloadRows,

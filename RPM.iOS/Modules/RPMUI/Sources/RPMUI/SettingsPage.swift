@@ -98,7 +98,15 @@ public struct SettingsPage: View {
     /// Deletes the account on the server and signs out. Returns nil when done, and an error
     /// message when it failed.
     private let onDeleteAccount: () async -> String?
+
+    /// Opens the subscription sheet.
     private let onSupport: () -> Void
+
+    /// Opens the App Store's page for the account's subscription.
+    private let onManageSubscription: () -> Void
+
+    /// A line under the supporter card, such as "This subscription belongs to another rpm account."
+    private let supporterNote: String?
 
     /// The Send crash reports switch.
     private let crashReports: Binding<Bool>
@@ -142,6 +150,8 @@ public struct SettingsPage: View {
                 onSignOut: @escaping () -> Void,
                 onDeleteAccount: @escaping () async -> String?,
                 onSupport: @escaping () -> Void,
+                onManageSubscription: @escaping () -> Void,
+                supporterNote: String?,
                 crashReports: Binding<Bool>,
                 onFeedback: (() -> Void)?,
                 sharesListening: Binding<Bool>? = nil,
@@ -163,6 +173,8 @@ public struct SettingsPage: View {
         self.onSignOut = onSignOut
         self.onDeleteAccount = onDeleteAccount
         self.onSupport = onSupport
+        self.onManageSubscription = onManageSubscription
+        self.supporterNote = supporterNote
         self.crashReports = crashReports
         self.onFeedback = onFeedback
         self.sharesListening = sharesListening
@@ -430,6 +442,26 @@ public struct SettingsPage: View {
                         Text(Loc.get(quota.tester ? "Rpm_Profile_PlanTester" : "Rpm_Profile_PlanFree"))
                             .font(RPMFont.display(17))
                             .foregroundStyle(RPMInk.cyan)
+                    }
+
+                    switch quota.supporterOffer {
+                    case .become:
+                        key(Loc.get("Cloud_BecomeSupporter"), stretches: true, action: onSupport)
+                            .padding(.top, 6)
+                    case .manageInAppStore:
+                        Text(Loc.get("Supporter_ThroughAppStore"))
+                            .font(RPMFont.display(13))
+                            .foregroundStyle(RPMInk.white(0xCC / 255))
+                        key(Loc.get("Supporter_Manage"), stretches: true, action: onManageSubscription)
+                            .padding(.top, 6)
+                    case .nothing:
+                        EmptyView()
+                    }
+
+                    if let supporterNote {
+                        Text(supporterNote)
+                            .font(RPMFont.display(13))
+                            .foregroundStyle(RPMInk.gold)
                     }
                 }
             }

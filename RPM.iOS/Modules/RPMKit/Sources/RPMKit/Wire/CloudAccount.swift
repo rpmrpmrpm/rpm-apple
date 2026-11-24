@@ -20,6 +20,11 @@ public struct CloudQuota: Codable, Hashable, Sendable {
     /// mark. For the words on screen.
     public let tester: Bool
 
+    /// `apple` or `google` while that store pays for the account's support, else nil. The phone
+    /// shows Manage subscription only for `apple`, because an App Store subscription is managed in
+    /// the App Store.
+    public let store: String?
+
     /// Whether the supporter's mark is shown for this account. The mark says "Supporter", so a
     /// tester, who does not pay, does not wear it.
     public var wearsMark: Bool { supporter && !tester }
@@ -32,12 +37,15 @@ public struct CloudQuota: Codable, Hashable, Sendable {
         unlimited  = try c.decodeIfPresent(Bool.self, forKey: .unlimited) ?? false
         supporter  = try c.decodeIfPresent(Bool.self, forKey: .supporter) ?? unlimited
         tester     = try c.decodeIfPresent(Bool.self, forKey: .tester) ?? false
+        store      = try c.decodeIfPresent(String.self, forKey: .store)
     }
 
-    public init(usedBytes: Int64, quotaBytes: Int64, fileCount: Int, unlimited: Bool, supporter: Bool, tester: Bool) {
+    public init(usedBytes: Int64, quotaBytes: Int64, fileCount: Int, unlimited: Bool, supporter: Bool, tester: Bool,
+                store: String?) {
         self.usedBytes = usedBytes; self.quotaBytes = quotaBytes
         self.fileCount = fileCount; self.unlimited = unlimited
         self.supporter = supporter; self.tester = tester
+        self.store = store
     }
 }
 
