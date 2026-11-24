@@ -567,8 +567,9 @@ struct PlaylistSleeve: View {
     /// Which of the app's own folders this is, or nil for every other row. See ``folderFrame``.
     var folder: FolderFace? = nil
 
-    /// The frame of one of the app's own folders, or nil. The folder's photograph goes behind its
-    /// window (`PlaylistPhotos.folderCover`), and the two come in together.
+    /// The frame of a folder, or nil. One of the app's own folders has its photograph behind the
+    /// window (`PlaylistPhotos.folderCover`), and the two come in together. A folder somebody made
+    /// has a still room in its colours there.
     var folderFrame: FramedList? = nil
 
     @State private var cover: Cover?
@@ -629,6 +630,21 @@ struct PlaylistSleeve: View {
                 Sleeve(image: cover.image)
                     .clipShape(shape)
                     .transition(.opacity)
+            } else if framed == nil, let folderFrame, folder == .plain,
+                      let drawing = FolderFrame.image(name: folderFrame.name, look: folderFrame.look,
+                                                      edge: edge) {
+                // A folder somebody made has no photograph: a still room in its colours shows
+                // through the window, with the frame and its name over it.
+                ZStack {
+                    if RoomView.works {
+                        RoomView(colours: folderFrame.room, sound: .still, foot: 1,
+                                 running: false, breathes: true, zero: .whenShown,
+                                 seed: folderFrame.name)
+                    }
+                    Image(uiImage: drawing)
+                        .resizable()
+                }
+                .frame(width: edge, height: edge)
             } else if framed == nil, let folderFrame {
                 // One of the app's own folders: its photograph with the folder frame over it,
                 // the name in the bar under the window. Both come in at once, when the photograph

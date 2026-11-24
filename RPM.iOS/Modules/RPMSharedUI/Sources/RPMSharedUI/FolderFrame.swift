@@ -3,16 +3,18 @@ import CoreText
 import CoreGraphics
 import RPMDesign
 
-/// The frame on the cover of one of the app's own playlist folders, lettered with the folder's name.
+/// The frame on the cover of a playlist folder, lettered with the folder's name.
 ///
 /// It is a different drawing from a list's frame (``PlaylistFrame``), so a folder does not look like
-/// one more list: a black square with a folder-shaped window cut out of it (a tab at the top right),
-/// and a bar under the window where the folder's name is set in the middle
-/// (``RPMDesign/FolderFrameMetrics``). The folder's photograph shows through the window
-/// (`PlaylistPhotos.folderCover`).
+/// one more list: a black square with a window cut out of it in the shape of the app's folder icon
+/// (round corners, a tab at the top left), a soft glow round the window's edge, and the folder's name
+/// centred under it (``RPMDesign/FolderFrameMetrics``). One of the app's own folders shows its
+/// photograph through the window (`PlaylistPhotos.folderCover`); a folder somebody made shows a
+/// still room in its colours.
 ///
 /// The drawing is inked in the folder's two colours as a list's frame is: its black in the border
-/// colour, and the name in the lettering colour. The window stays transparent.
+/// colour, the glow running from it towards the lettering colour, and the name in the lettering
+/// colour. The window stays transparent.
 public enum FolderFrame {
     /// The lettered frame at this size, or nil if the drawing did not load.
     ///
@@ -64,7 +66,7 @@ public enum FolderFrame {
         return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }()
 
-    /// Sets the name in the middle of the bar, in the app's Cabin Bold, with the system font for
+    /// Sets the name under the folder, in the app's Cabin Bold, with the system font for
     /// letters Cabin does not have.
     @MainActor
     private static func letter(_ name: String, edge: CGFloat, colour: RGB) {

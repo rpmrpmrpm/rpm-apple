@@ -273,7 +273,7 @@ extension PlaylistRow {
         face == .moods ? Self.moodsMark : nil
     }
 
-    /// The frame of one of the app's own folders, or nil. See ``FramedList/folder(_:name:)``.
+    /// The frame of a folder, or nil for a list. See ``FramedList/folder(_:name:)``.
     var folderFrame: FramedList? {
         face.flatMap { FramedList.folder($0, name: title) }
     }
