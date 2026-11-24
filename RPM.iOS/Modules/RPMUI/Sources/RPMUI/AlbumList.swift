@@ -31,7 +31,6 @@ public enum LibraryLayout: String, CaseIterable, Sendable {
 struct AlbumList: View {
     let listing: AlbumListing
     let covers: any CoverStore
-    let playing: String?
     let onOpen: (CloudAlbum) -> Void
     let onPlay: (CloudTrack) -> Void
     let isTrackMarked: (CloudTrack) -> Bool
@@ -139,10 +138,14 @@ struct AlbumList: View {
     /// its length.
     private func line(_ track: CloudTrack, at: Int, of album: CloudAlbum) -> some View {
         HStack(spacing: 10) {
-            Text(number(track, at: at))
-                .font(RPMFont.display(13))
-                .foregroundStyle(track.rpmId == playing ? .white : RPMInk.white(0x77 / 255))
-                .frame(width: 24, alignment: .trailing)
+            // White on the song that plays. It reads which song that is by itself. See
+            // ``IfPlaying``.
+            IfPlaying(rpmId: track.rpmId) { on in
+                Text(number(track, at: at))
+                    .font(RPMFont.display(13))
+                    .foregroundStyle(on ? .white : RPMInk.white(0x77 / 255))
+            }
+            .frame(width: 24, alignment: .trailing)
 
             VStack(alignment: .leading, spacing: 1) {
                 MarkedTitle(track.title ?? "", explicit: track.isExplicit)
@@ -214,11 +217,14 @@ struct AlbumList: View {
     }
 
     /// The playing mark in the margin: three points of white, which is what playing looks like
-    /// everywhere in this app.
+    /// everywhere in this app. It reads which song plays by itself, so a change of track draws
+    /// the mark again and not the list. See ``IfPlaying``.
     private func playingMark(_ track: CloudTrack) -> some View {
-        Capsule()
-            .fill(track.rpmId == playing ? Color.white : .clear)
-            .frame(width: 3, height: 24)
+        IfPlaying(rpmId: track.rpmId) { on in
+            Capsule()
+                .fill(on ? Color.white : .clear)
+                .frame(width: 3, height: 24)
+        }
     }
 }
 

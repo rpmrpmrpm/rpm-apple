@@ -26,11 +26,16 @@ struct RootView: View {
         }, toggleSaved: { [model] station in
             model.save(station)
         }))
+        _playingMark = State(initialValue: PlayingMark { [model] in model.nowPlaying })
     }
 
     /// Quick selection's own picks, the pinned playlists and the long-press menus on records and
     /// lists, for every page. See ``Holds``.
     @State private var holds: Holds
+
+    /// Which song has the playing mark, for every list. One object for the life of the screens, so
+    /// the environment does not change when this body runs again. See ``PlayingMark``.
+    @State private var playingMark: PlayingMark
     @Environment(\.displayScale) private var displayScale
 
     /// Whether the app is in the foreground.
@@ -346,6 +351,9 @@ struct RootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Start radio, on every song menu and home's radio entries. See `StartRadio`.
         .environment(\.startRadio, { [model] track in model.startRadio(track) })
+        // Which song has the playing mark. Each list reads it where it draws the mark, so a change
+        // of track does not run this body. See ``PlayingMark``.
+        .environment(\.playingMark, playingMark)
         // The wait mark fades out while the wall fades in, as in the Uno app
         // (`LibraryPage.ShowMark`), and the records do not replace the mark in one frame. The
         // library data arrives before the wall is on the screen, because the grid still has to
@@ -387,58 +395,7 @@ struct RootView: View {
         // `onStage` relies on this order when it puts the player away.
         .overlay {
             if playing.up {
-                NowPlayingSheet(player: model.player, art: model.playingArt,
-                                marked: model.isTrackMarked(model.player.current),
-                                lyrics: model.lyrics,
-                                lookingUpLyrics: model.lookingUpLyrics,
-                                onNeedLyrics: { await model.readLyrics() },
-                                karaoke: karaokeWanted && model.isSupporter,
-                                measured: model.measuredLines,
-                                onNeedTiming: { await model.readMeasured() },
-                                onWarmNext: { await model.warmNextTiming() },
-                                onMark: { on in Task { await model.markTrack(on) } },
-                                songMenu: songMenu,
-                                pull: $playing,
-                                // A starter track cannot go in a playlist: the cloud does not
-                                // hold it (`StarterTracks`).
-                                onFile: model.player.current
-                                    .flatMap { StarterTracks.isStarter($0.rpmId) ? nil : $0 }
-                                    .map { track in { model.filing = track } },
-                                onAlbum: model.player.current.flatMap { track in
-                                    let key = AlbumGrouping.key(for: track)
-                                    guard model.albums.contains(where: { $0.key == key }) else { return nil }
-                                    // The mode is set as well as the tab: the record is pushed
-                                    // onto the albums stack, and the library has two other views
-                                    // whose stacks would not show it.
-                                    return { tab = .library; mode = .albums; opened = [.album(key)] }
-                                },
-                                // The artists view of the library, with the artist's page
-                                // pushed on its own stack, as `RPM_OPEN_ARTIST` does.
-                                onArtist: model.player.current.flatMap { track in
-                                    guard let who = readArtists.artist(of: track, in: model.albums)
-                                    else { return nil }
-                                    return { tab = .library; mode = .artists; browsing = [.artist(who.name)] }
-                                },
-                                playingOn: model.player.castingTo?.name,
-                                onSpeakers: { close in
-                                    AnyView(SpeakerSheet(
-                                        speakers: model.speakers,
-                                        playingOn: model.player.castingTo,
-                                        looking: model.lookingForSpeakers,
-                                        trouble: model.castTrouble,
-                                        onPick: { speaker in
-                                            Task { await model.cast(to: speaker); close() }
-                                        },
-                                        onHandset: { Task { await model.stopCasting(); close() } },
-                                        onAgain: { Task { await model.findSpeakers() } },
-                                        onClose: close)
-                                        // The search for speakers starts when the sheet opens
-                                        // and not when the app starts. It takes a few seconds, and
-                                        // there is no reason to spend them for a user who never
-                                        // opens the sheet.
-                                        .task { await model.findSpeakers() })
-                                },
-                                sideways: sidewaysPlayer)
+                OwnReads { playerSheet }
                     // **This transition makes the whole movement of the player, in both
                     // directions.** The sheet moves itself only while a finger is on it
                     // (`NowPlayingSheet.putting`). When the finger lifts, the sheet hands over at
@@ -452,17 +409,9 @@ struct RootView: View {
             }
         }
         .animation(.spring(duration: 0.35), value: playing.up)
-        // The player's room and spectrum rest once the music has been paused for a moment. Not at
-        // once: a track takes a second to open, and the light fades out after a pause.
-        .task(id: model.player.isPlaying) {
-            guard !model.player.isPlaying else {
-                pausedAWhile = false
-                return
-            }
-            try? await Task.sleep(for: .seconds(2))
-            guard !Task.isCancelled else { return }
-            pausedAWhile = true
-        }
+        // What the shell does when the player changes. In a view of its own, so the player's
+        // changes do not run this body. See ``playerWatch``.
+        .background { playerWatch }
         // The first-run hints, over the app and the player, under the stage. See `CoachLayer`.
         .overlayPreferenceValue(CoachTargetFrames.self) { frames in
             CoachLayer(frames: frames, playerUp: playing.up, allowed: coachAllowed)
@@ -486,23 +435,7 @@ struct RootView: View {
         // screen while the phone is turned.
         .overlay {
             if staged {
-                StageView(player: model.player, playing: model.playing,
-                          playingOn: model.player.castingTo?.name,
-                          backdrops: model.backdrops,
-                          onSpeakers: { close in
-                              AnyView(SpeakerSheet(
-                                  speakers: model.speakers,
-                                  playingOn: model.player.castingTo,
-                                  looking: model.lookingForSpeakers,
-                                  trouble: model.castTrouble,
-                                  onPick: { speaker in
-                                      Task { await model.cast(to: speaker); close() }
-                                  },
-                                  onHandset: { Task { await model.stopCasting(); close() } },
-                                  onAgain: { Task { await model.findSpeakers() } },
-                                  onClose: close)
-                                  .task { await model.findSpeakers() })
-                          })
+                OwnReads { stageScreen }
                     .transition(.opacity)
             }
         }
@@ -546,35 +479,6 @@ struct RootView: View {
         // page, the artist page or the playlist picker, and those must not be shown on their side.
         .onChange(of: playing.up) { _, up in
             if !up && sidewaysPlayer { StageOrientation.requestPortrait() }
-        }
-        // **The app rotates only while there is something to rotate to.** The other screens are
-        // designed for an upright phone, so landscape is allowed only while a record is loaded.
-        // When the music stops, a phone held sideways is asked to turn back, so it is not left on
-        // a screen that was not designed for landscape. The Uno app has the same rule. See
-        // `StageOrientation`.
-        .onChange(of: loaded, initial: true) { _, now in
-            StageOrientation.allow(landscape: now)
-        }
-        // **When playback ends**, the player is put away and the tab shown is the one that the
-        // music came from: the library for a record, the radio for a station.
-        //
-        // The value is read from the player and not set by the code that handles the stop key.
-        // Playback can end in two ways, and only one of them is a key press. A queue that plays
-        // to its end ends in the same way as the key, and a screen that reacted only to the key
-        // would leave the mini player at the bottom of the app over a record that has finished.
-        // See `Player.isOver`.
-        .onChange(of: model.player.isOver) { _, over in
-            guard over else { return }
-
-            playing.putAway()
-
-            // The tab that the music came from. Home is never the result: the record has finished
-            // playing, and the place to see what played is the collection it came from.
-            tab = model.player.wasTheRadio ? .radio : .library
-        }
-        // The opening sound gives way to the music, as the desktop's does.
-        .onChange(of: model.player.isPlaying) { _, playing in
-            if playing { OpeningSound.stop() }
         }
         // The opening screen (`Opening`), over everything until the sign-in form is up or the home
         // screen has drawn what it opens on, then faded away. Once per launch: a later read of the
@@ -849,7 +753,7 @@ struct RootView: View {
     /// Whether the stage should be shown: the phone is turned and a record is loaded. A stage
     /// with nothing loaded is a black screen with a wordmark, so a turned phone with nothing
     /// loaded keeps the tab it was on.
-    private var onStage: Bool { vertical == .compact && loaded }
+    private var onStage: Bool { vertical == .compact && loadedNow }
 
     /// Whether a record or a station is loaded. This is the second condition for the stage, and
     /// the only reason for the app to be in landscape.
@@ -857,9 +761,15 @@ struct RootView: View {
     /// One property serves both uses, so the rule that lets the phone rotate and the screen it
     /// rotates to cannot disagree. An app that is allowed into landscape with nothing to show
     /// there would show a black screen with a wordmark.
+    ///
+    /// **Read only in ``playerWatch``.** It reads the player, which changes on every change of
+    /// track. The shell reads ``loadedNow``, which changes only when this answer does.
     private var loaded: Bool {
         model.player.current != nil || model.player.station != nil
     }
+
+    /// The last answer of ``loaded``, kept by ``playerWatch``.
+    @State private var loadedNow = false
 
     /// Opens a named screen, so that a script can show a page.
     ///
@@ -1004,10 +914,7 @@ struct RootView: View {
         // pages that the shell's inset reaches would end eight points above the bar. That shows a
         // band of background over the bar on every screen outside a navigation stack.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            RPMChrome(player: model.player, art: model.playingArt,
-                      showing: Binding(get: { tab }, set: { tab = $0 }),
-                      onAgain: { backToFirstPage(of: $0) },
-                      onOpen: { playing.raise() })
+            OwnReads { chromeBar }
                 // Asked before a tap replaces a queue that the user changed. iOS points the
                 // dialog's arrow at the view it is attached to, so it is attached here: it opens
                 // above the mini player and leaves the song that is playing in sight. One dialog
@@ -1078,6 +985,151 @@ struct RootView: View {
         }
     }
 
+    /// The player over the app. Built in a view of its own, see the overlay that shows it.
+    private var playerSheet: some View {
+        NowPlayingSheet(player: model.player, art: model.playingArt,
+                        marked: model.isTrackMarked(model.player.current),
+                        lyrics: model.lyrics,
+                        lookingUpLyrics: model.lookingUpLyrics,
+                        onNeedLyrics: { await model.readLyrics() },
+                        karaoke: karaokeWanted && model.isSupporter,
+                        measured: model.measuredLines,
+                        onNeedTiming: { await model.readMeasured() },
+                        onWarmNext: { await model.warmNextTiming() },
+                        onMark: { on in Task { await model.markTrack(on) } },
+                        songMenu: songMenu,
+                        pull: $playing,
+                        // A starter track cannot go in a playlist: the cloud does not
+                        // hold it (`StarterTracks`).
+                        onFile: model.player.current
+                            .flatMap { StarterTracks.isStarter($0.rpmId) ? nil : $0 }
+                            .map { track in { model.filing = track } },
+                        onAlbum: model.player.current.flatMap { track in
+                            let key = AlbumGrouping.key(for: track)
+                            guard model.albums.contains(where: { $0.key == key }) else { return nil }
+                            // The mode is set as well as the tab: the record is pushed
+                            // onto the albums stack, and the library has two other views
+                            // whose stacks would not show it.
+                            return { tab = .library; mode = .albums; opened = [.album(key)] }
+                        },
+                        // The artists view of the library, with the artist's page
+                        // pushed on its own stack, as `RPM_OPEN_ARTIST` does.
+                        onArtist: model.player.current.flatMap { track in
+                            guard let who = readArtists.artist(of: track, in: model.albums)
+                            else { return nil }
+                            return { tab = .library; mode = .artists; browsing = [.artist(who.name)] }
+                        },
+                        playingOn: model.player.castingTo?.name,
+                        onSpeakers: { close in
+                            AnyView(SpeakerSheet(
+                                speakers: model.speakers,
+                                playingOn: model.player.castingTo,
+                                looking: model.lookingForSpeakers,
+                                trouble: model.castTrouble,
+                                onPick: { speaker in
+                                    Task { await model.cast(to: speaker); close() }
+                                },
+                                onHandset: { Task { await model.stopCasting(); close() } },
+                                onAgain: { Task { await model.findSpeakers() } },
+                                onClose: close)
+                                // The search for speakers starts when the sheet opens
+                                // and not when the app starts. It takes a few seconds, and
+                                // there is no reason to spend them for a user who never
+                                // opens the sheet.
+                                .task { await model.findSpeakers() })
+                        },
+                        sideways: sidewaysPlayer)
+    }
+
+    /// The stage, over everything while the phone is turned. Built in a view of its own, because
+    /// it reads the player.
+    private var stageScreen: some View {
+        StageView(player: model.player, playing: model.playing,
+                  playingOn: model.player.castingTo?.name,
+                  backdrops: model.backdrops,
+                  onSpeakers: { close in
+                      AnyView(SpeakerSheet(
+                          speakers: model.speakers,
+                          playingOn: model.player.castingTo,
+                          looking: model.lookingForSpeakers,
+                          trouble: model.castTrouble,
+                          onPick: { speaker in
+                              Task { await model.cast(to: speaker); close() }
+                          },
+                          onHandset: { Task { await model.stopCasting(); close() } },
+                          onAgain: { Task { await model.findSpeakers() } },
+                          onClose: close)
+                          .task { await model.findSpeakers() })
+                  })
+    }
+
+    /// The mini player and the tab bar. Built in a view of its own, because it reads the record
+    /// that plays.
+    private var chromeBar: some View {
+        RPMChrome(player: model.player, art: model.playingArt,
+                  showing: Binding(get: { tab }, set: { tab = $0 }),
+                  onAgain: { backToFirstPage(of: $0) },
+                  onOpen: { playing.raise() })
+    }
+
+    /// What the shell does when the player changes: it rests the rooms after a pause, lets the
+    /// phone turn while something is loaded, puts the player away when the music ends, and stops
+    /// the opening sound.
+    ///
+    /// **In a view of its own, and not on ``body``.** These read the player, which changes on
+    /// every change of track and on every play and pause. Read in ``body``, each change would run
+    /// the whole root again, and with it every page open in its stacks. See ``OwnReads``.
+    private var playerWatch: some View {
+        OwnReads {
+            Color.clear
+                // The player's room and spectrum rest once the music has been paused for a
+                // moment. Not at once: a track takes a second to open, and the light fades out
+                // after a pause.
+                .task(id: model.player.isPlaying) {
+                    guard !model.player.isPlaying else {
+                        pausedAWhile = false
+                        return
+                    }
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    pausedAWhile = true
+                }
+                // **The app rotates only while there is something to rotate to.** The other
+                // screens are designed for an upright phone, so landscape is allowed only while a
+                // record is loaded. When the music stops, a phone held sideways is asked to turn
+                // back, so it is not left on a screen that was not designed for landscape. The
+                // Uno app has the same rule. See `StageOrientation`.
+                //
+                // The answer is also kept in `loadedNow`, which is what the shell reads.
+                .onChange(of: loaded, initial: true) { _, now in
+                    loadedNow = now
+                    StageOrientation.allow(landscape: now)
+                }
+                // **When playback ends**, the player is put away and the tab shown is the one
+                // that the music came from: the library for a record, the radio for a station.
+                //
+                // The value is read from the player and not set by the code that handles the stop
+                // key. Playback can end in two ways, and only one of them is a key press. A queue
+                // that plays to its end ends in the same way as the key, and a screen that reacted
+                // only to the key would leave the mini player at the bottom of the app over a
+                // record that has finished. See `Player.isOver`.
+                .onChange(of: model.player.isOver) { _, over in
+                    guard over else { return }
+
+                    playing.putAway()
+
+                    // The tab that the music came from. Home is never the result: the record has
+                    // finished playing, and the place to see what played is the collection it
+                    // came from.
+                    tab = model.player.wasTheRadio ? .radio : .library
+                }
+                // The opening sound gives way to the music, as the desktop's does.
+                .onChange(of: model.player.isPlaying) { _, playing in
+                    if playing { OpeningSound.stop() }
+                }
+        }
+    }
+
     /// The page of a tab other than home. Home is built once in ``shell`` and is not built here.
     ///
     /// Each page is a property of its own, and so is each view of the library. In one expression
@@ -1138,9 +1190,10 @@ struct RootView: View {
                 mode: $mode, lender: model.lender,
                 onOpen: { browsing.append(.artist($0.name)) },
                 onRefresh: { await model.refresh() })
+                .restsWhileCovered()
                 .footRoom(chrome, .insideAStack)
                 .navigationDestination(for: LibraryStep.self) { step in
-                    page(step, on: $browsing).footRoom(chrome, .insideAStack)
+                    page(step, on: $browsing).restsWhileCovered().footRoom(chrome, .insideAStack)
                 }
         }
     }
@@ -1155,37 +1208,47 @@ struct RootView: View {
                        onOpen: { genrePath.append(.genre($0.name)) },
                        onRefresh: { await model.refresh() })
                 .toolbar(.hidden, for: .navigationBar)
+                .restsWhileCovered()
                 .footRoom(chrome, .insideAStack)
                 .navigationDestination(for: GenreStep.self) { step in
-                    genrePage(step).footRoom(chrome, .insideAStack)
+                    genrePage(step).restsWhileCovered().footRoom(chrome, .insideAStack)
                 }
         }
+    }
+
+    /// The first page of the playlists' stack. See ``playlistsView``.
+    private var playlistsRoot: some View {
+        PlaylistsPage(
+            playlists: model.playlists,
+            mode: $mode,
+            // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
+            // cannot be marked from a phone, so the list would always be empty.
+            favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
+            covers: covers, lender: model.lender, owner: model.ownerName,
+            standing: model.playlistStanding,
+            albums: model.albums,
+            onOpen: { row in if let open = named(row) { lists.append(open) } },
+            onReread: { await model.rereadPlaylists() },
+            onMake: { name, folder, tracks in
+                await model.makePlaylist(name: name, in: folder, tracks: tracks)
+            },
+            history: model.playedLately,
+            onOpenHistory: { lists.append(.history) })
     }
 
     /// The lists have their own stack, so that a playlist pushed here is not still on
     /// screen after the user goes to the records. Both views are on the library tab.
     private var playlistsView: some View {
         NavigationStack(path: $lists) {
-            PlaylistsPage(
-                playlists: model.playlists,
-                mode: $mode,
-                // Nil and not empty on a borrowed shelf. A track on a borrowed shelf
-                // cannot be marked from a phone, so the list would always be empty.
-                favorites: model.viewing.isOwn ? model.favoriteTracks : nil,
-                covers: covers, lender: model.lender, owner: model.ownerName,
-                standing: model.playlistStanding,
-                albums: model.albums,
-                onOpen: { row in if let open = named(row) { lists.append(open) } },
-                onReread: { await model.rereadPlaylists() },
-                onMake: { name, folder, tracks in
-                    await model.makePlaylist(name: name, in: folder, tracks: tracks)
-                },
-                history: model.playedLately,
-                onOpenHistory: { lists.append(.history) })
+            // It reads the songs played lately, which change as songs play, so it is built in a
+            // view of its own. See ``OwnReads``.
+            OwnReads { playlistsRoot }
+                .restsWhileCovered()
                 .footRoom(chrome, .insideAStack)
                 .navigationDestination(for: OpenList.self) { open in
                     page(open, back: { lists.removeLast() })
                         .toolbar(.hidden, for: .navigationBar)
+                        .restsWhileCovered()
                         .footRoom(chrome, .insideAStack)
                 }
         }
@@ -1198,7 +1261,6 @@ struct RootView: View {
         NavigationStack(path: $opened) {
             LibraryPage(
                 albums: model.albums, standing: model.wallStanding, covers: covers,
-                playing: model.nowPlaying,
                 inOrder: inOrder, mode: $mode,
                 lender: model.lender,
                 onOpen: { opened.append(.album($0.key)) },
@@ -1217,9 +1279,10 @@ struct RootView: View {
                 onOpenArtist: { opened.append(.artist($0.name)) },
                 onOpenGenre: { opened.append(.genre($0.name)) },
                 onOpenList: { opened.append(.list(.playlist($0.id))) })
+                .restsWhileCovered()
                 .footRoom(chrome, .insideAStack)
                 .navigationDestination(for: LibraryStep.self) { step in
-                    page(step, on: $opened).footRoom(chrome, .insideAStack)
+                    page(step, on: $opened).restsWhileCovered().footRoom(chrome, .insideAStack)
                 }
         }
         // The search finds playlists as well, so they are read with the records' view too:
@@ -1263,6 +1326,12 @@ struct RootView: View {
 
     /// The tuner: the dial, the search and the full list of stations. See ``RadioPage``.
     private var tuner: some View {
+        // It reads the player, so it is built in a view of its own. See ``OwnReads``.
+        OwnReads { tunerPage }
+            .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var tunerPage: some View {
         RadioPage(stations: model.stations, saved: model.savedStations,
                   countries: model.countries,
                   tuned: model.player.station?.uuid,
@@ -1274,7 +1343,6 @@ struct RootView: View {
                   onTune: { model.tune($0) },
                   onSave: { model.save($0) },
                   onBack: { radioPath.removeLast() })
-            .toolbar(.hidden, for: .navigationBar)
     }
 
     /// The feed tab.
@@ -1477,7 +1545,7 @@ struct RootView: View {
                 .toolbar(.hidden, for: .navigationBar)
                 .footRoom(chrome, .insideAStack)
                 .navigationDestination(for: HomeStep.self) { step in
-                    homePage(step).footRoom(chrome, .insideAStack)
+                    homePage(step).restsWhileCovered().footRoom(chrome, .insideAStack)
                 }
         }
     }
@@ -1595,30 +1663,8 @@ struct RootView: View {
     private func page(_ open: OpenList, back: @escaping () -> Void) -> some View {
         switch open {
         case .queue:
-            PlaylistPage(title: Loc.get("AlbumMenu_PlaylistNowPlaying"), tracks: model.player.queue, missing: 0,
-                         covers: covers, isQueue: true,
-                         // The queue as this listening session has it. A record that was started
-                         // at track ten has nine earlier tracks in the queue that were never
-                         // played, and they are not shown or rearranged in this session.
-                         look: .sitting(from: model.player.earliest,
-                                        playing: model.player.index),
-                         canReorder: true,
-                         playing: model.nowPlaying,
-                         onPlay: { at, _ in Task { await model.jump(to: at) } },
-                         onShuffle: { Task { await model.shuffleTheQueue() } },
-                         onRemove: { model.removeFromQueue($0) },
-                         onMove: { from, to in model.player.move(from: from, to: to) },
-                         onBack: back,
-                         // The queue is not a playlist: nothing in the menu applies to it.
-                         menu: .none,
-                         isTrackMarked: { model.isTrackMarked($0) },
-                         isTrackMine: { model.isTrackMine($0) },
-                         onMarkTrack: { track, on in Task { await model.mark(track, on) } },
-                         onFile: { model.filing = $0 },
-                         // This list is the play order itself. A row here is already in the
-                         // queue, so there is nothing to send to play next. The row is moved
-                         // with the grip.
-                         upNext: .itIsTheQueue)
+            // It reads the player, so it is built in a view of its own. See ``OwnReads``.
+            OwnReads { queuePage(back: back) }
 
         case .favorites:
             // The marked songs: a list that marking a song changes, so it has no menu. It is
@@ -1631,9 +1677,13 @@ struct RootView: View {
                  menu: .none, back: back)
 
         case .history:
-            // The songs played lately: a list that playing changes, so it has no menu either.
-            list(Loc.get("Playlists_RecentlyPlayed"), model.playedLately, missing: 0,
-                 adding: nil, picture: nil, showing: nil, menu: .none, back: back)
+            // The songs played lately: a list that playing changes, so it has no menu either. It
+            // changes after every song that counted as played, so it is built in a view of its
+            // own. See ``OwnReads``.
+            OwnReads {
+                list(Loc.get("Playlists_RecentlyPlayed"), model.playedLately, missing: 0,
+                     adding: nil, picture: nil, showing: nil, menu: .none, back: back)
+            }
 
         case .playlist(let id):
             if let set = model.playlists.first(where: { $0.id == id }) {
@@ -1657,6 +1707,34 @@ struct RootView: View {
                 RPMInk.ground.ignoresSafeArea()
             }
         }
+    }
+
+    /// The running order's page. It reads the player: where the sitting began and which song
+    /// plays. See ``page(_:back:)``, which builds it in a view of its own.
+    private func queuePage(back: @escaping () -> Void) -> some View {
+        PlaylistPage(title: Loc.get("AlbumMenu_PlaylistNowPlaying"), tracks: model.player.queue, missing: 0,
+                     covers: covers, isQueue: true,
+                     // The queue as this listening session has it. A record that was started
+                     // at track ten has nine earlier tracks in the queue that were never
+                     // played, and they are not shown or rearranged in this session.
+                     look: .sitting(from: model.player.earliest,
+                                    playing: model.player.index),
+                     canReorder: true,
+                     onPlay: { at, _ in Task { await model.jump(to: at) } },
+                     onShuffle: { Task { await model.shuffleTheQueue() } },
+                     onRemove: { model.removeFromQueue($0) },
+                     onMove: { from, to in model.player.move(from: from, to: to) },
+                     onBack: back,
+                     // The queue is not a playlist: nothing in the menu applies to it.
+                     menu: .none,
+                     isTrackMarked: { model.isTrackMarked($0) },
+                     isTrackMine: { model.isTrackMine($0) },
+                     onMarkTrack: { track, on in Task { await model.mark(track, on) } },
+                     onFile: { model.filing = $0 },
+                     // This list is the play order itself. A row here is already in the
+                     // queue, so there is nothing to send to play next. The row is moved
+                     // with the grip.
+                     upNext: .itIsTheQueue)
     }
 
     /// The download key of a playlist page, as the album page has one.
@@ -1723,7 +1801,6 @@ struct RootView: View {
                      // be rearranged either. See `PlaylistSet.isWritable`, which checks both
                      // conditions: the list belongs to this account and a user made it.
                      canReorder: adding.map { $0.isWritable && $0.missing == 0 } ?? false,
-                     playing: model.nowPlaying,
                      adding: adding, albums: model.albums,
                      onPlay: { at, tapped in Task { await model.play(tracks, from: at, tapped: tapped) } },
                      onShuffle: { Task { await model.shuffle(tracks) } },
@@ -1944,7 +2021,6 @@ struct RootView: View {
                   artists: readArtists.artists(of: album, in: model.albums),
                   onArtist: openArtist,
                   readCredits: { await model.credits(of: $0) },
-                  playing: model.nowPlaying,
                   onPlay: { at, tapped in Task { await model.play(album, from: at, tapped: tapped) } },
                   onShuffle: { Task { await model.shuffle(album) } },
                   onMark: { on in Task { await model.mark(album, on) } },

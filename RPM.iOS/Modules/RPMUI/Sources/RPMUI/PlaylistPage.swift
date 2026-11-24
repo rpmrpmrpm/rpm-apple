@@ -78,7 +78,6 @@ public struct PlaylistPage: View {
     /// The library to pick from, for the panel that the plus key opens.
     private let albums: [CloudAlbum]
 
-    private let playing: String?
     private let onPlay: (Int, Tapped) -> Void
     private let onShuffle: () -> Void
     private let onRemove: (IndexSet) -> Void
@@ -141,7 +140,6 @@ public struct PlaylistPage: View {
     public init(title: String, tracks: [CloudTrack], missing: Int,
                 covers: any CoverStore, isQueue: Bool, look: QueueLook,
                 canReorder: Bool = false,
-                playing: String?,
                 adding: PlaylistSet? = nil, albums: [CloudAlbum] = [],
                 onPlay: @escaping (Int, Tapped) -> Void,
                 onShuffle: @escaping () -> Void,
@@ -167,7 +165,6 @@ public struct PlaylistPage: View {
         self.canReorder = canReorder
         self.adding = adding
         self.albums = albums
-        self.playing = playing
         self.onPlay = onPlay
         self.onShuffle = onShuffle
         self.onRemove = onRemove
@@ -722,11 +719,14 @@ public struct PlaylistPage: View {
     private func row(_ track: CloudTrack) -> some View {
         HStack(spacing: 14) {
             // The playing mark in the margin: three points wide and white, which is how "playing"
-            // is shown everywhere in this app.
-            Rectangle()
-                .fill(track.rpmId == playing ? Color.white : .clear)
-                .frame(width: 3, height: 28)
-                .clipShape(Capsule())
+            // is shown everywhere in this app. It reads which song plays by itself, so a change of
+            // track does not draw the page again. See ``IfPlaying``.
+            IfPlaying(rpmId: track.rpmId) { on in
+                Rectangle()
+                    .fill(on ? Color.white : .clear)
+                    .frame(width: 3, height: 28)
+                    .clipShape(Capsule())
+            }
 
             PlaylistSleeve(track: track, glyph: Glyph.record, edge: 40,
                            mark: 16, covers: covers)

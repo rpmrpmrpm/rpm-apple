@@ -25,7 +25,6 @@ public struct LibraryPage: View {
     private let standing: Standing
     private let albums: [CloudAlbum]
     private let covers: any CoverStore
-    private let playing: String?
     private let onOpen: (CloudAlbum) -> Void
     private let onPlay: (CloudTrack) -> Void
     private let onRefresh: () async -> Void
@@ -100,7 +99,7 @@ public struct LibraryPage: View {
     }
 
     public init(albums: [CloudAlbum], standing: Standing,
-                covers: any CoverStore, playing: String?,
+                covers: any CoverStore,
                 inOrder: SortedWall, mode: Binding<LibraryMode>,
                 lender: String? = nil,
                 onOpen: @escaping (CloudAlbum) -> Void,
@@ -130,7 +129,6 @@ public struct LibraryPage: View {
         self.albums = albums
         self.standing = standing
         self.covers = covers
-        self.playing = playing
         self.onOpen = onOpen
         self.onPlay = onPlay
         self.onRefresh = onRefresh
@@ -531,7 +529,7 @@ public struct LibraryPage: View {
     private var list: some View {
         Group {
             if let listing {
-                AlbumList(listing: listing.built, covers: covers, playing: playing,
+                AlbumList(listing: listing.built, covers: covers,
                           onOpen: onOpen, onPlay: onPlay,
                           isTrackMarked: isTrackMarked, isTrackMine: isTrackMine,
                           onMarkTrack: onMarkTrack, onFile: onFile, upNext: upNext)
@@ -770,18 +768,24 @@ public struct LibraryPage: View {
 
     /// The shape every row of the results shares: the playing mark in the margin, a 40-point
     /// picture, two lines, and whatever goes at the end.
+    ///
+    /// - Parameter song: the `rpmId` of the song on the row, for the playing mark. Nil for a row
+    ///   that is not a song.
     private func entry<Picture: View, End: View>(
-        _ title: String, _ line: String, playing: Bool = false, explicit: Bool = false,
+        _ title: String, _ line: String, song: String? = nil, explicit: Bool = false,
         @ViewBuilder picture: () -> Picture,
         @ViewBuilder end: () -> End
     ) -> some View {
         HStack(spacing: 10) {
             // The playing mark sits in the padding, so the pictures start on the same line as
-            // the header and the field above them.
-            Rectangle()
-                .fill(playing ? Color.white : .clear)
-                .frame(width: 3, height: 26)
-                .clipShape(Capsule())
+            // the header and the field above them. It reads which song plays by itself. See
+            // ``IfPlaying``.
+            IfPlaying(rpmId: song) { on in
+                Rectangle()
+                    .fill(on ? Color.white : .clear)
+                    .frame(width: 3, height: 26)
+                    .clipShape(Capsule())
+            }
 
             picture()
                 .padding(.leading, 9)
@@ -811,10 +815,10 @@ public struct LibraryPage: View {
 
     /// A row with nothing at its end.
     private func entry<Picture: View>(
-        _ title: String, _ line: String, playing: Bool = false, explicit: Bool = false,
+        _ title: String, _ line: String, song: String? = nil, explicit: Bool = false,
         @ViewBuilder picture: () -> Picture
     ) -> some View {
-        entry(title, line, playing: playing, explicit: explicit, picture: picture) { EmptyView() }
+        entry(title, line, song: song, explicit: explicit, picture: picture) { EmptyView() }
     }
 
     /// An artist found: their photograph where there is one, in a circle, their name, and how many
@@ -880,7 +884,7 @@ public struct LibraryPage: View {
     /// Finding it per row would scan the whole library once per row, which costs most of a
     /// frame on any collection of real size. See ``SongSearch/SongHit``.
     private func row(_ hit: SongSearch.SongHit) -> some View {
-        entry(hit.track.title ?? "", hit.track.artist ?? "", playing: hit.track.rpmId == playing,
+        entry(hit.track.title ?? "", hit.track.artist ?? "", song: hit.track.rpmId,
               explicit: hit.track.isExplicit) {
             SearchSleeve(album: hit.album, covers: covers)
         }

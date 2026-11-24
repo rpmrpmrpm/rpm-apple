@@ -24,11 +24,6 @@ public struct AlbumPage: View {
     /// Where the Wikipedia text under the keys comes from. See ``CentredAboutText``.
     private let articles: ArticleStore
 
-    /// Which row the speaker is on, if it is on one of these. The mark is out in the
-    /// list's left margin rather than in the row, because a marker in the flow pushes
-    /// every number and title right of everything in the header.
-    private let playing: String?
-
     private let onPlay: (Int, Tapped) -> Void
     private let onShuffle: () -> Void
     private let onMark: (Bool) -> Void
@@ -141,7 +136,6 @@ public struct AlbumPage: View {
                 shelf: [CloudAlbum], onOpenAlbum: @escaping (CloudAlbum) -> Void,
                 artists: [ArtistWallItem], onArtist: @escaping (ArtistWallItem) -> Void,
                 readCredits: @escaping (CloudAlbum) async -> AlbumCredits?,
-                playing: String? = nil,
                 onPlay: @escaping (Int, Tapped) -> Void, onShuffle: @escaping () -> Void,
                 onMark: @escaping (Bool) -> Void, onBack: @escaping () -> Void,
                 isTrackMarked: @escaping (CloudTrack) -> Bool = { _ in false },
@@ -168,7 +162,6 @@ public struct AlbumPage: View {
         self.aboutAtOpen = read.article(for: Self.subject(of: album)) != nil
         self.marked = marked
         self.classical = classical
-        self.playing = playing
         self.onPlay = onPlay
         self.onShuffle = onShuffle
         self.onMark = onMark
@@ -774,11 +767,16 @@ public struct AlbumPage: View {
         return HStack(spacing: 14) {
             // The playing mark, out in the margin: three points of white, which is
             // what "playing" looks like everywhere in this app. Never indented with a
-            // movement, so it stays in the margin on every line.
-            Rectangle()
-                .fill(track.rpmId == playing ? Color.white : .clear)
-                .frame(width: 3, height: 28)
-                .clipShape(Capsule())
+            // movement, so it stays in the margin on every line. It is in the margin and
+            // not in the row, because a mark in the flow would push every number and title
+            // to the right of everything in the header. It reads which song plays by
+            // itself, so a change of track does not draw the page again. See ``IfPlaying``.
+            IfPlaying(rpmId: track.rpmId) { on in
+                Rectangle()
+                    .fill(on ? Color.white : .clear)
+                    .frame(width: 3, height: 28)
+                    .clipShape(Capsule())
+            }
             // Blank, not a dash, on a row the catalogue has not reached: a column of
             // dashes looks like data. Left-aligned in a fixed column, so a single digit
             // is not set in from the line everything else is flush with.
