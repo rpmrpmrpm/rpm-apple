@@ -487,6 +487,13 @@ public final class PcmEngine: @unchecked Sendable {
     /// Whether anything is waiting behind what is being scheduled.
     public var hasSomethingNext: Bool { gate.withLock { coming.count > 1 } }
 
+    /// Whether this source is still waiting to be read, or is being read now. A source the
+    /// pump has read to its end has left `coming`, and its blocks are already in front of the
+    /// node or the room, so the source itself is no longer needed.
+    func stillReads(_ source: StreamedPcm) -> Bool {
+        gate.withLock { coming.contains { $0.source === source } }
+    }
+
     /// Takes back whatever was handed over behind the record at the front, so the
     /// engine runs out when that record ends. For the sleep timer set to the end of a
     /// track.

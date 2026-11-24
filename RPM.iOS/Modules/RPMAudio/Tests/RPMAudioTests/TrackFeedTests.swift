@@ -126,6 +126,27 @@ struct TrackFeedTests {
 
         #expect(feed.trouble == nil)
     }
+
+    /// **A feed that has read everything can be freed without being stopped.** Its session holds
+    /// it as the delegate. A session left open after the last byte would keep the feed and its
+    /// decoder for as long as the app runs.
+    @Test func aFeedThatHasReadEverythingCanBeFreed() async throws {
+        let watch = WeakFeed()
+
+        do {
+            let feed = TrackFeed()
+            watch.feed = feed
+            feed.start(try toneUrl(), kind: .stored)
+            try await until("the stream to finish") { feed.complete }
+        }
+
+        try await until("the feed to be freed") { watch.feed == nil }
+    }
+}
+
+/// Holds a feed without keeping it alive, so a test can see when it is freed.
+private final class WeakFeed: @unchecked Sendable {
+    weak var feed: TrackFeed?
 }
 
 /// Seeking in a stream that is only read forwards.

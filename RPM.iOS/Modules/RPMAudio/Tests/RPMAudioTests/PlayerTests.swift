@@ -904,6 +904,30 @@ private struct SignsOneRealOneDead: StreamSource {
     rpm.stop()
 }
 
+/// **A record that played through is let go of.** The queue goes on to the next record by
+/// itself, with no start and no queue edit, and the feed of the record that ended is closed. If
+/// it stayed open, every song of an album that plays through would stay in memory.
+@MainActor
+@Test func aRecordThatPlayedThroughLetsGoOfItsFeed() async throws {
+    let store = SilentStore()
+    store.lasts(2, for: "t0")
+    try await store.start()
+    defer { store.stop() }
+
+    let rpm = Player(source: SilenceSigned(store: store), shelves: AnyShelf(), copies: NoCopies(), nearby: NothingNearby(), reach: NetworkReach(), levelling: .album, levelsClassical: false, classical: { _ in false }, cover: { _ in nil })
+    await rpm.play((0..<3).map { track("t\($0)") }, from: 0, because: .somebodyAskedForIt)
+
+    #expect(rpm.feedsOpen == [0, 1], "open: \(rpm.feedsOpen)")
+
+    try await until("the queue to go on by itself", within: .seconds(20)) { rpm.index == 1 }
+
+    #expect(!rpm.feedsOpen.contains(0), "the record that ended is still open: \(rpm.feedsOpen)")
+    #expect(rpm.feedsOpen.contains(1), "the record playing lost its feed: \(rpm.feedsOpen)")
+    #expect(rpm.trouble == nil)
+
+    rpm.stop()
+}
+
 @MainActor
 private func until(_ what: String, within: Duration = .seconds(15),
                    _ done: @MainActor () -> Bool) async throws {

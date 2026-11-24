@@ -489,5 +489,12 @@ extension TrackFeed: URLSessionDataDelegate {
         // this is.** A socket that closed half way through a record must not look like a
         // record that finished, or the queue would move on to the next song.
         pcm.finish(cancelled ? .itWasPutDown : error == nil ? .theFileRanOut : .theBytesStopped)
+
+        // **The session is ended with its request.** Each session carries one request, and a
+        // session holds its delegate, which is this feed, until it is invalidated. A session
+        // left open after its last byte keeps the feed and its decoder alive for as long as
+        // the app runs. A seek after this opens a new session, so nothing is lost.
+        gate.withLock { if self.session === session { self.session = nil } }
+        session.finishTasksAndInvalidate()
     }
 }

@@ -1925,6 +1925,10 @@ public final class Player {
     /// test can check that the gain travels with the audio.
     var loudnessHandedOver: [SourceLoudness] { sound.loudnessComing }
 
+    /// The queue positions that have a feed open, in order. Internal so a test can check that
+    /// a record which played through is let go of.
+    var feedsOpen: [Int] { feeds.keys.sorted() }
+
     /// The list around the playing position has changed, and what is open belongs to
     /// positions that have moved.
     ///
@@ -2875,6 +2879,11 @@ public final class Player {
 
         settle(on: at)
 
+        // The record before this one has played through. Its download and its decoder are
+        // no longer needed. Not while a start is in progress: then this report is older than
+        // the start, and the feed the start is opening must not be closed.
+        if wentOnByItself, !starting { letGoOfWhatWasPlayed(before: at) }
+
         // **The sleep timer's other way of ending a track.** Reached when the next record
         // was handed over anyway: while casting (see `holdsBackTheNextRecord`), or when
         // the timer was set so close to the end that the pump had already moved on to the
@@ -2907,6 +2916,26 @@ public final class Player {
         // needed and not when it is.
         let mine = generation
         Task { await lookAhead(after: at, generation: mine) }
+    }
+
+    /// Closes the feeds of the positions before `at`, once the engine has gone on to `at`.
+    ///
+    /// **Without this, every record that plays through stays open.** A start and a queue edit
+    /// close the old feeds, but a queue that goes on by itself does not pass through either.
+    /// Each feed holds its decoder and its own `URLSession`, so an album that plays through
+    /// would keep every song of it in memory.
+    ///
+    /// **The end of the old record is not cut.** The engine reports a move when the speaker
+    /// reaches the new record. By then the pump has read the old source to its end and handed
+    /// every block of it to the node, and those blocks do not need the feed. A feed whose
+    /// source the engine still reads is kept anyway: a seek that landed between the report and
+    /// this call put the old record back on the engine.
+    private func letGoOfWhatWasPlayed(before at: Int) {
+        for (where_, feed) in feeds where where_ < at && !sound.stillReads(feed.pcm) {
+            feed.stop()
+            feeds[where_] = nil
+            nearbyFeeds[where_] = nil
+        }
     }
 
     /// Watches a **station's** buffer, to show it on screen.
@@ -3283,6 +3312,9 @@ public final class Player {
             }
 
             if let why = feed.trouble {
+                // Stopped as well as forgotten. A feed that is only forgotten keeps its session,
+                // and the session keeps the feed.
+                feed.stop()
                 letGo(feed, at: at)
                 switch why {
                 case .refused(403): return .failed(.signedIn)
