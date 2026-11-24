@@ -56,10 +56,10 @@ struct ListCard: View {
     @Environment(Screens.self) private var screens
     let set: PlaylistSet
     var edge: CGFloat = Card.edge
-    /// The caption at the top of the Playlists screen is the folder or the length
-    /// (``ListLines/shelf(_:)``). On home and inside a folder it is the mood sentence, because the
-    /// folder is already named above the cards.
-    var onShelf = false
+    /// The caption under the name, or nil for the mood sentence or the length
+    /// (``ListLines/caption(_:)``), as on home. The Playlists screen gives what kind of list it is
+    /// (``ListLines/kind(_:owner:)``).
+    var line: String? = nil
 
     var body: some View {
         Button {
@@ -67,7 +67,7 @@ struct ListCard: View {
         } label: {
             ListPicture(set: set, edge: edge, drifts: true)
                 .hoverEffect(.highlight)
-            CardLines(title: set.name, line: onShelf ? ListLines.shelf(set) : ListLines.caption(set),
+            CardLines(title: set.name, line: line ?? ListLines.caption(set),
                       explicit: set.tracks.contains(where: \.isExplicit), width: edge)
         }
         .buttonStyle(.borderless)
@@ -313,9 +313,31 @@ enum ListLines {
         return count(set)
     }
 
-    /// On the Playlists screen: the folder the list is filed in, or else the number of songs.
-    static func shelf(_ set: PlaylistSet) -> String {
-        set.folder.isEmpty ? count(set) : set.folder.joined(separator: " / ")
+    /// On the Playlists screen: what kind of list it is, as the phone's playlists tab says it
+    /// (`PlaylistRow.byline` on the iPhone, `listKindLine` on the Android TV).
+    ///
+    /// - A list somebody made names the person whose collection is shown (`owner`). Only the owner
+    ///   of a collection can make lists in it. With no name known, it says only that it is a
+    ///   playlist.
+    /// - A mood list names the genre it is cut to. A list cut across all genres (a whole mood, or
+    ///   a decade) says that it is a mood list.
+    /// - The listening lists (`GeneratedLists.ownerOnly`) are neither. They say how many songs
+    ///   they hold.
+    ///
+    /// The genre is the genres wall's name for it (`Genres.match`), so a list and the wall call the
+    /// same music by the same name. Genre names are not translated anywhere.
+    static func kind(_ set: PlaylistSet, owner: String?) -> String {
+        guard set.origin == .generated else {
+            guard let owner, !owner.isEmpty else { return Loc.get("Home_QuickPlaylist") }
+            return Loc.get("Playlists_RowBy", owner)
+        }
+        if GeneratedLists.ownerOnly.contains(set.cut?.kind ?? "") {
+            return count(set)
+        }
+        if let genre = set.cut?.genre?.trimmingCharacters(in: .whitespacesAndNewlines), !genre.isEmpty {
+            return Genres.match(genre) ?? genre
+        }
+        return Loc.get("Playlists_RowMood")
     }
 
     private static func count(_ set: PlaylistSet) -> String {

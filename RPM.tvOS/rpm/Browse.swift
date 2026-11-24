@@ -149,10 +149,21 @@ private enum PlaylistShelves {
 
 /// The rows of one place in the tree as a grid of cards, in the order `PlaylistBrowse` gives.
 private struct ShelfGrid: View {
+    @Environment(TVModel.self) private var model
     let rows: [PlaylistRow]
-    /// Whether the grid is inside a folder. A list then shows its mood sentence under its name,
-    /// because the folder is already named above the grid.
+    /// Whether the grid is inside a folder.
     let inFolder: Bool
+
+    /// Whose lists these are, for "Playlist by" under a list somebody made: the account that
+    /// shares the collection on screen, or the person's own name. Nil when no name is known.
+    private var owner: String? {
+        if let lender = model.session.lender { return lender }
+        if let own = model.session.shelfRows.first(where: \.isOwn)?.face, own.isKnown {
+            return own.displayName
+        }
+        let name = model.session.who?.displayName ?? ""
+        return name.isEmpty ? nil : name
+    }
 
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.fixed(Card.edge), spacing: Card.gap), count: AlbumGrid.columns),
@@ -165,7 +176,7 @@ private struct ShelfGrid: View {
                     // The songs marked now, read from this collection (`GeneratedLists.marked`).
                     FavouritesCard(tracks: set.tracks)
                 case .playlist(let set):
-                    ListCard(set: set, edge: Card.edge, onShelf: !inFolder)
+                    ListCard(set: set, edge: Card.edge, line: ListLines.kind(set, owner: owner))
                 }
             }
         }
