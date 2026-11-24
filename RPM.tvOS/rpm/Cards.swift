@@ -56,7 +56,9 @@ struct ListCard: View {
     @Environment(Screens.self) private var screens
     let set: PlaylistSet
     var edge: CGFloat = Card.edge
-    /// The caption on the Playlists screen is the folder. On home it is the mood sentence.
+    /// The caption at the top of the Playlists screen is the folder or the length
+    /// (``ListLines/shelf(_:)``). On home and inside a folder it is the mood sentence, because the
+    /// folder is already named above the cards.
     var onShelf = false
 
     var body: some View {
@@ -69,12 +71,41 @@ struct ListCard: View {
                       explicit: set.tracks.contains(where: \.isExplicit), width: edge)
         }
         .buttonStyle(.borderless)
-        .remembered("list:" + set.id)
+        .remembered(Self.focusName(set))
         .contextMenu {
             Button(Loc.get("Playlists_Play"), systemImage: "play.fill") { model.play(set.tracks, from: 0) }
             Button(Loc.get("AlbumMenu_Shuffle"), systemImage: "shuffle") { model.shuffle(set.tracks) }
         }
     }
+
+    /// The card's name for the screen's focus memory (``remembered(_:)``).
+    static func focusName(_ set: PlaylistSet) -> String { "list:" + set.id }
+}
+
+/// A playlist folder on the Playlists screen: its picture (``FolderPicture``), its name, and the
+/// word "Folder" where a list shows its count. Select opens the folder as a page of its own.
+struct FolderCard: View {
+    @Environment(Screens.self) private var screens
+    let name: String
+    /// The folder's full path, outermost first. Opening the card opens this folder.
+    let path: [String]
+    let face: FolderFace
+    var edge: CGFloat = Card.edge
+
+    var body: some View {
+        Button {
+            screens.open(.folder(path))
+        } label: {
+            FolderPicture(face: face, name: name, edge: edge)
+                .hoverEffect(.highlight)
+            CardLines(title: name, line: Loc.get("Playlists_RowFolder"), explicit: false, width: edge)
+        }
+        .buttonStyle(.borderless)
+        .remembered(Self.focusName(path))
+    }
+
+    /// The card's name for the screen's focus memory (``remembered(_:)``).
+    static func focusName(_ path: [String]) -> String { "folder:" + path.joined(separator: "\u{1}") }
 }
 
 /// The favourite songs as a card on the Playlists screen. Opens their list page.
@@ -93,12 +124,15 @@ struct FavouritesCard: View {
                       explicit: false, width: Card.edge)
         }
         .buttonStyle(.borderless)
-        .remembered("favourites")
+        .remembered(Self.focusName)
         .contextMenu {
             Button(Loc.get("Playlists_Play"), systemImage: "play.fill") { model.play(tracks, from: 0) }
             Button(Loc.get("AlbumMenu_Shuffle"), systemImage: "shuffle") { model.shuffle(tracks) }
         }
     }
+
+    /// The card's name for the screen's focus memory (``remembered(_:)``).
+    static let focusName = "favourites"
 }
 
 /// The two text lines under a card's picture: the title, with the E mark for an explicit record,

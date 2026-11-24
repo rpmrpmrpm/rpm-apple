@@ -8,57 +8,21 @@ import RPMSharedUI
 
 // MARK: Playlists
 
-/// The playlists screen: first the lists that the computer made, then the account's own lists.
-/// Each list opens its list page.
+/// The playlists screen: the top of the playlist tree, browsed as the phone browses it
+/// (`PlaylistBrowse`). The folders come first, then the lists: the app's own Moods folder (with
+/// the decades and a folder for each mood inside it), the folders somebody made, the listening
+/// lists, the favourite songs and the account's own lists. A folder's card opens the folder as a
+/// page (``PlaylistFolderPage``). A list's card opens its list page.
 struct PlaylistsView: View {
     @Environment(TVModel.self) private var model
 
     var body: some View {
-        let session = model.session
-        let generated = session.playlists.filter { $0.origin == .generated }
-        // The account's own lists, without the empty ones, as in the Android TV app.
-        let stored = session.playlists.filter { $0.origin != .generated && !$0.tracks.isEmpty }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        // The favourite songs as a list, as on the phone. Only for the account's own collection.
-        let favourites = session.viewing.isOwn ? session.favoriteTracks : []
+        let browse = PlaylistShelves.browse(at: [], session: model.session)
 
-        ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 40) {
-                PageBar(Counts.playlists(generated.count + stored.count))
-
-                switch session.playlistStanding {
-                case .reading:
-                    Waiting(Loc.get("Rpm_Playlists_Loading")).frame(height: 500)
-                case .trouble(let said):
-                    Trouble(said) { Task { await session.loadPlaylists() } }.frame(height: 500)
-                case .showing:
-                    if generated.isEmpty, stored.isEmpty, favourites.isEmpty {
-                        Message(Loc.get("Viz_BrowseNoPlaylists")).frame(height: 500)
-                    }
-                    if !generated.isEmpty {
-                        Heading(Loc.get("Home_MadeForYou"))
-                        ListGrid(sets: generated, favourites: [])
-                    }
-                    // The account's own lists, with a section for each folder. The phone opens a
-                    // folder as a separate step, and the TV shows the folders one under another.
-                    // Lists that are in no folder, and the favourite songs, come first under
-                    // "Playlists".
-                    let loose = stored.filter { $0.folder.isEmpty }
-                    if !loose.isEmpty || !favourites.isEmpty {
-                        Heading(Loc.get("Playlists_Title"))
-                        ListGrid(sets: loose, favourites: favourites)
-                    }
-                    ForEach(Self.folders(stored), id: \.self) { folder in
-                        Heading(folder.joined(separator: " / "))
-                        ListGrid(sets: stored.filter { $0.folder == folder }, favourites: [], underFolder: true)
-                    }
-                }
-            }
-            .padding(.top, Size.top)
-            .padding(.bottom, 80)
+        PlaylistShelf(browse: browse, top: Size.top) {
+            PageBar(Counts.playlists(browse.rows.count))
         }
-        .scrollClipDisabled()
-        .task { await session.showPlaylists() }
+        .task { await model.session.showPlaylists() }
     }
 
     /// Every folder that contains a list, in name order.
@@ -68,19 +32,142 @@ struct PlaylistsView: View {
     }
 }
 
-private struct ListGrid: View {
-    let sets: [PlaylistSet]
-    /// The favourite songs, drawn as the first card. No card is drawn when the array is empty.
-    let favourites: [CloudTrack]
-    /// Whether the grid is under its folder's heading, so the folder name is not repeated on each
-    /// list.
-    var underFolder = false
+/// One folder of the playlist tree, opened from its card. Each folder is a page on the screen's
+/// stack, so Back goes up one folder. The focus starts on the first card, and it comes back to the
+/// card of a folder opened from here when that folder closes.
+///
+/// The folder is looked up again each time the playlists change. A folder that has emptied (its
+/// lists were deleted on another device) shows the nearest folder above it that still holds
+/// something (``PlaylistFolderTree/stillOpen(_:folders:)``).
+struct PlaylistFolderPage: View {
+    @Environment(TVModel.self) private var model
+    /// The folder's path, outermost first.
+    let path: [String]
+    let page: Page
+
+    var body: some View {
+        let browse = PlaylistShelves.browse(at: path, session: model.session)
+
+        PlaylistShelf(browse: browse, top: Size.belowPill) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(browse.at.last ?? "")
+                    .font(.tv(64, .bold))
+                    .foregroundStyle(Ink.words)
+                    .lineLimit(1)
+                Text(Self.line(browse))
+                    .font(.tv(Size.row))
+                    .foregroundStyle(Ink.dim)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, Size.side)
+        }
+        .keepsFocus(page, first: PlaylistShelves.firstName(browse))
+    }
+
+    /// The line under the folder's name: the folders it is in, when it is not at the top of the
+    /// tree, and the number of rows in it. Two folders called "90s" are two places, and the name
+    /// alone would not say which one is open.
+    static func line(_ browse: PlaylistBrowse) -> String {
+        var parts: [String] = []
+        if !browse.path.isEmpty { parts.append(browse.path.joined(separator: " / ")) }
+        parts.append(Counts.playlists(browse.rows.count))
+        return parts.joined(separator: "  \u{b7}  ")
+    }
+}
+
+/// One place in the playlist tree as cards, under a header: the playlists screen at the top of
+/// the tree, and a folder's page under it.
+private struct PlaylistShelf<Header: View>: View {
+    @Environment(TVModel.self) private var model
+    let browse: PlaylistBrowse
+    /// Where the header starts: the screen margin on a screen, below the sidebar's pill on a page.
+    let top: CGFloat
+    @ViewBuilder let header: () -> Header
+
+    var body: some View {
+        let session = model.session
+
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 40) {
+                header()
+
+                switch session.playlistStanding {
+                case .reading:
+                    Waiting(Loc.get("Rpm_Playlists_Loading")).frame(height: 500)
+                case .trouble(let said):
+                    Trouble(said) { Task { await session.loadPlaylists() } }.frame(height: 500)
+                case .showing:
+                    if browse.rows.isEmpty {
+                        // Inside a folder only when the whole tree has emptied while it was open.
+                        Message(Loc.get("Viz_BrowseNoPlaylists")).frame(height: 500)
+                    } else {
+                        ShelfGrid(rows: browse.rows, inFolder: !browse.at.isEmpty)
+                    }
+                }
+            }
+            .padding(.top, top)
+            .padding(.bottom, 80)
+        }
+        .scrollClipDisabled()
+    }
+}
+
+/// What the playlists screen and the folder pages ask of the tree. On the main actor, because
+/// the session and the cards are.
+@MainActor
+private enum PlaylistShelves {
+    /// The rows at `at`, from the lists the screen shows.
+    ///
+    /// The account's own lists are shown without the empty ones, as in the Android TV app. The
+    /// favourite songs are a row only on the account's own collection. On a shared collection they
+    /// are nil, not empty, so the owner's copy of Favourite tracks is shown as it was sent
+    /// (``PlaylistBrowse/of(at:playlists:favorites:)``).
+    static func browse(at: [String], session: LibrarySession) -> PlaylistBrowse {
+        let shown = session.playlists.filter { $0.origin == .generated || !$0.tracks.isEmpty }
+        return PlaylistBrowse.of(at: at, playlists: shown,
+                                 favorites: session.viewing.isOwn ? session.favoriteTracks : nil)
+    }
+
+    /// The name a row's card is remembered by on its screen (``remembered(_:)``). The grid sets no
+    /// ``focusSpace(_:)``, so the space is empty.
+    static func focusName(_ row: PlaylistRow) -> String {
+        let name: String
+        switch row.kind {
+        case .folder(let folder, _): name = FolderCard.focusName(folder.path)
+        case .favorites: name = FavouritesCard.focusName
+        case .playlist(let set): name = ListCard.focusName(set)
+        }
+        return "/" + name
+    }
+
+    /// The name of the first card, where the focus starts on a folder's page.
+    static func firstName(_ browse: PlaylistBrowse) -> String? {
+        guard let row = browse.rows.first else { return nil }
+        return focusName(row)
+    }
+}
+
+/// The rows of one place in the tree as a grid of cards, in the order `PlaylistBrowse` gives.
+private struct ShelfGrid: View {
+    let rows: [PlaylistRow]
+    /// Whether the grid is inside a folder. A list then shows its mood sentence under its name,
+    /// because the folder is already named above the grid.
+    let inFolder: Bool
 
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.fixed(Card.edge), spacing: Card.gap), count: AlbumGrid.columns),
                   alignment: .leading, spacing: 56) {
-            if !favourites.isEmpty { FavouritesCard(tracks: favourites) }
-            ForEach(sets) { ListCard(set: $0, edge: Card.edge, onShelf: !underFolder) }
+            ForEach(rows) { row in
+                switch row.kind {
+                case .folder(let folder, let face):
+                    FolderCard(name: row.name, path: folder.path, face: face)
+                case .favorites(let set):
+                    // The songs marked now, read from this collection (`GeneratedLists.marked`).
+                    FavouritesCard(tracks: set.tracks)
+                case .playlist(let set):
+                    ListCard(set: set, edge: Card.edge, onShelf: !inFolder)
+                }
+            }
         }
         .padding(.horizontal, Size.side)
         .focusSection()

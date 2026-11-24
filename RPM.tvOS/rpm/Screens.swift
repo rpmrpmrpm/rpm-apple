@@ -27,6 +27,9 @@ enum Page: Hashable {
     case tuner(Bool)
     /// The account's favourite songs.
     case favourites
+    /// A folder of the playlist tree, by its path, outermost first. Each folder is a page of its
+    /// own, so Back goes up one folder.
+    case folder([String])
 }
 
 /// A song, and a list that already holds it.

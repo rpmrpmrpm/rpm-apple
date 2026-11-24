@@ -8,6 +8,9 @@ import SwiftUI
 /// focused, and asks tvOS to return the focus to that card whenever focus comes in from outside the
 /// screen.
 ///
+/// A page on a screen's stack can keep its focus in the same way. A playlist folder's page does, so
+/// Back from a folder inside it puts the focus on that folder's card again.
+///
 /// **A name must be unique on its screen.** The same record can appear in two home rows. Each row
 /// sets a ``focusSpace(_:)``, and the name is unique within that space.
 ///
@@ -21,7 +24,14 @@ extension View {
     /// `first` is the card that gets the focus when the screen is asked for focus before any card
     /// has had it. For home, this is the banner. Nil leaves the choice to tvOS.
     func keepsFocus(_ tab: TVTab, first: String?) -> some View {
-        modifier(KeepsFocus(tab: tab, first: first))
+        modifier(KeepsFocus(place: .tab(tab), first: first))
+    }
+
+    /// This page keeps its focus position in the same way. Apply it to a page on a screen's stack,
+    /// given as `page`. `first` is the card that the focus starts on when the page opens. The focus
+    /// returns to the last card when a page opened from this one closes.
+    func keepsFocus(_ page: Page, first: String?) -> some View {
+        modifier(KeepsFocus(place: .page(page), first: first))
     }
 
     /// This card's name on its screen, within the space around it.
@@ -43,8 +53,14 @@ extension EnvironmentValues {
 }
 
 private struct KeepsFocus: ViewModifier {
+    /// What keeps its focus: the screen of a tab, or a page on a screen's stack.
+    enum Place {
+        case tab(TVTab)
+        case page(Page)
+    }
+
     @Environment(Screens.self) private var screens
-    let tab: TVTab
+    let place: Place
     let first: String?
     @FocusState private var focused: String?
     @State private var last: String?
@@ -63,14 +79,37 @@ private struct KeepsFocus: ViewModifier {
                     focused = last
                     return
                 }
+                // A page that has just opened. tvOS can put the focus on the card nearest to
+                // where it was on the page below. The page starts on its first card instead.
+                if before == nil, last == nil, let opening, now != opening {
+                    focused = opening
+                    return
+                }
                 last = now
             }
-            .defaultFocus($focused, last, priority: .userInitiated)
+            .defaultFocus($focused, last ?? opening, priority: .userInitiated)
             // The shell sends this when the player comes down over this screen.
             .onChange(of: screens.focusBack) { _, _ in
-                guard screens.tab == tab, screens.paths[tab, default: []].isEmpty else { return }
+                guard onTop else { return }
                 focused = last ?? first
             }
+    }
+
+    /// The card that a page gives the focus to when it opens. The screen of a tab leaves that
+    /// choice to tvOS, and uses `first` only when it is asked for the focus back.
+    private var opening: String? {
+        if case .page = place { return first }
+        return nil
+    }
+
+    /// Whether this screen or page is the one on top, with nothing opened over it.
+    private var onTop: Bool {
+        switch place {
+        case .tab(let tab):
+            return screens.tab == tab && screens.paths[tab, default: []].isEmpty
+        case .page(let page):
+            return screens.paths[screens.tab, default: []].last == page
+        }
     }
 }
 

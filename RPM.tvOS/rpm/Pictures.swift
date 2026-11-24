@@ -149,6 +149,89 @@ struct ListPicture: View {
     private var pixels: Int { PictureSize.pixels(edge, scale: scale) }
 }
 
+/// A playlist folder's picture: the folder frame (`FolderFrame`), lettered with the folder's name,
+/// over what shows through its window. The phone draws its folders the same way.
+///
+/// - One of the app's own folders (the moods, the decades, one mood) shows its photograph there
+///   (`PlaylistPhotos.folderCover`). The photograph and the frame fade in together when the
+///   photograph is ready, so the frame is never shown over an empty window.
+/// - A folder somebody made shows a still room in the folder's colours. Where the room cannot be
+///   drawn, the window shows the plain square under it. An app folder whose photograph does not
+///   load is drawn the same way.
+/// - A folder whose frame cannot be drawn (the drawing is missing, or a mood this build has no
+///   colours for) shows the folder icon.
+///
+/// The inks are the phone's (`FramedList.folder(_:name:)`).
+struct FolderPicture: View {
+    @Environment(\.displayScale) private var scale
+
+    let face: FolderFace
+    let name: String
+    let edge: CGFloat
+    var corner: CGFloat = 10
+
+    /// The photograph, and the folder it was composed for. A card that is used again for another
+    /// folder does not show the last folder's photograph.
+    @State private var art: CoverArt?
+    @State private var artOf: FolderFace?
+    /// The folder whose photograph was asked for and did not come.
+    @State private var missing: FolderFace?
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
+        let framed = FramedList.folder(face, name: name)
+        let photo = (artOf == face ? art : nil) ?? PlaylistPhotos.folderCoverInMemory(face, edge: pixels)
+        let roomed = face == .plain || missing == face
+        ZStack {
+            shape.fill(Color.white.opacity(0x1F / 255))
+            if let framed, let frame = FolderFrame.image(name: framed.name, look: framed.look, edge: edge) {
+                if roomed {
+                    ZStack {
+                        if RoomView.works {
+                            RoomView(colours: framed.room, sound: .still, foot: 1, running: false,
+                                     breathes: true, zero: .whenShown, seed: name)
+                        }
+                        Image(uiImage: frame)
+                            .resizable()
+                    }
+                } else if let photo {
+                    ZStack {
+                        Image(decorative: photo.image, scale: 1)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                        Image(uiImage: frame)
+                            .resizable()
+                    }
+                    .transition(.opacity)
+                }
+            } else {
+                Image(systemName: "folder")
+                    .font(.system(size: edge * 0.22))
+                    .foregroundStyle(Color.white.opacity(0.3))
+            }
+        }
+        .frame(width: edge, height: edge)
+        .clipShape(shape)
+        .animation(.easeOut(duration: 0.2), value: photo != nil)
+        // The photograph is composed off the main actor: a decode and two draws. A folder
+        // somebody made has none.
+        .task(id: face) {
+            let face = self.face
+            let pixels = self.pixels
+            guard face != .plain, FramedList.folder(face, name: name) != nil else { return }
+            let made = await Task.detached(priority: .userInitiated) {
+                PlaylistPhotos.folderCover(face, edge: pixels)
+            }.value
+            guard !Task.isCancelled else { return }
+            art = made
+            artOf = face
+            missing = made == nil ? face : nil
+        }
+    }
+
+    private var pixels: Int { PictureSize.pixels(edge, scale: scale) }
+}
+
 /// Where a list's picture comes from, in the order that ``ListBehind`` gives. The desktop and the
 /// phone use the same order: the room, for the five generated lists that stand on one; the
 /// photograph that a generated list includes; the picture the computer stored for it; and the cover

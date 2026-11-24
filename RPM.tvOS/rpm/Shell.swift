@@ -203,6 +203,8 @@ struct PageView: View {
             TunerPage(musicFirst: musicFirst)
         case .favourites:
             RecordPage(of: .favourites(model.session.favoriteTracks), page: page)
+        case .folder(let path):
+            PlaylistFolderPage(path: path, page: page)
         }
     }
 }
