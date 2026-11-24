@@ -20,8 +20,9 @@ enum RecordOf {
 /// what the encyclopedias say on the left; the tracks on the right. The room behind is lit from
 /// the sleeve.
 ///
-/// Select on a track plays from it; press and hold opens its menu. The heart marks the record on
-/// the account's own collection.
+/// Select on a track plays from it; press and hold opens its menu. The keys are the phone's:
+/// Shuffle, Play in a round glass key in the middle, and the page's menu where the phone has its
+/// download key. The menu marks the record a favourite on the account's own collection.
 struct RecordPage: View {
     @Environment(TVModel.self) private var model
     @Environment(Screens.self) private var screens
@@ -197,20 +198,52 @@ struct RecordPage: View {
                 .accessibilityLabel(Loc.get("Review_Stars", String(stars)))
             }
 
-            HStack(spacing: 20) {
+            // What a list is and who is on it, above the keys as the phone's list page says it: a mood's
+            // sentence, then "Featuring" and the artists.
+            if case .list(let set) = of, let about = PlaylistFeatures.line(blurb: blurb(set), credits: tracks.map(\.artist)) {
+                Text(about)
+                    .font(.tv(24))
+                    .foregroundStyle(Color.white.opacity(0.75))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(4)
+                    .padding(.top, 10)
+                    .layoutPriority(-1)
+            }
+
+            // The phone's keys: Shuffle, then Play in the middle in a round glass key, then the page's
+            // menu where the phone has its download key. Shuffle and the menu are their marks alone,
+            // lit by the focus, so Play is the key the eye finds first. The Android TV's page has the
+            // same three.
+            HStack(spacing: 28) {
+                Button {
+                    model.shuffle(tracks)
+                    screens.playerShown = true
+                } label: {
+                    Image(systemName: "shuffle")
+                        .font(.system(size: 26))
+                        .frame(width: Self.sideKey, height: Self.sideKey)
+                }
+                .buttonStyle(.borderless)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(isAlbum ? Loc.get("AlbumGrid_Shuffle") : Loc.get("AlbumMenu_Shuffle"))
+
                 Button {
                     model.play(tracks, from: 0)
                     screens.playerShown = true
                 } label: {
-                    Label(isAlbum ? Loc.get("AlbumGrid_PlayAll") : Loc.get("Playlists_Play"), systemImage: "play.fill")
-                        .frame(minWidth: 220)
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 30))
+                        .frame(width: Self.playKey, height: Self.playKey)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
                 .focused($playFocused)
+                .accessibilityLabel(isAlbum ? Loc.get("AlbumGrid_PlayAll") : Loc.get("Playlists_Play"))
 
                 // The page's menu, as the Android TV's key beside Play: Shuffle,
-                // Add to queue and Play next, and on a record of the account's own collection Favourite
-                // album and Rate album.
+                // Add to queue and Play next, another selection of a generated list where the computer
+                // sent enough of it, and on a record of the account's own collection Favourite album and
+                // Rate album.
                 Menu {
                     Button(isAlbum ? Loc.get("AlbumGrid_Shuffle") : Loc.get("AlbumMenu_Shuffle"), systemImage: "shuffle") {
                         model.shuffle(tracks)
@@ -222,6 +255,11 @@ struct RecordPage: View {
                     Button(Loc.get("AlbumMenu_PlayNext"), systemImage: "text.line.first.and.arrowtriangle.forward") {
                         model.playNext(tracks, named: title)
                     }
+                    if case .list(let set) = of, model.session.hasAnotherList(set) {
+                        Button(Loc.get("Playlists_GenerateNew"), systemImage: "arrow.clockwise") {
+                            Task { await model.session.newGeneratedList(set) }
+                        }
+                    }
                     if case .album(let album) = of, model.session.viewing.isOwn {
                         let marked = model.session.isMarked(album)
                         Divider()
@@ -232,31 +270,13 @@ struct RecordPage: View {
                         Button(Loc.get("Tv_Album_Rate"), systemImage: "star") { rating = true }
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 26))
+                        .frame(width: Self.sideKey, height: Self.sideKey)
                 }
-                .buttonStyle(.glass)
-
-                // Another selection of a generated list, where the computer sent enough of it.
-                if case .list(let set) = of, model.session.hasAnotherList(set) {
-                    Button {
-                        Task { await model.session.newGeneratedList(set) }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel(Loc.get("Playlists_GenerateNew"))
-                }
-
-                if case .album(let album) = of, model.session.viewing.isOwn {
-                    let marked = model.session.isMarked(album)
-                    Button {
-                        Task { await model.session.mark(album, !marked) }
-                    } label: {
-                        Image(systemName: marked ? "heart.fill" : "heart")
-                            .keyTint(marked ? Ink.loved : nil)
-                    }
-                    .buttonStyle(.glass)
-                }
+                .menuStyle(.button)
+                .buttonStyle(.borderless)
+                .buttonBorderShape(.circle)
             }
             .padding(.top, 8)
             .focusSection()
@@ -264,17 +284,6 @@ struct RecordPage: View {
             if case .album(let album) = of {
                 // The first to give way: the article loses lines before anything above it moves.
                 AboutRecord(album: album)
-                    .layoutPriority(-1)
-            }
-            // What a list is and who is on it, as the phone's list page says it: a mood's
-            // sentence, then "Featuring" and the artists.
-            if case .list(let set) = of, let about = PlaylistFeatures.line(blurb: blurb(set), credits: tracks.map(\.artist)) {
-                Text(about)
-                    .font(.tv(24))
-                    .foregroundStyle(Color.white.opacity(0.75))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(4)
-                    .padding(.top, 10)
                     .layoutPriority(-1)
             }
         }
@@ -305,6 +314,10 @@ struct RecordPage: View {
         return art ?? model.artwork.coverInMemory(for: album, on: model.session.shelves.shelf(ofAlbum: album),
                                                   edge: Self.labelEdge)
     }
+
+    /// The round Play key under the names, and the keys beside it (Shuffle and the menu).
+    private static let playKey: CGFloat = 96
+    private static let sideKey: CGFloat = 80
 
     private static let labelEdge = 256
 
