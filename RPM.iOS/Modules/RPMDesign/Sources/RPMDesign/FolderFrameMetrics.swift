@@ -5,8 +5,8 @@ import CoreGraphics
 ///
 /// The drawing is 1000 pixels square: a folder-shaped window with round corners and a soft glow round
 /// its edge, on black. The window runs from 77 to 920 across and from 82 to 714 down. Its tab is at the
-/// top left, from 77 to about 420 across, and slopes down to the folder's top edge at 186. The name's
-/// capitals stand on the line at 911, with the middle of the gauge's ink at 880. Every number here is a
+/// top left, from 77 to about 420 across, and slopes down to the folder's top edge at 186. The middle of
+/// the name's gauge ink sits on the line at 880. Every number here is a
 /// share of the square, so the same rule sets the name at any size. The Android app reads the same numbers
 /// (`FolderFrameMetrics.kt`); change both together.
 public enum FolderFrameMetrics {
@@ -15,7 +15,7 @@ public enum FolderFrameMetrics {
 
     /// How tall the gauge's ink is, as a share of the square. This sets the type size, as on a
     /// list's frame (``ListFrameMetrics/gauge``), so every folder's name is set at one size.
-    public static let nameCross: CGFloat = 0.126
+    public static let nameCross: CGFloat = 0.095
 
     /// The widest a name may run: as wide as the folder. A longer name is set smaller rather than cut.
     public static let nameRun: CGFloat = 0.84
