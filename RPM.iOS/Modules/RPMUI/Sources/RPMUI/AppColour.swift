@@ -7,67 +7,36 @@ import RPMDesign
 /// The colour the user gives the app's glass: the bubbles, the cards, the buttons, the switches and
 /// the sliders. It is chosen on the Appearance settings and in the welcome's look step.
 ///
-/// **The background's colour is the default** (``theme(_:)``): each background has a colour, so a
-/// background and the glass on it go together like a theme. Choosing a background goes back to its
-/// colour. The user can pick another colour, or none (``none``): the app's white frost on dark
-/// glass. A colour is laid over that frost as a light wash, so text on it stays white and readable
-/// whichever colour is chosen.
+/// **No colour is the default**: the app's white frost on dark glass. The user can pick the
+/// background's own colour, so the glass and the background look like one theme, or one of the
+/// colours offered. A colour is laid over that frost as a light wash, so text on it stays white and
+/// readable whichever colour is chosen. What a stored value means is ``GlassColour``.
 ///
 /// The colours offered are the profile badge's colours (``RPMProfileBadges/colours``), shown as the
 /// same round bubbles as on the profile page, so the app and the badge can match.
 ///
-/// It is stored under ``key`` as `#RRGGBB`, the badge's own form, as ``none``, or empty for the
-/// background's colour. Every face that takes the colour
-/// reads the key itself (`@AppStorage`), so a new choice shows everywhere at once.
+/// Every face that takes the colour reads ``key`` itself (`@AppStorage`), so a new choice shows
+/// everywhere at once.
 ///
 /// **An album or a playlist on screen colours the glass with its cover** while it is shown
 /// (``PageColour``). That colour comes before the user's: see ``shown(_:)``.
 public enum AppColour {
-    public static let key = "look.colour"
+    public static let key = GlassColour.key
 
-    /// What is stored for no colour: the app's own white frost. Empty is the background's colour.
-    public static let none = "none"
-
-    /// The colour each background gives the glass, so the two look like one theme. The colours are
-    /// the badge's own blue, red, orange and yellow, and a grey for the grey background.
-    public static func theme(_ picture: Backdrop.Choice) -> UInt32 {
-        switch picture {
-        case .standard, .vinyl: 0x2563EB
-        case .pegasus: 0xD12A4E
-        case .sheetMusic, .cocoa: 0xE0701B
-        case .aero, .gold: 0xB8901F
-        case .graphite: 0x8E939B
-        }
-    }
-
-    /// The colour the user's choice gives: the background's when nothing is chosen, none for
-    /// ``none``, else the colour stored.
+    /// The colour the user's choice gives on the background shown now, or nil for no colour.
     @MainActor
     static func chosen(_ stored: String) -> Color? {
-        stored.isEmpty ? Color(rgb: theme(BackdropTheme.shared.picture)) : colour(stored)
+        GlassColour(stored: stored).value(on: BackdropTheme.shared.picture).map { Color(rgb: $0) }
     }
 
     /// The colours offered, as 0xRRGGBB.
     public static var offered: [UInt32] { RPMProfileBadges.colours }
-
-    /// The colour stored, or nil for none. Anything that cannot be read is none.
-    public static func colour(_ stored: String) -> Color? {
-        guard let value = value(stored) else { return nil }
-        return Color(rgb: value)
-    }
 
     /// The colour the glass is drawn in now: the page's on screen (``PageColour``), else the
     /// user's choice (``chosen(_:)``). Every face reads this.
     @MainActor
     static func shown(_ stored: String) -> Color? {
         PageColour.shared.current ?? chosen(stored)
-    }
-
-    /// The stored colour as 0xRRGGBB, or nil for none.
-    public static func value(_ stored: String) -> UInt32? {
-        guard stored.count == 7, stored.hasPrefix("#"),
-              let value = UInt32(stored.dropFirst(), radix: 16) else { return nil }
-        return value
     }
 
     /// How strongly each kind of face takes the colour. Light washes, because white text and
@@ -94,16 +63,16 @@ extension View {
     }
 }
 
-/// The round colour bubbles, as the profile page draws them for the badge: the background's own
-/// colour first, then no colour, then each colour offered. The one chosen has a thick white ring.
+/// The round colour bubbles, as the profile page draws them for the badge: no colour first, then
+/// the background's own colour, then each colour offered. The one chosen has a thick white ring.
 struct AppColourBubbles: View {
     @AppStorage(AppColour.key) private var stored = ""
 
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 12) {
-                themeBubble
                 bubble(nil)
+                themeBubble
                 ForEach(AppColour.offered, id: \.self) { value in
                     bubble(value)
                 }
@@ -116,13 +85,13 @@ struct AppColourBubbles: View {
 
     /// The background's own colour, with the palette mark on it: the glass follows the background.
     private var themeBubble: some View {
-        let picked = stored.isEmpty
+        let picked = GlassColour(stored: stored) == .background
 
         return Button {
             Haptics.pick()
-            stored = ""
+            stored = GlassColour.background.stored
         } label: {
-            Circle().fill(Color(rgb: AppColour.theme(BackdropTheme.shared.picture)))
+            Circle().fill(Color(rgb: GlassColour.theme(BackdropTheme.shared.picture)))
                 .overlay {
                     Text(Glyph.palette)
                         .font(RPMFont.icon(13))
@@ -141,11 +110,12 @@ struct AppColourBubbles: View {
 
     /// One bubble. Nil is no colour: the app's own frost, with a line across it.
     private func bubble(_ value: UInt32?) -> some View {
-        let picked = value == nil ? stored == AppColour.none : AppColour.value(stored) == value
+        let choice = value.map(GlassColour.colour) ?? .none
+        let picked = GlassColour(stored: stored) == choice
 
         return Button {
             Haptics.pick()
-            stored = value.map(RPMProfileBadges.wire) ?? AppColour.none
+            stored = choice.stored
         } label: {
             ZStack {
                 if let value {
@@ -239,7 +209,7 @@ extension View {
     }
 }
 
-/// The background the app is drawn on, for its colour (``AppColour/theme(_:)``). Every face reads
+/// The background the app is drawn on, for its colour (``GlassColour/theme(_:)``). Every face reads
 /// the colour through ``AppColour/shown(_:)``, so this is observed: a new background recolours the
 /// glass at once. The ground (``VinylGround``) keeps it up to date.
 @MainActor

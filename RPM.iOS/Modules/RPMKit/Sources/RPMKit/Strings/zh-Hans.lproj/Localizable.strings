@@ -7919,10 +7919,10 @@
 /* iPhone settings, Appearance, and the welcome's look step: heading over a row of colour bubbles that tint the app's bubbles, cards, buttons, switches and sliders. */
 "Settings_Colour" = "按钮和卡片的颜色";
 
-/* iPhone settings: what VoiceOver reads for the first colour bubble under Settings_Colour, which keeps the app's own white glass. */
+/* Phone settings: what VoiceOver/TalkBack reads for the first colour bubble under Settings_Colour, which keeps the app's own white glass. This is the default. */
 "Settings_ColourNone" = "无颜色";
 
-/* Phone settings: what VoiceOver/TalkBack reads for the first colour bubble under Settings_Colour, which gives the buttons and cards the colour of the chosen background, like a theme. */
+/* Phone settings: what VoiceOver/TalkBack reads for the second colour bubble under Settings_Colour, which gives the buttons and cards the colour of the chosen background, like a theme. */
 "Settings_ColourTheme" = "与背景相配";
 
 /* Phone settings, Appearance: the title of the card that chooses how the player looks when the phone is turned on its side (landscape). */
