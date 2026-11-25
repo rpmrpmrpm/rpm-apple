@@ -7,6 +7,9 @@ import Foundation
 /// or one of the profile badge's colours (``RPMProfileBadges/colours``), stored as `#RRGGBB`, the
 /// badge's own form. Anything else that is stored is no colour too, so a value this version does not
 /// know still shows the frost.
+///
+/// **A colour is a supporter feature.** For an account that is not a supporter's, every choice
+/// shows as no colour (``value(on:supporter:)``).
 public enum GlassColour: Equatable, Sendable {
     /// The app's white frost, with no colour.
     case none
@@ -44,8 +47,15 @@ public enum GlassColour: Equatable, Sendable {
     }
 
     /// The colour as 0xRRGGBB when the app is drawn on `picture`, or nil for no colour.
-    public func value(on picture: Backdrop.Choice) -> UInt32? {
-        switch self {
+    ///
+    /// - Parameter supporter: whether the account has the supporter features
+    ///   (``SupporterPlan/isSupporter``). A colour is a supporter feature, so for anyone else every
+    ///   choice is no colour. The choice stays stored, and it comes back if the account becomes a
+    ///   supporter. No default, so each caller says which plan it means.
+    public func value(on picture: Backdrop.Choice, supporter: Bool) -> UInt32? {
+        guard supporter else { return nil }
+
+        return switch self {
         case .none: nil
         case .background: Self.theme(picture)
         case .colour(let value): value

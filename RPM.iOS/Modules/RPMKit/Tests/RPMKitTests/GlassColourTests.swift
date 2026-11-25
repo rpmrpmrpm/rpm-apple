@@ -5,8 +5,8 @@ import Testing
 struct GlassColourTests {
     @Test func nothingStoredIsNoColour() {
         #expect(GlassColour(stored: "") == .none)
-        #expect(GlassColour(stored: "").value(on: .standard) == nil)
-        #expect(GlassColour(stored: "").value(on: .pegasus) == nil)
+        #expect(GlassColour(stored: "").value(on: .standard, supporter: true) == nil)
+        #expect(GlassColour(stored: "").value(on: .pegasus, supporter: true) == nil)
     }
 
     /// No colour is stored as nothing, so picking it again gives the same app as a new install.
@@ -17,9 +17,9 @@ struct GlassColourTests {
     @Test func theBackgroundsColourFollowsTheBackground() {
         let background = GlassColour(stored: GlassColour.matchesBackground)
         #expect(background == .background)
-        #expect(background.value(on: .standard) == 0x2563EB)
-        #expect(background.value(on: .pegasus) == 0xD12A4E)
-        #expect(background.value(on: .graphite) == 0x8E939B)
+        #expect(background.value(on: .standard, supporter: true) == 0x2563EB)
+        #expect(background.value(on: .pegasus, supporter: true) == 0xD12A4E)
+        #expect(background.value(on: .graphite, supporter: true) == 0x8E939B)
         #expect(background.stored == GlassColour.matchesBackground)
     }
 
@@ -29,8 +29,8 @@ struct GlassColourTests {
         let red = GlassColour.colour(0xD12A4E)
         #expect(red.stored == RPMProfileBadges.wire(0xD12A4E))
         #expect(GlassColour(stored: red.stored) == red)
-        #expect(red.value(on: .standard) == 0xD12A4E)
-        #expect(red.value(on: .cocoa) == 0xD12A4E)
+        #expect(red.value(on: .standard, supporter: true) == 0xD12A4E)
+        #expect(red.value(on: .cocoa, supporter: true) == 0xD12A4E)
     }
 
     @Test func anythingElseIsNoColour() {
@@ -38,5 +38,16 @@ struct GlassColourTests {
         #expect(GlassColour(stored: "teal") == .none)
         #expect(GlassColour(stored: "#12345") == .none)
         #expect(GlassColour(stored: "#GGGGGG") == .none)
+    }
+
+    /// A colour is a supporter feature: for anyone else every choice is no colour, on every
+    /// background. The choice itself is kept, so it comes back for a supporter.
+    @Test func anAccountThatIsNotASupportersShowsNoColour() {
+        let red = GlassColour.colour(0xD12A4E)
+        #expect(red.value(on: .standard, supporter: false) == nil)
+        #expect(red.value(on: .cocoa, supporter: false) == nil)
+        #expect(GlassColour.background.value(on: .pegasus, supporter: false) == nil)
+        #expect(GlassColour(stored: red.stored) == red)
+        #expect(red.value(on: .standard, supporter: true) == 0xD12A4E)
     }
 }

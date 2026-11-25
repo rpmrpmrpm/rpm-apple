@@ -151,7 +151,9 @@ public struct Welcome: View {
 
                             VStack(alignment: .leading, spacing: 10) {
                                 Text(Loc.get("Settings_Colour")).rpmKicker()
+                                // To the edge of the screen, as the backdrops above.
                                 AppColourBubbles()
+                                    .scrollClipDisabled()
                             }
 
                             VStack(alignment: .leading, spacing: 10) {

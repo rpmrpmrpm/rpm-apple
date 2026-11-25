@@ -3904,6 +3904,9 @@
 /* Supporters-only window: shown when word by word lyric timing is switched on by an account that is not a supporter. On the iPhone app, the line under the greyed-out karaoke switch on the Profile page. */
 "Supporters_Karaoke" = "Le mode karaoké est réservé aux soutiens de rpm. Merci d'envisager de soutenir rpm.";
 
+/* iPhone and Android phone settings, Appearance, and the welcome's look step: the line under the greyed-out colour bubbles (Settings_Colour) for an account that is not a supporter. */
+"Supporters_Colour" = "Les couleurs des boutons et des cartes sont réservées aux soutiens de rpm. Merci d'envisager de soutenir rpm.";
+
 /* Button that opens the page where supporting rpm is bought, or on the iPhone and Android phone the store's subscription sheet. Also the title of that sheet. */
 "Cloud_BecomeSupporter" = "Devenir soutien";
 

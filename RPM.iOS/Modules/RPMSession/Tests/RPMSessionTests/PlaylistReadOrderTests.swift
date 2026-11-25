@@ -240,7 +240,43 @@ struct PlaylistReadOrderTests {
         #expect(StarterTracks.isStarterShelf(session.albums))
     }
 
+    // ── the plan ──
+
+    /// A quota read that ends after a sign-out has the previous account's answer. It is dropped, so
+    /// the next account does not get the previous account's plan, ground or glass colour.
+    @Test func aQuotaReadThatEndsAfterASignOutIsDropped() async throws {
+        let cloud = StubCloud()
+        cloud.holdsQuota = true
+        let session = try await makeSession(source: HeldSource(tracks: []), cloud: cloud)
+
+        let reading = Task { await session.readQuota(.nextLaunch) }
+        try await quotaAsked(cloud)
+
+        await session.forget()
+        cloud.releaseQuota()
+        await reading.value
+
+        #expect(session.quota == nil)
+    }
+
+    @Test func aQuotaReadWithNoSignOutKeepsItsAnswer() async throws {
+        let session = try await makeSession(source: HeldSource(tracks: []), cloud: StubCloud())
+
+        await session.readQuota(.nextLaunch)
+
+        #expect(session.quota?.fileCount == 3)
+    }
+
     // ── the session and its doubles ──
+
+    /// Waits until the quota request has reached the stub, which holds it.
+    private func quotaAsked(_ cloud: StubCloud) async throws {
+        let deadline = ContinuousClock.now + .seconds(5)
+        while !cloud.quotaAsked, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        try #require(cloud.quotaAsked)
+    }
 
     /// Waits for the playlist read that ``LibrarySession/show(_:whenUp:)`` starts on its own task.
     ///
@@ -343,7 +379,8 @@ private actor HeldSource: LibrarySource {
 
 // ── the network ──
 
-/// The playlist endpoints, answered from what the test set. Everything else is answered 404.
+/// The playlist endpoints and the quota, answered from what the test set. Everything else is
+/// answered 404.
 private final class StubCloud: @unchecked Sendable {
     private let lock = NSLock()
     private var _playlists = "[]"
@@ -379,6 +416,25 @@ private final class StubCloud: @unchecked Sendable {
     /// The running order of the last write the store accepted.
     var lastWritten: [String] { lock.withLock { _lastWritten } }
 
+    private var _holdsQuota = false
+    private var _quotaAsked = false
+    private let quotaGate = DispatchSemaphore(value: 0)
+
+    /// Whether the quota's answer waits for ``releaseQuota()``.
+    var holdsQuota: Bool {
+        get { lock.withLock { _holdsQuota } }
+        set { lock.withLock { _holdsQuota = newValue } }
+    }
+
+    /// Whether a quota request has arrived.
+    var quotaAsked: Bool { lock.withLock { _quotaAsked } }
+
+    func releaseQuota() { quotaGate.signal() }
+
+    /// A free account's quota.
+    private static let quota = #"{"usedBytes":1000,"quotaBytes":26843545600,"fileCount":3,"#
+        + #""unlimited":false,"supporter":false,"tester":false}"#
+
     private static let cut = #"{"recipe":4,"computedAt":1,"lists":[{"kind":"RightNow","decade":0,"#
         + #""folder":[],"trackIds":["t0","t1","t2"],"shows":50}]}"#
 
@@ -394,6 +450,14 @@ private final class StubCloud: @unchecked Sendable {
         }
         if request.httpMethod == "PUT", path.contains("/cloud/playlist/") {
             return write(request)
+        }
+        if request.httpMethod == "GET", path.hasSuffix("/cloud/quota") {
+            let holds = lock.withLock { () -> Bool in
+                _quotaAsked = true
+                return _holdsQuota
+            }
+            if holds { quotaGate.wait() }
+            return reply(request, 200, Self.quota)
         }
         return reply(request, 404, "{}")
     }

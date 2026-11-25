@@ -683,6 +683,7 @@ public struct SettingsPage: View {
     /// A tap on it without support opens the page that explains it.
     private var backdrop: some View {
         card(Glyph.picture, Loc.get("Settings_Background")) {
+            // Clipped at the card's inner margin, so the tiles stay inside the card.
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 10) {
                     ForEach(Backdrop.Choice.allCases, id: \.self) { choice in
@@ -691,7 +692,6 @@ public struct SettingsPage: View {
                 }
                 .padding(.vertical, 2)
             }
-            .scrollClipDisabled()
 
             // Right under the backdrops, so the picture and how it is quietened are read together.
             BackdropVeilSliders()

@@ -125,8 +125,8 @@ public final class LibrarySession {
     /// Which records are marked. Loaded with one call for the whole library, not one call per tile.
     public private(set) var marks: Set<String> = []
 
-    /// Changed on sign-out. A marks read compares it after its `await`, so the marks of one account
-    /// are never stored in the session of the next account.
+    /// Changed on sign-out. A marks read and a quota read compare it after their `await`, so the
+    /// marks and the plan of one account are never stored in the session of the next account.
     private var marksEra = 0
 
     /// The home screen. Worked out once per launch, and nil until the shelf and the play counts
@@ -296,7 +296,13 @@ public final class LibrarySession {
     /// A failed read changes nothing. Without a network, a device must not show the account as
     /// having stopped supporting.
     public func readQuota(_ rule: GroundRule) async {
-        quota = try? await cloud.quota()
+        let era = marksEra
+        let read = try? await cloud.quota()
+
+        // After a sign-out during the read, the answer is the previous account's. It must not set
+        // the ground or the glass colour of the account that is signed in now.
+        guard era == marksEra else { return }
+        quota = read
 
         guard let quota else { return }
 
@@ -304,6 +310,8 @@ public final class LibrarySession {
         case .adoptNow: SupporterGround.adopt(isSupporter: quota.supporter, in: .standard)
         case .nextLaunch: SupporterGround.remember(isSupporter: quota.supporter, in: .standard)
         }
+        // The glass colour follows every answer, at once. See `SupporterPlan`.
+        SupporterPlan.shared.heard(quota.supporter)
         onQuotaRead()
     }
 
@@ -345,6 +353,7 @@ public final class LibrarySession {
         // Signing out is a known answer, unlike a quota read that failed. The app returns to its
         // own ground now.
         SupporterGround.adopt(isSupporter: false, in: .standard)
+        SupporterPlan.shared.heard(false)
     }
 
     /// Puts a shelf's records on the wall: the own shelf with ``additions`` laid over it, or the

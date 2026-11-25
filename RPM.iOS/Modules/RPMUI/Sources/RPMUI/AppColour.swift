@@ -18,15 +18,22 @@ import RPMDesign
 /// Every face that takes the colour reads ``key`` itself (`@AppStorage`), so a new choice shows
 /// everywhere at once.
 ///
+/// **The user's colour is a supporter feature.** For anyone else the glass has no colour whatever is
+/// stored, and the bubbles are greyed out with the reason under them. The plan is
+/// ``SupporterPlan``, which changes at once when the account becomes a supporter.
+///
 /// **An album or a playlist on screen colours the glass with its cover** while it is shown
 /// (``PageColour``). That colour comes before the user's: see ``shown(_:)``.
 public enum AppColour {
     public static let key = GlassColour.key
 
-    /// The colour the user's choice gives on the background shown now, or nil for no colour.
+    /// The colour the user's choice gives on the background shown now, or nil for no colour. Nil
+    /// for an account that is not a supporter's.
     @MainActor
     static func chosen(_ stored: String) -> Color? {
-        GlassColour(stored: stored).value(on: BackdropTheme.shared.picture).map { Color(rgb: $0) }
+        GlassColour(stored: stored)
+            .value(on: BackdropTheme.shared.picture, supporter: SupporterPlan.shared.isSupporter)
+            .map { Color(rgb: $0) }
     }
 
     /// The colours offered, as 0xRRGGBB.
@@ -65,27 +72,50 @@ extension View {
 
 /// The round colour bubbles, as the profile page draws them for the badge: no colour first, then
 /// the background's own colour, then each colour offered. The one chosen has a thick white ring.
+///
+/// For an account that is not a supporter's, the bubbles are greyed out and cannot be tapped, and
+/// the reason is under them. No colour shows as chosen then, whatever is stored, because that is
+/// what the glass shows. The row still scrolls, so all the colours can be seen.
+///
+/// The row is clipped at its own edges, so in a settings card it stays inside the card's margin.
+/// The welcome has no card and lets it run to the edge of the screen (`scrollClipDisabled`).
 struct AppColourBubbles: View {
     @AppStorage(AppColour.key) private var stored = ""
 
+    /// Whether this account may choose a colour. The same value that the glass reads
+    /// (``AppColour/chosen(_:)``), so a bubble is never open for a colour the glass would not show.
+    private var allowed: Bool { SupporterPlan.shared.isSupporter }
+
+    /// The choice that is in use: the stored one for a supporter, else no colour.
+    private var inUse: GlassColour { allowed ? GlassColour(stored: stored) : .none }
+
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 12) {
-                bubble(nil)
-                themeBubble
-                ForEach(AppColour.offered, id: \.self) { value in
-                    bubble(value)
+        VStack(alignment: .leading, spacing: 10) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 12) {
+                    bubble(nil)
+                    themeBubble
+                    ForEach(AppColour.offered, id: \.self) { value in
+                        bubble(value)
+                    }
                 }
+                .padding(.vertical, 2)
+                .opacity(allowed ? 1 : 0.35)
             }
-            .padding(.vertical, 2)
+            .scrollIndicators(.hidden)
+
+            if !allowed {
+                Text(Loc.get("Supporters_Colour"))
+                    .font(RPMFont.display(11))
+                    .foregroundStyle(RPMInk.white(0x88 / 255))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .scrollIndicators(.hidden)
-        .scrollClipDisabled()
     }
 
     /// The background's own colour, with the palette mark on it: the glass follows the background.
     private var themeBubble: some View {
-        let picked = GlassColour(stored: stored) == .background
+        let picked = inUse == .background
 
         return Button {
             Haptics.pick()
@@ -104,6 +134,7 @@ struct AppColourBubbles: View {
                 }
         }
         .buttonStyle(.plain)
+        .disabled(!allowed)
         .accessibilityLabel(Loc.get("Settings_ColourTheme"))
         .accessibilityAddTraits(picked ? .isSelected : [])
     }
@@ -111,7 +142,7 @@ struct AppColourBubbles: View {
     /// One bubble. Nil is no colour: the app's own frost, with a line across it.
     private func bubble(_ value: UInt32?) -> some View {
         let choice = value.map(GlassColour.colour) ?? .none
-        let picked = GlassColour(stored: stored) == choice
+        let picked = inUse == choice
 
         return Button {
             Haptics.pick()
@@ -135,6 +166,7 @@ struct AppColourBubbles: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(!allowed)
         .accessibilityLabel(value == nil ? Loc.get("Settings_ColourNone")
                                          : RPMProfileBadges.wire(value ?? 0))
         .accessibilityAddTraits(picked ? .isSelected : [])
