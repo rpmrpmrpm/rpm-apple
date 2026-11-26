@@ -406,6 +406,7 @@ public struct RadioPage: View {
             // The mark follows the edge, as on an empty playlist square.
             StationSquare(station: station, edge: art, inset: art * Self.tileInset,
                           mark: min(max(art * 0.2, 16), 52))
+                .adsCorner(station.carriesAds)
                 .overlay { well.strokeBorder(RPMInk.cardBorder, lineWidth: 1) }
                 .overlay {
                     if station.uuid == tuned {
@@ -455,8 +456,7 @@ public struct RadioPage: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
-                    if RadioAds.carriesAds(tags: station.tags, name: station.name,
-                                           homepage: station.homepage) {
+                    if station.carriesAds {
                         AdsBadge().layoutPriority(1)
                     }
                 }

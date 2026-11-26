@@ -411,9 +411,16 @@ private struct StationPanels: View {
                 StationSquare(station: pick.station, edge: HomePicksRow.art, inset: 4, mark: 15)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(pick.station.display)
-                        .font(RPMFont.text(14, weight: .medium))
-                        .lineLimit(1)
+                    // The AD mark right after the name, as on the radio page's rows.
+                    HStack(spacing: 6) {
+                        Text(pick.station.display)
+                            .font(RPMFont.text(14, weight: .medium))
+                            .lineLimit(1)
+
+                        if pick.station.carriesAds {
+                            AdsBadge().layoutPriority(1)
+                        }
+                    }
 
                     Text(Self.kindLine(pick))
                         .font(RPMFont.display(12))
@@ -479,6 +486,7 @@ private struct StationShelf: View {
     private func tile(_ station: RadioStation) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             StationSquare(station: station, edge: HomeRowView.art, inset: 16, mark: 30)
+                .adsCorner(station.carriesAds)
                 .overlay {
                     RoundedRectangle(cornerRadius: CoverCorner.radius(HomeRowView.art),
                                      style: .continuous)

@@ -25,3 +25,21 @@ struct AdsBadge: View {
         .accessibilityLabel(Loc.get("Radio_CarriesAds"))
     }
 }
+
+extension View {
+    /// The AD mark in the bottom-right corner of a station's square, for a tile whose name is
+    /// centred or narrow and has no room for the mark beside it. The mark sits on a dark plate,
+    /// because the square can be any colour and the letters are cut out of the mark.
+    @ViewBuilder
+    func adsCorner(_ shown: Bool, inset: CGFloat = 6) -> some View {
+        overlay(alignment: .bottomTrailing) {
+            if shown {
+                AdsBadge()
+                    .padding(3)
+                    .background(Color.black.opacity(0.55),
+                                in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .padding(inset)
+            }
+        }
+    }
+}

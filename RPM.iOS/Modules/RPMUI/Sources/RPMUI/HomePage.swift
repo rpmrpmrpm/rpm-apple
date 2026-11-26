@@ -922,9 +922,16 @@ struct HomePicksRow: View {
                         stationSquare(station)
 
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(station.display)
-                                .font(RPMFont.text(14, weight: .medium))
-                                .lineLimit(1)
+                            // The AD mark right after the name, as on the radio page's rows.
+                            HStack(spacing: 6) {
+                                Text(station.display)
+                                    .font(RPMFont.text(14, weight: .medium))
+                                    .lineLimit(1)
+
+                                if station.carriesAds {
+                                    AdsBadge().layoutPriority(1)
+                                }
+                            }
 
                             // The kind of entry, with the same text as the desktop.
                             Text(Loc.get("Home_QuickStation"))
