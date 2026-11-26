@@ -987,9 +987,12 @@ struct RootView: View {
         .overlay {
             if let track = model.filing {
                 PlaylistPickSheet(
-                    track: track, playlists: model.playlists,
+                    track: track, playlists: model.playlists, shelf: model.viewing,
                     onAdd: { set, song, already in
                         await model.addToPlaylist(set, tracks: [song], whenAlreadyThere: already)
+                    },
+                    onMake: { name, folder, tracks in
+                        await model.makePlaylist(name: name, in: folder, tracks: tracks)
                     },
                     onClose: { model.filing = nil })
                     .transition(.opacity)

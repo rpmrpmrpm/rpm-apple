@@ -305,7 +305,8 @@ public struct PlaylistPage: View {
                     onClose: { picking = false })
                     .transition(.opacity)
             } else if naming, case .own(let onRename, _) = menu {
-                PlaylistNameSheet(name: title, onSave: onRename, onClose: { naming = false })
+                PlaylistNameSheet(errand: .rename(title), onSave: onRename,
+                                  onSaved: { naming = false }, onCancel: { naming = false })
                     .transition(.opacity)
             }
         }

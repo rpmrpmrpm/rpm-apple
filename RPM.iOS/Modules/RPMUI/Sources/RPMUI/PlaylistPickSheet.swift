@@ -10,6 +10,10 @@ import RPMLibrary
 /// **Tapping a playlist SELECTS it, and the Add button adds the song.** A tap does not add the
 /// song at once. A folder and a playlist look alike in a list of places, and a tap that cannot
 /// be undone is wrong for a user who is walking through a tree.
+///
+/// **New playlist, the first row in every folder, makes a playlist with the song in it**, in the
+/// folder that is open. ``PlaylistNameSheet`` asks for the name and takes the panel's place
+/// while it is up. Cancel on it comes back to the panel, as it was.
 public struct PlaylistPickSheet: View {
     private let track: CloudTrack
 
@@ -30,19 +34,33 @@ public struct PlaylistPickSheet: View {
     /// looking at a borrowed shelf, and its lists are visible on the screen behind this sheet.
     private let borrowed: Bool
 
+    /// Whether New playlist is offered: only on this account's own shelf. On another account's
+    /// shelf a new playlist would belong to this account but name a record that it does not
+    /// have, so it would appear empty in every app that opened it. It is worked out from the
+    /// shelf and not from the lists, because a borrowed shelf can have no lists at all.
+    private let canMake: Bool
+
     /// - Parameter whenAlreadyThere: what to do with a song that the list already holds.
     ///   The user is asked and the sheet does not decide: see ``add()``.
     private let onAdd: (PlaylistSet, CloudTrack, PlaylistWriter.AlreadyThere) async -> String?
+
+    /// Makes a playlist with its name, its folder and its songs. Returns an error message when
+    /// it failed, and nil when it is made.
+    private let onMake: (String, [String], [CloudTrack]) async -> String?
     private let onClose: () -> Void
 
-    public init(track: CloudTrack, playlists: [PlaylistSet],
+    /// - Parameter shelf: the shelf that is being viewed, which `playlists` come from.
+    public init(track: CloudTrack, playlists: [PlaylistSet], shelf: CloudShelf,
                 onAdd: @escaping (PlaylistSet, CloudTrack,
                                   PlaylistWriter.AlreadyThere) async -> String?,
+                onMake: @escaping (String, [String], [CloudTrack]) async -> String?,
                 onClose: @escaping () -> Void) {
         self.track = track
         self.playlists = playlists.filter { $0.shelf.isOwn }
         self.borrowed = !playlists.isEmpty && !playlists.contains { $0.shelf.isOwn }
+        self.canMake = shelf.isOwn
         self.onAdd = onAdd
+        self.onMake = onMake
         self.onClose = onClose
     }
 
@@ -59,21 +77,40 @@ public struct PlaylistPickSheet: View {
     /// the question.
     @State private var asking: PlaylistSet?
 
+    /// The folder that a new playlist goes in, while the name card is on the screen.
+    ///
+    /// **It stores the folder and not a flag**: it is the folder that was open when New playlist
+    /// was tapped, and the name card says it.
+    @State private var naming: [String]?
+
     private var browse: PlaylistBrowse {
         PlaylistBrowse.places(at: at, playlists: playlists)
     }
 
     public var body: some View {
         ZStack {
-            // A tap anywhere outside the panel closes it without adding anything.
-            Color.black.opacity(0x99 / 255)
-                .ignoresSafeArea()
-                .onTapGesture { onClose() }
+            if let folder = naming {
+                PlaylistNameSheet(
+                    errand: .make(in: folder),
+                    onSave: { name in await onMake(name, folder, [track]) },
+                    // Made, with the song in it: the picker's work is done. It closes from here
+                    // and not from onCancel, so the panel does not come back while it fades out.
+                    onSaved: onClose,
+                    onCancel: { naming = nil })
+                    .transition(.opacity)
+            } else {
+                // A tap anywhere outside the panel closes it without adding anything.
+                Color.black.opacity(0x99 / 255)
+                    .ignoresSafeArea()
+                    .onTapGesture { onClose() }
 
-            panel
-                .frame(width: 320)
-                .rpmGlassCard(radius: 18)
+                panel
+                    .frame(width: 320)
+                    .rpmGlassCard(radius: 18)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeOut(duration: 0.18), value: naming)
         // **A playlist can hold the same song twice, but nobody does it by accident.**
         // When the song is already in the list, the sheet asks the user. Both answers have an
         // effect: Add again puts a second copy in the list.
@@ -157,6 +194,12 @@ public struct PlaylistPickSheet: View {
     private var places: some View {
         let rows = browse.rows
 
+        if canMake {
+            Button { make() } label: { newPlaylist }
+                .buttonStyle(RowPress())
+                .padding(.top, 6)
+        }
+
         if rows.isEmpty {
             // Three different empty cases: a shelf whose lists all belong to somebody else,
             // a folder that the user opened that holds only folders further down, and an
@@ -169,16 +212,47 @@ public struct PlaylistPickSheet: View {
                 .padding(18)
                 .frame(maxWidth: .infinity)
         } else {
-            ShortScroll(rows: rows.count, each: 48, upTo: 300) {
+            ShortScroll(rows: rows.count, each: 48, upTo: 300, padding: canMake ? 6 : 12) {
                 LazyVStack(spacing: 0) {
                     ForEach(rows) { row in
                         Button { tap(row) } label: { line(row) }
                             .buttonStyle(RowPress())
                     }
                 }
-                .padding(.vertical, 6)
+                // The New playlist row above already keeps the space at the top.
+                .padding(.top, canMake ? 0 : 6)
+                .padding(.bottom, 6)
             }
         }
+    }
+
+    /// The row that makes a new playlist, drawn like a place, with a plus where a place has its
+    /// folder or record. It stays above the places and does not scroll with them, so it can be
+    /// reached in a long folder.
+    private var newPlaylist: some View {
+        HStack(spacing: 14) {
+            Text(Glyph.plus)
+                .font(RPMFont.icon(15))
+                .foregroundStyle(RPMInk.white(0xB3 / 255))
+                .frame(width: 20)
+
+            Text(Loc.get("Playlists_NewPlaylist"))
+                .font(RPMFont.display(15))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 9)
+        .frame(minHeight: 48)
+        .contentShape(Rectangle())
+    }
+
+    private func make() {
+        guard !busy else { return }
+        Haptics.pick()
+        said = nil
+        naming = browse.at
     }
 
     private func tap(_ row: PlaylistRow) {

@@ -1,20 +1,45 @@
 import SwiftUI
 import RPMKit
 
-/// The card over a playlist page where the playlist's name is changed: Edit playlist in the
-/// page's menu. It is drawn over the page like ``WriteReviewSheet``, with the app's own look.
+/// The card where a playlist's name is typed. It is drawn like ``WriteReviewSheet``, with the
+/// app's own look.
+///
+/// It serves two screens: Edit playlist in a playlist page's menu (``Errand/rename(_:)``), and
+/// New playlist in ``PlaylistPickSheet`` (``Errand/make(in:)``), which makes the playlist with
+/// the song being filed in it.
 public struct PlaylistNameSheet: View {
+    /// What the card is for. The title, the key that saves and the line under the box show which.
+    public enum Errand: Equatable, Sendable {
+        /// Another name for a playlist that exists. The box starts with this name, the
+        /// playlist's name now.
+        case rename(String)
+
+        /// A new playlist, created in this folder. An empty path is the top of the tree. The box
+        /// starts empty.
+        case make(in: [String])
+    }
+
+    private let errand: Errand
     private let onSave: (String) async -> String?
-    private let onClose: () -> Void
+    private let onSaved: () -> Void
+    private let onCancel: () -> Void
 
     /// - Parameters:
-    ///   - name: the name the box starts with: the playlist's name now.
-    ///   - onSave: writes the new name. Answers why it failed, or nil when it is done.
-    public init(name: String, onSave: @escaping (String) async -> String?,
-                onClose: @escaping () -> Void) {
+    ///   - onSave: writes the name. Answers why it failed, or nil when it is done.
+    ///   - onSaved: called after `onSave` answered nil. The picker closes itself here, and not
+    ///     in `onCancel`, which takes the user back to the list of playlists.
+    ///   - onCancel: called when the card is put away without saving: Cancel, or a tap outside
+    ///     the card.
+    public init(errand: Errand, onSave: @escaping (String) async -> String?,
+                onSaved: @escaping () -> Void, onCancel: @escaping () -> Void) {
+        self.errand = errand
         self.onSave = onSave
-        self.onClose = onClose
-        _name = State(initialValue: name)
+        self.onSaved = onSaved
+        self.onCancel = onCancel
+        switch errand {
+        case .rename(let name): _name = State(initialValue: name)
+        case .make: _name = State(initialValue: "")
+        }
     }
 
     @State private var name: String
@@ -28,10 +53,10 @@ public struct PlaylistNameSheet: View {
         ZStack {
             Color.black.opacity(0xB3 / 255)
                 .ignoresSafeArea()
-                .onTapGesture { if !busy { onClose() } }
+                .onTapGesture { if !busy { onCancel() } }
 
             VStack(alignment: .leading, spacing: 14) {
-                Text(Loc.get("Rpm_PlaylistMenu_Edit"))
+                Text(title)
                     .font(RPMFont.displayBold(19))
                     .foregroundStyle(.white)
 
@@ -52,6 +77,12 @@ public struct PlaylistNameSheet: View {
                     }
                     .focused($typing)
 
+                // Where a new playlist goes. At the top of the tree there is nothing to say.
+                if case .make(let folder) = errand, !folder.isEmpty {
+                    Text(Loc.get("Rpm_NewPlaylist_In", folder.joined(separator: " / ")))
+                        .rpmKicker()
+                }
+
                 if let said {
                     Text(said)
                         .font(RPMFont.display(12))
@@ -59,7 +90,7 @@ public struct PlaylistNameSheet: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button(Loc.get("Common_Cancel"), action: onClose)
+                    Button(Loc.get("Common_Cancel"), action: onCancel)
                         .buttonStyle(RPMGlassButton(.ghost, radius: 10, height: 42, size: 14))
                         .disabled(busy)
 
@@ -67,7 +98,7 @@ public struct PlaylistNameSheet: View {
                         if busy {
                             ProgressView().tint(.white).scaleEffect(0.8)
                         } else {
-                            Text(Loc.get("ArtPlace_Save"))
+                            Text(key)
                         }
                     }
                     .buttonStyle(RPMGlassButton(.primary, radius: 10, height: 42, size: 14))
@@ -81,6 +112,20 @@ public struct PlaylistNameSheet: View {
         .onAppear { typing = true }
     }
 
+    private var title: String {
+        switch errand {
+        case .rename: Loc.get("Rpm_PlaylistMenu_Edit")
+        case .make: Loc.get("Playlists_NewPlaylist")
+        }
+    }
+
+    private var key: String {
+        switch errand {
+        case .rename: Loc.get("ArtPlace_Save")
+        case .make: Loc.get("Rpm_NewPlaylist_Create")
+        }
+    }
+
     private func save() {
         guard !busy, !blank else { return }
 
@@ -92,7 +137,7 @@ public struct PlaylistNameSheet: View {
             let trouble = await onSave(name)
             busy = false
 
-            guard let trouble else { onClose(); return }
+            guard let trouble else { onSaved(); return }
             said = trouble
         }
     }
