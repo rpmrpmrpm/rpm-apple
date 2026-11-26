@@ -344,7 +344,10 @@ struct RootView: View {
         case list(OpenList)
     }
 
-    var body: some View {
+    /// The app as the reader sees it: the screen for where the model stands, its overlays and what it gives the
+    /// views below it. ``body`` adds what the app does over its life. The two are apart so that neither chain of
+    /// modifiers is too long for the compiler to check in reasonable time.
+    private var dressed: some View {
         Group {
             switch model.standing {
             case .starting:
@@ -553,6 +556,10 @@ struct RootView: View {
         // Power Mode reaches every view at once. Set below the overlays for the same reason as
         // above: the player is one of them.
         .environment(\.motionPlan, MotionPlan(saving: PowerSaving.shared.isOn))
+    }
+
+    var body: some View {
+        dressed
         // Once for the life of the app. The screens are built again when the user chooses another
         // language (see `RPMApp`), and the model has already started by then.
         .task {
