@@ -2582,6 +2582,9 @@
 "Rpm_Profile_PlanTesterThanks" = "Danke, dass du rpm testest! Deine Berichte helfen uns, Probleme vor der öffentlichen Beta zu beheben.";
 "Rpm_Profile_Playback" = "Wiedergabe";
 
+/* iPhone and Android phone settings, Playback tab: heading of the card with the streaming quality pickers (Rpm_Profile_QualityWifi, Rpm_Profile_QualityCellular). The tab itself is Rpm_Profile_Playback. */
+"Rpm_Profile_PlaybackQuality" = "Wiedergabequalität";
+
 /* Settings, Profile page: what the quality choices do. */
 "Rpm_Profile_QualityDetail" = "Das Original ist genau so, wie es hochgeladen wurde. Eine niedrigere Bitrate verbraucht weniger Daten und weniger Speicher auf dem Telefon.";
 
@@ -2601,8 +2604,8 @@
 "Rpm_Profile_QualityWifi" = "Im WLAN";
 "Rpm_Profile_QualityCellular" = "Mobilfunk";
 
-/* iPhone settings, Playback card: label of the third quality picker, the bitrate albums are downloaded at. Sits under Rpm_Profile_QualityCellular. */
-"Rpm_Profile_QualityDownload" = "Für Downloads";
+/* iPhone and Android phone settings: label of the quality picker for the bitrate albums are downloaded at. */
+"Rpm_Profile_QualityDownload" = "Download-Qualität";
 
 /* iPhone settings, Playback card: under the download quality picker. */
 "Rpm_Profile_QualityDownloadDetail" = "Gilt für neue Downloads. Alben, die schon auf dem Telefon sind, behalten ihre Bitrate. Eine Bitrate, die noch nicht bereit ist, wird zuerst vorbereitet und dann geladen.";
@@ -3051,6 +3054,9 @@
 
 /* Settings, Sound: the equalizer's on/off switch. */
 "Settings_EqOn" = "Equalizer ein";
+
+/* Settings, equalizer: red warning under the sliders while the preamp and the bands together push the sound past full scale, so it clips. */
+"Settings_EqClipWarning" = "Diese Equalizer-Einstellung beizubehalten kann dein Gehör oder deine Lautsprecher schädigen.";
 
 /* Settings, Sound: label of the preset picker. */
 "Settings_EqPreset" = "Voreinstellung";
@@ -3930,6 +3936,12 @@
 
 /* Storage-full window: closes it without doing anything. Also the phone welcome's support step: goes on without becoming a supporter. */
 "Supporter_Later" = "Jetzt nicht";
+
+/* Phones: title of the small pop-up that asks a listener who is not a supporter to consider becoming one. Shown once every 50 launches. Its buttons are Cloud_BecomeSupporter and Supporter_Later. */
+"Supporter_NudgeTitle" = "Gefällt dir rpm?";
+
+/* Phones: the line in the pop-up under Supporter_NudgeTitle. */
+"Supporter_NudgeBody" = "Unterstützer halten rpm am Laufen und lassen es wachsen. Wenn rpm zu deinem Alltag gehört, werde doch auch einer!";
 
 /* Title of the window shown when a supporter-only feature is used by an account that is not one. */
 "Supporters_Title" = "Nur für Unterstützer";

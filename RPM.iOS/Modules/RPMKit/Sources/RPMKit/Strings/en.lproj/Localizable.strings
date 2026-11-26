@@ -2582,6 +2582,9 @@
 "Rpm_Profile_PlanTesterThanks" = "Thank you for testing rpm! Your reports help us fix problems before the public beta.";
 "Rpm_Profile_Playback" = "Playback";
 
+/* iPhone and Android phone settings, Playback tab: heading of the card with the streaming quality pickers (Rpm_Profile_QualityWifi, Rpm_Profile_QualityCellular). The tab itself is Rpm_Profile_Playback. */
+"Rpm_Profile_PlaybackQuality" = "Playback quality";
+
 /* Settings, Profile page: what the quality choices do. */
 "Rpm_Profile_QualityDetail" = "The original is exactly as it was uploaded. A lower bitrate uses less data and less space on your phone.";
 
@@ -2601,8 +2604,8 @@
 "Rpm_Profile_QualityWifi" = "On Wi-Fi";
 "Rpm_Profile_QualityCellular" = "On cellular";
 
-/* iPhone settings, Playback card: label of the third quality picker, the bitrate albums are downloaded at. Sits under Rpm_Profile_QualityCellular. */
-"Rpm_Profile_QualityDownload" = "For downloads";
+/* iPhone and Android phone settings: label of the quality picker for the bitrate albums are downloaded at. */
+"Rpm_Profile_QualityDownload" = "Download quality";
 
 /* iPhone settings, Playback card: under the download quality picker. */
 "Rpm_Profile_QualityDownloadDetail" = "Applies to new downloads. Albums already on your phone keep their bitrate. A bitrate that is not ready yet is prepared first, then downloaded.";
@@ -3051,6 +3054,9 @@
 
 /* Settings, Sound: the equalizer's on/off switch. */
 "Settings_EqOn" = "Equalizer on";
+
+/* Settings, equalizer: red warning under the sliders while the preamp and the bands together push the sound past full scale, so it clips. */
+"Settings_EqClipWarning" = "Keeping the equalizer on this adjustment might damage hearing or speakers.";
 
 /* Settings, Sound: label of the preset picker. */
 "Settings_EqPreset" = "Preset";
@@ -3930,6 +3936,12 @@
 
 /* Storage-full window: closes it without doing anything. Also the phone welcome's support step: goes on without becoming a supporter. */
 "Supporter_Later" = "Not now";
+
+/* Phones: title of the small pop-up that asks a listener who is not a supporter to consider becoming one. Shown once every 50 launches. Its buttons are Cloud_BecomeSupporter and Supporter_Later. */
+"Supporter_NudgeTitle" = "Enjoying rpm?";
+
+/* Phones: the line in the pop-up under Supporter_NudgeTitle. */
+"Supporter_NudgeBody" = "Supporters keep rpm running and growing. If it's part of your days, please consider becoming one!";
 
 /* Title of the window shown when a supporter-only feature is used by an account that is not one. */
 "Supporters_Title" = "Supporters only";

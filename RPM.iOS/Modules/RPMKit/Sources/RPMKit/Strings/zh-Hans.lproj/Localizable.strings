@@ -2582,6 +2582,9 @@
 "Rpm_Profile_PlanTesterThanks" = "感谢你测试 rpm！你的报告帮我们在公开测试前修好问题。";
 "Rpm_Profile_Playback" = "播放";
 
+/* iPhone and Android phone settings, Playback tab: heading of the card with the streaming quality pickers (Rpm_Profile_QualityWifi, Rpm_Profile_QualityCellular). The tab itself is Rpm_Profile_Playback. */
+"Rpm_Profile_PlaybackQuality" = "播放音质";
+
 /* Settings, Profile page: what the quality choices do. */
 "Rpm_Profile_QualityDetail" = "原始音质与上传时完全一致。较低的码率占用更少的流量和手机空间。";
 
@@ -2601,8 +2604,8 @@
 "Rpm_Profile_QualityWifi" = "Wi-Fi 下";
 "Rpm_Profile_QualityCellular" = "移动网络下";
 
-/* iPhone settings, Playback card: label of the third quality picker, the bitrate albums are downloaded at. Sits under Rpm_Profile_QualityCellular. */
-"Rpm_Profile_QualityDownload" = "下载时";
+/* iPhone and Android phone settings: label of the quality picker for the bitrate albums are downloaded at. */
+"Rpm_Profile_QualityDownload" = "下载音质";
 
 /* iPhone settings, Playback card: under the download quality picker. */
 "Rpm_Profile_QualityDownloadDetail" = "适用于新的下载。手机上已有的专辑保留原来的码率。尚未准备好的码率会先准备，然后再下载。";
@@ -3051,6 +3054,9 @@
 
 /* Settings, Sound: the equalizer's on/off switch. */
 "Settings_EqOn" = "启用均衡器";
+
+/* Settings, equalizer: red warning under the sliders while the preamp and the bands together push the sound past full scale, so it clips. */
+"Settings_EqClipWarning" = "保持当前均衡器设置可能会损伤听力或扬声器。";
 
 /* Settings, Sound: label of the preset picker. */
 "Settings_EqPreset" = "预设";
@@ -3930,6 +3936,12 @@
 
 /* Storage-full window: closes it without doing anything. Also the phone welcome's support step: goes on without becoming a supporter. */
 "Supporter_Later" = "暂不";
+
+/* Phones: title of the small pop-up that asks a listener who is not a supporter to consider becoming one. Shown once every 50 launches. Its buttons are Cloud_BecomeSupporter and Supporter_Later. */
+"Supporter_NudgeTitle" = "喜欢 rpm 吗？";
+
+/* Phones: the line in the pop-up under Supporter_NudgeTitle. */
+"Supporter_NudgeBody" = "支持者让 rpm 持续运行、不断成长。如果 rpm 已融入你的日常，不妨考虑成为支持者！";
 
 /* Title of the window shown when a supporter-only feature is used by an account that is not one. */
 "Supporters_Title" = "仅限支持者";
