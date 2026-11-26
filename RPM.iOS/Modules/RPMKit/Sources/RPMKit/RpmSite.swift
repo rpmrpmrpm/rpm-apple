@@ -21,4 +21,9 @@ public enum RpmSite {
 
     /// The terms of use, which include the licence for the apps.
     public static let terms = URL(string: "https://rpmrpmrpm.com/terms")!
+
+    /// The password reset page for an email account. The page mails a link where the person chooses
+    /// a new password. The TV's sign-in screen shows it as a QR code. The iPhone does not open it:
+    /// its sign-in screen resets the password in the app, with a mailed code.
+    public static let forgotPassword = URL(string: "https://rpmrpmrpm.com/forgot-password")!
 }
