@@ -954,10 +954,18 @@ struct HomeFeatureCard: View {
             sleeve
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(kicker)
-                    .font(RPMFont.display(12))
-                    .tracking(1.5)
-                    .foregroundStyle(RPMInk.white(0xCC / 255))
+                // A station's card has the AD mark beside the kicker, where it does not cut the
+                // title short. Home and the radio home both draw this card.
+                HStack(spacing: 8) {
+                    Text(kicker)
+                        .font(RPMFont.display(12))
+                        .tracking(1.5)
+                        .foregroundStyle(RPMInk.white(0xCC / 255))
+
+                    if station?.carriesAds == true {
+                        AdsBadge()
+                    }
+                }
 
                 Text(title)
                     .font(RPMFont.displayBold(22))
