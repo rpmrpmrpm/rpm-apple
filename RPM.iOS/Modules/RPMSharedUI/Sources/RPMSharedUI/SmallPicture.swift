@@ -86,12 +86,19 @@ public enum SmallPictures {
     ///   cached refusal would outlast whatever caused the error.
     public static func of(key: String, edge: CGFloat,
                    fetch: @Sendable () async throws -> Data?) async -> UIImage? {
+        try? await answered(key: key, edge: edge, fetch: fetch)
+    }
+
+    /// ``of(key:edge:fetch:)``, with the fetch's error passed on: nil means the answer was that there is
+    /// no picture, and a thrown error means there was no answer. A caller that has something better
+    /// to show than the next address (a station's last logo) can tell the two apart.
+    public static func answered(key: String, edge: CGFloat,
+                                fetch: @Sendable () async throws -> Data?) async throws -> UIImage? {
         let key = "\(Int(edge))|\(key)" as NSString
         if let known = held.object(forKey: key) { return known }
         if refused.object(forKey: key) != nil { return nil }
 
-        let data: Data?
-        do { data = try await fetch() } catch { return nil }
+        let data = try await fetch()
 
         // No picture, or one this decoder cannot read. The API serves a drawing as SVG, which
         // `UIImage` cannot open; the caller then tries the next address it has.

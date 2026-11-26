@@ -12,11 +12,11 @@ import RPMDesign
 /// some logo addresses no longer work. An empty area looks like a hole, not a placeholder, and
 /// the right placeholder differs between a 40-point row and a 260-point tile.
 ///
-/// **A logo that comes with no background gets a generated background**, as on the desktop: a soft
-/// figure in the logo's own hues, shifted away from its tone, that fills the whole square while
-/// ``inset`` keeps the logo away from the edges. See ``StationGround``. The caller clips the square
-/// to its own shape. This is done wherever a logo is shown, so the room behind it has something to
-/// react to.
+/// **Every logo stands on a generated background**: a soft figure in the logo's own hues, shifted
+/// away from its tone, that fills the whole square while ``inset`` keeps the logo away from the
+/// edges. See ``StationGround``. A logo that is a full square picture of its own stands on one too,
+/// so every station's square is the same kind of thing. The caller clips the square to its own
+/// shape. This is done wherever a logo is shown, so the room behind it has something to react to.
 public struct StationFace<Fallback: View>: View {
     let station: RadioStation
 
@@ -47,8 +47,7 @@ public struct StationFace<Fallback: View>: View {
 
     @State private var logo: UIImage?
 
-    /// The generated background behind a logo that has none of its own. It is nil for a logo that
-    /// already fills its own square.
+    /// The generated background behind the logo. It is nil only where the figure could not be made.
     @State private var ground: CGImage?
 
     /// The station that ``logo`` belongs to. A changed stamp keeps the old logo shown while the new
@@ -135,8 +134,8 @@ public struct StationFace<Fallback: View>: View {
     }
 }
 
-/// What a station's square shows besides its logo: the generated background behind a logo that has
-/// none, and the colours of the whole square for a room lit from them. It is computed once per logo
+/// What a station's square shows besides its logo: the generated background behind it, and the
+/// colours of the whole square for a room lit from them. It is computed once per logo
 /// per launch, off the main thread, because the background is a blurred 320-pixel figure.
 public enum StationDress {
     public struct Worn: Sendable {
@@ -180,18 +179,27 @@ public enum StationDress {
     /// directory's own addresses and does not replace them, as on the desktop, because the
     /// directory sometimes has a logo that the crawl could not choose. It goes through the API's
     /// transport, so it sends the app key and waits for a network like every other call.
+    ///
+    /// **Only an answer of "no logo" moves on to the directory's addresses.** When RPM's copy cannot
+    /// be asked for just now (no network for a moment, a slow or failing server), the station's last
+    /// logo is kept. Otherwise a face that shows RPM's logo would change to the directory's older one
+    /// on the next ask that fails, and the old logo would stay as the station's last.
     @MainActor
     public static func dress(_ station: RadioStation, edge: CGFloat, state: RadioState, reach: Reach) async -> Last? {
         let stamp = state.logoStamp
-        if let own = await SmallPictures.of(
-            key: "rpm|\(station.uuid)|\(stamp)", edge: edge * 3,
-            fetch: { @MainActor in
-                switch try await state.logo(for: station) {
-                case .found(let data): return data
-                case .none: return nil
-                }
-            }) {
-            return await kept(station, edge: edge, logo: own, key: "rpm|\(stamp)")
+        do {
+            if let own = try await SmallPictures.answered(
+                key: "rpm|\(station.uuid)|\(stamp)", edge: edge * 3,
+                fetch: { @MainActor in
+                    switch try await state.logo(for: station) {
+                    case .found(let data): return data
+                    case .none: return nil
+                    }
+                }) {
+                return await kept(station, edge: edge, logo: own, key: "rpm|\(stamp)")
+            }
+        } catch {
+            if let shown = last(station.uuid, edge: edge) { return shown }
         }
 
         // Try every logo that the directory lists, not just the first. A station usually has more
@@ -239,9 +247,10 @@ public enum StationDress {
 
         guard let picture = logo.cgImage else { return Worn(ground: nil, colours: .none) }
 
+        // Every logo gets the figure, a mark on nothing and a full square picture alike. Only a
+        // figure that cannot be made leaves the logo on the well's own dark.
         let worn = await Task.detached(priority: .utility) { () -> Worn in
-            if StationGround.standsAlone(picture),
-               let made = StationGround.ground(for: picture, identity: station) {
+            if let made = StationGround.ground(for: picture, identity: station) {
                 return Worn(ground: made, colours: Thumbnail.colours(of: made))
             }
             return Worn(ground: nil, colours: Thumbnail.colours(of: picture))
