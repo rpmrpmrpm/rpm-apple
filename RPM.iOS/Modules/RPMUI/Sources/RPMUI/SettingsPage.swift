@@ -472,7 +472,7 @@ public struct SettingsPage: View {
     /// it would often be wrong. A third setting is for downloads, which is a choice about space
     /// on the phone and not about the network.
     private var playback: some View {
-        card(Glyph.speaker, Loc.get("Rpm_Profile_Playback")) {
+        card(Glyph.speaker, Loc.get("Rpm_Profile_PlaybackQuality")) {
             rate(Loc.get("Rpm_Profile_QualityWifi"), onWifi)
             rate(Loc.get("Rpm_Profile_QualityCellular"), onCellular)
 
