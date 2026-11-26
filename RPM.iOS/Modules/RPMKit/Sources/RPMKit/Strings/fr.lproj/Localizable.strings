@@ -546,11 +546,50 @@
 "Login_ContinueWith" = "Continuer avec";
 "Login_Email" = "E-mail";
 
-/* Sign-in dialog: link under the password field. Opens rpmrpmrpm.com/forgot-password in the browser. */
+/* Sign-in screens: the link to reset a forgotten password. The desktop opens rpmrpmrpm.com/forgot-password in the browser, the phones open a reset card on the sign-in screen, and the TVs show a QR code to the same page. */
 "Login_Forgot" = "Mot de passe oublié ?";
 
 /* Sign-in dialog error: 'Forgot password?' was clicked and the system would not open a browser. */
 "Login_ForgotNoBrowser" = "Impossible d’ouvrir votre navigateur. Pour réinitialiser votre mot de passe, allez sur rpmrpmrpm.com/forgot-password.";
+
+/* Phone sign-in screen, the password reset card: its heading. Opened by "Forgot password?" (Login_Forgot). */
+"Reset_Title" = "Réinitialiser votre mot de passe";
+
+/* Phone password reset card, first step: under the heading, above the email field. */
+"Reset_Subtitle" = "Pas de souci ! Saisissez votre adresse e-mail et nous vous enverrons un code pour choisir un nouveau mot de passe.";
+
+/* Phone password reset card, first step: the button that emails the reset code. */
+"Reset_Send" = "Envoyer le code";
+
+/* Phone password reset card, second step: above the code and new password fields. {0} is the email address. */
+"Reset_CodeSent" = "Nous avons envoyé un code à six chiffres à %1$@. Saisissez-le avec votre nouveau mot de passe.";
+
+/* Phone password reset card, second step: placeholder of the new password field. */
+"Reset_NewPassword" = "Nouveau mot de passe";
+
+/* Phone password reset card, second step: the button that changes the password. */
+"Reset_Save" = "Définir le mot de passe";
+
+/* Phone sign-in screen: shown on the sign-in card after the password was changed, when signing in with it did not happen by itself. */
+"Reset_Done" = "C'est fait ! Votre nouveau mot de passe est prêt. Connectez-vous avec.";
+
+/* Phone password reset card, first step: Send code was pressed with no email typed in. */
+"Reset_NeedEmail" = "Saisissez l'adresse e-mail de votre compte rpm.";
+
+/* Phone password reset card, second step: Set new password was pressed with a field empty. */
+"Reset_NeedFields" = "Saisissez le code et votre nouveau mot de passe.";
+
+/* Phone password reset card, second step: the code was too old. "Below" is the Send a new code button (SignUp_Resend). */
+"Reset_CodeExpired" = "Ce code a expiré. Demandez-en un nouveau ci-dessous.";
+
+/* Phone password reset card: the reset email could not be sent. */
+"Reset_SendFailed" = "Impossible d'envoyer l'e-mail. Réessayez dans une minute.";
+
+/* Phone password reset card, second step: the password could not be changed for another reason. */
+"Reset_Failed" = "Impossible de changer votre mot de passe. Veuillez réessayer.";
+
+/* Under the QR code in the TV sign-in pop-up for "Forgot password?". The code opens rpmrpmrpm.com/forgot-password. */
+"Tv_SignIn_ForgotScan" = "Scannez le code avec l'appareil photo de votre téléphone et choisissez un nouveau mot de passe sur votre téléphone.";
 "Login_Google" = "Google";
 "Login_NeedFields" = "Saisissez votre e-mail et votre mot de passe.";
 "Login_OpeningBrowser" = "Ouverture du navigateur…";

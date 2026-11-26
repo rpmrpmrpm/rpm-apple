@@ -546,11 +546,50 @@
 "Login_ContinueWith" = "使用以下方式继续";
 "Login_Email" = "电子邮件";
 
-/* Sign-in dialog: link under the password field. Opens rpmrpmrpm.com/forgot-password in the browser. */
+/* Sign-in screens: the link to reset a forgotten password. The desktop opens rpmrpmrpm.com/forgot-password in the browser, the phones open a reset card on the sign-in screen, and the TVs show a QR code to the same page. */
 "Login_Forgot" = "忘记密码？";
 
 /* Sign-in dialog error: 'Forgot password?' was clicked and the system would not open a browser. */
 "Login_ForgotNoBrowser" = "无法打开浏览器。要重置密码，请前往 rpmrpmrpm.com/forgot-password。";
+
+/* Phone sign-in screen, the password reset card: its heading. Opened by "Forgot password?" (Login_Forgot). */
+"Reset_Title" = "重置密码";
+
+/* Phone password reset card, first step: under the heading, above the email field. */
+"Reset_Subtitle" = "别担心！输入你的邮箱，我们会发送一个验证码，让你设置新密码。";
+
+/* Phone password reset card, first step: the button that emails the reset code. */
+"Reset_Send" = "发送验证码";
+
+/* Phone password reset card, second step: above the code and new password fields. {0} is the email address. */
+"Reset_CodeSent" = "我们已向 %1$@ 发送了六位数验证码。请输入验证码和新密码。";
+
+/* Phone password reset card, second step: placeholder of the new password field. */
+"Reset_NewPassword" = "新密码";
+
+/* Phone password reset card, second step: the button that changes the password. */
+"Reset_Save" = "设置新密码";
+
+/* Phone sign-in screen: shown on the sign-in card after the password was changed, when signing in with it did not happen by itself. */
+"Reset_Done" = "完成！新密码已生效，请用它登录。";
+
+/* Phone password reset card, first step: Send code was pressed with no email typed in. */
+"Reset_NeedEmail" = "请输入你的 rpm 账户邮箱。";
+
+/* Phone password reset card, second step: Set new password was pressed with a field empty. */
+"Reset_NeedFields" = "请输入验证码和新密码。";
+
+/* Phone password reset card, second step: the code was too old. "Below" is the Send a new code button (SignUp_Resend). */
+"Reset_CodeExpired" = "验证码已过期。请在下方重新获取。";
+
+/* Phone password reset card: the reset email could not be sent. */
+"Reset_SendFailed" = "无法发送邮件，请一分钟后再试。";
+
+/* Phone password reset card, second step: the password could not be changed for another reason. */
+"Reset_Failed" = "无法更改密码，请重试。";
+
+/* Under the QR code in the TV sign-in pop-up for "Forgot password?". The code opens rpmrpmrpm.com/forgot-password. */
+"Tv_SignIn_ForgotScan" = "用手机相机扫描此代码，然后在手机上设置新密码。";
 "Login_Google" = "Google";
 "Login_NeedFields" = "请输入邮箱和密码。";
 "Login_OpeningBrowser" = "正在打开浏览器…";
