@@ -834,7 +834,8 @@ struct RootView: View {
         }
 
         Self.nudgeSettled = true
-        guard SupporterNudge.due(launch: launch, supporter: model.quota?.wearsMark),
+        let plan = model.quota.map { SupporterNudge.Plan.of(supporter: $0.supporter, tester: $0.tester) }
+        guard SupporterNudge.due(launch: launch, plan: plan),
               model.supporterAccount != nil else { return }
         nudging = true
     }
