@@ -1349,42 +1349,132 @@ public final class Player {
     }
 
     /// The phone's output device changed under the engine (``PcmEngine/deviceChanged``), for
-    /// example a Bluetooth device connected. iOS has stopped the engine, so the record is started
-    /// again where it was, as after a restart of the audio server.
+    /// example a Bluetooth device connected. iOS has stopped the engine, so the record is fed to
+    /// the engine again from the second where it was heard (``carryOnWhereItWasHeard(because:)``).
     ///
-    /// **Decided when the task runs, from whether the music should play then.** A device going away
-    /// also pauses (see `RemoteControl.routeChanged`), and that pause can arrive on either side of
-    /// this. Read here, a pause that came first is seen, and the record is not started again on the
-    /// phone's own speaker. A pause that comes after this has started the record is held until its
-    /// sound arrives and applied then (``pause()``), so no sound comes out.
+    /// **Not ``pickUpWhereItStopped()``.** That opens the record again: the new feed starts at the
+    /// top of the record, the engine plays it from there, and the seek to the right second comes
+    /// only after the start and its look-ahead have finished. The listener hears the record start
+    /// again and then jump. It is used here only when there is no feed to carry on from.
     ///
-    /// While paused the record is not started at all: it would make a sound. The next Play starts
-    /// it again instead (``reopensAfterTheDeviceChanged()``).
+    /// **Decided after a short wait, from whether the music should play then.** See
+    /// ``DeviceChanges``: several changes in a row are answered once, by the last one. A device
+    /// going away also pauses (see `RemoteControl.routeChanged`), and that pause can arrive on
+    /// either side of this. Read after the wait, a pause that came first is seen, and the record is
+    /// not started again on the phone's own speaker. A pause that comes later reaches the engine at
+    /// once (``pause()``), and the engine does not start the node while it is paused.
+    ///
+    /// While paused nothing is fed: it could make a sound. The next Play feeds the record instead
+    /// (``reopensAfterTheDeviceChanged()``).
     private func deviceChanged() {
         guard !onAvFoundation, !isCasting, index != nil || station != nil else { return }
 
+        let change = deviceChanges.happened()
+
         Task {
-            guard wantsToPlay else {
+            try? await Task.sleep(for: DeviceChanges.settle)
+
+            let answer = DeviceChanges.answer(
+                latest: deviceChanges.isLatest(change),
+                onThisPhone: !onAvFoundation && !isCasting && (index != nil || station != nil),
+                starting: starting,
+                wantsToPlay: wantsToPlay,
+                canCarryOn: whatCarriesOn != nil)
+
+            switch answer {
+            case .nothing:
+                break
+            case .onPlay:
                 deviceMoved = true
-                return
+            case .carryOnHere:
+                deviceMoved = false
+                if !carryOnWhereItWasHeard(because: .carryOnAsBefore) { await pickUpWhereItStopped() }
+            case .openAgain:
+                deviceMoved = false
+                await pickUpWhereItStopped()
             }
-            deviceMoved = false
-            await pickUpWhereItStopped()
         }
     }
 
-    /// Whether the output device changed while paused, so the engine must be built again before the
-    /// record can play. See ``deviceChanged()``.
+    /// Counts the output device changes, so that a burst of them is answered once. See
+    /// ``DeviceChanges``.
+    private var deviceChanges = DeviceChanges()
+
+    /// Whether the output device changed while paused, so the record must be fed to the engine
+    /// again before it can play. See ``deviceChanged()``.
     private var deviceMoved = false
 
     /// Play pressed after the output device changed during a pause: the engine was stopped under the
-    /// record, so it is started again where it was, instead of resuming a node that has lost what
-    /// was scheduled.
+    /// record, so the record is fed to it again from where it was paused, instead of resuming a node
+    /// that has lost what was scheduled.
     private func reopensAfterTheDeviceChanged() -> Bool {
         guard deviceMoved, !starting else { return false }
         deviceMoved = false
 
+        // **A Play press, so the pause is cleared.** The engine starts the node once it has a
+        // cushion in front of it, and the key reads the engine (`playbackChanged`).
+        if carryOnWhereItWasHeard(because: .somebodyAskedForIt) {
+            somebodyAskedForSound()
+            return true
+        }
+
         Task { await pickUpWhereItStopped() }
+        return true
+    }
+
+    /// The record on the engine and the feed it plays from, when the feed can move to another
+    /// second. Nil for a station, while casting, and when the feed has gone or has trouble.
+    private var whatCarriesOn: (at: Int, feed: TrackFeed)? {
+        guard station == nil, !isCasting, let at = index, queue.indices.contains(at),
+              let feed = feeds[at], feed.pcm.ready, feed.trouble == nil
+        else { return nil }
+        return (at, feed)
+    }
+
+    /// Feeds the record to the engine again from the second where it was heard, from the feed it
+    /// already plays from. For the output device changing under the engine (``deviceChanged()``).
+    ///
+    /// **The second comes from the engine** (``PcmEngine/position``). iOS has stopped the engine,
+    /// so the node's clock is gone, and the engine answers with the last second it read off that
+    /// clock. That is at most one tick behind what was heard, so a moment may be heard twice, and
+    /// nothing is skipped.
+    ///
+    /// This is the handset branch of ``seek(to:)``, without the parts that are about a person
+    /// moving the position: nothing counts it as a seek, because the listener did not move. The
+    /// feed moves to the second (a range request for a stream, a read for a copy on the phone), and
+    /// the engine is given the source from there. `PcmEngine.play` starts the engine again and
+    /// starts the node only once there is a cushion in front of it, so the record is never heard
+    /// from its top.
+    ///
+    /// - Parameter why: `.carryOnAsBefore` when the record was playing, so a pause pressed in the
+    ///   meantime is kept. `.somebodyAskedForIt` for a Play press.
+    /// - Returns: false when there is nothing to carry on from, or the engine refused the source.
+    ///   The caller then opens the record again.
+    private func carryOnWhereItWasHeard(because why: Playback.Start) -> Bool {
+        guard let (at, feed) = whatCarriesOn else { return false }
+
+        let heard = sound.position
+        guard let landed = feed.moveTo(heard) else { return false }
+
+        let loud = loudness(of: queue[at])
+
+        do { try sound.play(feed.pcm, id: at, from: landed, loudness: loud, because: why) }
+        catch {
+            Self.log.notice("the output device changed and the engine refused the record: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+
+        Self.log.notice("the output device changed; carrying on at \(landed, format: .fixed(precision: 2))s")
+
+        position = .seconds(landed)
+
+        // Starting the node again dropped what was queued behind it, so the record after this one
+        // has to be put back.
+        let mine = generation
+        lookingAhead = nil
+        Task { await lookAhead(after: at, generation: mine) }
+
+        playbackChanged()
         return true
     }
 

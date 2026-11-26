@@ -186,7 +186,8 @@ public final class PcmEngine: @unchecked Sendable {
     /// **iOS stops the engine for it, and the sound does not come back by itself.** The buffers
     /// scheduled in front of the node can go with the stop, without their completions, so the
     /// pump waits for room that never comes and the record stands still until the next one is
-    /// started. The player starts the record again where it was (see `Player.deviceChanged`).
+    /// started. The player feeds the record again from the second where it was heard, which
+    /// ``position`` still answers after the stop (see `Player.deviceChanged`).
     ///
     /// Only while the sound plays on this phone. While casting there is no local graph, and the
     /// keep-alive silence has its own engine and recovers it itself (``CastKeepAlive``).
