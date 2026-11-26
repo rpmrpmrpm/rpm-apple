@@ -212,6 +212,91 @@ private func level(at hz: Double, band: Int, db: Double, sampleRate: Double = ra
     #expect(curve.gains.count == 10)
 }
 
+// ── room for the bands ──
+
+@Test func aFlatCurveHasNoPeak() {
+    #expect(Equalizer.peakGain(bands: []) == 0)
+    #expect(abs(Equalizer.peakGain(bands: EqPreset.all[0].gains)) < 0.001)
+}
+
+@Test func oneRaisedBandPeaksAtItsOwnGain() {
+    #expect(abs(Equalizer.peakGain(bands: gains(4, 6)) - 6) < 0.05)
+    #expect(abs(Equalizer.peakGain(bands: gains(0, 6)) - 6) < 0.05)
+}
+
+@Test func raisedNeighboursAddUp() {
+    // The bands overlap, so ten bands at +6 dB peak higher than one: about +15 dB near 14 kHz.
+    let peak = Equalizer.peakGain(bands: Array(repeating: 6, count: 10))
+    #expect(peak >= 6)
+    #expect(abs(peak - 15.15) < 0.1)
+}
+
+@Test func cutsAloneNeverPeakAboveZero() {
+    #expect(Equalizer.peakGain(bands: [-3, -6, 0, 0, -2, 0, 0, 0, 0, -12]) <= 0)
+    #expect(Equalizer.peakGain(bands: Array(repeating: -12, count: 10)) <= 0)
+}
+
+@Test func turningTheEqualiserOnLowersThePreampToMakeRoom() {
+    let before = EqCurve.off.withPreset(EqPreset.all[5])
+    let after = before.turned(true).guarded(from: before)
+    // Bass boost peaks at about +9.4 dB.
+    #expect(after.preamp == -10)
+    #expect(!after.clips)
+}
+
+@Test func aBandRaisedWhileOnLowersThePreamp() {
+    let before = EqCurve.off.turned(true)
+    let after = before.withBand(4, 6).guarded(from: before)
+    #expect(after.preamp == -6)
+    #expect(!after.clips)
+}
+
+@Test func aPresetChosenWhileOnLowersThePreamp() {
+    let before = EqCurve.off.turned(true)
+    let after = before.withPreset(EqPreset.all[2]).guarded(from: before)
+    #expect(after.preamp < 0)
+    #expect(!after.clips)
+}
+
+@Test func thePreampIsNeverRaised() {
+    let before = EqCurve.off.turned(true).withPreamp(-12)
+    #expect(before.withBand(4, 3).guarded(from: before).preamp == -12)
+    #expect(before.withRoom().preamp == -12)
+}
+
+@Test func aPreampRaisedByTheListenerIsKeptAndClips() {
+    let safe = EqCurve.off.turned(true).withBand(4, 6).withPreamp(-6)
+    #expect(!safe.clips)
+    let loud = safe.withPreamp(0).guarded(from: safe)
+    #expect(loud.preamp == 0)
+    #expect(loud.clips)
+}
+
+@Test func flatAndCutsNeedNoRoom() {
+    let before = EqCurve.off.turned(true)
+    let cut = before.withBand(1, -6).guarded(from: before)
+    #expect(cut.preamp == 0)
+    #expect(!cut.clips)
+    let flat = before.withPreset(EqPreset.all[1]).withPreamp(-12).flattened()
+    #expect(flat.guarded(from: before).preamp == 0)
+    #expect(!flat.clips)
+}
+
+@Test func aCurveThatIsOffIsLeftAloneAndDoesNotWarn() {
+    let before = EqCurve.off
+    let after = before.withBand(4, 6).guarded(from: before)
+    #expect(after.preamp == 0)
+    #expect(!after.clips)
+    #expect(after.withRoom() == after)
+}
+
+@Test func aCurveThatNeedsMoreThanTwelveDecibelsStillClips() {
+    // Treble peaks at about +16.5 dB, past what the pre-amp can take away.
+    let curve = EqCurve.off.withPreset(EqPreset.all[6]).turned(true).withRoom()
+    #expect(curve.preamp == -12)
+    #expect(curve.clips)
+}
+
 // ── stored ──
 
 @Test func aCurveReadsBackAsItWasStored() {

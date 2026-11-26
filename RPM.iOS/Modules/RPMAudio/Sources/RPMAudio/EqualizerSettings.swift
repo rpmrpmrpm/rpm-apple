@@ -100,23 +100,31 @@ public final class EqualizerSettings {
     }
 
     /// Looks again at where the music goes. When it is other speakers than before, their own curve
-    /// is shown and heard.
+    /// is shown and heard. A curve that is on and clips gets room from its pre-amp first
+    /// (``EqCurve/withRoom()``), and that is stored, as a change on the faders would be.
     public func follow() {
         let now = EqOutput.pick(kind: Self.kind, name: Self.name, casting: player.isCasting)
         let before = output
         output = now
         guard before?.key != now.key else { return }
-        curve = EqCurve.parse(store.string(forKey: Self.prefix + now.key))
+        let stored = EqCurve.parse(store.string(forKey: Self.prefix + now.key))
+        curve = stored.withRoom()
         player.equalizer = curve
+        if curve != stored {
+            store.set(curve.stored, forKey: Self.prefix + now.key)
+        }
     }
 
     /// The curve is changed only here, so what is stored, what is shown and what is heard cannot
-    /// disagree.
+    /// disagree. Turning the equaliser on and moving the bands lower the pre-amp where the bands
+    /// would clip (``EqCurve/guarded(from:)``), so the faders show the pre-amp that is heard.
     public func change(_ next: EqCurve) {
-        guard let output, next != curve else { return }
-        curve = next
-        player.equalizer = next
-        store.set(next.stored, forKey: Self.prefix + output.key)
+        guard let output else { return }
+        let kept = next.guarded(from: curve)
+        guard kept != curve else { return }
+        curve = kept
+        player.equalizer = kept
+        store.set(kept.stored, forKey: Self.prefix + output.key)
     }
 
     // ── the route ──

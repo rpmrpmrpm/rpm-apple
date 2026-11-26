@@ -93,21 +93,71 @@ public struct Equalizer {
     /// highest frequency the stream can carry, and the cookbook's formula would give a filter that is
     /// unstable or that never decays.
     private mutating func setPeaking(_ band: Int, centre: Double, gain: Double) {
-        if centre >= sampleRate * Self.highestCentre || gain == 0 {
+        guard let c = Self.peaking(centre: centre, gain: gain, sampleRate: sampleRate) else {
             b0[band] = 1; b1[band] = 0; b2[band] = 0; a1[band] = 0; a2[band] = 0
             return
         }
+        b0[band] = c.b0; b1[band] = c.b1; b2[band] = c.b2; a1[band] = c.a1; a2[band] = c.a2
+    }
+
+    /// The coefficients of one peaking filter, already divided by a0.
+    typealias Coefficients = (b0: Double, b1: Double, b2: Double, a1: Double, a2: Double)
+
+    /// The cookbook's coefficients for a band at `centre` Hz with `gain` dB, or nil where the band is
+    /// left flat: no gain, or a centre too close to half the sample rate (see `setPeaking`).
+    static func peaking(centre: Double, gain: Double, sampleRate: Double) -> Coefficients? {
+        if centre >= sampleRate * highestCentre || gain == 0 { return nil }
         let a = pow(10, gain / 40)
         let w0 = 2 * Double.pi * centre / sampleRate
         let cosW = cos(w0)
-        let alpha = sin(w0) / (2 * Self.q)
+        let alpha = sin(w0) / (2 * q)
 
         let a0 = 1 + alpha / a
-        b0[band] = (1 + alpha * a) / a0
-        b1[band] = (-2 * cosW) / a0
-        b2[band] = (1 - alpha * a) / a0
-        a1[band] = (-2 * cosW) / a0
-        a2[band] = (1 - alpha / a) / a0
+        return (b0: (1 + alpha * a) / a0,
+                b1: (-2 * cosW) / a0,
+                b2: (1 - alpha * a) / a0,
+                a1: (-2 * cosW) / a0,
+                a2: (1 - alpha / a) / a0)
+    }
+
+    /// The highest gain of the ten bands together, in dB, without the pre-amp. It is read from the
+    /// real response of the filters: at 256 frequencies from 20 Hz to 20 kHz, evenly spaced on a log
+    /// scale, and at each band's centre. Neighbouring bands overlap, so two raised neighbours add up:
+    /// all ten bands at +6 dB give about +15 dB, near 14 kHz where three bands are close together.
+    ///
+    /// A flat curve gives 0 dB, and a curve with only cuts gives 0 dB or less. `sampleRate` is the
+    /// engine's rate (`StreamedPcm.engineFormat`) unless given.
+    public static func peakGain(bands gains: [Double], sampleRate: Double = 44100) -> Double {
+        let filters: [Coefficients] = Self.bands.indices.compactMap { band in
+            let gain = band < gains.count ? min(max(gains[band], -maxGain), maxGain) : 0
+            return peaking(centre: Self.bands[band], gain: gain, sampleRate: sampleRate)
+        }
+        guard !filters.isEmpty else { return 0 }
+
+        let points = 256
+        let lowest = 20.0
+        let highest = 20000.0
+        var frequencies = Self.bands
+        for i in 0..<points {
+            frequencies.append(lowest * pow(highest / lowest, Double(i) / Double(points - 1)))
+        }
+
+        var peak = -Double.infinity
+        for hz in frequencies where hz < sampleRate / 2 {
+            let w = 2 * Double.pi * hz / sampleRate
+            let cos1 = cos(w), sin1 = sin(w), cos2 = cos(2 * w), sin2 = sin(2 * w)
+            // The squared size of each filter's response at this frequency, multiplied together.
+            var power = 1.0
+            for f in filters {
+                let numReal = f.b0 + f.b1 * cos1 + f.b2 * cos2
+                let numImag = f.b1 * sin1 + f.b2 * sin2
+                let denReal = 1 + f.a1 * cos1 + f.a2 * cos2
+                let denImag = f.a1 * sin1 + f.a2 * sin2
+                power *= (numReal * numReal + numImag * numImag) / (denReal * denReal + denImag * denImag)
+            }
+            peak = max(peak, 10 * log10(power))
+        }
+        return peak.isFinite ? peak : 0
     }
 
     /// Clears the filter memory, so the end of the last audio does not carry into the next (a seek,
@@ -225,6 +275,39 @@ public struct EqCurve: Sendable, Equatable {
 
     /// Flat, the pre-amp too. The switch stays where it was.
     public func flattened() -> EqCurve { EqCurve(on: on, preamp: 0, gains: []) }
+
+    // ── room for the bands ──
+
+    /// How far the bands together raise the loudest frequency, in dB, before the pre-amp
+    /// (``Equalizer/peakGain(bands:sampleRate:)``).
+    public var peak: Double { Equalizer.peakGain(bands: gains) }
+
+    /// How far, in dB, the pre-amp and the peak together may go over 0 dB before the curve counts as
+    /// clipping. It covers rounding in the response, so a band at +6 dB and the pre-amp at -6 dB do
+    /// not count.
+    static let clipAllowance = 0.05
+
+    /// True while the curve is on and the pre-amp leaves too little room for the bands: the loudest
+    /// sounds are pushed past full scale and clipped, which distorts. The equaliser card warns then.
+    public var clips: Bool { on && preamp + peak > Self.clipAllowance }
+
+    /// The same curve with the pre-amp lowered until the bands no longer clip. The pre-amp moves in
+    /// whole dB, as the faders do, and only down. It stops at -12 dB, so a curve that needs more room
+    /// than that still clips. A curve that is off, flat or has only cuts is returned as it is.
+    public func withRoom() -> EqCurve {
+        let most = Self.clipAllowance - peak
+        guard on, preamp > most else { return self }
+        return withPreamp(most.rounded(.down))
+    }
+
+    /// The curve to keep when the listener changes `before` into this one. When the switch is turned
+    /// on, or the bands change while it is on (a fader, a preset, Flat), the pre-amp makes room
+    /// (``withRoom()``). A change of the pre-amp alone is kept as it is, so a listener who raises it
+    /// again is not overruled. The card shows the warning instead.
+    public func guarded(from before: EqCurve) -> EqCurve {
+        guard on, !before.on || before.gains != gains else { return self }
+        return withRoom()
+    }
 
     /// The preset whose bands this curve has, or nil. The pre-amp is not compared, as on the desktop.
     public var preset: EqPreset? {

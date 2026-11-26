@@ -5,7 +5,8 @@ import RPMAudio
 /// The equaliser, on the Playback settings under volume levelling. It is laid out as the desktop's
 /// Sound settings lay it out, as the Android phone does: whose curve it is, the switch, the presets
 /// and Flat, then the pre-amp and the ten bands as upright faders from -12 to +12 dB in whole steps.
-/// The card has its controls only, with no description line.
+/// The card has its controls only, with no description line. Under the faders, a warning in red
+/// shows while the curve clips (``EqCurve/clips``).
 ///
 /// It reads ``EqualizerSettings`` from the environment, and shows nothing where there is none.
 struct EqualizerCard: View {
@@ -42,6 +43,15 @@ struct EqualizerCard: View {
                 }
 
                 EqFaders(curve: eq.curve) { eq.change($0) }
+
+                // The bands push the loudest sounds past full scale. A new curve lowers the pre-amp
+                // by itself (``EqualizerSettings/change(_:)``), so this shows when the listener
+                // raises the pre-amp again, or when a curve needs more room than -12 dB gives.
+                if eq.curve.clips {
+                    Text(Loc.get("Settings_EqClipWarning"))
+                        .font(RPMFont.display(11))
+                        .foregroundStyle(RPMInk.red)
+                }
             }
         }
     }
