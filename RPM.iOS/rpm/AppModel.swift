@@ -666,6 +666,13 @@ final class AppModel {
     /// A message for the person, shown where the sign-in errors are shown.
     func report(_ what: String) { trouble = what }
 
+    /// A message for the sign-in screen that is not an error, such as a password that was just reset.
+    /// It replaces any error shown there.
+    func tell(_ what: String) {
+        trouble = nil
+        notice = what
+    }
+
     /// How a password sign-in ended, for the screen that asked.
     enum PasswordSignIn {
         case signedIn

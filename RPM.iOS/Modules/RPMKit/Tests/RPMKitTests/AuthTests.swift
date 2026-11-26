@@ -647,3 +647,78 @@ func eachSignUpRefusalHasItsOwnSentence(code: String, key: String) {
     #expect(SignUpAnswer.failed.said == Loc.get("SignUp_Failed"))
     #expect(SignUpAnswer.done.said == nil)
 }
+
+// ── password reset ──
+
+@Test func forgotPasswordSendsATrimmedEmailAndAnswersDoneOnANoContentAnswer() async throws {
+    let seen = Box<Data>()
+    let client = auth(stubbedSession { request in
+        seen.value = request.bodyData
+        #expect(request.url?.path == "/auth/forgot-password")
+        return (HTTPURLResponse(url: request.url!, statusCode: 204, httpVersion: nil, headerFields: nil)!, Data())
+    })
+
+    #expect(await client.forgotPassword(email: "  a@example.com ") == .done)
+    let sent = try JSONDecoder().decode([String: String].self, from: seen.value ?? Data())
+    #expect(sent == ["email": "a@example.com"])
+}
+
+@Test func resetPasswordSendsTheCodeAndPasswordAndSignsNobodyIn() async throws {
+    let seen = Box<Data>()
+    let client = auth(stubbedSession { request in
+        seen.value = request.bodyData
+        #expect(request.url?.path == "/auth/reset-password")
+        return ok(request, #"{"signedOutEverywhere":true}"#)
+    })
+
+    let answer = await client.resetPassword(email: " a@example.com ", code: " 123456 ", password: "Passw0rd")
+
+    #expect(answer == .done)
+    let sent = try JSONDecoder().decode([String: String].self, from: seen.value ?? Data())
+    #expect(sent == ["email": "a@example.com", "code": "123456", "password": "Passw0rd"])
+    #expect(await !client.isSignedIn)
+}
+
+/// The service's refusals carry a code. Its English sentence is not kept: the card says its own.
+@Test func aRefusedResetCarriesTheServicesCode() async {
+    let client = auth(replying(400, #"{"error":"The code has expired.","code":"code_expired"}"#))
+    #expect(await client.resetPassword(email: "a@example.com", code: "123456", password: "Passw0rd")
+        == .refused(code: "code_expired"))
+}
+
+@Test func aResetRefusalWithNoCodeIsRefusedAndAServerErrorIsFailed() async {
+    let noCode = auth(replying(400, #"{"error":"email is required."}"#))
+    #expect(await noCode.forgotPassword(email: "") == .refused(code: "refused"))
+
+    let broken = auth(replying(500, "<html>Internal Server Error</html>"))
+    #expect(await broken.forgotPassword(email: "a@example.com") == .failed)
+}
+
+@Test func resettingWithNoNetworkSaysOffline() async {
+    let client = AuthClient(base: accounts, keychain: MemoryStore(), reach: await closedLine(),
+                            session: replying(204, ""))
+    #expect(await client.forgotPassword(email: "a@example.com") == .offline)
+}
+
+@Test(arguments: [
+    ("too_many", "SignUp_TooMany", "SignUp_TooMany"),
+    ("invalid_code", "SignUp_InvalidCode", "SignUp_InvalidCode"),
+    ("code_expired", "Reset_CodeExpired", "Reset_CodeExpired"),
+    ("weak_password", "SignUp_WeakPassword", "SignUp_WeakPassword"),
+    ("invalid_email", "SignUp_InvalidEmail", "SignUp_InvalidEmail"),
+    ("something_new", "Reset_SendFailed", "Reset_Failed"),
+])
+func eachResetRefusalHasItsOwnSentence(code: String, onSend: String, onSave: String) {
+    #expect(PasswordResetAnswer.refused(code: code).saidOnSend == Loc.get(onSend))
+    #expect(PasswordResetAnswer.refused(code: code).saidOnSave == Loc.get(onSave))
+    #expect(Loc.get(onSend) != onSend)
+    #expect(Loc.get(onSave) != onSave)
+}
+
+@Test func aFailedResetSaysWhichStepFailedAndDoneSaysNothing() {
+    #expect(PasswordResetAnswer.offline.saidOnSend == Loc.get("Rpm_Net_Offline"))
+    #expect(PasswordResetAnswer.failed.saidOnSend == Loc.get("Reset_SendFailed"))
+    #expect(PasswordResetAnswer.failed.saidOnSave == Loc.get("Reset_Failed"))
+    #expect(PasswordResetAnswer.done.saidOnSend == nil)
+    #expect(PasswordResetAnswer.done.saidOnSave == nil)
+}

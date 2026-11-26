@@ -143,6 +143,42 @@ public actor AuthClient: TokenSource {
         }
     }
 
+    // Resetting a password
+
+    /// Asks the accounts service to mail a six-digit code for a new password (`auth/forgot-password`).
+    /// The service answers the same whether or not an account has this address, so
+    /// ``PasswordResetAnswer/done`` does not mean that the account exists. Asking again mails a new code,
+    /// which replaces the one sent before.
+    public func forgotPassword(email: String) async -> PasswordResetAnswer {
+        await postReset("auth/forgot-password", ["email": email.trimmingCharacters(in: .whitespacesAndNewlines)])
+    }
+
+    /// Sets a new password with the mailed code (`auth/reset-password`). This signs nobody in. After
+    /// ``PasswordResetAnswer/done``, ``signIn(email:password:)`` does, with the new password.
+    public func resetPassword(email: String, code: String, password: String) async -> PasswordResetAnswer {
+        await postReset("auth/reset-password", [
+            "email": email.trimmingCharacters(in: .whitespacesAndNewlines),
+            "code": code.trimmingCharacters(in: .whitespacesAndNewlines),
+            "password": password,
+        ])
+    }
+
+    /// Any 2xx is done. The body of a success is not read.
+    private func postReset(_ path: String, _ body: [String: String]) async -> PasswordResetAnswer {
+        do {
+            let (data, http) = try await send("POST", path, body: body)
+            switch http.statusCode {
+            case 200..<300: return .done
+            case 400..<500: return PasswordResetAnswer.refusal(data)
+            default: return .failed
+            }
+        } catch RPMError.offline {
+            return .offline
+        } catch {
+            return .failed
+        }
+    }
+
     /// Social sign-in, first step: ask the accounts service where to send the person.
     ///
     /// The app opens the browser, not this package. On iOS the right way is `ASWebAuthenticationSession`, which

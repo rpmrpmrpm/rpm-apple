@@ -26,6 +26,10 @@ struct SignInView: View {
     /// the record and the wordmark stay where they are.
     @State private var signingUp: SignUpCard.Start?
 
+    /// The reset card when it is up, in place of the sign-in card, with the address it opens with.
+    /// The password is reset on this screen too, so the record and the wordmark stay.
+    @State private var resetting: String?
+
     @FocusState private var editing: Field?
     private enum Field { case email, password }
 
@@ -66,14 +70,18 @@ struct SignInView: View {
 
                     if let signingUp {
                         SignUpCard(model: model, start: signingUp, back: { self.signingUp = nil })
+                    } else if let resetting {
+                        ResetCard(model: model, email: resetting,
+                                  back: { self.resetting = nil },
+                                  changed: { address in
+                                      email = address
+                                      password = ""
+                                      model.tell(Loc.get("Reset_Done"))
+                                      self.resetting = nil
+                                  })
                     } else {
                         card
 
-                        // No forgot-password link. The desktop opens
-                        // rpmrpmrpm.com/forgot-password, but App Review guideline 4 rejects
-                        // sending the phone to Safari for this. The phone would need an in-app
-                        // code flow (accounts auth/forgot-password and auth/reset-password,
-                        // which email a code-only reset).
                         Text(Loc.get("Login_NewHere"))
                             .font(RPMFont.display(13))
                             .foregroundStyle(
@@ -130,6 +138,15 @@ struct SignInView: View {
                 .focused($editing, equals: .password)
                 .onSubmit { Task { await withPassword() } }
                 .rpmField()
+
+            // A link, not a key, at the right edge as on the desktop. The desktop opens
+            // rpmrpmrpm.com/forgot-password; the phone resets the password in the app with a mailed
+            // code (ResetCard), because App Review guideline 4 rejects sending the phone to Safari for this.
+            Button(Loc.get("Login_Forgot")) { resetting = email }
+                .font(RPMFont.display(13))
+                .foregroundStyle(RPMInk.white(0xCC / 255))
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.top, -6)
 
             if let trouble = model.trouble {
                 Text(trouble)
