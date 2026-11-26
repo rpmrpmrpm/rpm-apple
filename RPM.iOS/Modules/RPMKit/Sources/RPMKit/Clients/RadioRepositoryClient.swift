@@ -25,8 +25,8 @@ public struct RadioRepositoryClient: Sendable {
         /// Stations not to show, by uuid.
         public let hidden: [String]
 
-        /// Stations shown with a different title, tags or description, by uuid (the admin's station
-        /// edit page). Empty from an API that sends no edits.
+        /// Stations shown with a different title, tags or description, or marked for ads, by uuid
+        /// (the admin's station edit page). Empty from an API that sends no edits.
         public let edits: [String: Edit]
 
         /// The stations with a card picture: a 16:9 picture the admin chose for the station's card, served
@@ -43,9 +43,12 @@ public struct RadioRepositoryClient: Sendable {
             public let name: String?
             public let tags: [String]?
             public let description: String?
+            /// True for a station that carries advertising, false for one that does not. Nil leaves
+            /// it to the app's own rule (`RadioAds`). Not sent when the admin did not set it.
+            public let ads: Bool?
 
-            public init(name: String?, tags: [String]?, description: String?) {
-                self.name = name; self.tags = tags; self.description = description
+            public init(name: String?, tags: [String]?, description: String?, ads: Bool? = nil) {
+                self.name = name; self.tags = tags; self.description = description; self.ads = ads
             }
         }
 

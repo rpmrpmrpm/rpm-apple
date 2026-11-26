@@ -92,7 +92,8 @@ public final class RadioState {
             let named = Set(read.hidden.map { $0.lowercased() })
             var edits: [String: StationEdit] = [:]
             for (uuid, wire) in read.edits {
-                if let edit = StationEdit.of(name: wire.name, tags: wire.tags, description: wire.description) {
+                if let edit = StationEdit.of(name: wire.name, tags: wire.tags, description: wire.description,
+                                             ads: wire.ads) {
                     edits[uuid.trimmingCharacters(in: .whitespaces).lowercased()] = edit
                 }
             }

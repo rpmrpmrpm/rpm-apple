@@ -129,6 +129,13 @@ public struct RadioStation: Codable, Hashable, Sendable, Identifiable {
     /// some, otherwise the directory's.
     public var shownTags: [String] { edit?.tags ?? tags }
 
+    /// Whether the station carries advertising: what the admin said where they said it, otherwise
+    /// the ads rule on the directory's own tags, name and website (``RadioAds``). Every AD mark and
+    /// the ads filter read this.
+    public var carriesAds: Bool {
+        edit?.ads ?? RadioAds.carriesAds(tags: tags, name: name, homepage: homepage)
+    }
+
     /// The genre tags worth showing: ``shownTags`` without the tags that describe the stream's
     /// specification or that the directory uses for its own bookkeeping.
     public var genres: [String] { RadioNames.genres(shownTags) }

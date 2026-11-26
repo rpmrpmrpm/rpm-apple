@@ -864,7 +864,7 @@ private struct TunerRow: View {
                                 .font(.tv(Size.row))
                                 .foregroundStyle(Ink.words)
                                 .lineLimit(1)
-                            if RadioAds.carriesAds(tags: station.tags, name: station.name, homepage: station.homepage) {
+                            if station.carriesAds {
                                 Text("AD")
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundStyle(Color(red: 0x0B / 255, green: 0x0D / 255, blue: 0x10 / 255))

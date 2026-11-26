@@ -1,23 +1,28 @@
 import Foundation
 
 /// How the admin changed the way one station is shown (rpm.Admin's station edit page, published in
-/// `radio/state`): its title, its tags, the line on its banner card. Each value is nil where the
-/// station's own is used. `tags` replace the directory's for genres only; the ads rule reads the
-/// directory's own. The desktop's `StationEdit` and the Android `StationEdit`.
+/// `radio/state`): its title, its tags, the line on its banner card, and whether it carries
+/// advertising. Each value is nil where the station's own is used. `tags` replace the directory's
+/// for genres only; the ads rule reads the directory's own, and `ads` overrides that rule
+/// (``RadioStation/carriesAds``). The desktop's `StationEdit` and the Android `StationEdit`.
 public struct StationEdit: Equatable, Hashable, Sendable {
     public let name: String?
     public let tags: [String]?
     public let description: String?
+    /// True for a station the admin knows carries advertising, false for one that does not.
+    public let ads: Bool?
 
-    public init(name: String?, tags: [String]?, description: String?) {
+    public init(name: String?, tags: [String]?, description: String?, ads: Bool? = nil) {
         self.name = name
         self.tags = tags
         self.description = description
+        self.ads = ads
     }
 
     /// The edit with blank values as nil and tags read as the directory's are (trimmed, lower case,
     /// each once), or nil where nothing is left of it.
-    public static func of(name: String?, tags: [String]?, description: String?) -> StationEdit? {
+    public static func of(name: String?, tags: [String]?, description: String?,
+                          ads: Bool? = nil) -> StationEdit? {
         let title = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         var seen = Set<String>()
         let tagged = tags?.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
@@ -25,8 +30,10 @@ public struct StationEdit: Equatable, Hashable, Sendable {
         let line = description?.trimmingCharacters(in: .whitespacesAndNewlines)
         let edit = StationEdit(name: title?.isEmpty == false ? title : nil,
                                tags: tagged?.isEmpty == false ? tagged : nil,
-                               description: line?.isEmpty == false ? line : nil)
-        return edit.name == nil && edit.tags == nil && edit.description == nil ? nil : edit
+                               description: line?.isEmpty == false ? line : nil,
+                               ads: ads)
+        return edit.name == nil && edit.tags == nil && edit.description == nil && edit.ads == nil
+            ? nil : edit
     }
 }
 

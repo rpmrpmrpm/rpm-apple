@@ -37,6 +37,26 @@ struct StationEditsTests {
         #expect(drawn[0].shownTags == ["news"])
     }
 
+    @Test func theAdminsAdsMarkWinsOverTheRule() {
+        // Tagged commercial, so the rule marks it; the admin says it carries none.
+        var marked = station("a", "Radio X", tags: ["commercial"])
+        #expect(marked.carriesAds)
+        marked.edit = StationEdit(name: nil, tags: nil, description: nil, ads: false)
+        #expect(!marked.carriesAds)
+
+        // Says nothing, so the rule does not mark it; the admin says it carries ads.
+        var quiet = station("b", "Radio Y")
+        #expect(!quiet.carriesAds)
+        quiet.edit = StationEdit(name: nil, tags: nil, description: nil, ads: true)
+        #expect(quiet.carriesAds)
+        #expect(StationSieve(ads: .with).keeps(quiet))
+    }
+
+    @Test func anEditOfOnlyTheAdsIsKept() {
+        let edit = StationEdit.of(name: nil, tags: nil, description: nil, ads: true)
+        #expect(edit?.ads == true)
+    }
+
     @Test func aStationWithNoEditIsHandedBackAsItWas() {
         let plain = station("a", "X")
         #expect(StationRules.none.edited(plain) == plain)

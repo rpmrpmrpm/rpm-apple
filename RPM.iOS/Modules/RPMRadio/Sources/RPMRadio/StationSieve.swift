@@ -44,12 +44,13 @@ public struct StationSieve: Equatable, Sendable {
     /// sieve with a format and nothing else says nothing about the genre.
     public func keeps(_ station: RadioStation) -> Bool {
         if let format, !isFormat(station.codec, format) { return false }
-        // The admin's tags where they set some; the ads rule below keeps the directory's own.
+        // The admin's tags where they set some. The ads read the admin's mark, else the rule on the
+        // directory's own tags (RadioStation.carriesAds).
         if let genre, !RadioGenres.is(RadioNames.genres(station.shownTags), genre) { return false }
         switch ads {
         case .either: return true
-        case .with: return RadioAds.carriesAds(tags: station.tags, name: station.name, homepage: station.homepage)
-        case .without: return !RadioAds.carriesAds(tags: station.tags, name: station.name, homepage: station.homepage)
+        case .with: return station.carriesAds
+        case .without: return !station.carriesAds
         }
     }
 
