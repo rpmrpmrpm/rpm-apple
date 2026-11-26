@@ -1251,7 +1251,7 @@
 /* The pinned playlist the player always plays. */
 "Playlists_NowPlaying" = "正在播放";
 
-/* Toolbar/menu action to create a playlist. */
+/* Toolbar/menu action to create a playlist. On the phones also the first row of the playlist picker, and the title of the card that names the new playlist. */
 "Playlists_NewPlaylist" = "新建播放列表";
 
 /* Toolbar/menu action to create a playlist folder. */
@@ -4933,8 +4933,8 @@
 /* Title of the confirmation when a song chosen is already in the playlist picked (iPhone playlist picker, and every add to playlist on the desktop), and the line shown when a write found it there. {0} is the playlist name. */
 "Rpm_PlaylistPick_AlreadyIn" = "已在 %1$@ 中";
 
-/* Empty state of the iPhone playlist picker at the top of the tree. */
-"Rpm_PlaylistPick_Empty" = "还没有播放列表。在“播放列表”标签页新建一个，或在电脑的 rpm 中选一个同步到云端。";
+/* Empty state of the phones' playlist picker at the top of the tree, under its New playlist row. */
+"Rpm_PlaylistPick_Empty" = "还没有播放列表。";
 
 /* Empty state of the iPhone playlist picker inside a folder. */
 "Rpm_PlaylistPick_EmptyFolder" = "此文件夹为空。";
@@ -4945,7 +4945,7 @@
 /* Placeholder in the name field of the iPhone new-playlist sheet. */
 "Rpm_NewPlaylist_Name" = "播放列表名称";
 
-/* Line under the name field of the iPhone new-playlist sheet, saying which folder the playlist is being made in. {0} = the folder. Hidden when it is not in one. */
+/* Line under the name field of the phones' new-playlist sheet and of the card that names a playlist made from the playlist picker, saying which folder the playlist is being made in. {0} = the folder. Hidden when it is not in one. */
 "Rpm_NewPlaylist_In" = "位于 %1$@";
 
 /* Placeholder in the song search field of the iPhone new-playlist sheet. */
@@ -4963,7 +4963,7 @@
 /* Empty state in the iPhone new-playlist sheet when the added-songs list is opened and nothing has been picked. */
 "Rpm_NewPlaylist_NoneAdded" = "尚未添加歌曲。";
 
-/* Confirms the iPhone new-playlist sheet. */
+/* Confirms the phones' new-playlist sheet, and the card that names a playlist made from the playlist picker. */
 "Rpm_NewPlaylist_Create" = "创建";
 
 /* Phone: title of the picker that switches between your library and shared ones. */
