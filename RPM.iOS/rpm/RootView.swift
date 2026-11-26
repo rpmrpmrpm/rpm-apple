@@ -234,6 +234,24 @@ struct RootView: View {
     @State private var showingSupport = false
     @State private var managingSubscription = false
 
+    /// The supporter pop-up (``SupporterNudgeCard``), and the subscription sheet opened from it. See ``considerNudge()``.
+    @State private var nudging = false
+    @State private var supportingFromNudge = false
+
+    /// This process's launch number for the supporter pop-up, once ``countLaunch()`` has counted it. 0 before that.
+    @MainActor private static var launchNumber = 0
+
+    /// Whether the supporter pop-up has had its turn in this process: shown, or passed over. Static for the same reason
+    /// as ``started``: the screens are built again when the user chooses another language.
+    @MainActor private static var nudgeSettled = false
+
+    /// How long the app must be up with nothing over it before the supporter pop-up shows.
+    private static let nudgeSettles: Duration = .milliseconds(2500)
+
+    /// How long a due supporter pop-up waits for the quota. A quota still not known after this (a failed read, no
+    /// network) means no pop-up on this launch.
+    private static let nudgeWaitsForPlan: Duration = .seconds(15)
+
     /// The open Send feedback sheet, with the screenshot taken just before it opened.
     @State private var feedback: FeedbackShot?
 
@@ -437,6 +455,18 @@ struct RootView: View {
             }
         }
         .animation(.easeOut(duration: 0.4), value: welcomeDue)
+        // The supporter pop-up, over the app, on a launch that ``considerNudge()`` found due.
+        .overlay {
+            if nudging {
+                SupporterNudgeCard(onSupport: {
+                                       nudging = false
+                                       supportingFromNudge = true
+                                   },
+                                   onClose: { nudging = false })
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: nudging)
         // Shown over everything, including the tab bar and the mini player. The stage is the whole
         // screen while the phone is turned.
         .overlay {
@@ -596,6 +626,15 @@ struct RootView: View {
                           send: { await model.diagnostics.sendFeedback($0) },
                           onClose: { feedback = nil })
         }
+        // The subscription sheet from the supporter pop-up's Become a supporter, as from the settings page's key.
+        .sheet(isPresented: $supportingFromNudge, onDismiss: { Task { await model.syncSupport() } }) {
+            if let account = model.supporterAccount {
+                SupporterSheet(account: account, onPurchase: { await model.purchased($0) })
+            }
+        }
+        // The supporter pop-up: the launch is counted once the app shows, and a due launch waits until nothing is over
+        // the app. See ``considerNudge()``.
+        .task(id: NudgeAsked(showing: model.standing == .showing, idle: nudgeIdle)) { await considerNudge() }
         .alert(Loc.get("Crash_PromptTitle"),
                isPresented: Binding(get: { model.diagnostics.asksAboutCrashes }, set: { _ in })) {
             Button(Loc.get("Crash_PromptSend")) { Task { await model.diagnostics.answer(send: true) } }
@@ -758,6 +797,59 @@ struct RootView: View {
         return Welcome.Support(account: account,
                                purchase: { await model.purchased($0) },
                                closed: { Task { await model.syncSupport() } })
+    }
+
+    /// Whether the app is up with nothing over it, so the supporter pop-up may show: after the welcome, and not while the
+    /// wait mark, the opening screen, the player, the stage, a picker, a card or a sheet is up.
+    private var nudgeIdle: Bool {
+        FirstRun.shared.welcomed && model.standing == .showing && !covering && !opening && !staged && !onStage
+            && !playing.up && !model.pickingLibrary && model.filing == nil && model.queueQuestion == nil
+            && !showingMe && people.isEmpty && feedback == nil && !showingSupport && !managingSubscription
+            && !showingDownloads && writing == nil && reporting == nil && feedReview == nil
+            && !model.diagnostics.asksAboutCrashes && !nudging && !supportingFromNudge
+    }
+
+    /// Decides once per process whether the supporter pop-up shows. The launch is counted as soon as the app shows
+    /// (``countLaunch()``). On a due launch (``SupporterNudge/onLaunch(_:)``) it waits until the app has been idle for
+    /// ``nudgeSettles``, then for the quota, and asks ``SupporterNudge/due(launch:supporter:)``. When the app stops
+    /// being idle, the task is cancelled and the wait starts again the next time it is idle.
+    private func considerNudge() async {
+        guard model.standing == .showing else { return }
+        let launch = Self.countLaunch()
+        guard nudgeIdle, !Self.nudgeSettled else { return }
+        guard SupporterNudge.onLaunch(launch) else {
+            Self.nudgeSettled = true
+            return
+        }
+
+        try? await Task.sleep(for: Self.nudgeSettles)
+        guard !Task.isCancelled else { return }
+
+        // The quota is nil while it is not read, and after a read that failed. Nil is "not known", never "free". It is
+        // polled, as the launch hold polls `homeReady`.
+        let cap = ContinuousClock.now.advanced(by: Self.nudgeWaitsForPlan)
+        while model.quota == nil, ContinuousClock.now < cap {
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+        }
+
+        Self.nudgeSettled = true
+        guard SupporterNudge.due(launch: launch, supporter: model.quota?.wearsMark),
+              model.supporterAccount != nil else { return }
+        nudging = true
+    }
+
+    /// Counts this launch for the supporter pop-up and gives its number: 1 for the first launch that reached the app.
+    /// The count is kept in the defaults (``SupporterNudge/launchesKey``). It goes up once per process: every later call
+    /// gives the same number, so screens built again (a new language, a sign-in after a sign-out) are not a new launch.
+    @MainActor
+    private static func countLaunch() -> Int {
+        if launchNumber == 0 {
+            let store = UserDefaults.standard
+            launchNumber = store.integer(forKey: SupporterNudge.launchesKey) + 1
+            store.set(launchNumber, forKey: SupporterNudge.launchesKey)
+        }
+        return launchNumber
     }
 
     /// The song the welcome plays: see ``WelcomeSong``. Only what can be played now: offline, a
@@ -2272,6 +2364,13 @@ private struct BadgesAsked: Hashable {
     let albums: Int
     let own: Bool
     let reader: String?
+}
+
+/// What the supporter pop-up's decision depends on: whether the app shows, and whether nothing is over it. See
+/// `RootView.considerNudge()`.
+private struct NudgeAsked: Hashable {
+    let showing: Bool
+    let idle: Bool
 }
 
 /// A line on an artist's wall that is being reported, and whose wall it is on.
